@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+import '../../../plugin_system/plugin_registry.dart';
 import '../models/company_profile.dart';
-import '../services/settings_repository.dart';
+import '../services/company_repository.dart';
 
 class CompanyProfileScreen extends StatefulWidget {
   const CompanyProfileScreen({super.key});
-
   @override
   State<CompanyProfileScreen> createState() => _CompanyProfileScreenState();
 }
 
 class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  late SettingsRepository _repo;
   late TextEditingController _nameController;
   late TextEditingController _postalController;
   late TextEditingController _addressController;
@@ -44,16 +43,19 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     super.dispose();
   }
 
+  Database get _db => PluginRegistry.instance.getContext()!.database;
+
   Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    _repo = SettingsRepository(prefs);
-    final profile = await _repo.loadCompanyProfile();
-    _nameController.text = profile.name;
-    _postalController.text = profile.postalCode;
-    _addressController.text = profile.address;
-    _telController.text = profile.tel;
-    _faxController.text = profile.fax;
-    _emailController.text = profile.email;
+    final repo = CompanyRepository(_db);
+    final profile = await repo.loadProfile();
+    if (profile != null) {
+      _nameController.text = profile.name;
+      _postalController.text = profile.postalCode;
+      _addressController.text = profile.address;
+      _telController.text = profile.tel;
+      _faxController.text = profile.fax;
+      _emailController.text = profile.email;
+    }
     setState(() => _isLoading = false);
   }
 
@@ -67,7 +69,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       fax: _faxController.text.trim(),
       email: _emailController.text.trim(),
     );
-    await _repo.saveCompanyProfile(profile);
+    final repo = CompanyRepository(_db);
+    await repo.saveProfile(profile);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('保存しました')),
@@ -78,7 +81,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('会社情報')),
+      appBar: AppBar(title: const Text('自社情報')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(

@@ -27,6 +27,8 @@ class PluginRegistry {
     _initialized = true;
   }
 
+  PluginContext? getContext() => _context;
+
   Future<void> register(H1Plugin plugin) async {
     if (_plugins.containsKey(plugin.id)) {
       throw Exception('Plugin already registered: ${plugin.id}');

@@ -1,6 +1,6 @@
 # 進捗ステータス
 
-**更新:** 2026-06-01 22:50
+**更新:** 2026-06-01 23:20
 **作成者:** OpenCode
 
 ---
@@ -22,6 +22,8 @@
 | 11 | QuickActions プラグイン移植 | P1 | ✅ |
 | 12 | **プラグイン有効/無効制御** | **P1** | ✅ |
 | 13 | **DBスキーマプラグイン分解 + マイグレーション基盤** | **P1/P2** | ✅ |
+| 14 | **自社情報プラグイン分離 (CompanyPlugin)** | **P1** | ✅ |
+| 15 | **バックアッププラグイン実装 (BackupPlugin)** | **P1** | ✅ |
 
 ---
 
@@ -43,7 +45,22 @@
   - PurchasePlugin: `suppliers`
   - SettingsPlugin: `company_info`
 
-### 14. DBマイグレーション基盤
+### 14. 自社情報プラグイン分離
+- `SettingsPlugin` から `CompanyProfile` / `company_profile_screen.dart` を分離
+- 新規 `CompanyPlugin` (com.h1.plugin.company) — 独立プラグインとして `/company` ルート提供
+- `CompanyRepository` を DB (`company_info` table) ベースに変更（SharedPrefs→DB移行）
+- `SettingsPlugin.dependencies` に `com.h1.plugin.company` 追加
+- 削除: `settings/models/company_profile.dart`, `settings/screens/company_profile_screen.dart`
+- `PluginRegistry` に `getContext()` 追加
+
+### 15. バックアッププラグイン実装
+- h-1.flutter.0 から `LocalBackupService` 移植（SysLogger→debugPrint）
+- `BackupPlugin` (com.h1.plugin.backup) — 画面ID BK、毎日自動バックアップ
+- 機能: 手動バックアップ、自動バックアップ（起動時）、一覧表示、SHA256検証、リストア
+- `DatabaseHelper.getDatabasePath()` 追加
+- Google Drive連携は含めない（後続タスク）
+
+### 16. DBマイグレーション基盤
 - `DatabaseHelper._databaseVersion` 2 にバンプ
 - `upgradeDatabase()` にバージョンループ + `_migrateToVersion()` 実装
 - `H1Plugin.migrate()` インターフェース追加（プラグイン単位のマイグレーションフック）

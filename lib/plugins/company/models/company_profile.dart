@@ -41,6 +41,28 @@ class CompanyProfile {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+    'id': 1,
+    'name': name,
+    'zip_code': postalCode,
+    'address': address,
+    'tel': tel,
+    'fax': fax,
+    'email': email,
+  };
+
+  factory CompanyProfile.fromMap(Map<String, dynamic> map) {
+    return CompanyProfile(
+      name: map['name'] as String? ?? '',
+      postalCode: map['zip_code'] as String? ?? '',
+      address: map['address'] as String? ?? '',
+      tel: map['tel'] as String? ?? '',
+      fax: map['fax'] as String? ?? '',
+      email: map['email'] as String? ?? '',
+      defaultTaxRate: ((map['default_tax_rate'] as num?) ?? 10).toInt(),
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'name': name,
     'postalCode': postalCode,

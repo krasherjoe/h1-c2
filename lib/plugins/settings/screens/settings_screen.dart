@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/settings_repository.dart';
-import 'company_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -42,13 +41,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           ListTile(
             leading: const Icon(Icons.business),
-            title: const Text('会社情報'),
+            title: const Text('自社情報'),
             subtitle: const Text('会社名・住所・電話番号など'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CompanyProfileScreen()),
-            ),
+            onTap: () => Navigator.pushNamed(context, '/company'),
           ),
           const Divider(),
           ListTile(

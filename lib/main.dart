@@ -15,6 +15,8 @@ import 'plugins/purchase/purchase_plugin.dart';
 import 'plugins/analytics/analytics_plugin.dart';
 import 'plugins/accounting/accounting_plugin.dart';
 import 'plugins/quick_actions/quick_actions_plugin.dart';
+import 'plugins/company/company_plugin.dart';
+import 'plugins/backup/backup_plugin.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/invoice_input/invoice_input_form.dart';
 import 'screens/invoice_history/invoice_history_screen.dart';
@@ -37,12 +39,14 @@ void main() async {
   await registry.register(DocumentsPlugin());
   await registry.register(CustomersPlugin());
   await registry.register(ProductsPlugin());
+  await registry.register(CompanyPlugin());
   await registry.register(SettingsPlugin());
   await registry.register(InventoryPlugin());
   await registry.register(PurchasePlugin());
   await registry.register(AnalyticsPlugin());
   await registry.register(AccountingPlugin());
   await registry.register(QuickActionsPlugin());
+  await registry.register(BackupPlugin());
 
   final stateService = PluginStateService();
   final states = await stateService.loadAll(

@@ -56,6 +56,11 @@ class DatabaseHelper {
 
   String get databaseName => 'h1_core.db';
 
+  Future<String> getDatabasePath() async {
+    final dir = await _getDatabaseDirectory();
+    return p.join(dir, databaseName);
+  }
+
   Future<String> _getDatabaseDirectory() async {
     final dir = await getApplicationDocumentsDirectory();
     return dir.path;
