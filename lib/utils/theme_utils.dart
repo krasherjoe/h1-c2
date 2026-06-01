@@ -35,20 +35,27 @@ Color appBarForeground(Color background) {
 Color adjustSurfaceContrast(Color card, Color background, {double minRatio = 1.5}) {
   if (contrastRatio(card, background) >= minRatio) return card;
 
-  final cardL = card.computeLuminance();
-  final bgL = background.computeLuminance();
-  var hsl = HSLColor.fromColor(card);
+  final hsl = HSLColor.fromColor(card);
+  Color? best;
 
-  if (cardL > bgL) {
-    while (contrastRatio(hsl.toColor(), background) < minRatio && hsl.lightness < 0.95) {
-      hsl = hsl.withLightness((hsl.lightness + 0.05).clamp(0.0, 1.0));
-    }
-  } else {
-    while (contrastRatio(hsl.toColor(), background) < minRatio && hsl.lightness > 0.05) {
-      hsl = hsl.withLightness((hsl.lightness - 0.05).clamp(0.0, 1.0));
+  void tryDirection(bool lighten) {
+    for (int i = 1; i <= 18; i++) {
+      final step = i * 0.05;
+      final newLightness = lighten
+          ? (hsl.lightness + step).clamp(0.0, 1.0)
+          : (hsl.lightness - step).clamp(0.0, 1.0);
+      final candidate = hsl.withLightness(newLightness).toColor();
+      if (contrastRatio(candidate, background) >= minRatio) {
+        best = candidate;
+        return;
+      }
     }
   }
-  return hsl.toColor();
+
+  tryDirection(true);
+  tryDirection(false);
+
+  return best ?? card;
 }
 
 /// 伝票種別ごとの AppBar 背景色（テーマ対応・ダークモード対応）。
