@@ -47,21 +47,29 @@ class AppTheme {
   }
 
   static InputDecorationTheme _inputTheme(bool isDark, String style) {
-    if (style == 'outlined') {
-      return const InputDecorationTheme(
+    if (style == 'raised') {
+      return InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: isDark ? const Color(0xFF3E3E42) : Colors.white,
         isDense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: const Color(0xFF6366F1), width: 2),
+        ),
       );
     }
-    return InputDecorationTheme(
+    return const InputDecorationTheme(
       filled: true,
-      fillColor: isDark ? const Color(0xFF3E3E42) : Colors.white,
+      fillColor: Colors.white,
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      border: OutlineInputBorder(borderSide: BorderSide.none),
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      border: OutlineInputBorder(),
     );
   }
 }
