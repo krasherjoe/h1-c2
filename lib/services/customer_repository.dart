@@ -476,7 +476,6 @@ class CustomerRepository {
           whereArgs: [customerId],
         );
         await txn.insert('customer_contacts', {
-          'id': Uuid().v4(),
           'customer_id': customerId,
           'email': email,
           'tel': tel,
@@ -652,7 +651,6 @@ class CustomerRepository {
         whereArgs: [customer.id],
       );
       await txn.insert('customer_contacts', {
-        'id': Uuid().v4(),
         'customer_id': customer.id,
         'email': customer.email,
         'tel': customer.tel,
