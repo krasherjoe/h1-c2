@@ -115,4 +115,17 @@
 ---
 
 ## git.cyberius.biz 最終push
-- `e3d9312` — プラグイン有効/無効制御 + DBスキーマ分解 + マイグレーション基盤
+- `6044eb5` — 自社情報プラグイン分離 + バックアッププラグイン移植
+
+---
+
+## 作業中: 顧客マスター本物移植
+
+**問題:** `CustomerEditScreen` が15行のスタブで編集機能が死んでいる。
+`CustomerMasterScreen` が H1Explorer で二重ラップされている。
+
+**計画:** `docs/plans/customer-master-restoration.md` に設計書あり。
+- CustomerRepository を h-1.flutter.0 の本物(815行)に戻す
+- CustomerEditScreen を h-1.flutter.0 の本物(730行)に戻す
+- H1Explorer 経由から直ルートに変更
+- 未移植widgetをインライン化して対応
