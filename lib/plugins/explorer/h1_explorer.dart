@@ -61,7 +61,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   void _openViewer(T item) {
-    Navigator.push(
+    Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => _H1ExplorerViewerScreen<T>(
@@ -69,20 +69,19 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           item: item,
         ),
       ),
-    );
+    ).then((changed) {
+      if (changed == true && mounted) _loadItems();
+    });
   }
 
   Future<void> _openEditor(T? item) async {
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
-        builder: (_) => _H1ExplorerEditorScreen<T>(
-          config: widget.config,
-          item: item,
-        ),
+        builder: (_) => widget.config.buildEditor(context, item),
       ),
     );
-    if (result == true && mounted) _loadItems();
+    if (result != null && mounted) _loadItems();
   }
 
   Future<void> _confirmDelete(T item) async {
@@ -398,55 +397,42 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 }
 
-class _H1ExplorerViewerScreen<T extends H1ExplorerItem> extends StatelessWidget {
+class _H1ExplorerViewerScreen<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
   final T item;
 
   const _H1ExplorerViewerScreen({required this.config, required this.item});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(item.title),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => _H1ExplorerEditorScreen<T>(
-                  config: config,
-                  item: item,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: config.buildViewer(context, item),
-    );
-  }
+  State<_H1ExplorerViewerScreen<T>> createState() => _H1ExplorerViewerScreenState<T>();
 }
 
-class _H1ExplorerEditorScreen<T extends H1ExplorerItem> extends StatelessWidget {
-  final H1ExplorerConfig<T> config;
-  final T? item;
-
-  const _H1ExplorerEditorScreen({required this.config, required this.item});
+class _H1ExplorerViewerScreenState<T extends H1ExplorerItem> extends State<_H1ExplorerViewerScreen<T>> {
+  Future<void> _edit() async {
+    final result = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => widget.config.buildEditor(context, widget.item),
+      ),
+    );
+    if (!mounted) return;
+    if (result != null) Navigator.pop(context, true);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(item == null ? '新規作成' : '編集'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text(widget.item.title),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _edit,
+          ),
+        ],
       ),
-      body: config.buildEditor(context, item),
+      body: widget.config.buildViewer(context, widget.item),
     );
   }
 }
