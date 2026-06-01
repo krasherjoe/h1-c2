@@ -4,8 +4,9 @@ import 'h1_explorer_config.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
+  final Widget? appBarTitle;
 
-  const H1Explorer({super.key, required this.config});
+  const H1Explorer({super.key, required this.config, this.appBarTitle});
 
   @override
   State<H1Explorer<T>> createState() => _H1ExplorerState<T>();
@@ -113,7 +114,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.config.explorerTitle),
+        title: widget.appBarTitle ?? Text(widget.config.explorerTitle),
         centerTitle: true,
         actions: [
           IconButton(

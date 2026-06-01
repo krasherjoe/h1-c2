@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import '../../explorer/h1_explorer.dart';
+import '../../plugins/documents/explorer/document_explorer_config.dart';
+import '../../widgets/screen_id_title.dart';
 
-class InvoiceHistoryScreen extends StatefulWidget {
+class InvoiceHistoryScreen extends StatelessWidget {
   final bool isPickerMode;
   const InvoiceHistoryScreen({super.key, this.isPickerMode = false});
 
   @override
-  State<InvoiceHistoryScreen> createState() => _InvoiceHistoryScreenState();
-}
-
-class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('伝票履歴')),
-      body: const Center(child: Text('伝票履歴（準備中）')),
+    return H1Explorer(
+      config: DocumentExplorerConfig(),
+      appBarTitle: const ScreenAppBarTitle(
+        screenId: 'IH',
+        title: '伝票履歴',
+      ),
     );
   }
 }
