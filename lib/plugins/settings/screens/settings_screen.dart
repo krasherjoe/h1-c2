@@ -17,6 +17,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _prefix = '';
   ThemeMode _themeMode = ThemeMode.system;
   String _webhookUrl = '';
+  String _inputStyle = 'raised';
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _prefix = _repo.documentNumberPrefix;
       _themeMode = _repo.themeMode;
       _webhookUrl = prefs.getString('mattermost_webhook_url') ?? '';
+      _inputStyle = _repo.inputFieldStyle;
     });
   }
 
@@ -39,6 +41,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _themeMode = mode);
     _repo.themeMode = mode;
     themeNotifier.value = mode;
+  }
+
+  void _setInputStyle(String v) {
+    setState(() => _inputStyle = v);
+    _repo.inputFieldStyle = v;
   }
 
   @override
@@ -120,6 +127,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
               selected: {_themeMode},
               onSelectionChanged: (v) => _setTheme(v.first),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.text_fields),
+            title: const Text('入力フィールドスタイル'),
+            trailing: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'raised', label: Text('立体'), icon: Icon(Icons.layers)),
+                ButtonSegment(value: 'outlined', label: Text('縁取り'), icon: Icon(Icons.border_style)),
+              ],
+              selected: {_inputStyle},
+              onSelectionChanged: (v) => _setInputStyle(v.first),
             ),
           ),
           const Divider(),

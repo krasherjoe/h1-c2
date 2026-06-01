@@ -172,6 +172,24 @@ class _H1CoreAppState extends State<H1CoreApp> {
     ).copyWith(
       surfaceContainerLowest: const Color(0xFF2C2C2E),
     );
+    final inputStyle = widget.prefs.getString('input_field_style') ?? 'raised';
+
+    InputDecorationTheme inputTheme(bool isDark) {
+      if (inputStyle == 'outlined') {
+        return const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(),
+        );
+      }
+      // raised style: 背景色のみ、枠線なし
+      return InputDecorationTheme(
+        filled: true,
+        fillColor: isDark ? const Color(0xFF3E3E42) : const Color(0xFFEEEEF0),
+        border: OutlineInputBorder(borderSide: BorderSide.none),
+      );
+    }
+
     return MaterialApp(
       title: '販売アシスト1号 コア',
       debugShowCheckedModeBanner: false,
@@ -191,10 +209,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
           elevation: 1,
           surfaceTintColor: Colors.transparent,
         ),
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-        ),
+        inputDecorationTheme: inputTheme(false),
       ),
       darkTheme: ThemeData(
         colorScheme: darkScheme,
@@ -212,10 +227,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
           elevation: 1,
           surfaceTintColor: Colors.transparent,
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: darkScheme.surfaceContainerHighest,
-        ),
+        inputDecorationTheme: inputTheme(true),
       ),
       themeMode: _themeMode,
       builder: (context, child) => SafeArea(

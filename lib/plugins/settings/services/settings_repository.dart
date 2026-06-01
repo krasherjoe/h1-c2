@@ -30,4 +30,9 @@ class SettingsRepository {
       _ => 'system',
     });
   }
+
+  static const _inputStyleKey = 'input_field_style';
+
+  String get inputFieldStyle => _prefs.getString(_inputStyleKey) ?? 'raised';
+  set inputFieldStyle(String v) => _prefs.setString(_inputStyleKey, v);
 }
