@@ -37,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sections = _registry.allPlugins
+    final sections = _registry.activePlugins
       .map((p) => p.dashboardSection)
       .whereType<DashboardSection>()
       .toList()

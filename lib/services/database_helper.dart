@@ -10,7 +10,8 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2;
+  static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
   static Future<Database>? _databaseFuture;
@@ -78,4 +79,16 @@ Future<void> createAllTables(Database db, int version) async {
 }
 
 Future<void> upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+  for (var v = oldVersion + 1; v <= newVersion; v++) {
+    await _migrateToVersion(db, v);
+  }
+}
+
+Future<void> _migrateToVersion(Database db, int version) async {
+  switch (version) {
+    case 2:
+      break;
+    default:
+      break;
+  }
 }

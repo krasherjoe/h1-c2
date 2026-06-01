@@ -58,5 +58,30 @@ class SettingsPlugin extends H1Plugin {
   };
 
   @override
-  Future<void> createTables(Database db) async {}
+  Future<void> createTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS company_info (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        zip_code TEXT,
+        address TEXT,
+        address2 TEXT,
+        tel TEXT,
+        fax TEXT,
+        email TEXT,
+        url TEXT,
+        default_tax_rate REAL DEFAULT 0.10,
+        seal_path TEXT,
+        seal_offset_x REAL DEFAULT 10.0,
+        seal_offset_y REAL DEFAULT 50.0,
+        seal_rotation REAL DEFAULT 0.0,
+        tax_display_mode TEXT DEFAULT 'normal',
+        registration_number TEXT,
+        bank_accounts TEXT,
+        default_bank_account_index INTEGER DEFAULT 0,
+        fiscal_year_start INTEGER DEFAULT 4,
+        is_exempt_taxpayer INTEGER DEFAULT 0
+      )
+    ''');
+  }
 }

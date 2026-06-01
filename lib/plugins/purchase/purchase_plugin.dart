@@ -84,6 +84,31 @@ class PurchasePlugin extends H1Plugin {
         FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE
       )
     ''');
-    debugPrint('[PurchasePlugin] Tables created');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS suppliers (
+        id TEXT PRIMARY KEY,
+        display_name TEXT NOT NULL,
+        formal_name TEXT NOT NULL,
+        title TEXT DEFAULT '様',
+        department TEXT,
+        address TEXT,
+        tel TEXT,
+        email TEXT,
+        contact_person TEXT,
+        payment_terms TEXT,
+        bank_account TEXT,
+        closing_day INTEGER,
+        payment_site_days INTEGER DEFAULT 30,
+        notes TEXT,
+        is_locked INTEGER DEFAULT 0,
+        is_hidden INTEGER DEFAULT 0,
+        head_char1 TEXT,
+        head_char2 TEXT,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_suppliers_display_name ON suppliers(display_name)',
+    );
   }
 }

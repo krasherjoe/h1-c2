@@ -18,6 +18,7 @@ abstract class H1Plugin {
   List<MenuItem> getMenuItems();
   Map<String, WidgetBuilder> getRoutes();
   Future<void> createTables(Database db);
+  Future<void> migrate(Database db, int fromVersion, int toVersion) async {}
   Widget? getSettingsScreen() => null;
   List<ScreenDefinition> get screens => [];
   DashboardSection? get dashboardSection => null;

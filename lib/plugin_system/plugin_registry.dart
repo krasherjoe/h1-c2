@@ -5,6 +5,7 @@ import 'plugin_interface.dart';
 import 'plugin_context.dart';
 import 'menu_item.dart';
 import 'screen_definition.dart';
+import '../services/database_helper.dart';
 
 class PluginRegistry {
   static final PluginRegistry instance = PluginRegistry._();
@@ -14,6 +15,7 @@ class PluginRegistry {
   final Map<String, H1Plugin> _plugins = {};
   final Map<String, ScreenDefinition> _screensByRoute = {};
   final Map<String, ScreenDefinition> _screensById = {};
+  final Set<String> _disabledPlugins = {};
   PluginContext? _context;
   bool _initialized = false;
 
@@ -60,6 +62,11 @@ class PluginRegistry {
       } catch (e) {
         debugPrint('[PluginRegistry] Table creation error for ${plugin.id}: $e');
       }
+      try {
+        await plugin.migrate(_context!.database, 1, DatabaseHelper.databaseVersion);
+      } catch (e) {
+        debugPrint('[PluginRegistry] Migration error for ${plugin.id}: $e');
+      }
     }
 
     for (final screen in plugin.screens) {
@@ -87,8 +94,23 @@ class PluginRegistry {
     debugPrint('[PluginRegistry] Unregistered: ${plugin.name}');
   }
 
+  void setEnabled(String pluginId, bool enabled) {
+    if (enabled) {
+      _disabledPlugins.remove(pluginId);
+    } else {
+      _disabledPlugins.add(pluginId);
+    }
+  }
+
+  bool isEnabled(String pluginId) => !_disabledPlugins.contains(pluginId);
+
+  List<H1Plugin> get allPlugins => _plugins.values.toList();
+
+  List<H1Plugin> get activePlugins =>
+    _plugins.values.where((p) => isEnabled(p.id)).toList();
+
   List<MenuItem> getAllMenuItems() {
-    return _plugins.values.expand((p) => p.getMenuItems()).toList();
+    return activePlugins.expand((p) => p.getMenuItems()).toList();
   }
 
   Map<String, List<MenuItem>> getMenuItemsByCategory() {
@@ -102,15 +124,13 @@ class PluginRegistry {
 
   Map<String, WidgetBuilder> getAllRoutes() {
     final routes = <String, WidgetBuilder>{};
-    for (final plugin in _plugins.values) {
+    for (final plugin in activePlugins) {
       routes.addAll(plugin.getRoutes());
     }
     return routes;
   }
 
   H1Plugin? getPlugin(String pluginId) => _plugins[pluginId];
-
-  List<H1Plugin> get allPlugins => _plugins.values.toList();
 
   ScreenDefinition? getScreenByRoute(String route) => _screensByRoute[route];
   ScreenDefinition? getScreenById(String id) => _screensById[id];

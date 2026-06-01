@@ -4,6 +4,7 @@ import 'services/database_helper.dart';
 import 'plugin_system/plugin_registry.dart';
 import 'plugin_system/plugin_context.dart';
 import 'plugin_system/core_plugin.dart';
+import 'plugin_system/plugin_state_service.dart';
 import 'plugins/quotation_plugin.dart';
 import 'plugins/documents/documents_plugin.dart';
 import 'plugins/customers/customers_plugin.dart';
@@ -42,6 +43,16 @@ void main() async {
   await registry.register(AnalyticsPlugin());
   await registry.register(AccountingPlugin());
   await registry.register(QuickActionsPlugin());
+
+  final stateService = PluginStateService();
+  final states = await stateService.loadAll(
+    registry.allPlugins.map((p) => p.id).toList(),
+  );
+  for (final entry in states.entries) {
+    if (!entry.value) {
+      registry.setEnabled(entry.key, false);
+    }
+  }
 
   runApp(H1CoreApp(registry: registry));
 }

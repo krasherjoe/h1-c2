@@ -57,5 +57,87 @@ class ProductsPlugin extends H1Plugin {
   };
 
   @override
-  Future<void> createTables(Database db) async {}
+  Future<void> createTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS product_categories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        parent_id TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_categories_name ON product_categories(name)',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS products (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        default_unit_price INTEGER,
+        default_unit_price_is_tax_inclusive INTEGER DEFAULT 0,
+        wholesale_price INTEGER DEFAULT 0,
+        barcode TEXT,
+        model_number TEXT,
+        manufacturer TEXT,
+        category TEXT,
+        category_id TEXT,
+        stock_quantity INTEGER,
+        supplier_id TEXT,
+        supplier_name TEXT,
+        is_locked INTEGER DEFAULT 0,
+        is_hidden INTEGER DEFAULT 0,
+        description TEXT,
+        tags TEXT,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(category_id) REFERENCES product_categories(id)
+      )
+    ''');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id)',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS product_option_groups (
+        id TEXT PRIMARY KEY,
+        product_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        price_mode TEXT DEFAULT 'add',
+        sort_order INTEGER DEFAULT 0,
+        FOREIGN KEY(product_id) REFERENCES products(id)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS product_option_values (
+        id TEXT PRIMARY KEY,
+        group_id TEXT NOT NULL,
+        value TEXT NOT NULL,
+        price_modifier INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+        FOREIGN KEY(group_id) REFERENCES product_option_groups(id)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS product_variant_options (
+        variant_id TEXT NOT NULL,
+        option_value_id TEXT NOT NULL,
+        PRIMARY KEY(variant_id, option_value_id),
+        FOREIGN KEY(variant_id) REFERENCES products(id),
+        FOREIGN KEY(option_value_id) REFERENCES product_option_values(id)
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_variant_options_variant ON product_variant_options(variant_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_option_groups_product ON product_option_groups(product_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_option_values_group ON product_option_values(group_id)',
+    );
+  }
 }
