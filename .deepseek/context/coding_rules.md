@@ -375,6 +375,19 @@ class MyPlugin extends H1Plugin {
 6. 相対パスでのインポート
 7. 過度なコメント
 8. グローバル変数の乱用
+9. `Colors.black` / `Colors.white` の直指定（`textColorOn()` 経由以外）
+10. `Colors.black26` / `Colors.black38` の直指定（`cs.shadow` を使うこと）
+
+## カラー・デザイン
+
+デザインルールの詳細は `.deepseek/context/design_rules.md` を参照。
+
+### 重要ルール
+
+- **3層構造**: 壁紙(`surfaceContainerLowest`) → カード(`surface`+影) → 入力フォーム(`Colors.white`)
+- **カードの影**: `cs.shadow.withValues(alpha:)` を使い、二重シャドウで立体感を演出
+- **文字色**: カスタム背景色の場合は必ず `textColorOn(背景色)` を使う
+- **テーマ**: Material 3 + `colorSchemeSeed: Colors.indigo`。全色 `Theme.of(context).colorScheme` から取得
 
 ## 推奨事項
 
