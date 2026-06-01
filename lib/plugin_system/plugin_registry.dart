@@ -58,7 +58,6 @@ class PluginRegistry {
     }
 
     if (_context != null) {
-      await plugin.initialize(_context!);
       try {
         await plugin.createTables(_context!.database);
       } catch (e) {
@@ -69,6 +68,7 @@ class PluginRegistry {
       } catch (e) {
         debugPrint('[PluginRegistry] Migration error for ${plugin.id}: $e');
       }
+      await plugin.initialize(_context!);
     }
 
     for (final screen in plugin.screens) {

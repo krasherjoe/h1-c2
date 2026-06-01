@@ -13,6 +13,7 @@ class UpdateService {
   String? latestVersion;
   String? latestApkUrl;
   String? latestNotes;
+  String? _apkName;
   String? _downloadedPath;
   double _downloadProgress = 0;
 
@@ -37,6 +38,7 @@ class UpdateService {
         final name = asset['name'] as String? ?? '';
         if (name.endsWith('.apk')) {
           latestApkUrl = asset['browser_download_url'] as String?;
+          _apkName = name;
           break;
         }
       }

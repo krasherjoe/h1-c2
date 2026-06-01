@@ -7,7 +7,7 @@ class ErrorReporter {
   static const _kWebhookUrlKey = 'mattermost_webhook_url';
   static const _kDefaultWebhookUrl = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
   static const _kEnvUrl = String.fromEnvironment('MATTERMOST_WEBHOOK_URL');
-  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.4+1');
+  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.26+1');
 
   static Future<String> _getWebhookUrl() async {
     if (_kEnvUrl.isNotEmpty) return _kEnvUrl;

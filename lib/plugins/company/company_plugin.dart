@@ -21,9 +21,14 @@ class CompanyPlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
-    final repo = CompanyRepository(context.database);
-    final profile = await repo.loadProfile() ?? const CompanyProfile();
-    context.registerService<CompanyProfile>('companyProfile', profile);
+    try {
+      final repo = CompanyRepository(context.database);
+      final profile = await repo.loadProfile() ?? const CompanyProfile();
+      context.registerService<CompanyProfile>('companyProfile', profile);
+    } catch (e) {
+      debugPrint('[CompanyPlugin] プロファイル読込スキップ(テーブル未作成): $e');
+      context.registerService<CompanyProfile>('companyProfile', const CompanyProfile());
+    }
   }
 
   @override Future<void> dispose() async {}
