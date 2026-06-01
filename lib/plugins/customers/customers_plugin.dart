@@ -97,6 +97,9 @@ class CustomersPlugin extends H1Plugin {
           )
         ''');
       } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE customer_contacts ADD COLUMN version INTEGER DEFAULT 1');
+      } catch (_) {}
     }
   }
 
@@ -163,6 +166,7 @@ class CustomersPlugin extends H1Plugin {
         address TEXT,
         tel TEXT,
         email TEXT,
+        version INTEGER DEFAULT 1,
         is_active INTEGER DEFAULT 1,
         created_at TEXT NOT NULL,
         FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
