@@ -5,7 +5,9 @@ import '../../../models/invoice_models.dart';
 import '../../../models/project_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/project_repository.dart';
-import '../../../screens/customer_master/customer_master_screen.dart';
+import '../../../plugins/explorer/h1_explorer.dart';
+import '../../../plugins/customers/explorer/customer_explorer_config.dart';
+import '../../../plugins/customers/models/customer_explorer_item.dart';
 import '../widgets/invoice_quick_project_dialog.dart';
 
 Future<Customer?> selectCustomer(
@@ -15,15 +17,20 @@ Future<Customer?> selectCustomer(
   required ProductRepository productRepo,
   required ValueChanged<List<InvoiceItem>> onItemsRecalculated,
 }) async {
-  final Customer? picked = await Navigator.push(
+  final picked = await Navigator.push<CustomerExplorerItem>(
     context,
     MaterialPageRoute(
-      builder: (_) => CustomerMasterScreen(selectionMode: true),
+      builder: (_) => H1Explorer(
+        config: CustomerExplorerConfig(),
+        selectionMode: true,
+      ),
       fullscreenDialog: true,
     ),
   );
   if (picked == null || !context.mounted) return null;
-  if (picked.id == currentCustomer?.id) return null;
+  final customer = picked.customer;
+  if (!context.mounted) return null;
+  if (customer.id == currentCustomer?.id) return null;
 
   if (items.isNotEmpty) {
     final shouldRecalculate = await showDialog<bool>(
@@ -32,7 +39,7 @@ Future<Customer?> selectCustomer(
         title: const Text('顧客変更と価格再計算'),
         content: Text(
           '明細${items.length}件があります。'
-          '「${picked.displayName}」のランク・顧客別価格に基づき、'
+          '「${customer.displayName}」のランク・顧客別価格に基づき、'
           '単価を再計算しますか？',
         ),
         actions: [
@@ -57,7 +64,7 @@ Future<Customer?> selectCustomer(
         if (item.productId != null) {
           final resolved = await productRepo.resolveUnitPrice(
             productId: item.productId!,
-            customerId: picked.id,
+            customerId: customer.id,
           );
           if (!context.mounted) return null;
           newItems[i] = item.copyWith(unitPrice: resolved.unitPrice);
@@ -78,7 +85,7 @@ Future<Customer?> selectCustomer(
     }
   }
 
-  return picked;
+  return customer;
 }
 
 void showProjectPicker(

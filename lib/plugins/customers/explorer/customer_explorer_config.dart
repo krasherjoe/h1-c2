@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
-import '../../../explorer/h1_explorer_config.dart';
+import '../../../plugins/explorer/h1_explorer_config.dart';
+import '../../../models/customer_model.dart';
 import '../../../services/customer_repository.dart';
-import '../../../screens/customer_master/customer_master_screen.dart';
 import '../../../screens/customer_edit_screen.dart';
+import '../../../screens/customer_master/logic/customer_search_filter.dart';
+import '../../../screens/customer_master/logic/customer_import_export.dart';
+import '../../../screens/customer_master/logic/customer_dialogs.dart';
+import '../../../screens/customer_master/logic/customer_utils.dart';
 import '../models/customer_explorer_item.dart';
 
 class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
-  @override
-  String get explorerTitle => '顧客マスター';
+  String _sortKey = 'name_asc';
+
+  CustomerExplorerConfig();
 
   @override
-  String get searchHint => '顧客名・電話番号で検索';
+  String get explorerTitle => '得意先マスター';
+
+  @override
+  String get searchHint => '顧客名で検索';
 
   @override
   IconData get itemIcon => Icons.person;
@@ -19,19 +27,46 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   String get emptyMessage => '顧客が登録されていません';
 
   @override
+  List<SortOption> get sortOptions => [
+        const SortOption(key: 'name_asc', label: '名前順'),
+        const SortOption(key: 'name_desc', label: '名前順（降順）'),
+      ];
+
+  @override
+  String get currentSortKey => _sortKey;
+
+  @override
+  void onSortChanged(String key) {
+    _sortKey = key;
+  }
+
+  @override
+  String? groupKey(CustomerExplorerItem item) {
+    return kanaCharToGroup(kanaFirstChar(item.customer));
+  }
+
+  @override
   Future<List<CustomerExplorerItem>> fetchItems(String query) async {
     final repo = CustomerRepository();
+    List<Customer> customers;
     if (query.isNotEmpty) {
-      final customers = await repo.searchCustomers(query);
-      return customers.map((c) => CustomerExplorerItem(c)).toList();
+      customers = await repo.searchCustomers(query);
+    } else {
+      customers = await repo.getAllCustomers();
     }
-    final customers = await repo.getAllCustomers();
-    return customers.map((c) => CustomerExplorerItem(c)).toList();
+    final list = List<Customer>.from(customers);
+    await sortCustomers(
+      list: list,
+      sortKey: _sortKey,
+      showHidden: false,
+      ignoreCorpPrefix: true,
+    );
+    return list.map((c) => CustomerExplorerItem(c)).toList();
   }
 
   @override
   Widget buildViewer(BuildContext context, CustomerExplorerItem item) {
-    return const CustomerMasterScreen(selectionMode: false);
+    return CustomerEditScreen(customer: item.customer);
   }
 
   @override
@@ -46,5 +81,70 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   Future<void> deleteItem(CustomerExplorerItem item) async {
     final repo = CustomerRepository();
     await repo.deleteCustomer(item.customer.id);
+  }
+
+  @override
+  List<({String id, IconData icon, String label})> get overflowActions => [
+    (id: 'import', icon: Icons.file_upload, label: 'CSV取込'),
+    (id: 'export', icon: Icons.file_download, label: 'CSV出力'),
+    (id: 'honorific', icon: Icons.auto_fix_high, label: '敬称の重複をチェック'),
+  ];
+
+  @override
+  void onOverflowAction(
+    BuildContext context,
+    String id, {
+    required VoidCallback onListChanged,
+  }) async {
+    switch (id) {
+      case 'import':
+        importCsv(context, onListChanged);
+      case 'export':
+        final repo = CustomerRepository();
+        final all = await repo.getAllCustomers();
+        exportCsv(all);
+      case 'honorific':
+        final repo = CustomerRepository();
+        final all = await repo.getAllCustomers();
+        cleanDuplicateHonorific(
+          context: context,
+          customers: all,
+          customerRepo: repo,
+          onComplete: onListChanged,
+        );
+    }
+  }
+
+  @override
+  List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
+          BuildContext context) =>
+      [
+        (
+          icon: Icons.edit_note,
+          label: '手入力で新規作成',
+          onTap: () => _openNewEditor(context),
+        ),
+        (
+          icon: Icons.contact_phone,
+          label: '電話帳から取り込む',
+          onTap: () => _openPhonebookImport(context),
+        ),
+      ];
+
+  void _openNewEditor(BuildContext context) {
+    Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CustomerEditScreen(),
+      ),
+    );
+  }
+
+  void _openPhonebookImport(BuildContext context) {
+    showPhonebookImport(
+      context: context,
+      customerRepo: CustomerRepository(),
+      onComplete: () {},
+    );
   }
 }

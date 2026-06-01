@@ -1,17 +1,33 @@
-# h_1_core
+# 販売アシスト1号 コア (h-1-core)
 
-A new Flutter project.
+請求書・領収証発行、顧客・商品マスター管理に対応した Flutter 製マルチプラットフォームアプリケーション。
 
-## Getting Started
+## 機能
 
-This project is a starting point for a Flutter application.
+- 請求書・見積書の発行・管理
+- 顧客マスター管理（五十音グループ・CSV入出力）
+- 商品マスター管理（カテゴリ別・価格帯ソート）
+- 仕入管理・在庫管理
+- 分析レポート・会計収支
+- ダッシュボード（クイックアクション）
+- ハッシュチェーンによる改ざん検出・監査
+- 自動バックアップ（7年保存）
+- 自社情報管理
+- プラグインシステム（有効/無効制御）
+- ダークモード対応
 
-A few resources to get you started if this is your first Flutter project:
+## 技術スタック
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Flutter 3.12.0+
+- sqflite（ローカルデータベース）
+- PDF生成 (pdf, printing)
+- SharedPreferences（設定保存）
+- SHA256 ハッシュチェーン（改ざん検出）
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## ダウンロード
+
+最新のAPKは [releases](./releases) からダウンロードしてください。
+
+## ライセンス
+
+All Rights Reserved.

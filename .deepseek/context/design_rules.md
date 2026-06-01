@@ -9,9 +9,9 @@
 ```
 
 | 層 | カラーソース | 影 | 用途 |
-|---|---|---|---|
+|---|---|---|---|---|
 | 壁紙 | `ColorScheme.surfaceContainerLowest` | なし | Scaffold 背景 |
-| カード | `ColorScheme.surface` | `cs.shadow` 二重シャドウ | メニュータイル、パネル、各ブロック |
+| カード | `adjustSurfaceContrast(surface, surfaceContainerLowest)` で自動調整 | `cs.shadow` 二重シャドウ | メニュータイル、パネル、各ブロック |
 | 入力フォーム | `Colors.white` | なし | TextField, TextFormField 内部 |
 
 ## カードの影（Elevation）

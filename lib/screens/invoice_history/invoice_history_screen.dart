@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../explorer/h1_explorer.dart';
+import '../../plugins/explorer/h1_explorer.dart';
 import '../../plugins/documents/explorer/document_explorer_config.dart';
 import '../../widgets/screen_id_title.dart';
 

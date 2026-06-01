@@ -27,6 +27,30 @@ Color appBarForeground(Color background) {
   return textColorOn(background);
 }
 
+/// カードの表面色を背景に対して視認できるよう自動調整する。
+///
+/// Material3 の `surface`（カード）と `surfaceContainerLowest`（壁紙）は
+/// 近い輝度になりがち。この関数は [minRatio] のコントラスト比（デフォルト1.5:1）を
+/// 下回る場合、カード色を明るく/暗くして差を確保する。
+Color adjustSurfaceContrast(Color card, Color background, {double minRatio = 1.5}) {
+  if (contrastRatio(card, background) >= minRatio) return card;
+
+  final cardL = card.computeLuminance();
+  final bgL = background.computeLuminance();
+  var hsl = HSLColor.fromColor(card);
+
+  if (cardL > bgL) {
+    while (contrastRatio(hsl.toColor(), background) < minRatio && hsl.lightness < 0.95) {
+      hsl = hsl.withLightness((hsl.lightness + 0.05).clamp(0.0, 1.0));
+    }
+  } else {
+    while (contrastRatio(hsl.toColor(), background) < minRatio && hsl.lightness > 0.05) {
+      hsl = hsl.withLightness((hsl.lightness - 0.05).clamp(0.0, 1.0));
+    }
+  }
+  return hsl.toColor();
+}
+
 /// 伝票種別ごとの AppBar 背景色（テーマ対応・ダークモード対応）。
 Color documentTypeColor(DocumentType type, ColorScheme cs, bool isDark) {
   final base = switch (type) {

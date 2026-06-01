@@ -52,8 +52,22 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
     if (_loading) return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
     if (_pages.isEmpty) return const SizedBox.shrink();
     final actions = _service.allActions;
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Row(
+            children: [
+              const Spacer(),
+              IconButton(
+                icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
+                tooltip: 'クイックアクション設定',
+                onPressed: () => Navigator.pushNamed(context, '/quick_actions/settings'),
+              ),
+            ],
+          ),
+        ),
         SizedBox(
           height: _calcHeight(),
           child: PageView(

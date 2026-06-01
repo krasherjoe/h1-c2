@@ -1,131 +1,107 @@
 # 進捗ステータス
 
-**更新:** 2026-06-01 23:20
+**更新:** 2026-06-02 10:45
 **作成者:** OpenCode
 
 ---
 
-## 完了タスク一覧（全13タスク）
+## 完了タスク一覧（全22タスク）
 
 | # | タスク | 優先度 | 状態 |
 |---|---|---|---|
-| 1 | H1Explorer コア基盤実装 | P1 | ✅ |
-| 2 | 顧客・商品プラグイン実装 | P1 | ✅ |
-| 3 | 設定プラグイン実装 | P1 | ✅ |
-| 4 | ルート繋ぎ込み修正 | - | ✅ |
-| 5 | 伝票プラグイン実装 | P2 | ✅ |
+| 1 | H1Explorer コア基盤実装 → プラグイン化 | P1 | ✅ |
+| 2 | 顧客プラグイン実装 （CustomerExplorerConfig 再実装） | P1 | ✅ |
+| 3 | 商品プラグイン実装 （ProductExplorerConfig 再実装） | P1 | ✅ |
+| 4 | 伝票プラグイン実装 | P2 | ✅ |
+| 5 | 仕入プラグイン実装 | P2 | ✅ |
 | 6 | 在庫管理プラグイン実装 | P2 | ✅ |
-| 7 | 仕入管理プラグイン実装 | P2 | ✅ |
-| 8 | 分析レポートプラグイン実装 | P3 | ✅ |
-| 9 | 会計収支プラグイン実装 | P3 | ✅ |
-| 10 | ダッシュボード原型復元 + セクションシステム | P1 | ✅ |
-| 11 | QuickActions プラグイン移植 | P1 | ✅ |
-| 12 | **プラグイン有効/無効制御** | **P1** | ✅ |
-| 13 | **DBスキーマプラグイン分解 + マイグレーション基盤** | **P1/P2** | ✅ |
-| 14 | **自社情報プラグイン分離 (CompanyPlugin)** | **P1** | ✅ |
-| 15 | **バックアッププラグイン実装 (BackupPlugin)** | **P1** | ✅ |
-
----
-
-## 今回の実装詳細
-
-### 12. プラグイン有効/無効制御
-- `PluginStateService` — SharedPreferencesで有効/無効状態を永続化
-- `PluginRegistry` — `_disabledPlugins` Set、`setEnabled()` / `isEnabled()` / `activePlugins`
-- `plugin_management_screen.dart` — SwitchトグルUI、依存関係警告ダイアログ、トグル不可プラグイン
-- `dashboard_screen.dart` — `activePlugins` で無効プラグインのセクション除外
-- `main.dart` — 起動時に保存済み状態を復元
-
-### 13. DBスキーマプラグイン分解
-- `database_schema_core.dart` → `activity_logs` + `hash_chain` のみに縮小
-- 各プラグインの `createTables()` に該当テーブルを `IF NOT EXISTS` で移動:
-  - CustomersPlugin: `customers`, `customer_product_prices`
-  - ProductsPlugin: `products`, `product_categories`, オプションテーブル群
-  - DocumentsPlugin: `invoices`, `invoice_items`, `payment_schedules`
-  - PurchasePlugin: `suppliers`
-  - SettingsPlugin: `company_info`
-
-### 14. 自社情報プラグイン分離
-- `SettingsPlugin` から `CompanyProfile` / `company_profile_screen.dart` を分離
-- 新規 `CompanyPlugin` (com.h1.plugin.company) — 独立プラグインとして `/company` ルート提供
-- `CompanyRepository` を DB (`company_info` table) ベースに変更（SharedPrefs→DB移行）
-- `SettingsPlugin.dependencies` に `com.h1.plugin.company` 追加
-- 削除: `settings/models/company_profile.dart`, `settings/screens/company_profile_screen.dart`
-- `PluginRegistry` に `getContext()` 追加
-
-### 15. バックアッププラグイン実装
-- h-1.flutter.0 から `LocalBackupService` 移植（SysLogger→debugPrint）
-- `BackupPlugin` (com.h1.plugin.backup) — 画面ID BK、毎日自動バックアップ
-- 機能: 手動バックアップ、自動バックアップ（起動時）、一覧表示、SHA256検証、リストア
-- `DatabaseHelper.getDatabasePath()` 追加
-- Google Drive連携は含めない（後続タスク）
-
-### 16. DBマイグレーション基盤
-- `DatabaseHelper._databaseVersion` 2 にバンプ
-- `upgradeDatabase()` にバージョンループ + `_migrateToVersion()` 実装
-- `H1Plugin.migrate()` インターフェース追加（プラグイン単位のマイグレーションフック）
-- `PluginRegistry.register()` で `createTables` 後に `migrate()` 呼び出し
-
----
-
-## 待機中
-
-- Cascadeからの新規タスクを `tasks/inbox/` で待機中
-- 現在 `inbox/` は空
+| 7 | 分析レポートプラグイン実装 | P3 | ✅ |
+| 8 | 会計収支プラグイン実装 | P3 | ✅ |
+| 9 | ダッシュボード原型復元 + セクションシステム | P1 | ✅ |
+| 10 | QuickActions プラグイン移植 | P1 | ✅ |
+| 11 | プラグイン有効/無効制御 | P1 | ✅ |
+| 12 | DBスキーマプラグイン分解 + マイグレーション基盤 | P1/P2 | ✅ |
+| 13 | 自社情報プラグイン分離 (CompanyPlugin) | P1 | ✅ |
+| 14 | バックアッププラグイン実装 | P1 | ✅ |
+| 15 | 設定プラグイン + ルート繋ぎ込み | P1 | ✅ |
+| 16 | 顧客マスター 直ルート化 → H1Explorer 統一へ回帰 | P1 | ✅ |
+| 17 | 商品マスター 直ルート化 → H1Explorer 統一へ回帰 | P1 | ✅ |
+| 18 | H1Explorer プラグイン化 (ExplorerPlugin) | P1 | ✅ |
+| 19 | エディタ保存ロジック修正 (常にtrue問題) | P1 | ✅ |
+| 20 | CustomerMasterScreen / ProductMasterScreen 削除 | P1 | ✅ |
+| 21 | ConversionPlugin（V1→V2データ変換 + 起動時ガード） | P1 | ✅ |
+| 22 | AuditPlugin（ハッシュチェーン監査画面 + 定期検証） | P1 | ✅ |
 
 ---
 
 ## アーキテクチャ現状
 
-### プラグイン構成（12プラグイン）
-
-| ID | プラグイン | トグル |
-|---|---|---|
-| `com.h1.core` | コアシステム | ❌ 常時有効 |
-| `com.h1.plugin.settings` | 設定 | ❌ 常時有効 |
-| `com.h1.plugin.quick_actions` | クイックアクション | ✅ |
-| `com.h1.plugin.customers` | 顧客管理 | ✅ |
-| `com.h1.plugin.products` | 商品管理 | ✅ |
-| `com.h1.plugin.documents` | 伝票管理 | ✅ |
-| `com.h1.plugin.purchase` | 仕入管理 | ✅ |
-| `com.h1.plugin.inventory` | 在庫管理 | ✅ |
-| `com.h1.plugin.analytics` | 分析レポート | ✅ |
-| `com.h1.plugin.accounting` | 会計収支 | ✅ |
-| (quotation) | 見積書 | ✅ |
-| (built-in routes) | 請求書入力/履歴/プラグイン管理 | N/A |
-
-### DBスキーマ配置
-
+### 全マスターが H1Explorer に統一
 ```
-コアスキーマ (database_schema_core.dart)
-├── activity_logs
-└── hash_chain
-
-各プラグインの createTables()
-├── customers / customer_product_prices
-├── products / product_categories / オプション系
-├── invoices / invoice_items / payment_schedules
-├── purchases / purchase_items / suppliers
-├── stock_transactions (inventory)
-├── company_info (settings)
-├── payments (accounting)
-└── (各プラグインの独自テーブル)
+H1Explorer（統一シェル）
+  ├── CustomerExplorerConfig（顧客マスター）
+  ├── ProductExplorerConfig（商品マスター）
+  ├── DocumentExplorerConfig（伝票管理）
+  └── PurchaseExplorerConfig（仕入管理）
 ```
+
+### H1ExplorerConfig の拡張機能（全 optional）
+
+| 機能 | 顧客 | 商品 | 伝票 | 仕入 |
+|---|---|---|---|---|
+| ソートメニュー | ✅ 名前順/降順 | ✅ 名前・カテゴリ・価格 | - | - |
+| グループ見出し | ✅ 五十音（あ〜わ） | ✅ カテゴリ別 | - | - |
+| FAB ポップアップ | ✅ 手入力/電話帳 | -（直接エディタ） | - | - |
+| オーバーフローメニュー | ✅ CSV入出力/敬称 | ✅ CSV入出力 | - | - |
+| selectionMode | ✅ 請求書画面で使用 | ✅ 請求書画面で使用 | - | - |
+
+### プラグイン構成（15プラグイン）
+
+| ID | プラグイン | トグル | 役割 |
+|---|---|---|---|
+| `com.h1.core` | コアシステム | ❌ | 基盤 |
+| `com.h1.plugin.explorer` | マスターエクスプローラー | ✅ | 統一シェル |
+| `com.h1.plugin.settings` | 設定 | ❌ | 設定管理 |
+| `com.h1.plugin.company` | 自社情報 | ✅ | 会社情報 |
+| `com.h1.plugin.backup` | バックアップ | ✅ | データ保護 |
+| `com.h1.plugin.quick_actions` | クイックアクション | ✅ | ダッシュボード |
+| `com.h1.plugin.customers` | 顧客管理 | ✅ | CustomerExplorerConfig |
+| `com.h1.plugin.products` | 商品管理 | ✅ | ProductExplorerConfig |
+| `com.h1.plugin.documents` | 伝票管理 | ✅ | DocumentExplorerConfig |
+| `com.h1.plugin.purchase` | 仕入管理 | ✅ | PurchaseExplorerConfig |
+| `com.h1.plugin.inventory` | 在庫管理 | ✅ | - |
+| `com.h1.plugin.analytics` | 分析レポート | ✅ | - |
+| `com.h1.plugin.accounting` | 会計収支 | ✅ | - |
+| `com.h1.plugin.conversion` | データ変換 | ✅ | V1→V2マイグレーション |
+| `com.h1.plugin.audit` | ハッシュチェーン監査 | ✅ | 改ざん検出UI |
+
+### 削除したファイル
+
+- `lib/screens/customer_master/customer_master_screen.dart`
+- `lib/screens/customer_master/widgets/` （4ファイル: list_view, card, sort_menu, kana_chips）
+- `lib/screens/customer_master/models/customer_list_types.dart`
+- `lib/screens/product_master/product_master_screen.dart`
+- `lib/screens/product_master/widgets/` （3ファイル: list_view, card, sort_menu）
+- `lib/plugins/customers/explorer/customer_explorer_config.dart`（旧バージョン）
+- `lib/plugins/customers/models/customer_explorer_item.dart`（旧バージョン）
+- `lib/plugins/products/explorer/product_explorer_config.dart`（旧バージョン）
+- `lib/plugins/products/models/product_explorer_item.dart`（旧バージョン）
+- `lib/explorer/` 全ファイル（プラグイン化により移設）
+
+### 残置しているロジックファイル（Config から参照）
+
+- `lib/screens/customer_master/logic/` （5ファイル: search_filter, import_export, dialogs, utils）
+- `lib/screens/product_master/logic/` （4ファイル: data_loader, import_export, dialogs, undo_manager）
+- `lib/screens/product_master/models/product_list_types.dart`
+
+---
+
+## Next Steps
+
+1. **Google Drive backup integration** — バックアッププラグインの post‑poned 機能
+2. **電帳法 定期自動検証** — AuditPlugin の起動時スケジュール検証（現在は手動トリガーのみ）
 
 ---
 
 ## git.cyberius.biz 最終push
-- `6044eb5` — 自社情報プラグイン分離 + バックアッププラグイン移植
-
----
-
-## 作業中: 顧客マスター本物移植
-
-**問題:** `CustomerEditScreen` が15行のスタブで編集機能が死んでいる。
-`CustomerMasterScreen` が H1Explorer で二重ラップされている。
-
-**計画:** `docs/plans/customer-master-restoration.md` に設計書あり。
-- CustomerRepository を h-1.flutter.0 の本物(815行)に戻す
-- CustomerEditScreen を h-1.flutter.0 の本物(730行)に戻す
-- H1Explorer 経由から直ルートに変更
-- 未移植widgetをインライン化して対応
+- `HEAD` — ConversionPlugin + AuditPlugin 実装完了

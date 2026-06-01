@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../explorer/h1_explorer_item.dart';
+import '../../../plugins/explorer/h1_explorer_item.dart';
 import '../../../models/customer_model.dart';
 
 class CustomerExplorerItem extends H1ExplorerItem {
@@ -17,7 +17,7 @@ class CustomerExplorerItem extends H1ExplorerItem {
   String? get subtitle => customer.tel;
 
   @override
-  String? get badge => null;
+  String? get badge => customer.rank != CustomerRank.none ? customer.rank.label : null;
 
   @override
   IconData? get icon => Icons.person;

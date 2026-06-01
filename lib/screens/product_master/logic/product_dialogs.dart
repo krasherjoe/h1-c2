@@ -9,7 +9,9 @@ import '../../../services/product_category_repository.dart';
 import '../../../services/customer_repository.dart';
 import '../../../services/permission_service.dart';
 import '../../../services/sys_logger.dart';
-import '../../customer_master/customer_master_screen.dart';
+import '../../../plugins/explorer/h1_explorer.dart';
+import '../../../plugins/customers/explorer/customer_explorer_config.dart';
+import '../../../plugins/customers/models/customer_explorer_item.dart';
 
 // ---- カテゴリ関連ダイアログ ----
 
@@ -551,11 +553,17 @@ Future<void> showCustomerPriceDialog({
                 icon: const Icon(Icons.add),
                 label: const Text('顧客を選択して価格設定'),
                 onPressed: () async {
-                  final customer = await Navigator.push<Customer>(
+                  final picked = await Navigator.push<CustomerExplorerItem>(
                     context,
-                    MaterialPageRoute(builder: (_) => const CustomerMasterScreen(selectionMode: true)),
+                    MaterialPageRoute(
+                      builder: (_) => H1Explorer(
+                        config: CustomerExplorerConfig(),
+                        selectionMode: true,
+                      ),
+                    ),
                   );
-                  if (customer == null) return;
+                  if (picked == null) return;
+                  final customer = picked.customer;
                   if (!ctx.mounted) return;
                   final priceCtrl = TextEditingController();
                   final existingPrice = prices.firstWhere(

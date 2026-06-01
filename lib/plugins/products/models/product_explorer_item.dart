@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../explorer/h1_explorer_item.dart';
+import '../../../plugins/explorer/h1_explorer_item.dart';
 import '../../../models/product_model.dart';
 
 class ProductExplorerItem extends H1ExplorerItem {

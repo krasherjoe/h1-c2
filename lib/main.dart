@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/database_helper.dart';
 import 'plugin_system/plugin_registry.dart';
@@ -16,7 +17,13 @@ import 'plugins/analytics/analytics_plugin.dart';
 import 'plugins/accounting/accounting_plugin.dart';
 import 'plugins/quick_actions/quick_actions_plugin.dart';
 import 'plugins/company/company_plugin.dart';
+import 'plugins/explorer/explorer_plugin.dart';
 import 'plugins/backup/backup_plugin.dart';
+import 'plugins/conversion/conversion_plugin.dart';
+import 'plugins/conversion/services/data_migration_service.dart';
+import 'plugins/conversion/screens/conversion_guard_screen.dart';
+import 'plugins/audit/audit_plugin.dart';
+import 'utils/theme_utils.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/invoice_input/invoice_input_form.dart';
 import 'screens/invoice_history/invoice_history_screen.dart';
@@ -46,7 +53,10 @@ void main() async {
   await registry.register(AnalyticsPlugin());
   await registry.register(AccountingPlugin());
   await registry.register(QuickActionsPlugin());
+  await registry.register(ExplorerPlugin());
   await registry.register(BackupPlugin());
+  await registry.register(ConversionPlugin());
+  await registry.register(AuditPlugin());
 
   final stateService = PluginStateService();
   final states = await stateService.loadAll(
@@ -58,37 +68,112 @@ void main() async {
     }
   }
 
-  runApp(H1CoreApp(registry: registry));
+  runApp(H1CoreApp(registry: registry, db: db, prefs: prefs));
 }
 
-class H1CoreApp extends StatelessWidget {
+class H1CoreApp extends StatefulWidget {
   final PluginRegistry registry;
+  final Database db;
+  final SharedPreferences prefs;
 
-  const H1CoreApp({super.key, required this.registry});
+  const H1CoreApp({
+    super.key,
+    required this.registry,
+    required this.db,
+    required this.prefs,
+  });
+
+  @override
+  State<H1CoreApp> createState() => _H1CoreAppState();
+}
+
+class _H1CoreAppState extends State<H1CoreApp> {
+  bool? _needsConversion;
+  bool _isConverting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+  }
+
+  Future<void> _check() async {
+    final needs = await DataMigrationService.needsConversion(widget.db);
+    if (!mounted) return;
+    setState(() => _needsConversion = needs);
+  }
+
+  Future<void> _runConversion() async {
+    setState(() => _isConverting = true);
+    await DataMigrationService.runConversion(widget.db, widget.prefs);
+    if (!mounted) return;
+    setState(() {
+      _needsConversion = false;
+      _isConverting = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final lightScheme = ColorScheme.fromSeed(
+      seedColor: Colors.indigo,
+      brightness: Brightness.light,
+    );
+    final darkScheme = ColorScheme.fromSeed(
+      seedColor: Colors.indigo,
+      brightness: Brightness.dark,
+    );
+    final lightCardColor = adjustSurfaceContrast(
+      lightScheme.surface, lightScheme.surfaceContainerLowest);
+    final darkCardColor = adjustSurfaceContrast(
+      darkScheme.surface, darkScheme.surfaceContainerLowest);
+
     return MaterialApp(
       title: '販売アシスト1号 コア',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
+        colorScheme: lightScheme,
         useMaterial3: true,
         brightness: Brightness.light,
+        cardTheme: CardThemeData(
+          color: lightCardColor,
+          elevation: 1,
+          surfaceTintColor: Colors.transparent,
+        ),
       ),
       darkTheme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
+        colorScheme: darkScheme,
         useMaterial3: true,
         brightness: Brightness.dark,
+        cardTheme: CardThemeData(
+          color: darkCardColor,
+          elevation: 1,
+          surfaceTintColor: Colors.transparent,
+        ),
       ),
       themeMode: ThemeMode.system,
-      home: const DashboardScreen(),
+      home: _buildHome(),
       routes: {
         '/invoice/input': (_) => const InvoiceInputForm(),
         '/invoice/history': (_) => const InvoiceHistoryScreen(),
         '/plugins': (_) => const PluginManagementScreen(),
-        ...registry.getAllRoutes(),
+        ...widget.registry.getAllRoutes(),
       },
     );
+  }
+
+  Widget _buildHome() {
+    if (_needsConversion == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_needsConversion!) {
+      return ConversionGuardScreen(
+        onConvert: _runConversion,
+        isConverting: _isConverting,
+      );
+    }
+    return const DashboardScreen();
   }
 }

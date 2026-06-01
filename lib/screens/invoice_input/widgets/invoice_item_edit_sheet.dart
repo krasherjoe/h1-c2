@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../models/product_model.dart';
 import '../../../models/invoice_models.dart';
 import '../../../services/product_repository.dart';
-import '../../../screens/product_master/product_master_screen.dart';
+import '../../../plugins/explorer/h1_explorer.dart';
+import '../../../plugins/products/explorer/product_explorer_config.dart';
+import '../../../plugins/products/models/product_explorer_item.dart';
 import 'variant_picker_sheet.dart';
 
 Future<Map<String, dynamic>?> showItemEditSheet(
@@ -11,11 +13,17 @@ Future<Map<String, dynamic>?> showItemEditSheet(
   required String? customerId,
   required ProductRepository productRepo,
 }) async {
-  final product = await Navigator.push<Product>(
+  final picked = await Navigator.push<ProductExplorerItem>(
     context,
-    MaterialPageRoute(builder: (_) => const ProductMasterScreen(selectionMode: true)),
+    MaterialPageRoute(
+      builder: (_) => H1Explorer(
+        config: ProductExplorerConfig(),
+        selectionMode: true,
+      ),
+    ),
   );
-  if (product == null) return null;
+  if (picked == null) return null;
+  final product = picked.product;
 
   final resolvedProduct = await _resolveVariant(context, product, productRepo);
   if (resolvedProduct == null) return null;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../explorer/h1_explorer_config.dart';
+import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../models/purchase_model.dart';
 import '../services/purchase_repository.dart';
 import 'purchase_viewer.dart';

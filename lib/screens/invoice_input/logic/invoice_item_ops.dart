@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../models/invoice_models.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
-import '../../../screens/product_master/product_master_screen.dart';
+import '../../../plugins/explorer/h1_explorer.dart';
+import '../../../plugins/products/explorer/product_explorer_config.dart';
+import '../../../plugins/products/models/product_explorer_item.dart';
 import '../../../screens/barcode_scanner/barcode_scanner_screen.dart';
 import '../../../widgets/paste_buffer_dialog.dart';
 
@@ -28,13 +30,17 @@ Future<ItemAddResult?> addItemToInvoice(
   required String? customerId,
   required Future<Product> Function(Product) resolveVariant,
 }) async {
-  final product = await Navigator.push<Product>(
+  final picked = await Navigator.push<ProductExplorerItem>(
     context,
     MaterialPageRoute(
-      builder: (_) => const ProductMasterScreen(selectionMode: true),
+      builder: (_) => H1Explorer(
+        config: ProductExplorerConfig(),
+        selectionMode: true,
+      ),
     ),
   );
-  if (product == null || !context.mounted) return null;
+  if (picked == null || !context.mounted) return null;
+  final product = picked.product;
   final resolvedProduct = await resolveVariant(product);
   if (!context.mounted) return null;
 

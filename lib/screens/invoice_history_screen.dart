@@ -8,8 +8,9 @@ import '../services/invoice_repository.dart';
 import '../services/sales_repository.dart';
 import '../services/customer_repository.dart';
 import 'invoice_detail_page.dart';
-import 'product_master/product_master_screen.dart';
-import 'customer_master/customer_master_screen.dart';
+import '../plugins/explorer/h1_explorer.dart';
+import '../plugins/customers/explorer/customer_explorer_config.dart';
+import '../plugins/products/explorer/product_explorer_config.dart';
 import 'invoice_input_screen.dart';
 import 'invoice_preview_page.dart';
 import '../services/sys_logger.dart';
@@ -758,7 +759,9 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const CustomerMasterScreen(),
+                            builder: (_) => H1Explorer(
+                              config: CustomerExplorerConfig(),
+                            ),
                           ),
                         );
                       },
@@ -774,7 +777,9 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const ProductMasterScreen(),
+                            builder: (_) => H1Explorer(
+                              config: ProductExplorerConfig(),
+                            ),
                           ),
                         );
                       },

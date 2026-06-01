@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../explorer/h1_explorer_config.dart';
+import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import 'document_viewer.dart';

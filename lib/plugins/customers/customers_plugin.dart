@@ -4,7 +4,7 @@ import '../../../plugin_system/plugin_interface.dart';
 import '../../../plugin_system/plugin_context.dart';
 import '../../../plugin_system/plugin_permission.dart';
 import '../../../plugin_system/menu_item.dart';
-import '../../../explorer/h1_explorer.dart';
+import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/customer_explorer_config.dart';
 
 class CustomersPlugin extends H1Plugin {
