@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/customer_model.dart';
 import '../../../services/customer_repository.dart';
+import '../../../services/error_reporter.dart';
 import '../../../screens/customer_edit_screen.dart';
 import '../../../screens/customer_master/logic/customer_search_filter.dart';
 import '../../../screens/customer_master/logic/customer_import_export.dart';
@@ -156,11 +157,12 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('登録エラー: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      ErrorReporter.showError(
+        context,
+        message: '顧客登録エラー',
+        detail: e.toString(),
+        screenId: 'C3',
+        stackTrace: e is Error ? e.stackTrace : null,
       );
     }
   }

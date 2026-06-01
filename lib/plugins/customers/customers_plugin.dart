@@ -57,6 +57,31 @@ class CustomersPlugin extends H1Plugin {
   };
 
   @override
+  Future<void> migrate(Database db, int fromVersion, int toVersion) async {
+    if (fromVersion < 2) {
+      final cols = {
+        'contact_version_id': 'INTEGER',
+        'odoo_id': 'TEXT',
+        'kana': 'TEXT',
+        'rank_discount_rate': 'REAL',
+        'is_synced': 'INTEGER DEFAULT 0',
+        'is_current': 'INTEGER DEFAULT 1',
+        'version': 'INTEGER DEFAULT 1',
+        'content_hash': 'TEXT',
+        'previous_hash': 'TEXT',
+        'next_version_id': 'TEXT',
+        'valid_from': 'TEXT',
+        'valid_to': 'TEXT',
+      };
+      for (final e in cols.entries) {
+        try {
+          await db.execute('ALTER TABLE customers ADD COLUMN ${e.key} ${e.value}');
+        } catch (_) {}
+      }
+    }
+  }
+
+  @override
   Future<void> createTables(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS customers (
@@ -68,17 +93,29 @@ class CustomersPlugin extends H1Plugin {
         address TEXT,
         tel TEXT,
         email TEXT,
+        contact_version_id INTEGER,
+        odoo_id TEXT,
+        kana TEXT,
         head_char1 TEXT,
         head_char2 TEXT,
         closing_day INTEGER,
         payment_day INTEGER,
         rank TEXT DEFAULT 'none',
+        rank_discount_rate REAL,
         credit_limit INTEGER DEFAULT 0,
         credit_note TEXT,
         lat REAL,
         lng REAL,
         is_locked INTEGER DEFAULT 0,
         is_hidden INTEGER DEFAULT 0,
+        is_synced INTEGER DEFAULT 0,
+        is_current INTEGER DEFAULT 1,
+        version INTEGER DEFAULT 1,
+        content_hash TEXT,
+        previous_hash TEXT,
+        next_version_id TEXT,
+        valid_from TEXT,
+        valid_to TEXT,
         updated_at TEXT NOT NULL
       )
     ''');

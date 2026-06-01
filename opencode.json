@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "mattermost": {
+      "type": "local",
+      "command": [
+        "/home/user/.local/bin/mattermost-mcp-server",
+        "-host", "https://mm.ka.sugeee.com",
+        "-bot-token", "a76xqj6zjig8tbba9fwyhwssfo"
+      ],
+      "enabled": true
+    }
+  }
+}

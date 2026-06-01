@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../main.dart' show themeNotifier;
+import '../../../services/error_reporter.dart';
 import '../services/settings_repository.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _taxRate = 10;
   String _prefix = '';
   ThemeMode _themeMode = ThemeMode.system;
+  String _webhookUrl = '';
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _taxRate = _repo.defaultTaxRate;
       _prefix = _repo.documentNumberPrefix;
       _themeMode = _repo.themeMode;
+      _webhookUrl = prefs.getString('mattermost_webhook_url') ?? '';
     });
   }
 
@@ -117,6 +120,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
               selected: {_themeMode},
               onSelectionChanged: (v) => _setTheme(v.first),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.webhook),
+            title: const Text('Mattermost Webhook URL'),
+            subtitle: const Text('エラー報告送信先'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: TextField(
+                    controller: TextEditingController(text: _webhookUrl),
+                    decoration: const InputDecoration(
+                      hintText: 'https://mm.ka.sugeee.com/hooks/xxx',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                    onSubmitted: (v) {
+                      _webhookUrl = v.trim();
+                      ErrorReporter.setWebhookUrl(_webhookUrl);
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send, size: 18),
+                  tooltip: 'テスト送信',
+                  onPressed: () {
+                    ErrorReporter.setWebhookUrl(_webhookUrl.trim());
+                    ErrorReporter.sendError(
+                      message: '設定テスト',
+                      detail: '設定画面からのテスト送信です',
+                      screenId: 'settings',
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('テスト送信しました')),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],

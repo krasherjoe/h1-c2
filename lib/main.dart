@@ -1,3 +1,4 @@
+import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +24,9 @@ import 'plugins/conversion/conversion_plugin.dart';
 import 'plugins/conversion/services/data_migration_service.dart';
 import 'plugins/conversion/screens/conversion_guard_screen.dart';
 import 'plugins/audit/audit_plugin.dart';
+import 'plugins/debug/debug_plugin.dart';
 import 'utils/theme_utils.dart';
+import 'services/error_reporter.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/invoice_input/invoice_input_form.dart';
 import 'screens/invoice_history/invoice_history_screen.dart';
@@ -42,6 +45,21 @@ final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    ErrorReporter.sendError(
+      message: details.summary.toString(),
+      stackTrace: details.stack,
+    );
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    ErrorReporter.sendError(
+      message: error.toString(),
+      stackTrace: stack,
+    );
+    return true;
+  };
 
   final db = await DatabaseHelper().database;
   final prefs = await SharedPreferences.getInstance();
@@ -68,6 +86,7 @@ void main() async {
   await registry.register(BackupPlugin());
   await registry.register(ConversionPlugin());
   await registry.register(AuditPlugin());
+  await registry.register(DebugPlugin());
 
   final stateService = PluginStateService();
   final states = await stateService.loadAll(
@@ -193,9 +212,9 @@ class _H1CoreAppState extends State<H1CoreApp> {
           elevation: 1,
           surfaceTintColor: Colors.transparent,
         ),
-        inputDecorationTheme: const InputDecorationTheme(
+        inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white,
+          fillColor: darkScheme.surfaceContainerHighest,
         ),
       ),
       themeMode: _themeMode,
