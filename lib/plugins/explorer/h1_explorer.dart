@@ -61,7 +61,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   void _openViewer(T item) {
-    Navigator.push<bool>(
+    Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
         builder: (_) => _H1ExplorerViewerScreen<T>(
