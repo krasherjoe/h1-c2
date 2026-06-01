@@ -245,7 +245,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                     title: Text(a.label),
                     onTap: () {
                       Navigator.pop(ctx);
-                      a.onTap();
+                      Future.microtask(() => a.onTap());
                     },
                   ))
               .toList(),
