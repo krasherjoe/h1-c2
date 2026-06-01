@@ -70,13 +70,17 @@ else
 fi
 
 # tag を origin にも打つ
-git tag -f "$VERSION"
+git tag -f "$VERSION" 2>/dev/null || git tag "$VERSION"
 git push origin "$VERSION" 2>/dev/null || true
 
+# gh はリモートに同じ tag が無いと怒るので一旦消して任せる
+git tag -d "$VERSION" 2>/dev/null || true
 gh release create "$VERSION" \
   --title "$VERSION" \
   "${NOTES_ARG[@]}" \
   "/tmp/$APK_NAME#$APK_NAME"
+# 再度 local tag を打って origin と同期
+git tag "$VERSION"
 
 rm -f "/tmp/$APK_NAME"
 echo ""

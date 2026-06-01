@@ -56,9 +56,18 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.only(right: 4),
           child: Row(
             children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Text(
+                  _pages[_currentPage].name,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
               const Spacer(),
               IconButton(
                 icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
