@@ -4,7 +4,17 @@ import 'services/database_helper.dart';
 import 'plugin_system/plugin_registry.dart';
 import 'plugin_system/plugin_context.dart';
 import 'plugins/quotation_plugin.dart';
+import 'plugins/documents/documents_plugin.dart';
+import 'plugins/customers/customers_plugin.dart';
+import 'plugins/products/products_plugin.dart';
+import 'plugins/settings/settings_plugin.dart';
+import 'plugins/inventory/inventory_plugin.dart';
+import 'plugins/purchase/purchase_plugin.dart';
+import 'plugins/analytics/analytics_plugin.dart';
+import 'plugins/accounting/accounting_plugin.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/invoice_input/invoice_input_form.dart';
+import 'screens/invoice_history/invoice_history_screen.dart';
 import 'screens/plugin_management_screen.dart';
 
 void main() async {
@@ -20,6 +30,14 @@ void main() async {
 
   // プラグイン登録
   await registry.register(QuotationPlugin());
+  await registry.register(DocumentsPlugin());
+  await registry.register(CustomersPlugin());
+  await registry.register(ProductsPlugin());
+  await registry.register(SettingsPlugin());
+  await registry.register(InventoryPlugin());
+  await registry.register(PurchasePlugin());
+  await registry.register(AnalyticsPlugin());
+  await registry.register(AccountingPlugin());
 
   runApp(H1CoreApp(registry: registry));
 }
@@ -47,6 +65,8 @@ class H1CoreApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       home: const DashboardScreen(),
       routes: {
+        '/invoice/input': (_) => const InvoiceInputForm(),
+        '/invoice/history': (_) => const InvoiceHistoryScreen(),
         '/plugins': (_) => const PluginManagementScreen(),
         ...registry.getAllRoutes(),
       },

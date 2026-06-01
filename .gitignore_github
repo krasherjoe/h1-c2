@@ -1,0 +1,12 @@
+# GitHub用 .gitignore
+# ソースコードは含めない、APKとREADME.mdのみ
+
+# すべてを除外
+*
+!*/
+
+# APKとREADME.mdのみ許可
+!releases/
+!releases/*.apk
+!README.md
+!.gitignore

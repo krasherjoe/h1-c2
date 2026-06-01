@@ -139,8 +139,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _navigate(BuildContext context, MenuItem item) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.title} - 準備中')),
-    );
+    Navigator.pushNamed(context, item.route);
   }
 }

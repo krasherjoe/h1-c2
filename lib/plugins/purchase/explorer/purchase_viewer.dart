@@ -1,0 +1,144 @@
+import 'package:flutter/material.dart';
+import '../models/purchase_model.dart';
+import '../logic/purchase_converter.dart';
+import '../services/purchase_repository.dart';
+
+class PurchaseViewer extends StatelessWidget {
+  final PurchaseModel purchase;
+
+  const PurchaseViewer({super.key, required this.purchase});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildHeader(context, theme),
+        const Divider(height: 24),
+        _buildItemsSection(context, theme),
+        const Divider(height: 24),
+        _buildTotalSection(theme),
+        if (purchase.isConfirmed) ...[
+          const Divider(height: 24),
+          _buildConvertButton(context),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Chip(label: Text(purchase.purchaseType.label)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: purchase.isDraft ? Colors.orange.shade100 : Colors.green.shade100,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                purchase.isDraft ? '下書き' : '確定',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: purchase.isDraft ? Colors.orange.shade800 : Colors.green.shade800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(purchase.documentNumber, style: theme.textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text('仕入先: ${purchase.supplierName}'),
+        Text('日付: ${_formatDate(purchase.date)}'),
+        if (purchase.linkedDocumentId != null)
+          Text('元伝票: ${purchase.linkedDocumentId}'),
+      ],
+    );
+  }
+
+  Widget _buildItemsSection(BuildContext context, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('明細', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        ...purchase.items.map((item) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.productName),
+                    Text(
+                      '${_formatQty(item.quantity)} × ${_formatMoney(item.unitPrice)}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Text(_formatMoney(item.subtotal)),
+            ],
+          ),
+        )),
+      ],
+    );
+  }
+
+  Widget _buildTotalSection(ThemeData theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text('合計', style: theme.textTheme.titleMedium),
+        Text(_formatMoney(purchase.total), style: theme.textTheme.titleMedium),
+      ],
+    );
+  }
+
+  Widget _buildConvertButton(BuildContext context) {
+    final next = nextPurchaseType(purchase.purchaseType);
+    if (next == null) return const SizedBox.shrink();
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.arrow_forward),
+        label: Text('${next.label}へ変換'),
+        onPressed: () async {
+          try {
+            final repo = PurchaseRepository();
+            final newPurchase = convertPurchase(purchase.copyWith(
+              id: repo.generateId(),
+              documentNumber: await repo.generateDocumentNumber(next),
+            ));
+            await repo.save(newPurchase);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${next.label}伝票を作成しました')),
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('変換エラー: $e')),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) =>
+    '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+
+  String _formatMoney(int amount) =>
+    '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+
+  String _formatQty(double qty) =>
+    qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toStringAsFixed(1);
+}
