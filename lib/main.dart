@@ -144,15 +144,19 @@ class _H1CoreAppState extends State<H1CoreApp> {
     final lightScheme = ColorScheme.fromSeed(
       seedColor: Colors.indigo,
       brightness: Brightness.light,
+    ).copyWith(
+      surfaceContainerLowest: const Color(0xFFE5E5E8),
     );
     final darkScheme = ColorScheme.fromSeed(
       seedColor: Colors.indigo,
       brightness: Brightness.dark,
+    ).copyWith(
+      surfaceContainerLowest: const Color(0xFF2C2C2E),
     );
     final lightCardColor = adjustSurfaceContrast(
-      lightScheme.surface, lightScheme.surfaceContainerLowest);
+      lightScheme.surface, lightScheme.surfaceContainerLowest, minRatio: 2.0);
     final darkCardColor = adjustSurfaceContrast(
-      darkScheme.surface, darkScheme.surfaceContainerLowest);
+      darkScheme.surface, darkScheme.surfaceContainerLowest, minRatio: 2.0);
 
     return MaterialApp(
       title: '販売アシスト1号 コア',

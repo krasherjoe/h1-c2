@@ -93,8 +93,8 @@ final textColor = textColorOn(someBackgroundColor);
 
 | 層 | ライトモード | ダークモード |
 |---|---|---|
-| 壁紙 | `surfaceContainerLowest` = ほぼ白 | `surfaceContainerLowest` = 暗いグレー |
-| カード | `surface` = 白 | `surface` = やや明るいグレー |
+| 壁紙 | `#E5E5E8`（ソフトグレー） | `#2C2C2E`（ミディアムグレー） |
+| カード | `adjustSurfaceContrast(surface, #E5E5E8, minRatio:2.0)` | `adjustSurfaceContrast(surface, #2C2C2E, minRatio:2.0)` |
 | 影 | 黒影（半透明） | `cs.shadow` で自動調整 |
 | 入力フォーム | `Colors.white` | `Colors.white`（常に白） |
 

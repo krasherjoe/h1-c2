@@ -47,6 +47,80 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
     return 8.0 + (maxRows * 72.0) + ((maxRows - 1) * 6.0) + 4.0;
   }
 
+  void _openReorderSheet() {
+    final page = _pages[_currentPage];
+    final actions = _service.allActions;
+    final ids = List<String>.from(page.actionIds);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).padding.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    Text('並び替え: ${page.name}',
+                      style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.check),
+                      onPressed: () {
+                        page.actionIds = ids;
+                        _service.savePages(_pages);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: (ids.length * 56.0).clamp(0, MediaQuery.of(ctx).size.height * 0.55),
+                child: ReorderableListView.builder(
+                  itemCount: ids.length,
+                  onReorder: (oldI, newI) {
+                    setSheetState(() {
+                      if (newI > oldI) newI--;
+                      final item = ids.removeAt(oldI);
+                      ids.insert(newI, item);
+                    });
+                  },
+                  itemBuilder: (ctx, i) {
+                    final route = ids[i];
+                    final item = actions[route];
+                    return ListTile(
+                      key: ValueKey(route),
+                      leading: Icon(item?.icon ?? Icons.help_outline,
+                        color: item != null
+                          ? QuickActionService.accentFor(item)
+                          : null),
+                      title: Text(item?.title ?? route),
+                      subtitle: Text(route, style: const TextStyle(fontSize: 11)),
+                      trailing: ReorderableDragStartListener(
+                        index: i,
+                        child: const Icon(Icons.drag_handle),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) => _load());
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
@@ -61,14 +135,29 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Text(
-                  _pages[_currentPage].name,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
+                child: Row(
+                  children: [
+                    Text(
+                      'クイックアクション  ',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      _pages[_currentPage].name,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
+              IconButton(
+                icon: Icon(Icons.reorder, size: 20, color: cs.onSurfaceVariant),
+                tooltip: '並び替え',
+                onPressed: _openReorderSheet,
+              ),
               IconButton(
                 icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
                 tooltip: 'クイックアクション設定',
@@ -101,6 +190,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                           label: item.title,
                           accentColor: QuickActionService.accentFor(item),
                           onTap: () => Navigator.pushNamed(context, route),
+                          onLongPress: _openReorderSheet,
                         ),
                       );
                     }).toList(),
