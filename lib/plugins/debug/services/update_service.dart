@@ -78,4 +78,12 @@ class UpdateService {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
+
+  Future<void> openDownloadUrl() async {
+    if (latestApkUrl == null) return;
+    final uri = Uri.parse(latestApkUrl!);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 }

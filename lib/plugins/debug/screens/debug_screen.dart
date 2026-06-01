@@ -204,6 +204,7 @@ class _DebugScreenState extends State<DebugScreen> {
             _infoRow('Mattermost', _service.baseUrl),
             _infoRow('チーム', 'cyb'),
             _infoRow('チャンネル', 'h1-debug'),
+            _infoRow('バージョン', _service.appVersion),
           ],
         ),
       ),
@@ -235,23 +236,29 @@ class _DebugScreenState extends State<DebugScreen> {
               const SizedBox(height: 8),
               Text('最新: ${_updater.latestVersion}', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  FilledButton.icon(
-                    onPressed: _downloading ? null : _downloadApk,
-                    icon: _downloading
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.download, size: 18),
-                    label: Text(_downloading ? 'ダウンロード中...' : 'APKダウンロード'),
+                  Row(
+                    children: [
+                      FilledButton.icon(
+                        onPressed: _downloading ? null : _downloadApk,
+                        icon: _downloading
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.download, size: 18),
+                        label: Text(_downloading ? 'ダウンロード中...' : 'APK保存'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: _updater.openDownloadUrl,
+                        icon: const Icon(Icons.open_in_browser, size: 18),
+                        label: const Text('ブラウザで開く'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: _updater.openReleasesPage,
+                        icon: const Icon(Icons.language, size: 18),
+                        label: const Text('GitHub'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: _updater.openReleasesPage,
-                    icon: const Icon(Icons.open_in_browser, size: 18),
-                    label: const Text('GitHubで開く'),
-                  ),
-                ],
-              ),
               if (_downloadResult != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),

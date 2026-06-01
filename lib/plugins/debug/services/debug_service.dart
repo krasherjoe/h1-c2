@@ -13,6 +13,9 @@ class DebugService {
   static const _kWebhookKey = 'mattermost_webhook_url';
   static const _kRootIdKey = 'mm_root_id';
   static const _kChannelName = 'h1-debug';
+  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.4+1');
+
+  String get appVersion => _kAppVersion;
 
   String? _pat;
   String? _baseUrl;
@@ -148,7 +151,7 @@ class DebugService {
         headers: _headers,
         body: jsonEncode({
           'channel_id': channelId,
-          'message': ':floppy_disk: **h-1-core DB送信** | ${sizeMb}MB',
+          'message': ':floppy_disk: **h-1-core DB送信** | v$_kAppVersion | ${sizeMb}MB',
           'file_ids': fileIds,
         }),
       );

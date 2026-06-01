@@ -29,7 +29,7 @@ echo "✅ origin/${BRANCH} へpush完了"
 # === 2. APK ビルド ===
 echo ""
 echo "=== 2/4: APK ビルド ==="
-flutter build apk --release
+flutter build apk --release --dart-define=APP_VERSION="$VERSION"
 cp "$APK_PATH" "/tmp/$APK_NAME"
 echo "✅ APK: /tmp/$APK_NAME ($(wc -c < "/tmp/$APK_NAME") bytes)"
 
