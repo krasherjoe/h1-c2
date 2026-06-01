@@ -39,4 +39,6 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
   List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
           BuildContext context) =>
       null;
+
+  VoidCallback? onListChanged;
 }

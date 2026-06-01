@@ -131,13 +131,18 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
         ),
       ];
 
-  void _openNewEditor(BuildContext context) {
-    Navigator.push<bool>(
+  void _openNewEditor(BuildContext context) async {
+    final result = await Navigator.push<Customer>(
       context,
       MaterialPageRoute(
         builder: (_) => CustomerEditScreen(),
       ),
     );
+    if (result != null && context.mounted) {
+      final repo = CustomerRepository();
+      await repo.saveCustomer(result);
+      if (context.mounted) onListChanged?.call();
+    }
   }
 
   void _openPhonebookImport(BuildContext context) {

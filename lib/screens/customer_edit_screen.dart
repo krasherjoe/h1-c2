@@ -389,34 +389,40 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                     DropdownButtonFormField<int>(
                       initialValue: _closingDay,
                       decoration: const InputDecoration(
-                        labelText: '締日（月末以外の場合）',
+                        labelText: '締日',
                         hintText: '未設定の場合は空欄',
                         prefixIcon: Icon(Icons.calendar_today),
                         border: OutlineInputBorder(),
                       ),
-                      items: List.generate(28, (i) => i + 1)
-                          .map((day) => DropdownMenuItem(
-                                value: day,
-                                child: Text('$day日'),
-                              ))
-                          .toList(),
+                      items: [
+                        ...List.generate(31, (i) => i + 1).map((day) =>
+                          DropdownMenuItem(value: day, child: Text('$day日')),
+                        ),
+                        const DropdownMenuItem(
+                          value: 99,
+                          child: Text('月末'),
+                        ),
+                      ],
                       onChanged: (val) => setState(() => _closingDay = val),
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<int>(
                       initialValue: _paymentDay,
                       decoration: const InputDecoration(
-                        labelText: '支払日（月末以外の場合）',
+                        labelText: '支払日',
                         hintText: '未設定の場合は空欄',
                         prefixIcon: Icon(Icons.payment),
                         border: OutlineInputBorder(),
                       ),
-                      items: List.generate(28, (i) => i + 1)
-                          .map((day) => DropdownMenuItem(
-                                value: day,
-                                child: Text('$day日'),
-                              ))
-                          .toList(),
+                      items: [
+                        ...List.generate(31, (i) => i + 1).map((day) =>
+                          DropdownMenuItem(value: day, child: Text('$day日')),
+                        ),
+                        const DropdownMenuItem(
+                          value: 99,
+                          child: Text('月末'),
+                        ),
+                      ],
                       onChanged: (val) => setState(() => _paymentDay = val),
                     ),
                   ],

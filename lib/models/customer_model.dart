@@ -144,8 +144,8 @@ class Customer {
   final String? kana; // フリガナ（五十音グルーピング用）
   final String? headChar1; // インデックス 1
   final String? headChar2; // インデックス 2
-  final int? closingDay; // 締日（月次請求の締め日、1-28）
-  final int? paymentDay; // 支払日（支払い期限日、1-28）
+  final int? closingDay; // 締日（1-31, 99=月末）
+  final int? paymentDay; // 支払日（1-31, 99=月末）
   final CustomerRank rank; // 顧客ランク（VIP/ゴールド/シルバー/ブロンズ/未設定）
   final int? rankDiscountRate; // ランク値引率上書き(%)。null時はrank.defaultDiscountRate
   final int creditLimit; // 与信限度額

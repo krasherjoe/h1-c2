@@ -28,11 +28,13 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   @override
   void initState() {
     super.initState();
+    widget.config.onListChanged = _loadItems;
     _loadItems();
   }
 
   @override
   void dispose() {
+    widget.config.onListChanged = null;
     _searchController.dispose();
     super.dispose();
   }
