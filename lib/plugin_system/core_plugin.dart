@@ -31,7 +31,37 @@ class CorePlugin extends H1Plugin {
   @override List<PluginPermission> get requiredPermissions => [];
   @override Future<void> initialize(PluginContext context) async {}
   @override Future<void> dispose() async {}
-  @override Future<void> createTables(Database db) async {}
+  @override
+  Future<void> createTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS master_hidden (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        master_type TEXT NOT NULL,
+        master_id TEXT NOT NULL,
+        is_hidden INTEGER DEFAULT 1,
+        hidden_at TEXT NOT NULL,
+        UNIQUE(master_type, master_id)
+      )
+    ''');
+  }
+
+  @override
+  Future<void> migrate(Database db, int fromVersion, int toVersion) async {
+    if (fromVersion < 2) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS master_hidden (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            master_type TEXT NOT NULL,
+            master_id TEXT NOT NULL,
+            is_hidden INTEGER DEFAULT 1,
+            hidden_at TEXT NOT NULL,
+            UNIQUE(master_type, master_id)
+          )
+        ''');
+      } catch (_) {}
+    }
+  }
   @override Widget? getSettingsScreen() => null;
   @override Map<String, WidgetBuilder> getRoutes() => {};
   @override List<MenuItem> getMenuItems() => [];
