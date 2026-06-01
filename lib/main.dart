@@ -164,7 +164,12 @@ class _H1CoreAppState extends State<H1CoreApp> {
       theme: ThemeData(
         colorScheme: lightScheme,
         useMaterial3: true,
+        fontFamily: 'IPAexGothic',
+        scaffoldBackgroundColor: lightScheme.surfaceContainerLowest,
         brightness: Brightness.light,
+        appBarTheme: const AppBarTheme(
+          surfaceTintColor: Colors.transparent,
+        ),
         cardTheme: CardThemeData(
           color: lightCardColor,
           elevation: 1,
@@ -174,7 +179,12 @@ class _H1CoreAppState extends State<H1CoreApp> {
       darkTheme: ThemeData(
         colorScheme: darkScheme,
         useMaterial3: true,
+        fontFamily: 'IPAexGothic',
+        scaffoldBackgroundColor: darkScheme.surfaceContainerLowest,
         brightness: Brightness.dark,
+        appBarTheme: const AppBarTheme(
+          surfaceTintColor: Colors.transparent,
+        ),
         cardTheme: CardThemeData(
           color: darkCardColor,
           elevation: 1,
@@ -182,6 +192,11 @@ class _H1CoreAppState extends State<H1CoreApp> {
         ),
       ),
       themeMode: _themeMode,
+      builder: (context, child) => SafeArea(
+        top: true,
+        bottom: true,
+        child: child!,
+      ),
       home: _buildHome(),
       routes: {
         '/invoice/input': (_) => const InvoiceInputForm(),

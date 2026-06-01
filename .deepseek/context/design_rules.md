@@ -94,6 +94,8 @@ final textColor = textColorOn(someBackgroundColor);
 | 層 | ライトモード | ダークモード |
 |---|---|---|
 | 壁紙 | `#E5E5E8`（ソフトグレー） | `#2C2C2E`（ミディアムグレー） |
+| AppBar 背景 | `#D0D0D3`（グレー） | `#3A3A3D`（暗めグレー） |
+| AppBar 文字/アイコン | `#1A1A2E`（濃紺） | `#F0F0F0`（薄いグレー） |
 | カード | `adjustSurfaceContrast(surface, #E5E5E8, minRatio:2.0)` | `adjustSurfaceContrast(surface, #2C2C2E, minRatio:2.0)` |
 | 影 | 黒影（半透明） | `cs.shadow` で自動調整 |
 | 入力フォーム | `Colors.white` | `Colors.white`（常に白） |
