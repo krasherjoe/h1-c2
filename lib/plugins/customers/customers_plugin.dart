@@ -78,6 +78,25 @@ class CustomersPlugin extends H1Plugin {
           await db.execute('ALTER TABLE customers ADD COLUMN ${e.key} ${e.value}');
         } catch (_) {}
       }
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS customer_contacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id TEXT NOT NULL,
+            contact_version_id INTEGER,
+            display_name TEXT,
+            formal_name TEXT,
+            title INTEGER DEFAULT 1,
+            department TEXT,
+            address TEXT,
+            tel TEXT,
+            email TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+          )
+        ''');
+      } catch (_) {}
     }
   }
 
@@ -131,6 +150,26 @@ class CustomersPlugin extends H1Plugin {
     ''');
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_customer_prices_customer ON customer_product_prices(customer_id)',
+    );
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS customer_contacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id TEXT NOT NULL,
+        contact_version_id INTEGER,
+        display_name TEXT,
+        formal_name TEXT,
+        title INTEGER DEFAULT 1,
+        department TEXT,
+        address TEXT,
+        tel TEXT,
+        email TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_customer_contacts_customer ON customer_contacts(customer_id)',
     );
   }
 }
