@@ -42,6 +42,7 @@ ThemeMode _loadThemeMode(SharedPreferences prefs) {
 }
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+final ValueNotifier<String> inputStyleNotifier = ValueNotifier('raised');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -128,18 +129,25 @@ class _H1CoreAppState extends State<H1CoreApp> {
     _themeMode = _loadThemeMode(widget.prefs);
     themeNotifier.value = _themeMode;
     themeNotifier.addListener(_onThemeChanged);
+    inputStyleNotifier.addListener(_onInputStyleChanged);
     _check();
   }
 
   @override
   void dispose() {
     themeNotifier.removeListener(_onThemeChanged);
+    inputStyleNotifier.removeListener(_onInputStyleChanged);
     super.dispose();
   }
 
   void _onThemeChanged() {
     if (!mounted) return;
     setState(() => _themeMode = themeNotifier.value);
+  }
+
+  void _onInputStyleChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _check() async {
@@ -179,13 +187,16 @@ class _H1CoreAppState extends State<H1CoreApp> {
         return const InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           border: OutlineInputBorder(),
         );
       }
-      // raised style: 背景色のみ、枠線なし
       return InputDecorationTheme(
         filled: true,
         fillColor: isDark ? const Color(0xFF3E3E42) : const Color(0xFFEEEEF0),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderSide: BorderSide.none),
       );
     }

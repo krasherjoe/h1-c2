@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../main.dart' show themeNotifier;
+import '../../../main.dart' show themeNotifier, inputStyleNotifier;
 import '../../../services/error_reporter.dart';
+import '../../../widgets/screen_id_title.dart';
 import '../services/settings_repository.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -46,13 +47,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _setInputStyle(String v) {
     setState(() => _inputStyle = v);
     _repo.inputFieldStyle = v;
+    inputStyleNotifier.value = v;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('設定')),
+      appBar: AppBar(
+        title: const ScreenAppBarTitle(screenId: 'SA', title: '設定'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
