@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/customer_model.dart';
+import '../services/customer_repository.dart';
 import '../services/permission_service.dart';
 import '../widgets/customer_rank_badge.dart';
 import '../widgets/screen_id_title.dart';
@@ -114,7 +115,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
     return kanaMap[first] ?? first;
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
     final isLocked = widget.customer?.isLocked ?? false;
@@ -140,7 +141,8 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
       lng: _customer?.lng,
       isLocked: false,
     );
-    Navigator.pop(context, newCustomer);
+    await CustomerRepository().saveCustomer(newCustomer);
+    Navigator.pop(context, true);
   }
 
   @override

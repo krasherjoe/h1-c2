@@ -134,26 +134,17 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
 
   void _openNewEditor(BuildContext context) async {
     try {
-      final result = await Navigator.push<Customer>(
+      final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
           builder: (_) => CustomerEditScreen(),
         ),
       );
-      if (result != null && context.mounted) {
-        final repo = CustomerRepository();
-        await repo.saveCustomer(result);
-        if (context.mounted) {
-          onListChanged?.call();
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('「${result.displayName}」を登録しました'),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-              ),
-            );
-          }
-        }
+      if (result == true && context.mounted) {
+        onListChanged?.call();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('登録しました')),
+        );
       }
     } catch (e) {
       if (!context.mounted) return;
