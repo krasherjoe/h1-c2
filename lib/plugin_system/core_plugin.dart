@@ -123,17 +123,23 @@ class _CoreMenuSectionState extends State<_CoreMenuSection> {
   }
 
   Widget _tile(MenuItem item) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, item.route),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: cs.surface,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-              blurRadius: 6,
+              color: cs.shadow.withValues(alpha: 0.12),
+              blurRadius: 8,
               offset: const Offset(0, 2),
+            ),
+            BoxShadow(
+              color: cs.shadow.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
         ),

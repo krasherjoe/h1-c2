@@ -20,7 +20,8 @@ class QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
     final lightColor = isDark ? const Color(0xFF2A2A3A) : Colors.white;
     final darkColor = isDark
         ? const Color(0xFF3A3A4E)
@@ -42,7 +43,7 @@ class QuickActionButton extends StatelessWidget {
           BoxShadow(
             blurRadius: 8,
             offset: const Offset(0, 4),
-            color: Colors.black.withValues(alpha: 0.25),
+            color: cs.shadow.withValues(alpha: 0.25),
           ),
         ],
       ),

@@ -58,12 +58,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 32),
                 children: [
                   _buildSlideUnlock(),
                   if (_statusEnabled) _buildStatusBar(),

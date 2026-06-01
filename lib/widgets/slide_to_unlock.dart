@@ -57,13 +57,13 @@ class _SlideToUnlockState extends State<SlideToUnlock> {
         return Container(
           height: widget.height ?? 72,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, 4)),
-            ],
-          ),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(color: cs.shadow.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
+              ],
+            ),
           child: Stack(
             children: [
               // 進行バー
@@ -84,8 +84,8 @@ class _SlideToUnlockState extends State<SlideToUnlock> {
                           accentEnd,
                         ],
                       ),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+                      boxShadow: [
+                        BoxShadow(color: cs.shadow.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 2)),
                       ],
                     ),
                   ),
@@ -156,8 +156,8 @@ class _SlideToUnlockState extends State<SlideToUnlock> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular((widget.thumbSize ?? 52) / 2),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black38, blurRadius: 8, offset: Offset(0, 4)),
+                      boxShadow: [
+                        BoxShadow(color: cs.shadow.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: Icon(Icons.arrow_forward_ios, color: accentEnd, size: 20),
