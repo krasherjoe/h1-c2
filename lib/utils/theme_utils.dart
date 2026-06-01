@@ -10,12 +10,15 @@ double contrastRatio(Color a, Color b) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/// 背景色に対して最大コントラスト（かつ色相が離れた）文字色を返す。
-/// 輝度ベースで白/黒を選択。同系統色での視認性低下を防ぐ。
+/// 背景色に対して最大コントラストの文字色を返す。
+/// 純白/純黒ではなく、僅かに色味を帯びた色を使う（視覚的に自然）。
+const Color _nearBlack = Color(0xFF1A1A2E);
+const Color _nearWhite = Color(0xFFF0F0F0);
+
 Color textColorOn(Color background) {
-  final blackContrast = contrastRatio(background, Colors.black);
-  final whiteContrast = contrastRatio(background, Colors.white);
-  return blackContrast >= whiteContrast ? Colors.black : Colors.white;
+  final darkContrast = contrastRatio(background, _nearBlack);
+  final lightContrast = contrastRatio(background, _nearWhite);
+  return darkContrast >= lightContrast ? _nearBlack : _nearWhite;
 }
 
 /// 背景色に対して読みやすいテキスト色（白 or 濃いネイビー）を返す。
