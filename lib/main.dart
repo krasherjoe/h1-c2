@@ -153,11 +153,6 @@ class _H1CoreAppState extends State<H1CoreApp> {
     ).copyWith(
       surfaceContainerLowest: const Color(0xFF2C2C2E),
     );
-    final lightCardColor = adjustSurfaceContrast(
-      lightScheme.surface, lightScheme.surfaceContainerLowest, minRatio: 2.0);
-    final darkCardColor = adjustSurfaceContrast(
-      darkScheme.surface, darkScheme.surfaceContainerLowest, minRatio: 2.0);
-
     return MaterialApp(
       title: '販売アシスト1号 コア',
       debugShowCheckedModeBanner: false,
@@ -167,13 +162,19 @@ class _H1CoreAppState extends State<H1CoreApp> {
         fontFamily: 'IPAexGothic',
         scaffoldBackgroundColor: lightScheme.surfaceContainerLowest,
         brightness: Brightness.light,
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
+          backgroundColor: lightScheme.primary,
+          foregroundColor: lightScheme.onPrimary,
           surfaceTintColor: Colors.transparent,
         ),
         cardTheme: CardThemeData(
-          color: lightCardColor,
+          color: const Color(0xFFF5F5F7),
           elevation: 1,
           surfaceTintColor: Colors.transparent,
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
       darkTheme: ThemeData(
@@ -182,13 +183,19 @@ class _H1CoreAppState extends State<H1CoreApp> {
         fontFamily: 'IPAexGothic',
         scaffoldBackgroundColor: darkScheme.surfaceContainerLowest,
         brightness: Brightness.dark,
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
+          backgroundColor: darkScheme.primary,
+          foregroundColor: darkScheme.onPrimary,
           surfaceTintColor: Colors.transparent,
         ),
         cardTheme: CardThemeData(
-          color: darkCardColor,
+          color: const Color(0xFF3A3A3D),
           elevation: 1,
           surfaceTintColor: Colors.transparent,
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
       themeMode: _themeMode,
