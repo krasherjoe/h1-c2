@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../main.dart' show themeNotifier;
 import '../services/settings_repository.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late SettingsRepository _repo;
   int _taxRate = 10;
   String _prefix = '';
+  ThemeMode _themeMode = ThemeMode.system;
 
   @override
   void initState() {
@@ -26,7 +28,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _taxRate = _repo.defaultTaxRate;
       _prefix = _repo.documentNumberPrefix;
+      _themeMode = _repo.themeMode;
     });
+  }
+
+  void _setTheme(ThemeMode mode) {
+    setState(() => _themeMode = mode);
+    _repo.themeMode = mode;
+    themeNotifier.value = mode;
   }
 
   @override
@@ -82,6 +91,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _repo.documentNumberPrefix = v;
                 },
               ),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.palette),
+            title: const Text('テーマ'),
+            trailing: SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  label: Text('システム'),
+                  icon: Icon(Icons.settings_brightness),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  label: Text('ライト'),
+                  icon: Icon(Icons.light_mode),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  label: Text('ダーク'),
+                  icon: Icon(Icons.dark_mode),
+                ),
+              ],
+              selected: {_themeMode},
+              onSelectionChanged: (v) => _setTheme(v.first),
             ),
           ),
         ],

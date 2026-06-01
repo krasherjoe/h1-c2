@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsRepository {
@@ -10,4 +11,23 @@ class SettingsRepository {
 
   String get documentNumberPrefix => _prefs.getString('doc_number_prefix') ?? '';
   set documentNumberPrefix(String value) => _prefs.setString('doc_number_prefix', value);
+
+  static const _themeKey = 'theme_mode';
+
+  ThemeMode get themeMode {
+    final v = _prefs.getString(_themeKey) ?? 'system';
+    return switch (v) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+  }
+
+  set themeMode(ThemeMode mode) {
+    _prefs.setString(_themeKey, switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      _ => 'system',
+    });
+  }
 }

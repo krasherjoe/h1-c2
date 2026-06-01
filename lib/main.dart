@@ -29,6 +29,17 @@ import 'screens/invoice_input/invoice_input_form.dart';
 import 'screens/invoice_history/invoice_history_screen.dart';
 import 'screens/plugin_management_screen.dart';
 
+ThemeMode _loadThemeMode(SharedPreferences prefs) {
+  final v = prefs.getString('theme_mode') ?? 'system';
+  return switch (v) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+}
+
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -90,11 +101,26 @@ class H1CoreApp extends StatefulWidget {
 class _H1CoreAppState extends State<H1CoreApp> {
   bool? _needsConversion;
   bool _isConverting = false;
+  late ThemeMode _themeMode;
 
   @override
   void initState() {
     super.initState();
+    _themeMode = _loadThemeMode(widget.prefs);
+    themeNotifier.value = _themeMode;
+    themeNotifier.addListener(_onThemeChanged);
     _check();
+  }
+
+  @override
+  void dispose() {
+    themeNotifier.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    if (!mounted) return;
+    setState(() => _themeMode = themeNotifier.value);
   }
 
   Future<void> _check() async {
@@ -151,7 +177,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
           surfaceTintColor: Colors.transparent,
         ),
       ),
-      themeMode: ThemeMode.system,
+      themeMode: _themeMode,
       home: _buildHome(),
       routes: {
         '/invoice/input': (_) => const InvoiceInputForm(),
