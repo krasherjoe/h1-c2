@@ -3,21 +3,21 @@
 ## 視覚階層（3層構造）
 
 ```
-壁紙（最背面）         ← surfaceContainerLowest  フラット、影なし
-  └─ カード（中層）     ← surface + 影          立体感あり
-       └─ 入力フォーム  ← Colors.white           フラット、純白
+壁紙（最背面）         ← #E5E5E8（ライト）/ #2C2C2E（ダーク）  影なし
+  └─ カード（中層）     ← #F5F5F7（ライト）/ #3A3A3D（ダーク）  影あり
+       └─ 入力フォーム  ← 設定で切替（立体/縁取り）
 ```
 
-| 層 | カラーソース | 影 | 用途 |
+| 層 | ライト | ダーク | 影 |
 |---|---|---|---|---|
-| 壁紙 | `ColorScheme.surfaceContainerLowest` | なし | Scaffold 背景 |
-| カード | `adjustSurfaceContrast(surface, surfaceContainerLowest)` で自動調整 | `cs.shadow` 二重シャドウ | メニュータイル、パネル、各ブロック |
-| 入力フォーム | `Colors.white` | なし | TextField, TextFormField 内部 |
+| 壁紙 | `#E5E5E8`（ソフトグレー） | `#2C2C2E`（ミディアムグレー） | なし |
+| カード | `#F5F5F7`（薄グレー） | `#3A3A3D`（明るめグレー） | 二重シャドウ |
+| AppBar背景 | `cs.primary` | `cs.primary` | なし |
+| AppBar文字/アイコン | `cs.onPrimary` | `cs.onPrimary` | - |
 
 ## カードの影（Elevation）
 
 ```dart
-// 標準的なカードの影（二重シャドウで立体感）
 BoxShadow(
   color: cs.shadow.withValues(alpha: 0.12),
   blurRadius: 8,
@@ -31,7 +31,7 @@ BoxShadow(
 ```
 
 ```dart
-// 浮いている要素（スライドつまみ、FAB）: 強めの影
+// 浮いている要素（スライドつまみ、FAB）
 BoxShadow(
   color: cs.shadow.withValues(alpha: 0.2),
   blurRadius: 8,
@@ -39,103 +39,89 @@ BoxShadow(
 ),
 ```
 
-**禁止**: `Colors.black` / `Colors.black26` / `Colors.black38` の直指定（ダークモードで不自然になる）。
+**禁止**: `Colors.black` / `Colors.black26` / `Colors.black38` の直指定。
+
+## 入力フィールド
+
+設定画面から切替可能:
+
+| スタイル | 設定値 | 背景色 | 枠線 |
+|---|---|---|---|
+| 立体（デフォルト） | `raised` | `#EEEEF0`（ライト）/ `#3E3E42`（ダーク） | なし |
+| 縁取り | `outlined` | `Colors.white` | `OutlineInputBorder()` |
+
+テーマ中央制御: `main.dart` の `InputDecorationTheme` で全フィールド一律適用。
+個別の `InputDecoration` で上書きしないこと。
 
 ## コントラスト（文字色）
 
 `lib/utils/theme_utils.dart` の `textColorOn()` を使うこと。
 
 ```dart
-// 背景色に対して最適な文字色を返す（WCAG AA 4.5:1 準拠）
 final textColor = textColorOn(someBackgroundColor);
 ```
 
 **返り値:**
-- 明るい背景 → `0xFF1A1A2E`（濃いネイビー、純黒ではない）
-- 暗い背景 → `0xFFF0F0F0`（薄いグレー、純白ではない）
+- 明るい背景 → `0xFF1A1A2E`（濃いネイビー）
+- 暗い背景 → `0xFFF0F0F0`（薄いグレー）
 
-純白・純黒は入力フォーム内部とヘッダー行のみで使用し、通常のテキストには使わない。
+純白・純黒は入力フォーム内部とヘッダー行のみ。
 
 ## カラースキーム（Material 3）
 
-`main.dart` で `colorSchemeSeed: Colors.indigo` を設定。
-各ウィジェットはハードコードされた色ではなく `Theme.of(context).colorScheme` から取得する。
+`main.dart` で `ColorScheme.fromSeed(seedColor: Colors.indigo)` を基準に、
+壁紙色のみ `copyWith(surfaceContainerLowest: ...)` で上書き。
 
 ### 用途マッピング
 
-| ColorScheme プロパティ | 用途 |
+| プロパティ | 用途 |
 |---|---|
-| `surface` | カードの背景色 |
-| `surfaceContainerLowest` | 壁紙（Scaffold 全体の背景） |
-| `surfaceContainerLow` | セクションの薄い背景（ステータスバー等） |
-| `primary` | アクセント色、アイコン色、強調ボタン |
-| `onPrimary` | primary 上のテキスト色 |
-| `primaryContainer` | CircleAvatar の背景、薄いアクセント |
-| `secondary` | サブアクセント |
-| `secondaryContainer` | ステータスバーの背景（alpha 0.3 と併用） |
+| `primary` | AppBar背景、強調ボタン |
+| `onPrimary` | AppBar上のテキスト/アイコン |
+| `surface` | カード背景（固定色で上書き） |
+| `surfaceContainerLowest` | 壁紙（固定色で上書き） |
+| `primaryContainer` | CircleAvatar、薄いアクセント |
+| `secondary` / `secondaryContainer` | サブアクセント、ステータスバー |
 | `onSurface` | 主要テキスト色 |
 | `onSurfaceVariant` | 補足テキスト（ID・説明文） |
-| `shadow` | カードの影色（withValues で alpha 調整） |
+| `shadow` | カード影色（`withValues` でalpha調整） |
 | `outlineVariant` | 区切り線、薄いボーダー |
 
-### 直接使ってはいけない色
+### 禁止
 
 - `Colors.black` / `Colors.white`（`textColorOn` 経由以外）
-- `Colors.black26` / `Colors.black38`（`cs.shadow` を使うこと）
-- 固定のARGB色（`Color(0xFF...)`） — テーマのカスタムカラーとして定義する場合を除く
+- `Colors.black26` / `Colors.black38`（代わりに `cs.shadow`）
+- 固定ARGB色（カスタムカラー定義以外）
+
+## テーマ切替
+
+`main.dart` の `themeMode` は SharedPreferences の `theme_mode` キーから読む。
+設定画面の「テーマ」セグメントボタンで変更可能（即時反映）。
+
+| 値 | 動作 |
+|---|---|
+| `system`（デフォルト） | 端末設定に連動 |
+| `light` | 常にライトモード |
+| `dark` | 常にダークモード |
 
 ## ダークモード
 
-`main.dart` で `themeMode: ThemeMode.system` を設定済み。
-全ウィジェットが `Theme.of(context)` 経由で自動適応する。
-
-### ダークモードでの振る舞い
-
-| 層 | ライトモード | ダークモード |
-|---|---|---|
-| 壁紙 | `#E5E5E8`（ソフトグレー） | `#2C2C2E`（ミディアムグレー） |
-| AppBar 背景 | `#D0D0D3`（グレー） | `#3A3A3D`（暗めグレー） |
-| AppBar 文字/アイコン | `#1A1A2E`（濃紺） | `#F0F0F0`（薄いグレー） |
-| カード | `adjustSurfaceContrast(surface, #E5E5E8, minRatio:2.0)` | `adjustSurfaceContrast(surface, #2C2C2E, minRatio:2.0)` |
-| 影 | 黒影（半透明） | `cs.shadow` で自動調整 |
-| 入力フォーム | `Colors.white` | `Colors.white`（常に白） |
+`themeMode: ThemeMode.system` がデフォルト。
+全ウィジェットが `Theme.of(context)` 経由で自動適応。
 
 ## textColorOn 関数詳細
 
-`lib/utils/theme_utils.dart` に定義:
+`lib/utils/theme_utils.dart`:
 
-```dart
-/// WCAG AA 基準のコントラスト比 (4.5:1) を計算。
-double contrastRatio(Color a, Color b);
-
-/// 背景色に対して最大コントラストの文字色を返す。
-/// 純白/純黒ではなく、僅かに色味を帯びた色を使う（視覚的に自然）。
-Color textColorOn(Color background);
-```
-
-### 使用例
-
-```dart
-import '../utils/theme_utils.dart';
-
-// カスタム背景色のテキスト
-Container(
-  color: someCustomColor,
-  child: Text('ラベル', style: TextStyle(color: textColorOn(someCustomColor))),
-)
-```
-
-### WCAG AA コンプライアンス
-
-- `textColorOn()` は常に 4.5:1 以上のコントラスト比を保証する
-- `contrastRatio()` は WCAG 2.1 の相対輝度計算式に準拠
-- 通常テキスト（<18px）は 4.5:1、大テキスト（>=18px bold / >=24px）は 3:1 が基準
+- `contrastRatio(Color a, Color b)` → WCAG 2.1 相対輝度計算
+- `textColorOn(Color background)` → 4.5:1以上を保証
+- `adjustSurfaceContrast(Color card, Color background, {minRatio})` → カードと背景の輝度差確保
 
 ## チェックリスト
 
 - [ ] Scaffold の背景に `surfaceContainerLowest` を使っているか
 - [ ] カードに `cs.shadow` の二重シャドウを適用しているか
-- [ ] テキスト色に `textColorOn()` を使っているか（カスタム背景色の場合）
+- [ ] テキスト色に `textColorOn()` を使っているか
 - [ ] `Colors.black` / `Colors.white` を直指定していないか
-- [ ] `Colors.black26` / `Colors.black38` を直指定していないか（代わりに `cs.shadow`）
+- [ ] 入力フィールドはテーマの `InputDecorationTheme` に従っているか
 - [ ] ダークモードでの見た目を確認したか

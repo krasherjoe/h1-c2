@@ -26,6 +26,7 @@ import 'plugins/conversion/screens/conversion_guard_screen.dart';
 import 'plugins/audit/audit_plugin.dart';
 import 'plugins/debug/debug_plugin.dart';
 import 'utils/theme_utils.dart';
+import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/invoice_input/invoice_input_form.dart';
@@ -168,78 +169,13 @@ class _H1CoreAppState extends State<H1CoreApp> {
 
   @override
   Widget build(BuildContext context) {
-    final lightScheme = ColorScheme.fromSeed(
-      seedColor: Colors.indigo,
-      brightness: Brightness.light,
-    ).copyWith(
-      surfaceContainerLowest: const Color(0xFFE5E5E8),
-    );
-    final darkScheme = ColorScheme.fromSeed(
-      seedColor: Colors.indigo,
-      brightness: Brightness.dark,
-    ).copyWith(
-      surfaceContainerLowest: const Color(0xFF2C2C2E),
-    );
     final inputStyle = widget.prefs.getString('input_field_style') ?? 'raised';
-
-    InputDecorationTheme inputTheme(bool isDark) {
-      if (inputStyle == 'outlined') {
-        return const InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          border: OutlineInputBorder(),
-        );
-      }
-      return InputDecorationTheme(
-        filled: true,
-        fillColor: isDark ? const Color(0xFF3E3E42) : const Color(0xFFEEEEF0),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(borderSide: BorderSide.none),
-      );
-    }
 
     return MaterialApp(
       title: '販売アシスト1号 コア',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: lightScheme,
-        useMaterial3: true,
-        fontFamily: 'IPAexGothic',
-        scaffoldBackgroundColor: lightScheme.surfaceContainerLowest,
-        brightness: Brightness.light,
-        appBarTheme: AppBarTheme(
-          backgroundColor: lightScheme.primary,
-          foregroundColor: lightScheme.onPrimary,
-          surfaceTintColor: Colors.transparent,
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFFF5F5F7),
-          elevation: 1,
-          surfaceTintColor: Colors.transparent,
-        ),
-        inputDecorationTheme: inputTheme(false),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: darkScheme,
-        useMaterial3: true,
-        fontFamily: 'IPAexGothic',
-        scaffoldBackgroundColor: darkScheme.surfaceContainerLowest,
-        brightness: Brightness.dark,
-        appBarTheme: AppBarTheme(
-          backgroundColor: darkScheme.primary,
-          foregroundColor: darkScheme.onPrimary,
-          surfaceTintColor: Colors.transparent,
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF3A3A3D),
-          elevation: 1,
-          surfaceTintColor: Colors.transparent,
-        ),
-        inputDecorationTheme: inputTheme(true),
-      ),
+      theme: AppTheme.light(inputStyle: inputStyle),
+      darkTheme: AppTheme.dark(inputStyle: inputStyle),
       themeMode: _themeMode,
       builder: (context, child) => SafeArea(
         top: true,
