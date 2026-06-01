@@ -3,6 +3,8 @@ import 'package:sqflite/sqflite.dart';
 import 'plugin_permission.dart';
 import 'menu_item.dart';
 import 'plugin_context.dart';
+import 'dashboard_section.dart';
+import 'screen_definition.dart';
 
 abstract class H1Plugin {
   String get id;
@@ -17,4 +19,6 @@ abstract class H1Plugin {
   Map<String, WidgetBuilder> getRoutes();
   Future<void> createTables(Database db);
   Widget? getSettingsScreen() => null;
+  List<ScreenDefinition> get screens => [];
+  DashboardSection? get dashboardSection => null;
 }

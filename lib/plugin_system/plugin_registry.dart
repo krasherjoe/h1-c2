@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'plugin_interface.dart';
 import 'plugin_context.dart';
 import 'menu_item.dart';
+import 'screen_definition.dart';
 
 class PluginRegistry {
   static final PluginRegistry instance = PluginRegistry._();
@@ -11,6 +12,8 @@ class PluginRegistry {
   PluginRegistry._();
 
   final Map<String, H1Plugin> _plugins = {};
+  final Map<String, ScreenDefinition> _screensByRoute = {};
+  final Map<String, ScreenDefinition> _screensById = {};
   PluginContext? _context;
   bool _initialized = false;
 
@@ -25,6 +28,21 @@ class PluginRegistry {
   Future<void> register(H1Plugin plugin) async {
     if (_plugins.containsKey(plugin.id)) {
       throw Exception('Plugin already registered: ${plugin.id}');
+    }
+
+    for (final screen in plugin.screens) {
+      if (_screensById.containsKey(screen.id)) {
+        throw Exception('Screen ID "${screen.id}" already registered');
+      }
+      if (_screensByRoute.containsKey(screen.route)) {
+        throw Exception('Route "${screen.route}" already registered');
+      }
+    }
+
+    for (final item in plugin.getMenuItems()) {
+      if (_screensByRoute.containsKey(item.route)) {
+        throw Exception('Route "${item.route}" already registered as a screen');
+      }
     }
 
     for (final dep in plugin.dependencies) {
@@ -42,6 +60,11 @@ class PluginRegistry {
       } catch (e) {
         debugPrint('[PluginRegistry] Table creation error for ${plugin.id}: $e');
       }
+    }
+
+    for (final screen in plugin.screens) {
+      _screensByRoute[screen.route] = screen;
+      _screensById[screen.id] = screen;
     }
 
     _plugins[plugin.id] = plugin;
@@ -88,6 +111,10 @@ class PluginRegistry {
   H1Plugin? getPlugin(String pluginId) => _plugins[pluginId];
 
   List<H1Plugin> get allPlugins => _plugins.values.toList();
+
+  ScreenDefinition? getScreenByRoute(String route) => _screensByRoute[route];
+  ScreenDefinition? getScreenById(String id) => _screensById[id];
+  List<ScreenDefinition> getAllScreenDefinitions() => _screensByRoute.values.toList();
 
   List<String> _findDependentPlugins(String pluginId) {
     return _plugins.values

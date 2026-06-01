@@ -3,14 +3,13 @@ import '../services/quick_action_service.dart';
 import '../models/quick_action_page.dart';
 import '../widgets/quick_action_button.dart';
 
-class QuickActionsScreen extends StatefulWidget {
-  const QuickActionsScreen({super.key});
-
+class QuickActionsPanel extends StatefulWidget {
+  const QuickActionsPanel({super.key});
   @override
-  State<QuickActionsScreen> createState() => _QuickActionsScreenState();
+  State<QuickActionsPanel> createState() => _QuickActionsPanelState();
 }
 
-class _QuickActionsScreenState extends State<QuickActionsScreen> {
+class _QuickActionsPanelState extends State<QuickActionsPanel> {
   final _service = QuickActionService();
   final _pageCtrl = PageController();
   List<QuickActionPage> _pages = [];
@@ -32,14 +31,7 @@ class _QuickActionsScreenState extends State<QuickActionsScreen> {
   Future<void> _load() async {
     final pages = await _service.loadPages();
     if (!mounted) return;
-    setState(() {
-      _pages = pages;
-      _loading = false;
-    });
-  }
-
-  void _navigate(String route) {
-    Navigator.pushNamed(context, route);
+    setState(() { _pages = pages; _loading = false; });
   }
 
   double _calcHeight() {
@@ -55,105 +47,68 @@ class _QuickActionsScreenState extends State<QuickActionsScreen> {
     return 8.0 + (maxRows * 72.0) + ((maxRows - 1) * 6.0) + 4.0;
   }
 
-  List<Widget> _buildPages() {
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
+    if (_pages.isEmpty) return const SizedBox.shrink();
     final actions = _service.allActions;
-    return _pages.map((page) {
-      final gap = 4.0;
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Center(
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: gap,
-            runSpacing: 6,
-            children: page.actionIds.map((route) {
-              final item = actions[route];
-              if (item == null) return const SizedBox.shrink();
-              return SizedBox(
-                width: 72,
-                child: QuickActionButton(
-                  icon: item.icon,
-                  label: item.title,
-                  accentColor: QuickActionService.accentFor(item),
-                  onTap: () => _navigate(route),
+    return Column(
+      children: [
+        SizedBox(
+          height: _calcHeight(),
+          child: PageView(
+            controller: _pageCtrl,
+            onPageChanged: (i) => setState(() => _currentPage = i),
+            children: _pages.map((page) {
+              final gap = 4.0;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: gap,
+                    runSpacing: 6,
+                    children: page.actionIds.map((route) {
+                      final item = actions[route];
+                      if (item == null) return const SizedBox.shrink();
+                      return SizedBox(
+                        width: 72,
+                        child: QuickActionButton(
+                          icon: item.icon,
+                          label: item.title,
+                          accentColor: QuickActionService.accentFor(item),
+                          onTap: () => Navigator.pushNamed(context, route),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               );
             }).toList(),
           ),
         ),
-      );
-    }).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('QA: クイックアクション'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () async {
-              await Navigator.pushNamed(context, '/quick_actions/settings');
-              if (!mounted) return;
-              await _load();
-            },
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _pages.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.widgets, size: 64, color: Theme.of(context).colorScheme.outlineVariant),
-                      const SizedBox(height: 16),
-                      Text('アクションがありません', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: () => Navigator.pushNamed(context, '/quick_actions/settings'),
-                        icon: const Icon(Icons.add),
-                        label: const Text('アクションを追加'),
-                      ),
-                    ],
+        if (_pages.length > 1)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _pages.length,
+                (i) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: _currentPage == i ? 20 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _currentPage == i
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                )
-              : Column(
-                  children: [
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: _calcHeight(),
-                      child: PageView(
-                        controller: _pageCtrl,
-                        onPageChanged: (i) => setState(() => _currentPage = i),
-                        children: _buildPages(),
-                      ),
-                    ),
-                    if (_pages.length > 1)
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(
-                            _pages.length,
-                            (i) => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              width: _currentPage == i ? 20 : 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: _currentPage == i
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.outlineVariant,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
                 ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
