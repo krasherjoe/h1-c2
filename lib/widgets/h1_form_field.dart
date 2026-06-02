@@ -131,10 +131,14 @@ class H1FormField extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  blurRadius: 8,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                ),
+                BoxShadow(
+                  blurRadius: 12,
                   offset: const Offset(0, 4),
-                  color: (isDark ? Colors.black : const Color(0xFF63666F))
-                      .withValues(alpha: 0.3),
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
                 ),
               ],
             ),
