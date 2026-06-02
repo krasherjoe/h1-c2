@@ -481,7 +481,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                                 hintText:
                                     '空欄で${_rank.defaultDiscountRate}%（${_rank.label}既定値）',
                                 prefixIcon: const Icon(Icons.percent),
-                                border: const OutlineInputBorder(),
+                                border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                                 isDense: true,
                               ),
                               onChanged: (v) {

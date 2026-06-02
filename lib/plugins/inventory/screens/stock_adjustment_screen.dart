@@ -108,7 +108,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
                   controller: quantityController,
                   decoration: const InputDecoration(
                     labelText: '調整後数量',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                     prefixIcon: Icon(Icons.edit),
                   ),
                   keyboardType: TextInputType.number,
@@ -281,7 +281,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
                 child: TextField(
                   decoration: InputDecoration(
                     labelText: '商品名またはバーコード',
-                    border: const OutlineInputBorder(),
+                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(

@@ -47,6 +47,7 @@ class AppTheme {
   }
 
   static InputDecorationTheme _inputTheme(bool isDark, String style) {
+    const radius = BorderRadius.all(Radius.circular(12));
     if (style == 'raised') {
       return InputDecorationTheme(
         filled: true,
@@ -54,21 +55,27 @@ class AppTheme {
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(
+          borderRadius: radius,
           borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
         ),
         enabledBorder: OutlineInputBorder(
+          borderRadius: radius,
           borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
         ),
         focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
           borderSide: BorderSide(color: const Color(0xFF6366F1), width: 2),
         ),
       );
     }
-    return const InputDecorationTheme(
+    return InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
       isDense: true,
-      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      border: OutlineInputBorder(borderRadius: radius),
+      enabledBorder: OutlineInputBorder(borderRadius: radius),
+      focusedBorder: OutlineInputBorder(borderRadius: radius),
     );
   }
 }

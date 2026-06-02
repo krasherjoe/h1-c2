@@ -170,7 +170,7 @@ class _TaxReportScreenState extends State<TaxReportScreen> {
             decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              border: OutlineInputBorder(),
+              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
             ),
             onFieldSubmitted: (v) {
               final y = int.tryParse(v) ?? year;
@@ -189,7 +189,7 @@ class _TaxReportScreenState extends State<TaxReportScreen> {
             decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              border: OutlineInputBorder(),
+              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
             ),
             onFieldSubmitted: (v) {
               var m = int.tryParse(v) ?? month;

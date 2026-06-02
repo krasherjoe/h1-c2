@@ -458,15 +458,21 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
+        surfaceTintColor: cs.surfaceTint,
+        scrolledUnderElevation: 1,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('PE:価格表'),
+            Text('PE:価格表', style: TextStyle(color: cs.onSurface)),
             const SizedBox(width: 8),
             DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _currentYear,
                 isDense: true,
+                dropdownColor: cs.surfaceContainerHigh,
+                style: TextStyle(fontSize: 14, color: cs.onSurface),
+                icon: Icon(Icons.arrow_drop_down, color: cs.onSurfaceVariant),
                 onChanged: _years.isEmpty
                     ? null
                     : (v) async {
@@ -486,7 +492,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
             ),
             if (_currentYear == null)
               IconButton(
-                icon: const Icon(Icons.add, size: 18),
+                icon: Icon(Icons.add, size: 18, color: cs.onSurfaceVariant),
                 tooltip: '年度追加',
                 onPressed: _addYear,
               ),
@@ -497,7 +503,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
             Badge(
               label: Text('${_undoStack.undoCount}'),
               child: IconButton(
-                icon: const Icon(Icons.undo),
+                icon: Icon(Icons.undo, color: cs.onSurface),
                 tooltip: '元に戻す: ${_undoStack.lastDescription}',
                 onPressed: _undo,
               ),
@@ -509,7 +515,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
             ),
           IconButton(
             icon: Icon(Icons.redo,
-                color: _undoStack.canRedo ? null : cs.onSurface.withValues(alpha: 0.3)),
+                color: _undoStack.canRedo ? cs.onSurface : cs.onSurface.withValues(alpha: 0.3)),
             onPressed: _undoStack.canRedo ? _redo : null,
           ),
         ],

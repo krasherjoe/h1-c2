@@ -248,7 +248,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: '得意先',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                   child: Text(
                     _customerName.isEmpty ? 'タップして選択' : _customerName,
@@ -260,7 +260,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 controller: _customerRepCtrl,
                 decoration: const InputDecoration(
                   labelText: '顧客代表者名',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
               ),
               const SizedBox(height: 16),
@@ -279,7 +279,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: '契約日',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                   child: Text(_df.format(_contractDate)),
                 ),
@@ -300,7 +300,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: '開始日',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                   child: Text(_df.format(_startDate)),
                 ),
@@ -310,7 +310,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 controller: _monthsCtrl,
                 decoration: const InputDecoration(
                   labelText: '契約月数',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 keyboardType: TextInputType.number,
                 onChanged: (v) {
@@ -381,7 +381,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                   child: TextField(
                     decoration: const InputDecoration(
                       labelText: '月額（円）',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                       prefixText: '¥ ',
                     ),
                     keyboardType: TextInputType.number,
@@ -430,7 +430,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 initialValue: _serviceTemplate.isEmpty ? null : _serviceTemplate,
                 decoration: const InputDecoration(
                   labelText: 'サービス種別',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 items: const [
                   DropdownMenuItem(value: '保守サービス', child: Text('保守サービス')),
@@ -454,7 +454,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 controller: _serviceCtrl,
                 decoration: const InputDecoration(
                   labelText: 'サービス内容（編集可）',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 maxLines: 5,
               ),
@@ -463,7 +463,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 controller: _notesCtrl,
                 decoration: const InputDecoration(
                   labelText: '特記事項（任意）',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 maxLines: 3,
               ),
@@ -472,7 +472,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 controller: _companyRepCtrl,
                 decoration: const InputDecoration(
                   labelText: '自社代表者名',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
               ),
               const SizedBox(height: 32),

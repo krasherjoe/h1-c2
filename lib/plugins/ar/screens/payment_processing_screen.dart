@@ -204,7 +204,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                 child: TextField(
                   controller: _amountCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: '入金額', isDense: true, border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: '入金額', isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)))),
                 ),
               ),
               const SizedBox(width: 8),
