@@ -29,6 +29,11 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
 
   String? groupKey(T item) => null;
 
+  /// フィルター状態（Explorerが管理、fetchItems内で参照可能）
+  String statusFilter = '';
+  DateTime? dateFrom;
+  DateTime? dateTo;
+
   List<({String id, IconData icon, String label})> get overflowActions => [];
   void onOverflowAction(
     BuildContext context,

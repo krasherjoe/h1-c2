@@ -25,7 +25,13 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   @override
   Future<List<DocumentModel>> fetchItems(String query) async {
     final repo = DocumentRepository();
-    return repo.fetchAll(filterType: filterType, query: query);
+    return repo.fetchAll(
+      filterType: filterType,
+      query: query,
+      statusFilter: statusFilter.isNotEmpty ? statusFilter : null,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+    );
   }
 
   @override

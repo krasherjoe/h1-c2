@@ -8,7 +8,7 @@ class DocumentRepository {
 
   Future<Database> get _db => _dbHelper.database;
 
-  Future<List<DocumentModel>> fetchAll({DocumentType? filterType, String query = ''}) async {
+  Future<List<DocumentModel>> fetchAll({DocumentType? filterType, String query = '', String? statusFilter, DateTime? dateFrom, DateTime? dateTo}) async {
     final db = await _db;
     final conditions = <String>[];
     final args = <dynamic>[];
@@ -20,6 +20,18 @@ class DocumentRepository {
     if (query.isNotEmpty) {
       conditions.add('(d.document_number LIKE ? OR d.customer_name LIKE ?)');
       args.addAll(['%$query%', '%$query%']);
+    }
+    if (statusFilter != null && statusFilter.isNotEmpty) {
+      conditions.add('d.status = ?');
+      args.add(statusFilter);
+    }
+    if (dateFrom != null) {
+      conditions.add('d.date >= ?');
+      args.add(dateFrom.toIso8601String().substring(0, 10));
+    }
+    if (dateTo != null) {
+      conditions.add('d.date <= ?');
+      args.add(dateTo.toIso8601String().substring(0, 10));
     }
     conditions.add('d.status IS NOT NULL');
 

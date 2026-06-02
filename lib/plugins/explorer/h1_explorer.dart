@@ -25,6 +25,13 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   bool _isLoading = true;
   String _query = '';
   bool _showSearch = false;
+  bool _showFilter = false;
+  String _statusFilter = '';
+  DateTime? _dateFrom;
+  DateTime? _dateTo;
+
+  bool get _hasActiveFilters =>
+      _statusFilter.isNotEmpty || _dateFrom != null || _dateTo != null;
 
   @override
   void initState() {
@@ -42,6 +49,9 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
 
   Future<void> _loadItems() async {
     if (!mounted) return;
+    widget.config.statusFilter = _statusFilter;
+    widget.config.dateFrom = _dateFrom;
+    widget.config.dateTo = _dateTo;
     setState(() => _isLoading = true);
     try {
       final items = await widget.config.fetchItems(_query);
@@ -58,6 +68,15 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
 
   void _onSearchChanged(String value) {
     _query = value;
+    _loadItems();
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _statusFilter = '';
+      _dateFrom = null;
+      _dateTo = null;
+    });
     _loadItems();
   }
 
@@ -184,6 +203,11 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
             icon: Icon(_showSearch ? Icons.close : Icons.search),
             onPressed: () => setState(() => _showSearch = !_showSearch),
           ),
+          IconButton(
+            icon: Icon(_showFilter ? Icons.filter_list_off : Icons.filter_list),
+            tooltip: 'フィルター',
+            onPressed: () => setState(() => _showFilter = !_showFilter),
+          ),
         ],
       ),
       body: Column(
@@ -207,6 +231,9 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                 onChanged: _onSearchChanged,
               ),
             ),
+          if (_showFilter) _buildFilterBar(),
+          if (_hasActiveFilters)
+            _buildActiveFilters(),
           Expanded(child: _buildBody()),
         ],
       ),
@@ -250,6 +277,138 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                   ))
               .toList(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ToggleButtons(
+                  isSelected: [
+                    _statusFilter == '',
+                    _statusFilter == 'draft',
+                    _statusFilter == 'confirmed',
+                  ],
+                  onPressed: (i) {
+                    setState(() {
+                      _statusFilter = ['', 'draft', 'confirmed'][i];
+                    });
+                    _loadItems();
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  constraints: const BoxConstraints(minHeight: 32, minWidth: 60),
+                  textStyle: const TextStyle(fontSize: 12),
+                  children: const [
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('すべて')),
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('下書き')),
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('確定')),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _dateChip(context, cs, '開始日', _dateFrom, (d) => _dateFrom = d),
+              const SizedBox(width: 8),
+              _dateChip(context, cs, '終了日', _dateTo, (d) => _dateTo = d),
+              if (_hasActiveFilters)
+                TextButton(
+                  onPressed: _clearFilters,
+                  child: const Text('クリア', style: TextStyle(fontSize: 12)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dateChip(BuildContext context, ColorScheme cs, String label, DateTime? value, void Function(DateTime?) setter) {
+    return Expanded(
+      child: InkWell(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: value ?? DateTime.now(),
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+          );
+          if (picked != null) {
+            setter(picked);
+            _loadItems();
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: value != null ? cs.primary : cs.outlineVariant),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.date_range, size: 16, color: value != null ? cs.primary : cs.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text(
+                value != null
+                    ? '${value.year}/${value.month.toString().padLeft(2, '0')}/${value.day.toString().padLeft(2, '0')}'
+                    : label,
+                style: TextStyle(fontSize: 12, color: value != null ? cs.primary : cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveFilters() {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            if (_statusFilter.isNotEmpty)
+              _filterChip(cs, _statusFilter == 'draft' ? '下書き' : '確定', () {
+                setState(() => _statusFilter = '');
+                _loadItems();
+              }),
+            if (_dateFrom != null)
+              _filterChip(cs, '${_dateFrom!.month}/${_dateFrom!.day}から', () {
+                setState(() => _dateFrom = null);
+                _loadItems();
+              }),
+            if (_dateTo != null)
+              _filterChip(cs, '${_dateTo!.month}/${_dateTo!.day}まで', () {
+                setState(() => _dateTo = null);
+                _loadItems();
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _filterChip(ColorScheme cs, String label, VoidCallback onRemove) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InputChip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        deleteIcon: const Icon(Icons.close, size: 16),
+        onDeleted: onRemove,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }
