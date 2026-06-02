@@ -29,6 +29,7 @@ import 'plugins/debug/debug_plugin.dart';
 import 'plugins/project/project_plugin.dart';
 import 'plugins/memorandum/memorandum_plugin.dart';
 import 'plugins/ar/ar_plugin.dart';
+import 'plugins/daily/daily_plugin.dart';
 import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
@@ -96,6 +97,7 @@ void main() async {
   await registry.register(ProjectPlugin());
   await registry.register(MemorandumPlugin());
   await registry.register(ArPlugin());
+  await registry.register(DailyPlugin());
 
   final stateService = PluginStateService();
   final states = await stateService.loadAll(
