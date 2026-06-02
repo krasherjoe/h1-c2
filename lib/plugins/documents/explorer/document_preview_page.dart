@@ -123,7 +123,8 @@ class DocumentPreviewPage extends StatelessWidget {
     try {
       final pdf = await generateDocumentPdf(document);
       await Printing.layoutPdf(onLayout: (_) => pdf.save());
-    } catch (e) {
+    } catch (e, st) {
+      ErrorReporter.sendError(message: 'PDFプレビュー失敗: $e', screenId: '/documents/preview', stackTrace: st);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('PDFエラー: $e')),

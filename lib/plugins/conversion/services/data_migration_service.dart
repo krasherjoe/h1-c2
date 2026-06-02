@@ -5,9 +5,15 @@ class DataMigrationService {
   static const _conversionDoneKey = 'conversion_v1_to_v2_done';
 
   static Future<bool> needsConversion(Database db) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_conversionDoneKey) == true) return false;
+
     final tables = await db
         .rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='documents'");
-    return tables.isNotEmpty;
+    if (tables.isEmpty) return false;
+
+    final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM documents');
+    return (rows.first['c'] as int? ?? 0) > 0;
   }
 
   static Future<void> runConversion(

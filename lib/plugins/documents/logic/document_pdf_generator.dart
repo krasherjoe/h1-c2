@@ -8,7 +8,7 @@ import '../models/document_model.dart';
 Future<pw.Document> generateDocumentPdf(DocumentModel document) async {
   final pdf = pw.Document(title: '${document.documentType.label} ${document.documentNumber}');
 
-  final fontData = await rootBundle.load('assets/fonts/ipaexg.ttf');
+  final fontData = await rootBundle.load('fonts/ipaexg.ttf');
   final ipaex = pw.Font.ttf(fontData);
   final dateFormatter = DateFormat('yyyy年MM月dd日');
   final amountFormatter = NumberFormat('#,###');

@@ -16,7 +16,7 @@ Future<Uint8List> generateInvoicePdf(Invoice invoice) async {
     author: 'h1-core',
   );
 
-  final fontData = await rootBundle.load("assets/fonts/ipaexg.ttf");
+  final fontData = await rootBundle.load("fonts/ipaexg.ttf");
   final ipaex = pw.Font.ttf(fontData);
   final dateFormatter = DateFormat('yyyy年MM月dd日');
   final amountFormatter = NumberFormat("#,###");
