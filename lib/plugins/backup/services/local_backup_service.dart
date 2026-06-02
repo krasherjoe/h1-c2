@@ -18,11 +18,12 @@ class LocalBackupService {
   Future<String> _getBackupDirectory() async {
     try {
       if (Platform.isAndroid) {
-        final backupDir = Directory('/storage/emulated/0/Download');
-        if (!await backupDir.exists()) {
-          await backupDir.create(recursive: true);
-        }
-        return backupDir.path;
+        try {
+          final backupDir = Directory('/storage/emulated/0/Download');
+          if (await backupDir.exists()) {
+            return backupDir.path;
+          }
+        } catch (_) {}
       } else if (Platform.isIOS) {
         final dir = await getApplicationDocumentsDirectory();
         final backupDir = Directory(path.join(dir.path, 'backups'));
@@ -31,15 +32,15 @@ class LocalBackupService {
         }
         return backupDir.path;
       }
-      final fallbackDir = Directory(path.join(await getDatabasesPath(), 'backups'));
-      if (!await fallbackDir.exists()) {
-        await fallbackDir.create(recursive: true);
-      }
-      return fallbackDir.path;
     } catch (e) {
-      debugPrint('[BackupService] バックアップディレクトリ取得エラー: $e');
-      return path.join(await getDatabasesPath(), 'backups');
+      debugPrint('[Backup] _getBackupDirectory error: $e');
     }
+    final dir = await getApplicationDocumentsDirectory();
+    final backupDir = Directory(path.join(dir.path, 'backups'));
+    if (!await backupDir.exists()) {
+      await backupDir.create(recursive: true);
+    }
+    return backupDir.path;
   }
 
   Future<bool> _isTodayBackedUp(String companyName) async {

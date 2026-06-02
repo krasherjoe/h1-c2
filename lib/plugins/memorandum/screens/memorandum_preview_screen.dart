@@ -46,10 +46,12 @@ class _MemorandumPreviewScreenState extends State<MemorandumPreviewScreen> {
   Future<Directory> _getDownloadDirectory() async {
     try {
       if (Platform.isAndroid) {
-        final dir = Directory('/storage/emulated/0/Download');
-        if (await dir.exists()) {
-          return dir;
-        }
+        try {
+          final dir = Directory('/storage/emulated/0/Download');
+          if (await dir.exists()) {
+            return dir;
+          }
+        } catch (_) {}
       } else if (Platform.isIOS) {
         return await getApplicationDocumentsDirectory();
       }

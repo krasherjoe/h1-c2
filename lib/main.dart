@@ -59,14 +59,33 @@ Future<void> _migrateIfNeeded() async {
   final prefs = await SharedPreferences.getInstance();
   if (prefs.getBool('migrated_v2') == true) return;
 
+  // 1) 旧バージョン: app-private の h1_core.db を移行
   final oldDir = await getApplicationDocumentsDirectory();
   final oldDb = File(p.join(oldDir.path, 'h1_core.db'));
   if (await oldDb.exists()) {
-    final companyName = 'default';
     final newDbPath = await CompanyService.getCurrentDbPath();
     await oldDb.copy(newDbPath);
-    await CompanyService.setCurrentCompany(companyName);
-    debugPrint('[Migration] 旧DBを移行: $oldDb → $newDbPath');
+    await CompanyService.setCurrentCompany('default');
+    debugPrint('[Migration] app-private DB移行: $oldDb → $newDbPath');
+  }
+
+  // 2) 旧バージョン: public Documents に保存された DB を移行 (v1.2.097〜v1.2.102)
+  try {
+    final publicDbDir = Directory('/storage/emulated/0/Documents/販売アシスト1号code');
+    if (await publicDbDir.exists()) {
+      final files = publicDbDir.listSync().whereType<File>().where((f) => f.path.endsWith('.db'));
+      for (final f in files) {
+        final name = p.basenameWithoutExtension(f.path);
+        if (name.startsWith('.')) continue;
+        final destPath = p.join((await CompanyService.getCompanyDirectory()).path, '$name.db');
+        if (!await File(destPath).exists()) {
+          await f.copy(destPath);
+          debugPrint('[Migration] public DB移行: ${f.path} → $destPath');
+        }
+      }
+    }
+  } catch (e) {
+    debugPrint('[Migration] public DB移行スキップ(権限なし): $e');
   }
 
   await prefs.setBool('migrated_v2', true);
