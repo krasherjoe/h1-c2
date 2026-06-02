@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/purchase_model.dart';
 import '../logic/purchase_converter.dart';
 import '../services/purchase_repository.dart';
+import '../../../services/error_reporter.dart';
+import 'purchase_preview_page.dart';
 
 class PurchaseViewer extends StatelessWidget {
   final PurchaseModel purchase;
@@ -19,6 +21,8 @@ class PurchaseViewer extends StatelessWidget {
         _buildItemsSection(context, theme),
         const Divider(height: 24),
         _buildTotalSection(theme),
+        const SizedBox(height: 12),
+        _buildPreviewButton(context),
         if (purchase.isConfirmed) ...[
           const Divider(height: 24),
           _buildConvertButton(context),
@@ -128,6 +132,44 @@ class PurchaseViewer extends StatelessWidget {
               SnackBar(content: Text('変換エラー: $e')),
             );
           }
+        },
+      ),
+    );
+  }
+
+  Widget _buildPreviewButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.preview),
+        label: const Text('プレビュー'),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PurchasePreviewPage(
+                purchase: purchase,
+                isUnlocked: purchase.isDraft,
+                onFormalIssue: () async {
+                  try {
+                    final repo = PurchaseRepository();
+                    final updated = purchase.copyWith(status: 'confirmed');
+                    await repo.save(updated);
+                    return true;
+                  } catch (e, st) {
+                    ErrorReporter.sendError(
+                      message: '正式発行失敗: $e',
+                      screenId: '/purchase/viewer',
+                      stackTrace: st,
+                    );
+                    return false;
+                  }
+                },
+                showShare: true,
+                showPrint: true,
+              ),
+            ),
+          );
         },
       ),
     );

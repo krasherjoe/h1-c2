@@ -6,6 +6,7 @@ import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
+import 'purchase_preview_page.dart';
 
 class PurchaseEditor extends StatefulWidget {
   final PurchaseModel? purchase;
@@ -87,7 +88,33 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
 
       await _repo.save(purchase);
       if (!mounted) return;
-      Navigator.pop(context, true);
+      final saved = await _repo.fetchById(docId) ?? purchase;
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PurchasePreviewPage(
+            purchase: saved,
+            isUnlocked: true,
+            onFormalIssue: () async {
+              try {
+                final updated = saved.copyWith(status: 'confirmed');
+                await _repo.save(updated);
+                return true;
+              } catch (e, st) {
+                ErrorReporter.sendError(
+                  message: '正式発行失敗: $e',
+                  screenId: '/purchase/editor',
+                  stackTrace: st,
+                );
+                return false;
+              }
+            },
+            showShare: true,
+            showPrint: true,
+          ),
+        ),
+      );
     } catch (e, st) {
       ErrorReporter.sendError(
         message: '仕入保存失敗: $e',
