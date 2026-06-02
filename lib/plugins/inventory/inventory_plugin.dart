@@ -9,6 +9,9 @@ import 'screens/stock_inbound_screen.dart';
 import 'screens/stock_outbound_screen.dart';
 import 'screens/stocktake_screen.dart';
 import 'screens/stock_adjustment_screen.dart';
+import 'screens/stocktake_input_screen.dart';
+import 'screens/stock_transfer_screen.dart';
+import 'screens/inventory_valuation_screen.dart';
 import 'screens/warehouse_list_screen.dart';
 import 'screens/stock_inquiry_screen.dart';
 
@@ -91,6 +94,38 @@ class InventoryPlugin extends H1Plugin {
       icon: Icons.fact_check,
       description: '棚卸入力',
     ),
+    const MenuItem(
+      id: 'IC',
+      title: '棚卸入力(一括)',
+      route: '/inventory/stocktake_input',
+      category: '在庫',
+      icon: Icons.edit_note,
+      description: '一括棚卸入力',
+    ),
+    const MenuItem(
+      id: 'IA',
+      title: '在庫調整',
+      route: '/inventory/adjustment',
+      category: '在庫',
+      icon: Icons.tune,
+      description: '在庫調整',
+    ),
+    const MenuItem(
+      id: 'IM',
+      title: '在庫移動',
+      route: '/inventory/transfer',
+      category: '在庫',
+      icon: Icons.swap_horiz,
+      description: '倉庫間在庫移動',
+    ),
+    const MenuItem(
+      id: 'R4',
+      title: '在庫評価額',
+      route: '/inventory/valuation',
+      category: '在庫',
+      icon: Icons.account_balance,
+      description: '在庫評価額一覧',
+    ),
   ];
 
   @override
@@ -100,6 +135,9 @@ class InventoryPlugin extends H1Plugin {
     '/inventory/outbound': (_) => const StockOutboundScreen(),
     '/inventory/stocktake': (_) => const StocktakeScreen(),
     '/inventory/adjustment': (_) => const StockAdjustmentScreen(),
+    '/inventory/stocktake_input': (_) => const StocktakeInputScreen(),
+    '/inventory/transfer': (_) => const StockTransferScreen(),
+    '/inventory/valuation': (_) => const InventoryValuationScreen(),
     '/inventory/warehouses': (_) => const WarehouseListScreen(),
     '/inventory/inquiry': (_) => const StockInquiryScreen(),
   };
@@ -140,6 +178,31 @@ class InventoryPlugin extends H1Plugin {
         reference_number TEXT,
         notes TEXT,
         created_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS stock_transfers (
+        id TEXT PRIMARY KEY,
+        document_no TEXT NOT NULL,
+        from_warehouse_id TEXT NOT NULL,
+        to_warehouse_id TEXT NOT NULL,
+        memo TEXT,
+        transfer_date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        created_by_device TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS stock_transfer_items (
+        id TEXT PRIMARY KEY,
+        transfer_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        notes TEXT,
+        FOREIGN KEY (transfer_id) REFERENCES stock_transfers(id)
       )
     ''');
 
