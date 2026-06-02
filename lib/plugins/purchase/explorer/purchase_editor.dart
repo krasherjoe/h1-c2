@@ -130,35 +130,32 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (_isNew) _buildTypeSelector(theme),
-              const SizedBox(height: 16),
-              _buildSupplierField(theme),
-              const SizedBox(height: 12),
-              _buildDateField(theme),
-              const Divider(height: 24),
-              _buildItemsHeader(theme),
-              ..._items.asMap().entries.map((entry) =>
-                _buildItemRow(entry.key, entry.value, theme)),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('明細追加'),
-                  onPressed: _addItem,
-                ),
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(title: Text(_isNew ? '新規仕入' : '仕入編集')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (_isNew) _buildTypeSelector(theme),
+          const SizedBox(height: 16),
+          _buildSupplierField(theme),
+          const SizedBox(height: 12),
+          _buildDateField(theme),
+          const Divider(height: 24),
+          _buildItemsHeader(theme),
+          ..._items.asMap().entries.map((entry) =>
+            _buildItemRow(entry.key, entry.value, theme)),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('明細追加'),
+              onPressed: _addItem,
+            ),
           ),
-        ),
-        _buildBottomBar(),
-      ],
+        ],
+      ),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -236,26 +233,24 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
   }
 
   Widget _buildBottomBar() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _isSaving ? null : () => _save(confirmed: false),
-                child: const Text('下書き保存'),
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _isSaving ? null : () => _save(confirmed: false),
+              child: const Text('下書き保存'),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: _isSaving ? null : () => _save(confirmed: true),
-                child: const Text('確定保存'),
-              ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: FilledButton(
+              onPressed: _isSaving ? null : () => _save(confirmed: true),
+              child: const Text('確定保存'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
