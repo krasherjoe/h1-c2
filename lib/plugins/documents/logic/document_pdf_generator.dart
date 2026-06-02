@@ -101,7 +101,10 @@ String _footerMessage(DocumentType type) {
   }
 }
 
-Future<pw.Document> generateDocumentPdf(DocumentModel document) async {
+Future<pw.Document> generateDocumentPdf(DocumentModel document, {
+  double? sealOffsetXOverride,
+  double? sealOffsetYOverride,
+}) async {
   final maxItems = await loadMaxPreviewItems();
 
   final pdf = pw.Document(
@@ -140,8 +143,8 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document) async {
         ).copyWith(defaultTextStyle: pw.TextStyle(fontFallback: [ipaex])),
         buildBackground: (context) {
           if (sealImage == null) return pw.SizedBox();
-          final sealX = companyInfo?.sealOffsetX ?? 10.0;
-          final sealY = companyInfo?.sealOffsetY ?? 50.0;
+          final sealX = sealOffsetXOverride ?? companyInfo?.sealOffsetX ?? 10.0;
+          final sealY = sealOffsetYOverride ?? companyInfo?.sealOffsetY ?? 50.0;
           return pw.Stack(
             fit: pw.StackFit.expand,
             children: [
