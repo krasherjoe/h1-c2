@@ -155,43 +155,36 @@ class _DocumentEditorState extends State<DocumentEditor> {
     setState(() => _items.removeAt(index));
   }
 
+  int get _total => _items.fold(0, (sum, item) => sum + (item.quantity * item.unitPrice).round());
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: Text(_isNew ? '新規書類' : '書類編集')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          if (_isNew) _buildTypeSelector(theme),
+          if (_isNew) _buildTypeSelector(cs),
           const SizedBox(height: 16),
-          _buildCustomerField(theme),
+          _buildHeaderCard(cs),
           const SizedBox(height: 12),
-          _buildDateField(theme),
-          const Divider(height: 24),
-          _buildItemsHeader(theme),
-          ..._items.asMap().entries.map((entry) =>
-            _buildItemRow(entry.key, entry.value, theme)),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('明細追加'),
-              onPressed: _addItem,
-            ),
-          ),
+          _buildCustomerCard(cs),
+          const SizedBox(height: 20),
+          _buildItemsSection(cs),
+          const SizedBox(height: 20),
+          _buildSummarySection(cs),
         ],
       ),
       bottomNavigationBar: _buildBottomBar(),
     );
   }
 
-  Widget _buildTypeSelector(ThemeData theme) {
+  Widget _buildTypeSelector(ColorScheme cs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('伝票種別', style: theme.textTheme.titleSmall),
+        Text('伝票種別', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         DropdownButtonFormField<DocumentType>(
           initialValue: _selectedType,
@@ -207,70 +200,244 @@ class _DocumentEditorState extends State<DocumentEditor> {
     );
   }
 
-  Widget _buildCustomerField(ThemeData theme) {
-    return InkWell(
-      onTap: _selectCustomer,
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          labelText: '顧客',
-          suffixIcon: Icon(Icons.search),
+  Widget _buildHeaderCard(ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: _selectedDate,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+          );
+          if (picked != null && mounted) {
+            setState(() => _selectedDate = picked);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_today, size: 20, color: cs.primary),
+              const SizedBox(width: 12),
+              Text('伝票日付:', style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 8),
+              Text(
+                '${_selectedDate.year}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.day.toString().padLeft(2, '0')}',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface),
+              ),
+              const Spacer(),
+              Icon(Icons.chevron_right, size: 20, color: cs.onSurfaceVariant),
+            ],
+          ),
         ),
-        child: Text(_customerName.isNotEmpty ? _customerName : 'タップして選択'),
       ),
     );
   }
 
-  Widget _buildDateField(ThemeData theme) {
-    return InkWell(
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: _selectedDate,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-        );
-        if (picked != null && mounted) {
-          setState(() => _selectedDate = picked);
-        }
-      },
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          labelText: '日付',
-          suffixIcon: Icon(Icons.calendar_today),
-        ),
-        child: Text(
-          '${_selectedDate.year}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.day.toString().padLeft(2, '0')}',
-        ),
+  Widget _buildCustomerCard(ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
       ),
-    );
-  }
-
-  Widget _buildItemsHeader(ThemeData theme) {
-    return Text('明細 (${_items.length})', style: theme.textTheme.titleSmall);
-  }
-
-  Widget _buildItemRow(int index, _EditingItem item, ThemeData theme) {
-    return Card(
       child: ListTile(
-        title: Text(item.productName),
-        subtitle: Text('${_formatQty(item.quantity)} × ${_formatMoney(item.unitPrice)} = ${_formatMoney((item.quantity * item.unitPrice).round())}'),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () => _removeItem(index),
+        leading: Icon(Icons.business, color: cs.primary),
+        title: Text(
+          _customerName.isNotEmpty ? '$_customerName 様' : '取引先を選択してください',
+          style: TextStyle(fontWeight: FontWeight.w500, color: _customerName.isNotEmpty ? cs.onSurface : cs.onSurfaceVariant),
         ),
-        onTap: () => _editItem(index),
+        subtitle: _customerName.isEmpty ? null : Text('タップして変更', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+        onTap: _selectCustomer,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+    );
+  }
+
+  Widget _buildItemsSection(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('明細項目', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
+            const Spacer(),
+            TextButton.icon(
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('追加'),
+              onPressed: _addItem,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_items.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Text('商品が追加されていません', textAlign: TextAlign.center,
+              style: TextStyle(color: cs.onSurfaceVariant)),
+          )
+        else
+          ..._items.asMap().entries.map((entry) => _buildItemCard(entry.key, entry.value, cs)),
+      ],
+    );
+  }
+
+  Widget _buildItemCard(int index, _EditingItem item, ColorScheme cs) {
+    final subtotal = (item.quantity * item.unitPrice).round();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      elevation: 0.5,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () => _editItem(index),
+              child: Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text('￥${_formatMoney(item.unitPrice)} × ${_formatQty(item.quantity)} = ￥${_formatMoney(subtotal)}',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                ),
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline, size: 20, color: cs.onSurfaceVariant),
+                  onPressed: () {
+                    if (item.quantity > 1) {
+                      setState(() => item.quantity -= 1);
+                    }
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+                GestureDetector(
+                  onTap: () => _showQuantityDialog(index),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(_formatQty(item.quantity),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add_circle_outline, size: 20, color: cs.onSurfaceVariant),
+                  onPressed: () => setState(() => item.quantity += 1),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
+                  onPressed: () => _removeItem(index),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showQuantityDialog(int index) async {
+    final item = _items[index];
+    final controller = TextEditingController(text: item.quantity.toString());
+    final result = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('数量を入力'),
+        content: H1TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: '数量'),
+          keyboardType: TextInputType.number,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () {
+            final v = double.tryParse(controller.text);
+            if (v != null && v > 0) Navigator.pop(ctx, v);
+          }, child: const Text('OK')),
+        ],
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() => _items[index].quantity = result);
+    }
+  }
+
+  Widget _buildSummarySection(ColorScheme cs) {
+    final subtotal = _total;
+    final tax = (subtotal * 0.1).round();
+    final total = subtotal + tax;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _summaryRow('小計', subtotal, cs, labelColor: cs.onSurfaceVariant),
+          const Divider(height: 20),
+          _summaryRow('消費税 (10%)', tax, cs, labelColor: cs.onSurfaceVariant),
+          const Divider(height: 20),
+          _summaryRow('合計 (税込)', total, cs, totalStyle: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryRow(String label, int amount, ColorScheme cs, {Color? labelColor, bool totalStyle = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(
+          fontSize: totalStyle ? 15 : 13,
+          fontWeight: totalStyle ? FontWeight.bold : FontWeight.normal,
+          color: labelColor ?? cs.onSurface,
+        )),
+        Text('￥${_formatMoney(amount)}', style: TextStyle(
+          fontSize: totalStyle ? 18 : 14,
+          fontWeight: totalStyle ? FontWeight.bold : FontWeight.normal,
+          color: totalStyle ? cs.primary : cs.onSurface,
+        )),
+      ],
     );
   }
 
   Widget _buildBottomBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: _isSaving ? null : _save,
-          child: const Text('保存'),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            icon: _isSaving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save),
+            label: Text(_isSaving ? '保存中...' : '下書き保存'),
+            onPressed: _isSaving ? null : _save,
+          ),
         ),
       ),
     );
