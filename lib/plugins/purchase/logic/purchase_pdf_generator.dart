@@ -1,15 +1,14 @@
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../services/company_repository.dart';
+import '../../../utils/font_cache.dart';
 import '../models/purchase_model.dart';
 
 Future<pw.Document> generatePurchasePdf(PurchaseModel purchase) async {
   final pdf = pw.Document(title: '${purchase.purchaseType.label} ${purchase.documentNumber}');
 
-  final fontData = await rootBundle.load('fonts/ipaexg.ttf');
-  final ipaex = pw.Font.ttf(fontData);
+  final ipaex = await loadIpaexFont();
   final dateFormatter = DateFormat('yyyy年MM月dd日');
   final amountFormatter = NumberFormat('#,###');
 

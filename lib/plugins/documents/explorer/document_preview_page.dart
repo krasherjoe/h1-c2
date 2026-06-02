@@ -37,6 +37,7 @@ class DocumentPreviewPage extends StatefulWidget {
 
 class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   bool _issued = false;
+  String? _error;
   late Future<Uint8List> Function(PdfPageFormat) _stablePdfBuilder;
 
   @override
@@ -57,8 +58,18 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       : widget.document;
 
   Future<Uint8List> _buildPdfBytes([PdfPageFormat? format]) async {
-    final doc = await generateDocumentPdf(_effectiveDocument);
-    return Uint8List.fromList(await doc.save());
+    try {
+      final doc = await generateDocumentPdf(_effectiveDocument);
+      return Uint8List.fromList(await doc.save());
+    } catch (e, st) {
+      ErrorReporter.sendError(
+        message: 'PDF生成失敗: $e',
+        screenId: '/documents/preview',
+        stackTrace: st,
+      );
+      if (mounted) setState(() => _error = 'PDFの生成に失敗しました\n$e');
+      rethrow;
+    }
   }
 
   Future<bool> _showFormalIssueWarning(BuildContext context) async {
@@ -153,17 +164,25 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       body: Column(
         children: [
           Expanded(
-            child: PdfPreview(
-              key: ValueKey(_issued),
-              initialPageFormat: _kPageFormat,
-              build: _stablePdfBuilder,
-              allowPrinting: false,
-              allowSharing: false,
-              canChangePageFormat: false,
-              canChangeOrientation: false,
-              canDebug: false,
-              actions: const [],
-            ),
+            child: _error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(_error!, textAlign: TextAlign.center,
+                          style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    ),
+                  )
+                : PdfPreview(
+                    key: ValueKey(_issued),
+                    initialPageFormat: _kPageFormat,
+                    build: _stablePdfBuilder,
+                    allowPrinting: false,
+                    allowSharing: false,
+                    canChangePageFormat: false,
+                    canChangeOrientation: false,
+                    canDebug: false,
+                    actions: const [],
+                  ),
           ),
           SafeArea(
             top: false,
