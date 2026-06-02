@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../models/stock_transaction_model.dart';
 import '../services/inventory_repository.dart';
 import '../../../services/product_repository.dart';
@@ -51,7 +52,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
       );
       return;
     }
-    final qty = double.tryParse(_qtyController.text) ?? 0;
+    final qty = int.tryParse(_qtyController.text) ?? 0;
     if (qty == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('数量を入力してください')),
@@ -62,13 +63,13 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
     setState(() => _isSaving = true);
     try {
       await _repo.save(StockTransaction(
-        id: _repo.generateId(),
-        type: StockTransactionType.adjustment,
+        id: const Uuid().v4(),
         productId: _productId,
         productName: _productName,
         quantity: qty,
-        date: DateTime.now(),
-        note: _noteController.text.isNotEmpty ? _noteController.text : null,
+        type: 'adjustment',
+        createdAt: DateTime.now(),
+        notes: _noteController.text.isNotEmpty ? _noteController.text : null,
       ));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

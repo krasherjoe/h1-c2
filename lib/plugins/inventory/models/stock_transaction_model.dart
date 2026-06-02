@@ -25,46 +25,63 @@ extension StockTransactionTypeLabel on StockTransactionType {
 
 class StockTransaction {
   final String id;
-  final StockTransactionType type;
   final String productId;
   final String productName;
-  final double quantity;
-  final DateTime date;
-  final String? note;
+  final String? warehouseId;
+  final String? warehouseName;
+  final int quantity;
+  final String type;
+  final String? referenceId;
+  final String? referenceNumber;
+  final String? notes;
+  final DateTime createdAt;
 
   const StockTransaction({
     required this.id,
-    required this.type,
     required this.productId,
     required this.productName,
-    this.quantity = 0,
-    required this.date,
-    this.note,
+    this.warehouseId,
+    this.warehouseName,
+    required this.quantity,
+    required this.type,
+    this.referenceId,
+    this.referenceNumber,
+    this.notes,
+    required this.createdAt,
   });
+
+  StockTransactionType get transactionType {
+    return StockTransactionType.values.firstWhere(
+      (t) => t.name == type,
+      orElse: () => StockTransactionType.adjustment,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
     'id': id,
-    'transaction_type': type.name,
     'product_id': productId,
     'product_name': productName,
+    'warehouse_id': warehouseId,
+    'warehouse_name': warehouseName,
     'quantity': quantity,
-    'date': date.toIso8601String().substring(0, 10),
-    'note': note,
-    'created_at': DateTime.now().toIso8601String(),
+    'type': type,
+    'reference_id': referenceId,
+    'reference_number': referenceNumber,
+    'notes': notes,
+    'created_at': createdAt.toIso8601String(),
   };
 
-  factory StockTransaction.fromMap(Map<String, dynamic> map) {
-    return StockTransaction(
-      id: map['id'] as String,
-      type: StockTransactionType.values.firstWhere(
-        (t) => t.name == map['transaction_type'],
-        orElse: () => StockTransactionType.inbound,
-      ),
-      productId: map['product_id'] as String? ?? '',
-      productName: map['product_name'] as String? ?? '',
-      quantity: (map['quantity'] as num?)?.toDouble() ?? 0,
-      date: DateTime.tryParse(map['date'] as String? ?? '') ?? DateTime.now(),
-      note: map['note'] as String?,
-    );
-  }
+  factory StockTransaction.fromMap(Map<String, dynamic> map) => StockTransaction(
+    id: map['id'] as String? ?? '',
+    productId: map['product_id'] as String? ?? '',
+    productName: map['product_name'] as String? ?? '',
+    warehouseId: map['warehouse_id'] as String?,
+    warehouseName: map['warehouse_name'] as String?,
+    quantity: map['quantity'] as int? ?? 0,
+    type: map['type'] as String? ?? '',
+    referenceId: map['reference_id'] as String?,
+    referenceNumber: map['reference_number'] as String?,
+    notes: map['notes'] as String?,
+    createdAt: DateTime.parse(map['created_at'] as String? ?? ''),
+  );
 }

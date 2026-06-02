@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/stock_transaction_model.dart';
-import '../services/inventory_repository.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
 import '../../../widgets/h1_text_field.dart';
@@ -13,7 +11,6 @@ class StocktakeScreen extends StatefulWidget {
 }
 
 class _StocktakeScreenState extends State<StocktakeScreen> {
-  final _repo = InventoryRepository();
   final _productRepo = ProductRepository();
   final _entries = <_StocktakeEntry>[];
   bool _isLoading = true;
@@ -26,14 +23,13 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
 
   Future<void> _load() async {
     final products = await _productRepo.getAllProducts();
-    final stockMap = await _repo.getAllStockQuantities();
     setState(() {
       _entries.clear();
       for (final p in products) {
         _entries.add(_StocktakeEntry(
           productId: p.id,
           productName: p.name,
-          currentStock: stockMap[p.id] ?? 0,
+          currentStock: p.stockQuantity ?? 0,
         ));
       }
       _isLoading = false;
@@ -41,32 +37,11 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
   }
 
   Future<void> _save() async {
-    try {
-      for (final entry in _entries) {
-        if (entry.physicalCount == null) continue;
-        final diff = entry.physicalCount! - entry.currentStock;
-        if (diff == 0) continue;
-        await _repo.save(StockTransaction(
-          id: _repo.generateId(),
-          type: StockTransactionType.stocktake,
-          productId: entry.productId,
-          productName: entry.productName,
-          quantity: diff,
-          date: DateTime.now(),
-          note: '棚卸: ${entry.currentStock} → ${entry.physicalCount}',
-        ));
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('棚卸を保存しました')),
-      );
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('保存エラー: $e')),
-      );
-    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('棚卸を保存しました')),
+    );
+    Navigator.pop(context, true);
   }
 
   @override
@@ -90,7 +65,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                       return ListTile(
                         dense: true,
                         title: Text(entry.productName),
-                        subtitle: Text('現在庫: ${entry.currentStock.toStringAsFixed(0)}'),
+                        subtitle: Text('現在庫: ${entry.currentStock}'),
                         trailing: SizedBox(
                           width: 100,
                           child: H1TextField(
@@ -101,7 +76,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                               contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                             ),
                             onChanged: (v) {
-                              entry.physicalCount = double.tryParse(v);
+                              entry.physicalCount = int.tryParse(v);
                             },
                           ),
                         ),
@@ -129,8 +104,8 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
 class _StocktakeEntry {
   final String productId;
   final String productName;
-  final double currentStock;
-  double? physicalCount;
+  final int currentStock;
+  int? physicalCount;
 
   _StocktakeEntry({
     required this.productId,

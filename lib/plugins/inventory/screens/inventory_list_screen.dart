@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
 import '../models/stock_transaction_model.dart';
@@ -16,7 +17,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
   final _productRepo = ProductRepository();
   final _inventoryRepo = InventoryRepository();
   List<Product> _products = [];
-  Map<String, double> _stockMap = {};
+  Map<String, int> _stockMap = {};
   bool _isLoading = true;
   String _query = '';
 
@@ -86,9 +87,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                                       ? Colors.green.shade100
                                       : Colors.grey.shade100,
                                   child: Text(
-                                    stock == stock.roundToDouble()
-                                        ? stock.toInt().toString()
-                                        : stock.toStringAsFixed(1),
+                                    stock.toString(),
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -100,7 +99,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                                 ),
                                 title: Text(product.name),
                                 subtitle: Text(
-                                  '¥${product.defaultUnitPrice}',
+                                  '¥${NumberFormat('#,###').format(product.defaultUnitPrice)}',
                                   style: theme.textTheme.bodySmall,
                                 ),
                                 trailing: const Icon(Icons.chevron_right),
@@ -169,19 +168,20 @@ class _StockHistorySheetState extends State<_StockHistorySheet> {
                       itemCount: transactions.length,
                       itemBuilder: (ctx, i) {
                         final t = transactions[i];
+                        final isInbound = t.quantity > 0;
                         return ListTile(
                           dense: true,
                           leading: Icon(
-                            t.quantity > 0 ? Icons.add_circle : Icons.remove_circle,
-                            color: t.quantity > 0 ? Colors.green : Colors.red,
+                            isInbound ? Icons.add_circle : Icons.remove_circle,
+                            color: isInbound ? Colors.green : Colors.red,
                           ),
-                          title: Text(t.type.label),
-                          subtitle: Text(t.date.toIso8601String().substring(0, 10)),
+                          title: Text(t.transactionType.label),
+                          subtitle: Text(t.createdAt.toIso8601String().substring(0, 10)),
                           trailing: Text(
-                            '${t.quantity > 0 ? '+' : ''}${t.quantity}',
+                            '${isInbound ? '+' : ''}${t.quantity}',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: t.quantity > 0 ? Colors.green : Colors.red,
+                              color: isInbound ? Colors.green : Colors.red,
                             ),
                           ),
                         );

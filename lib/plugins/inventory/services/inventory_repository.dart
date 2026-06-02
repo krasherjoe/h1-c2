@@ -20,7 +20,7 @@ class InventoryRepository {
     final maps = await db.rawQuery('''
       SELECT * FROM stock_transactions
       $where
-      ORDER BY date DESC, created_at DESC
+      ORDER BY created_at DESC
       LIMIT ?
     ''', [...args, limit]);
     return maps.map((m) => StockTransaction.fromMap(m)).toList();
@@ -35,17 +35,17 @@ class InventoryRepository {
     );
   }
 
-  Future<double> getStockQuantity(String productId) async {
+  Future<int> getStockQuantity(String productId) async {
     final db = await _db;
     final result = await db.rawQuery('''
       SELECT COALESCE(SUM(quantity), 0) as total
       FROM stock_transactions
       WHERE product_id = ?
     ''', [productId]);
-    return (result.first['total'] as num?)?.toDouble() ?? 0;
+    return (result.first['total'] as int?) ?? 0;
   }
 
-  Future<Map<String, double>> getAllStockQuantities() async {
+  Future<Map<String, int>> getAllStockQuantities() async {
     final db = await _db;
     final result = await db.rawQuery('''
       SELECT product_id, product_name, COALESCE(SUM(quantity), 0) as total
@@ -54,9 +54,9 @@ class InventoryRepository {
       HAVING total != 0
       ORDER BY product_name ASC
     ''');
-    final map = <String, double>{};
+    final map = <String, int>{};
     for (final row in result) {
-      map[row['product_id'] as String] = (row['total'] as num?)?.toDouble() ?? 0;
+      map[row['product_id'] as String] = (row['total'] as int?) ?? 0;
     }
     return map;
   }
