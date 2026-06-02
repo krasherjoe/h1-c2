@@ -48,7 +48,7 @@ class AppTheme {
 
   static InputDecorationTheme _inputTheme(bool isDark, String style) {
     const radius = BorderRadius.all(Radius.circular(12));
-    const pad = EdgeInsetsDirectional.fromSTEB(12, 16, 12, 12);
+    const pad = EdgeInsetsDirectional.fromSTEB(12, 22, 12, 12);
     if (style == 'raised') {
       return InputDecorationTheme(
         filled: true,
