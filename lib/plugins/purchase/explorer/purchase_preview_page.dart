@@ -161,7 +161,7 @@ class _PurchasePreviewPageState extends State<PurchasePreviewPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('PP:${widget.purchase.purchaseType.label} プレビュー'),
+        title: Text('PUP:${widget.purchase.purchaseType.label} プレビュー'),
       ),
       body: Column(
         children: [

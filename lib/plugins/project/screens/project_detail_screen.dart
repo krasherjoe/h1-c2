@@ -111,19 +111,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final cs = Theme.of(context).colorScheme;
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('案件詳細')),
+        appBar: AppBar(title: const Text('PJ2:案件詳細')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     final project = _project;
     if (project == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('案件詳細')),
+        appBar: AppBar(title: const Text('PJ2:案件詳細')),
         body: const Center(child: Text('案件が見つかりません')),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(project.name)),
+      appBar: AppBar(title: Text('PJ2:${project.name}')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [

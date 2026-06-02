@@ -63,7 +63,7 @@ class _MemorandumPreviewScreenState extends State<MemorandumPreviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('覚書プレビュー'),
+        title: const Text('MP:覚書プレビュー'),
         actions: [
           IconButton(
             icon: const Icon(Icons.download),

@@ -164,7 +164,7 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(_isNew ? '新規仕入' : '仕入編集')),
+      appBar: AppBar(title: Text('PUE:${_isNew ? '新規仕入' : '仕入編集'}')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -51,7 +51,7 @@ class _MemorandumListScreenState extends State<MemorandumListScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('覚書 一覧'),
+        title: const Text('MN1:覚書一覧'),
         actions: [
           IconButton(
             icon: Icon(_filterStatus == null ? Icons.filter_list : Icons.filter_list_off),
