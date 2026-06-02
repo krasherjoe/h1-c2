@@ -2,10 +2,12 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../services/company_repository.dart';
+import '../../../services/preview_settings_service.dart';
 import '../../../utils/font_cache.dart';
 import '../models/purchase_model.dart';
 
 Future<pw.Document> generatePurchasePdf(PurchaseModel purchase) async {
+  final maxItems = await loadMaxPreviewItems();
   final pdf = pw.Document(title: '${purchase.purchaseType.label} ${purchase.documentNumber}');
 
   final ipaex = await loadIpaexFont();
@@ -99,7 +101,7 @@ Future<pw.Document> generatePurchasePdf(PurchaseModel purchase) async {
                 _cell('金額', isHeader: true, align: pw.TextAlign.right),
               ],
             ),
-            ...purchase.items.map((item) => pw.TableRow(
+            ...purchase.items.take(maxItems).map((item) => pw.TableRow(
                   children: [
                     _cell(item.productName),
                     _cell(amountFormatter.format(item.quantity), align: pw.TextAlign.right),
@@ -107,6 +109,15 @@ Future<pw.Document> generatePurchasePdf(PurchaseModel purchase) async {
                     _cell(amountFormatter.format(item.subtotal), align: pw.TextAlign.right),
                   ],
                 )),
+            if (purchase.items.length > maxItems)
+              pw.TableRow(
+                children: [
+                  _cell('他 ${purchase.items.length - maxItems} 件', isHeader: true),
+                  _cell('', align: pw.TextAlign.right),
+                  _cell('', align: pw.TextAlign.right),
+                  _cell('', align: pw.TextAlign.right),
+                ],
+              ),
           ],
         ),
         pw.SizedBox(height: 12),

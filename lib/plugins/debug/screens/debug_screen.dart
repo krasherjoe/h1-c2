@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/debug_service.dart';
 import '../services/update_service.dart';
+import '../../../services/preview_settings_service.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _DebugScreenState extends State<DebugScreen> {
   bool _downloading = false;
   String? _updateError;
   String? _downloadResult;
+  int _maxPages = kDefaultMaxPreviewPages;
 
   @override
   void initState() {
@@ -29,8 +31,15 @@ class _DebugScreenState extends State<DebugScreen> {
 
   Future<void> _init() async {
     await _service.loadConfig();
+    _maxPages = await loadMaxPreviewPages();
     if (!mounted) return;
     setState(() => _loading = false);
+  }
+
+  Future<void> _setMaxPages(int v) async {
+    await saveMaxPreviewPages(v);
+    if (!mounted) return;
+    setState(() => _maxPages = v);
   }
 
   Future<void> _sendDb() async {
@@ -113,6 +122,8 @@ class _DebugScreenState extends State<DebugScreen> {
           const SizedBox(height: 12),
           _actionsCard(cs),
           const SizedBox(height: 12),
+          _previewCard(cs),
+          const SizedBox(height: 12),
           _infoCard(),
           const SizedBox(height: 12),
           _updateCard(cs),
@@ -185,6 +196,38 @@ class _DebugScreenState extends State<DebugScreen> {
               onPressed: _sendTestReport,
               icon: const Icon(Icons.bug_report, size: 18),
               label: const Text('テストエラー報告'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _previewCard(ColorScheme cs) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('プレビュー設定', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text('最大ページ数:'),
+                const Spacer(),
+                Text('$_maxPages ページ (${_maxPages * kItemsPerPage} 明細)', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('デフォルト20 / 最小5 / 最大55', style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.6))),
+            Slider(
+              value: _maxPages.toDouble(),
+              min: 5,
+              max: 55,
+              divisions: 50,
+              label: '$_maxPages',
+              onChanged: (v) => _setMaxPages(v.round()),
             ),
           ],
         ),
