@@ -464,15 +464,15 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('PE:価格表', style: TextStyle(color: cs.onSurface)),
+            Text('PE:価格表', style: TextStyle(color: cs.onPrimary)),
             const SizedBox(width: 8),
             DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _currentYear,
                 isDense: true,
                 dropdownColor: cs.surfaceContainerHigh,
-                style: TextStyle(fontSize: 14, color: cs.onSurface),
-                icon: Icon(Icons.arrow_drop_down, color: cs.onSurfaceVariant),
+                style: TextStyle(fontSize: 14, color: cs.onPrimary),
+                icon: Icon(Icons.arrow_drop_down, color: cs.onPrimary.withValues(alpha: 0.7)),
                 onChanged: _years.isEmpty
                     ? null
                     : (v) async {
@@ -492,7 +492,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
             ),
             if (_currentYear == null)
               IconButton(
-                icon: Icon(Icons.add, size: 18, color: cs.onSurfaceVariant),
+                icon: Icon(Icons.add, size: 18, color: cs.onPrimary.withValues(alpha: 0.7)),
                 tooltip: '年度追加',
                 onPressed: _addYear,
               ),
@@ -503,19 +503,19 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
             Badge(
               label: Text('${_undoStack.undoCount}'),
               child: IconButton(
-                icon: Icon(Icons.undo, color: cs.onSurface),
+                icon: Icon(Icons.undo, color: cs.onPrimary),
                 tooltip: '元に戻す: ${_undoStack.lastDescription}',
                 onPressed: _undo,
               ),
             )
           else
             IconButton(
-              icon: Icon(Icons.undo, color: cs.onSurface.withValues(alpha: 0.3)),
+              icon: Icon(Icons.undo, color: cs.onPrimary.withValues(alpha: 0.3)),
               onPressed: null,
             ),
           IconButton(
             icon: Icon(Icons.redo,
-                color: _undoStack.canRedo ? cs.onSurface : cs.onSurface.withValues(alpha: 0.3)),
+                color: _undoStack.canRedo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
             onPressed: _undoStack.canRedo ? _redo : null,
           ),
         ],

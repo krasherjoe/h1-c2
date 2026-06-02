@@ -428,14 +428,14 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           else
             IconButton(
               icon: Icon(Icons.undo,
-                  color: cs.onSurface.withValues(alpha: 0.3)),
+                  color: cs.onPrimary.withValues(alpha: 0.3)),
               onPressed: null,
             ),
           IconButton(
             icon: Icon(Icons.redo,
                 color: _undoStack.canRedo
-                    ? null
-                    : cs.onSurface.withValues(alpha: 0.3)),
+                    ? cs.onPrimary
+                    : cs.onPrimary.withValues(alpha: 0.3)),
             onPressed: _undoStack.canRedo ? _redo : null,
           ),
         ],

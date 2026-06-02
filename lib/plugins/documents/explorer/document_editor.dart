@@ -197,18 +197,25 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Future<void> _selectCustomer() async {
-    final result = await showSearch<String>(
+    final customers = await _customerRepo.searchCustomers('');
+    if (!mounted) return;
+    final result = await showModalBottomSheet<Customer>(
       context: context,
-      delegate: _CustomerSearchDelegate(repo: _customerRepo),
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => _CustomerPickerSheet(
+        customers: customers,
+        repo: _customerRepo,
+      ),
     );
     if (result != null && mounted) {
-      final customer = await _customerRepo.getById(result);
-      if (customer != null && mounted) {
-        _wrapWithSnapshot(() {
-          _customerId = customer.id;
-          _customerName = customer.displayName.isNotEmpty ? customer.displayName : customer.formalName;
-        });
-      }
+      _wrapWithSnapshot(() {
+        _customerId = result.id;
+        _customerName = result.displayName.isNotEmpty ? result.displayName : result.formalName;
+      });
     }
   }
 
@@ -279,12 +286,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
         title: Text(_isNew ? 'DE:新規書類' : 'DE:書類編集'),
         actions: [
           IconButton(
-            icon: Icon(Icons.undo, color: _canUndo ? null : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+            icon: Icon(Icons.undo, color: _canUndo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
             tooltip: '元に戻す',
             onPressed: _canUndo ? _undo : null,
           ),
           IconButton(
-            icon: Icon(Icons.redo, color: _canRedo ? null : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+            icon: Icon(Icons.redo, color: _canRedo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
             tooltip: 'やり直す',
             onPressed: _canRedo ? _redo : null,
           ),
@@ -613,7 +620,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   String _formatMoney(int amount) =>
-    '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   String _formatQty(double qty) =>
     qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toStringAsFixed(1);
@@ -657,53 +664,100 @@ class _EditingItem {
   });
 }
 
-class _CustomerSearchDelegate extends SearchDelegate<String> {
+class _CustomerPickerSheet extends StatefulWidget {
+  final List<Customer> customers;
   final CustomerRepository repo;
-
-  _CustomerSearchDelegate({required this.repo});
-
-  @override
-  List<Widget>? buildActions(BuildContext context) => [
-    IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
-  ];
+  const _CustomerPickerSheet({required this.customers, required this.repo});
 
   @override
-  Widget? buildLeading(BuildContext context) => IconButton(
-    icon: const Icon(Icons.arrow_back),
-    onPressed: () => close(context, ''),
-  );
+  State<_CustomerPickerSheet> createState() => _CustomerPickerSheetState();
+}
+
+class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
+  late List<Customer> _filtered;
+  final _searchCtrl = TextEditingController();
 
   @override
-  Widget buildResults(BuildContext context) => _buildSearchResults(context);
+  void initState() {
+    super.initState();
+    _filtered = widget.customers;
+  }
 
   @override
-  Widget buildSuggestions(BuildContext context) => _buildSearchResults(context);
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
-  Widget _buildSearchResults(BuildContext context) {
-    if (query.isEmpty) return const Center(child: Text('顧客名を入力してください'));
-    return FutureBuilder<List>(
-      future: repo.searchCustomers(query),
-      builder: (ctx, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('エラー: ${snapshot.error}'));
-        }
-        final customers = snapshot.data ?? [];
-        if (customers.isEmpty) return const Center(child: Text('見つかりませんでした'));
-        return ListView.builder(
-          itemCount: customers.length,
-          itemBuilder: (ctx, i) {
-            final c = customers[i] as Customer;
-            return ListTile(
-              title: Text(c.displayName.isNotEmpty ? c.displayName : c.formalName),
-              subtitle: Text(c.id),
-              onTap: () => close(context, c.id),
-            );
-          },
-        );
-      },
+  void _search(String q) {
+    final query = q.trim().toLowerCase();
+    setState(() {
+      _filtered = query.isEmpty
+          ? widget.customers
+          : widget.customers.where((c) =>
+              c.displayName.toLowerCase().contains(query) ||
+              c.formalName.toLowerCase().contains(query)).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                Expanded(child: Text('取引先を選択', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface))),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: H1TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: '顧客名で検索',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onChanged: _search,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_filtered.isEmpty)
+            Expanded(child: Center(child: Text('見つかりませんでした', style: TextStyle(color: cs.onSurfaceVariant))))
+          else
+            Expanded(
+              child: ListView.builder(
+                controller: scrollCtrl,
+                itemCount: _filtered.length,
+                itemBuilder: (ctx, i) {
+                  final c = _filtered[i];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: cs.primaryContainer,
+                      child: Text(c.displayName.isNotEmpty ? c.displayName[0].toUpperCase() : '?',
+                          style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.bold)),
+                    ),
+                    title: Text(c.displayName.isNotEmpty ? c.displayName : c.formalName,
+                        style: TextStyle(fontWeight: FontWeight.w500, color: cs.onSurface)),
+                    subtitle: c.formalName.isNotEmpty ? Text(c.formalName, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)) : null,
+                    trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+                    onTap: () => Navigator.pop(ctx, c),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
