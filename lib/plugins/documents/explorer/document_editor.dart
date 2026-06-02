@@ -7,6 +7,7 @@ import '../../../models/customer_model.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../services/error_reporter.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -93,7 +94,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
       await _repo.save(doc);
       if (!mounted) return;
       Navigator.pop(context, true);
-    } catch (e) {
+    } catch (e, st) {
+      ErrorReporter.sendError(
+        message: '書類保存失敗: $e',
+        screenId: '/documents/editor',
+        stackTrace: st,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('保存エラー: $e')),

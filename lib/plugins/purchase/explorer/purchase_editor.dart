@@ -5,6 +5,7 @@ import '../services/purchase_repository.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../services/error_reporter.dart';
 
 class PurchaseEditor extends StatefulWidget {
   final PurchaseModel? purchase;
@@ -87,7 +88,12 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
       await _repo.save(purchase);
       if (!mounted) return;
       Navigator.pop(context, true);
-    } catch (e) {
+    } catch (e, st) {
+      ErrorReporter.sendError(
+        message: '仕入保存失敗: $e',
+        screenId: '/purchase/editor',
+        stackTrace: st,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('保存エラー: $e')),

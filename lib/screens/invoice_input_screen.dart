@@ -18,6 +18,7 @@ import '../services/permission_service.dart';
 import '../models/project_model.dart';
 import '../services/project_repository.dart';
 import '../services/sys_logger.dart';
+import '../services/error_reporter.dart';
 import '../widgets/document_card.dart';
 import 'invoice_input/widgets/invoice_body_content.dart';
 import 'invoice_input/widgets/invoice_saving_overlay.dart';
@@ -483,8 +484,13 @@ class _InvoiceInputFormState extends State<InvoiceInputForm> {
       await _loadEditLogs();
       _stateKey = calcStateKey(customer: _selectedCustomer, selectedDate: _selectedDate, includeTax: _includeTax, taxRate: _taxRate, documentType: _documentType, isDraft: _isDraft, items: _items);
       if (mounted) setState(() => _isViewMode = true);
-    } catch (e) {
+    } catch (e, st) {
       SysLogger.instance.logError('InvIn', e);
+      ErrorReporter.sendError(
+        message: '保存失敗: $e',
+        screenId: '/invoice/input',
+        stackTrace: st,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('保存に失敗しました: $e')));
       }
