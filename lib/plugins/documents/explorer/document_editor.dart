@@ -22,6 +22,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
   final _repo = DocumentRepository();
   final _customerRepo = CustomerRepository();
   final _productRepo = ProductRepository();
+  static const _maxUndo = 30;
 
   late DocumentType _selectedType;
   late String _customerId;
@@ -30,7 +31,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
   late List<_EditingItem> _items;
   bool _isSaving = false;
 
+  final _undoStack = <_EditorSnapshot>[];
+  final _redoStack = <_EditorSnapshot>[];
+
   bool get _isNew => widget.document == null;
+  bool get _canUndo => _undoStack.isNotEmpty;
+  bool get _canRedo => _redoStack.isNotEmpty;
 
   @override
   void initState() {
@@ -48,6 +54,56 @@ class _DocumentEditorState extends State<DocumentEditor> {
       unitPrice: item.unitPrice,
       taxRate: item.taxRate,
     )).toList();
+  }
+
+  void _takeSnapshot() {
+    _undoStack.add(_EditorSnapshot(
+      selectedType: _selectedType,
+      customerId: _customerId,
+      customerName: _customerName,
+      selectedDate: _selectedDate,
+      items: _items.map((e) => _EditingItem(
+        id: e.id, productId: e.productId, productName: e.productName,
+        quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
+      )).toList(),
+    ));
+    if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
+    _redoStack.clear();
+  }
+
+  void _undo() {
+    if (!_canUndo) return;
+    _redoStack.add(_EditorSnapshot(
+      selectedType: _selectedType,
+      customerId: _customerId,
+      customerName: _customerName,
+      selectedDate: _selectedDate,
+      items: _items.map((e) => _EditingItem(
+        id: e.id, productId: e.productId, productName: e.productName,
+        quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
+      )).toList(),
+    ));
+    final s = _undoStack.removeLast();
+    setState(() {
+      _selectedType = s.selectedType;
+      _customerId = s.customerId;
+      _customerName = s.customerName;
+      _selectedDate = s.selectedDate;
+      _items = s.items;
+    });
+  }
+
+  void _redo() {
+    if (!_canRedo) return;
+    _takeSnapshot();
+    final s = _redoStack.removeLast();
+    setState(() {
+      _selectedType = s.selectedType;
+      _customerId = s.customerId;
+      _customerName = s.customerName;
+      _selectedDate = s.selectedDate;
+      _items = s.items;
+    });
   }
 
   Future<void> _save() async {
@@ -109,6 +165,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
     }
   }
 
+  void _wrapWithSnapshot(VoidCallback fn) {
+    _takeSnapshot();
+    fn();
+  }
+
   Future<void> _selectCustomer() async {
     final result = await showSearch<String>(
       context: context,
@@ -117,7 +178,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
     if (result != null && mounted) {
       final customer = await _customerRepo.getById(result);
       if (customer != null && mounted) {
-        setState(() {
+        _wrapWithSnapshot(() {
           _customerId = customer.id;
           _customerName = customer.displayName.isNotEmpty ? customer.displayName : customer.formalName;
         });
@@ -134,7 +195,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       ),
     );
     if (result != null && mounted) {
-      setState(() => _items.add(result));
+      _wrapWithSnapshot(() => _items.add(result));
     }
   }
 
@@ -147,12 +208,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
       ),
     );
     if (result != null && mounted) {
-      setState(() => _items[index] = result);
+      _wrapWithSnapshot(() => _items[index] = result);
     }
   }
 
   void _removeItem(int index) {
-    setState(() => _items.removeAt(index));
+    _wrapWithSnapshot(() => _items.removeAt(index));
   }
 
   int get _total => _items.fold(0, (sum, item) => sum + (item.quantity * item.unitPrice).round());
@@ -161,7 +222,21 @@ class _DocumentEditorState extends State<DocumentEditor> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(_isNew ? '新規書類' : '書類編集')),
+      appBar: AppBar(
+        title: Text(_isNew ? '新規書類' : '書類編集'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.undo, color: _canUndo ? null : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+            tooltip: '元に戻す',
+            onPressed: _canUndo ? _undo : null,
+          ),
+          IconButton(
+            icon: Icon(Icons.redo, color: _canRedo ? null : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+            tooltip: 'やり直す',
+            onPressed: _canRedo ? _redo : null,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
@@ -187,13 +262,13 @@ class _DocumentEditorState extends State<DocumentEditor> {
         Text('伝票種別', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         DropdownButtonFormField<DocumentType>(
-          initialValue: _selectedType,
+          value: _selectedType,
           items: DocumentType.values.map((t) => DropdownMenuItem(
             value: t,
             child: Text(t.label),
           )).toList(),
           onChanged: (v) {
-            if (v != null) setState(() => _selectedType = v);
+            if (v != null) _wrapWithSnapshot(() => _selectedType = v);
           },
         ),
       ],
@@ -217,7 +292,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
             lastDate: DateTime(2100),
           );
           if (picked != null && mounted) {
-            setState(() => _selectedDate = picked);
+            _wrapWithSnapshot(() => _selectedDate = picked);
           }
         },
         child: Padding(
@@ -318,7 +393,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
                   icon: Icon(Icons.remove_circle_outline, size: 20, color: cs.onSurfaceVariant),
                   onPressed: () {
                     if (item.quantity > 1) {
-                      setState(() => item.quantity -= 1);
+                      _wrapWithSnapshot(() => item.quantity -= 1);
                     }
                   },
                   visualDensity: VisualDensity.compact,
@@ -339,7 +414,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
                 ),
                 IconButton(
                   icon: Icon(Icons.add_circle_outline, size: 20, color: cs.onSurfaceVariant),
-                  onPressed: () => setState(() => item.quantity += 1),
+                  onPressed: () => _wrapWithSnapshot(() => item.quantity += 1),
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -382,7 +457,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       ),
     );
     if (result != null && mounted) {
-      setState(() => _items[index].quantity = result);
+      _wrapWithSnapshot(() => _items[index].quantity = result);
     }
   }
 
@@ -448,6 +523,22 @@ class _DocumentEditorState extends State<DocumentEditor> {
 
   String _formatQty(double qty) =>
     qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toStringAsFixed(1);
+}
+
+class _EditorSnapshot {
+  final DocumentType selectedType;
+  final String customerId;
+  final String customerName;
+  final DateTime selectedDate;
+  final List<_EditingItem> items;
+
+  _EditorSnapshot({
+    required this.selectedType,
+    required this.customerId,
+    required this.customerName,
+    required this.selectedDate,
+    required this.items,
+  });
 }
 
 class _EditingItem {
