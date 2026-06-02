@@ -7,7 +7,7 @@ import '../models/document_model.dart';
 import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
 import '../../../services/error_reporter.dart';
 
-const _kPageFormat = PdfPageFormat(100, 120, marginAll: 8);
+const _kPreviewDpi = 96.0;
 
 class DocumentPreviewPage extends StatefulWidget {
   final DocumentModel document;
@@ -174,7 +174,8 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                   )
                 : PdfPreview(
                     key: ValueKey(_issued),
-                    initialPageFormat: _kPageFormat,
+                    initialPageFormat: PdfPageFormat.a4,
+                    dpi: _kPreviewDpi,
                     build: _stablePdfBuilder,
                     allowPrinting: false,
                     allowSharing: false,

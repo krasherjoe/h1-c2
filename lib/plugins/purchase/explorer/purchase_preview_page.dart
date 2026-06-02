@@ -7,7 +7,7 @@ import '../models/purchase_model.dart';
 import '../logic/purchase_pdf_generator.dart' show generatePurchasePdf;
 import '../../../services/error_reporter.dart';
 
-const _kPageFormat = PdfPageFormat(100, 120, marginAll: 8);
+const _kPreviewDpi = 96.0;
 
 class PurchasePreviewPage extends StatefulWidget {
   final PurchaseModel purchase;
@@ -174,7 +174,8 @@ class _PurchasePreviewPageState extends State<PurchasePreviewPage> {
                   )
                 : PdfPreview(
                     key: ValueKey(_issued),
-                    initialPageFormat: _kPageFormat,
+                    initialPageFormat: PdfPageFormat.a4,
+                    dpi: _kPreviewDpi,
                     build: _stablePdfBuilder,
                     allowPrinting: false,
                     allowSharing: false,
