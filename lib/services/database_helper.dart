@@ -11,7 +11,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 5;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -117,6 +117,11 @@ Future<void> _migrateToVersion(Database db, int version) async {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_sync_log_unsent ON sync_log(synced_at) WHERE synced_at IS NULL',
       );
+      break;
+    case 5:
+      try {
+        await db.execute('ALTER TABLE company_info ADD COLUMN closing_day INTEGER DEFAULT 20');
+      } catch (_) {}
       break;
     default:
       break;

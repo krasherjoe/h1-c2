@@ -83,6 +83,7 @@ class CompanyPlugin extends H1Plugin {
         bank_accounts TEXT,
         default_bank_account_index INTEGER DEFAULT 0,
         fiscal_year_start INTEGER DEFAULT 4,
+        closing_day INTEGER DEFAULT 20,
         is_exempt_taxpayer INTEGER DEFAULT 0
       )
     ''');

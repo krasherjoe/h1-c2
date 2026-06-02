@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Google Sign-In 用 Web OAuth クライアントID。
+        Google Cloud Console → 認証情報 → OAuth 2.0 クライアントID (Web アプリケーション型)
+        で作成した Client ID を以下に設定すること。
+    -->
+    <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+</resources>
