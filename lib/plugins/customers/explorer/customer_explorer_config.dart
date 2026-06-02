@@ -3,11 +3,11 @@ import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/customer_model.dart';
 import '../../../services/customer_repository.dart';
 import '../../../services/error_reporter.dart';
-import '../../../screens/customer_edit_screen.dart';
-import '../../../screens/customer_master/logic/customer_search_filter.dart';
-import '../../../screens/customer_master/logic/customer_import_export.dart';
-import '../../../screens/customer_master/logic/customer_dialogs.dart';
-import '../../../screens/customer_master/logic/customer_utils.dart';
+import '../screens/customer_edit_screen.dart';
+import '../logic/customer_search_filter.dart';
+import '../logic/customer_import_export.dart';
+import '../logic/customer_dialogs.dart';
+import '../logic/customer_utils.dart';
 import '../models/customer_explorer_item.dart';
 
 class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {

@@ -30,8 +30,6 @@ import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
 import 'services/input_style_service.dart';
 import 'screens/dashboard_screen.dart';
-import 'screens/invoice_input/invoice_input_form.dart';
-import 'screens/invoice_history/invoice_history_screen.dart';
 import 'screens/plugin_management_screen.dart';
 
 ThemeMode _loadThemeMode(SharedPreferences prefs) {
@@ -185,8 +183,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
       ),
       home: _buildHome(),
       routes: {
-        '/invoice/input': (_) => const InvoiceInputForm(),
-        '/invoice/history': (_) => const InvoiceHistoryScreen(),
+
         '/plugins': (_) => const PluginManagementScreen(),
         ...widget.registry.getAllRoutes(),
       },

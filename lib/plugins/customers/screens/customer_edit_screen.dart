@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../models/customer_model.dart';
-import '../services/customer_repository.dart';
-import '../services/permission_service.dart';
-import '../widgets/customer_rank_badge.dart';
-import '../widgets/screen_id_title.dart';
-import '../widgets/h1_text_field.dart';
-import '../widgets/h1_form_field.dart';
+import '../../../models/customer_model.dart';
+import '../../../services/customer_repository.dart';
+import '../../../services/permission_service.dart';
+import '../../../widgets/customer_rank_badge.dart';
+import '../../../widgets/screen_id_title.dart';
+import '../../../widgets/h1_text_field.dart';
+import '../../../widgets/h1_form_field.dart';
 
 class CustomerEditScreen extends StatefulWidget {
   final Customer? customer;

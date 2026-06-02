@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
-import '../../../screens/screen_p1_product_editor.dart';
-import '../../../screens/product_master/logic/product_data_loader.dart';
-import '../../../screens/product_master/logic/product_import_export.dart';
+import '../screens/product_editor_screen.dart';
+import '../logic/product_data_loader.dart';
+import '../logic/product_import_export.dart';
 import '../models/product_explorer_item.dart';
 
 class ProductExplorerConfig extends H1ExplorerConfig<ProductExplorerItem> {

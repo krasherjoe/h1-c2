@@ -7,7 +7,7 @@ import '../../../services/sys_logger.dart';
 import '../../../services/screen_id_logger.dart';
 import '../../../widgets/generic_csv_import_screen.dart';
 
-import '../../../screens/phonebook_selection_screen.dart';
+import '../screens/phonebook_selection_screen.dart';
 
 Future<void> importCsv(BuildContext context, VoidCallback onComplete) async {
   await Navigator.push(

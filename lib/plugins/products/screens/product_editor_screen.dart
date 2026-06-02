@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../models/product_model.dart';
-import '../services/product_repository.dart';
-import '../widgets/h1_form_field.dart';
+import '../../../models/product_model.dart';
+import '../../../services/product_repository.dart';
+import '../../../widgets/h1_form_field.dart';
 
 class ProductEditorScreen extends StatefulWidget {
   final Product? product;
