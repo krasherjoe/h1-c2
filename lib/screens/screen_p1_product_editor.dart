@@ -100,8 +100,9 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
+            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.onPrimary),
             child: _isSaving
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.onPrimary))
                 : const Text('保存', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],

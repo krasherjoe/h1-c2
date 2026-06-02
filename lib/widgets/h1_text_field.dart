@@ -113,21 +113,24 @@ class H1TextField extends StatelessWidget {
         );
         if (inputStyle != 'raised') return field;
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-                color: (isDark ? Colors.black : const Color(0xFF63666F))
-                    .withValues(alpha: 0.3),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: field,
+        return Material(
+          type: MaterialType.transparency,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                  color: (isDark ? Colors.black : const Color(0xFF63666F))
+                      .withValues(alpha: 0.3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: field,
+            ),
           ),
         );
       },
