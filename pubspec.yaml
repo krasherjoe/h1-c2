@@ -1,7 +1,7 @@
 name: h_1_core
 description: "販売アシスト1号 コア版 - 請求書・領収証発行、顧客・商品マスター"
 publish_to: 'none'
-version: 1.2.27+1
+version: 1.2.28+1
 
 environment:
   sdk: ^3.12.0
