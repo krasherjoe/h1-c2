@@ -6,6 +6,8 @@ import 'package:printing/printing.dart';
 import '../models/document_model.dart';
 import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
 import '../../../services/error_reporter.dart';
+import '../../../services/google_auth_service.dart';
+import '../../../services/gmail_sender.dart';
 
 const _kPreviewDpi = 96.0;
 
@@ -230,6 +232,35 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                             widget.onShare?.call();
                           }
                         : null,
+                  ),
+                  const SizedBox(width: 4),
+                  _ppButton(
+                    icon: Icons.email,
+                    label: 'メール',
+                    enabled: widget.showShare,
+                    onPressed: () async {
+                      final email = await GoogleAuthService.instance.getEmail();
+                      if (!mounted) return;
+                      
+                      if (email == null) {
+                        final ok = await GoogleAuthService.instance.signIn();
+                        if (!ok) return;
+                      }
+                      
+                      final bytes = await _buildPdfBytes();
+                      final success = await GmailSender.sendPdf(
+                        to: '',
+                        subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
+                        body: '${widget.document.documentType.label}を添付してお送りします。',
+                        pdfBytes: bytes,
+                        pdfFilename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(success ? '送信しました' : '送信できませんでした')),
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(width: 4),
                   _ppButton(

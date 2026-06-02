@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/debug_service.dart';
 import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
+import '../../../services/google_auth_service.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -163,6 +164,8 @@ class _DebugScreenState extends State<DebugScreen> {
               icon: const Icon(Icons.vpn_key, size: 18),
               label: Text(_service.isConfigured ? 'PAT変更' : 'PAT設定'),
             ),
+            const SizedBox(height: 12),
+            _googleAuthStatus(cs),
           ],
         ),
       ),
@@ -311,6 +314,52 @@ class _DebugScreenState extends State<DebugScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _googleAuthStatus(ColorScheme cs) {
+    return FutureBuilder<bool>(
+      future: GoogleAuthService.instance.isSignedIn(),
+      builder: (ctx, snap) {
+        final signedIn = snap.data ?? false;
+        return Column(
+          children: [
+            _statusRow(Icons.email, 'Gmail連携', signedIn),
+            if (signedIn)
+              FutureBuilder<String?>(
+                future: GoogleAuthService.instance.getEmail(),
+                builder: (ctx, snap2) => Padding(
+                  padding: const EdgeInsets.only(left: 26, bottom: 8),
+                  child: Row(
+                    children: [
+                      Text(snap2.data ?? '', style: const TextStyle(fontSize: 12)),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () async {
+                          await GoogleAuthService.instance.signOut();
+                          setState(() {});
+                        },
+                        child: const Text('ログアウト', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(left: 26),
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await GoogleAuthService.instance.signIn();
+                    setState(() {});
+                  },
+                  icon: const Icon(Icons.login, size: 18),
+                  label: const Text('Google認証'),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
