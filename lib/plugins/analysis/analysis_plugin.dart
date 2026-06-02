@@ -7,6 +7,7 @@ import '../../plugin_system/menu_item.dart';
 import 'screens/sales_analysis_screen.dart';
 import 'screens/product_profit_screen.dart';
 import 'screens/report_dashboard_screen.dart';
+import 'screens/monthly_report_screen.dart';
 
 class AnalysisPlugin extends H1Plugin {
   @override
@@ -62,6 +63,14 @@ class AnalysisPlugin extends H1Plugin {
       icon: Icons.dashboard,
       description: 'サマリーカード・月次グラフ',
     ),
+    const MenuItem(
+      id: 'FP1',
+      title: '月次収支',
+      route: '/analysis/monthly',
+      category: 'レポート',
+      icon: Icons.account_balance,
+      description: '月別売上・仕入・粗利・利益',
+    ),
   ];
 
   @override
@@ -69,6 +78,7 @@ class AnalysisPlugin extends H1Plugin {
     '/analysis/sales': (_) => const SalesAnalysisScreen(),
     '/analysis/profits': (_) => const ProductProfitScreen(),
     '/analysis/dashboard': (_) => const ReportDashboardScreen(),
+    '/analysis/monthly': (_) => const MonthlyReportScreen(),
   };
 
   @override

@@ -9,6 +9,8 @@ import 'screens/cash_flow_screen.dart';
 import 'screens/payment_processing_screen.dart';
 import 'screens/payment_schedule_screen.dart';
 import 'screens/payment_register_screen.dart';
+import 'screens/ledger_screen.dart';
+import 'screens/tax_report_screen.dart';
 import 'models/ar_models.dart';
 
 class ArPlugin extends H1Plugin {
@@ -82,6 +84,22 @@ class ArPlugin extends H1Plugin {
       icon: Icons.account_balance,
       description: '資金繰り表',
     ),
+    const MenuItem(
+      id: 'LR',
+      title: '台帳',
+      route: '/ar/ledger',
+      category: '売掛・支払',
+      icon: Icons.book,
+      description: '売掛台帳・買掛台帳',
+    ),
+    const MenuItem(
+      id: 'TX',
+      title: '税務レポート',
+      route: '/ar/tax',
+      category: '売掛・支払',
+      icon: Icons.calculate,
+      description: '消費税納付額計算',
+    ),
   ];
 
   @override
@@ -91,6 +109,8 @@ class ArPlugin extends H1Plugin {
     '/ar/schedules': (_) => const PaymentScheduleScreen(),
     '/ar/payment': (_) => const PaymentRegisterScreen(),
     '/ar/cashflow': (_) => const CashFlowScreen(),
+    '/ar/ledger': (_) => const LedgerScreen(),
+    '/ar/tax': (_) => const TaxReportScreen(),
   };
 
   @override
