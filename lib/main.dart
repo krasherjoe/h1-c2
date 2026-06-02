@@ -51,7 +51,8 @@ void main() async {
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     ErrorReporter.sendError(
-      message: details.summary.toString(),
+      message: '${details.exceptionAsString()} | ${details.library}',
+      detail: details.context?.toString(),
       stackTrace: details.stack,
     );
   };
