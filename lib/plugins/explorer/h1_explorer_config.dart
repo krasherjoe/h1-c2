@@ -34,6 +34,10 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
   DateTime? dateFrom;
   DateTime? dateTo;
 
+  /// タイプ別フィルター
+  String typeFilter = '';
+  List<({String value, String label, IconData icon})> get typeFilterOptions => [];
+
   List<({String id, IconData icon, String label})> get overflowActions => [];
   void onOverflowAction(
     BuildContext context,

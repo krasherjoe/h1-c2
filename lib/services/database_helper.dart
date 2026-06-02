@@ -10,7 +10,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -92,6 +92,11 @@ Future<void> upgradeDatabase(Database db, int oldVersion, int newVersion) async 
 Future<void> _migrateToVersion(Database db, int version) async {
   switch (version) {
     case 2:
+      break;
+    case 3:
+      try {
+        await db.execute('ALTER TABLE projects ADD COLUMN contract_months INTEGER');
+      } catch (_) {}
       break;
     default:
       break;

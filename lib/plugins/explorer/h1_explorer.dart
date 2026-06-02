@@ -31,7 +31,8 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   DateTime? _dateTo;
 
   bool get _hasActiveFilters =>
-      _statusFilter.isNotEmpty || _dateFrom != null || _dateTo != null;
+      _statusFilter.isNotEmpty || _dateFrom != null || _dateTo != null ||
+      widget.config.typeFilter.isNotEmpty;
 
   @override
   void initState() {
@@ -73,6 +74,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
 
   void _clearFilters() {
     setState(() {
+      widget.config.typeFilter = '';
       _statusFilter = '';
       _dateFrom = null;
       _dateTo = null;
@@ -283,10 +285,43 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
 
   Widget _buildFilterBar() {
     final cs = Theme.of(context).colorScheme;
+    final typeOptions = widget.config.typeFilterOptions;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         children: [
+          if (typeOptions.isNotEmpty) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: ToggleButtons(
+                    isSelected: typeOptions.map((o) => widget.config.typeFilter == o.value).toList(),
+                    onPressed: (i) {
+                      setState(() {
+                        widget.config.typeFilter = typeOptions[i].value;
+                      });
+                      _loadItems();
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    constraints: const BoxConstraints(minHeight: 32, minWidth: 52),
+                    textStyle: const TextStyle(fontSize: 11),
+                    children: typeOptions.map((o) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(o.icon, size: 14),
+                          const SizedBox(width: 3),
+                          Text(o.label),
+                        ],
+                      ),
+                    )).toList(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
             children: [
               Expanded(
@@ -379,6 +414,14 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
+            if (widget.config.typeFilter.isNotEmpty)
+              _filterChip(cs, widget.config.typeFilterOptions
+                  .where((o) => o.value == widget.config.typeFilter)
+                  .map((o) => o.label)
+                  .firstOrNull ?? widget.config.typeFilter, () {
+                setState(() => widget.config.typeFilter = '');
+                _loadItems();
+              }),
             if (_statusFilter.isNotEmpty)
               _filterChip(cs, _statusFilter == 'draft' ? '下書き' : '確定', () {
                 setState(() => _statusFilter = '');

@@ -25,6 +25,8 @@ import 'plugins/conversion/services/data_migration_service.dart';
 import 'plugins/conversion/screens/conversion_guard_screen.dart';
 import 'plugins/audit/audit_plugin.dart';
 import 'plugins/debug/debug_plugin.dart';
+import 'plugins/project/project_plugin.dart';
+import 'plugins/memorandum/memorandum_plugin.dart';
 import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
@@ -88,6 +90,8 @@ void main() async {
   await registry.register(ConversionPlugin());
   await registry.register(AuditPlugin());
   await registry.register(DebugPlugin());
+  await registry.register(ProjectPlugin());
+  await registry.register(MemorandumPlugin());
 
   final stateService = PluginStateService();
   final states = await stateService.loadAll(

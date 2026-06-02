@@ -6,6 +6,8 @@ import '../../../services/customer_repository.dart';
 import '../../../models/customer_model.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
+import '../../../services/project_repository.dart';
+import '../../../models/project_model.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
 
@@ -22,6 +24,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
   final _repo = DocumentRepository();
   final _customerRepo = CustomerRepository();
   final _productRepo = ProductRepository();
+  final _projectRepo = ProjectRepository();
   static const _maxUndo = 30;
 
   late DocumentType _selectedType;
@@ -29,6 +32,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
   late String _customerName;
   late DateTime _selectedDate;
   late List<_EditingItem> _items;
+  String? _projectId;
+  String? _projectName;
   bool _isSaving = false;
 
   final _undoStack = <_EditorSnapshot>[];
@@ -46,6 +51,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
     _customerId = doc?.customerId ?? '';
     _customerName = doc?.customerName ?? '';
     _selectedDate = doc?.date ?? DateTime.now();
+    _projectId = doc?.projectId;
     _items = (doc?.items ?? []).map((item) => _EditingItem(
       id: item.id,
       productId: item.productId,
@@ -54,6 +60,15 @@ class _DocumentEditorState extends State<DocumentEditor> {
       unitPrice: item.unitPrice,
       taxRate: item.taxRate,
     )).toList();
+    if (_projectId != null) _loadProjectName();
+  }
+
+  Future<void> _loadProjectName() async {
+    if (_projectId == null) return;
+    final project = await _projectRepo.getById(_projectId!);
+    if (project != null && mounted) {
+      setState(() => _projectName = project.name);
+    }
   }
 
   void _takeSnapshot() {
@@ -62,6 +77,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
       customerId: _customerId,
       customerName: _customerName,
       selectedDate: _selectedDate,
+      projectId: _projectId,
+      projectName: _projectName,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
@@ -78,6 +95,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
       customerId: _customerId,
       customerName: _customerName,
       selectedDate: _selectedDate,
+      projectId: _projectId,
+      projectName: _projectName,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
@@ -89,6 +108,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _customerId = s.customerId;
       _customerName = s.customerName;
       _selectedDate = s.selectedDate;
+      _projectId = s.projectId;
+      _projectName = s.projectName;
       _items = s.items;
     });
   }
@@ -102,6 +123,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _customerId = s.customerId;
       _customerName = s.customerName;
       _selectedDate = s.selectedDate;
+      _projectId = s.projectId;
+      _projectName = s.projectName;
       _items = s.items;
     });
   }
@@ -137,6 +160,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
         date: _selectedDate,
         total: total,
         status: 'draft',
+        projectId: _projectId,
         items: _items.map((e) => DocumentItem(
           id: e.id,
           productId: e.productId,
@@ -183,6 +207,31 @@ class _DocumentEditorState extends State<DocumentEditor> {
           _customerName = customer.displayName.isNotEmpty ? customer.displayName : customer.formalName;
         });
       }
+    }
+  }
+
+  Future<void> _selectProject() async {
+    final projects = await _projectRepo.getAll();
+    if (!mounted) return;
+
+    final filtered = _customerId.isNotEmpty
+        ? projects.where((p) => p.customerId == _customerId).toList()
+        : projects;
+
+    final result = await showDialog<Project>(
+      context: context,
+      builder: (ctx) => _ProjectPickerDialog(
+        projects: filtered,
+        projectRepo: _projectRepo,
+        customerId: _customerId,
+        customerName: _customerName,
+      ),
+    );
+    if (result != null && mounted) {
+      _wrapWithSnapshot(() {
+        _projectId = result.id;
+        _projectName = result.name;
+      });
     }
   }
 
@@ -245,6 +294,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
           _buildHeaderCard(cs),
           const SizedBox(height: 12),
           _buildCustomerCard(cs),
+          const SizedBox(height: 12),
+          _buildProjectCard(cs),
           const SizedBox(height: 20),
           _buildItemsSection(cs),
           const SizedBox(height: 20),
@@ -333,6 +384,45 @@ class _DocumentEditorState extends State<DocumentEditor> {
         subtitle: _customerName.isEmpty ? null : Text('タップして変更', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
         onTap: _selectCustomer,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildProjectCard(ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: ListTile(
+        leading: Icon(Icons.workspaces, color: cs.secondary),
+        title: Text(
+          _projectName ?? '案件に紐付け',
+          style: TextStyle(fontWeight: FontWeight.w500, color: _projectName != null ? cs.onSurface : cs.onSurfaceVariant),
+        ),
+        subtitle: _projectName == null ? null : Text('タップして変更', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_projectId != null)
+              IconButton(
+                icon: Icon(Icons.close, size: 18, color: cs.onSurfaceVariant),
+                onPressed: () => _wrapWithSnapshot(() {
+                  _projectId = null;
+                  _projectName = null;
+                }),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+          ],
+        ),
+        onTap: _selectProject,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -530,6 +620,8 @@ class _EditorSnapshot {
   final String customerId;
   final String customerName;
   final DateTime selectedDate;
+  final String? projectId;
+  final String? projectName;
   final List<_EditingItem> items;
 
   _EditorSnapshot({
@@ -537,6 +629,8 @@ class _EditorSnapshot {
     required this.customerId,
     required this.customerName,
     required this.selectedDate,
+    this.projectId,
+    this.projectName,
     required this.items,
   });
 }
@@ -606,6 +700,112 @@ class _CustomerSearchDelegate extends SearchDelegate<String> {
           },
         );
       },
+    );
+  }
+}
+
+class _ProjectPickerDialog extends StatefulWidget {
+  final List<Project> projects;
+  final ProjectRepository projectRepo;
+  final String customerId;
+  final String customerName;
+
+  const _ProjectPickerDialog({
+    required this.projects,
+    required this.projectRepo,
+    required this.customerId,
+    required this.customerName,
+  });
+
+  @override
+  State<_ProjectPickerDialog> createState() => _ProjectPickerDialogState();
+}
+
+class _ProjectPickerDialogState extends State<_ProjectPickerDialog> {
+  late List<Project> _projects;
+
+  @override
+  void initState() {
+    super.initState();
+    _projects = widget.projects;
+  }
+
+  Future<void> _createNewProject() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('新規案件'),
+        content: H1TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: '案件名'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.pop(ctx, controller.text.trim());
+              }
+            },
+            child: const Text('作成'),
+          ),
+        ],
+      ),
+    );
+    if (name == null || !mounted) return;
+    try {
+      final id = await widget.projectRepo.createProject(
+        name: name,
+        customerId: widget.customerId,
+        customerName: widget.customerName,
+      );
+      final project = await widget.projectRepo.getById(id);
+      if (project != null && mounted) {
+        setState(() => _projects = [project, ..._projects]);
+        Navigator.pop(context, project);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('作成エラー: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('案件を選択'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: _projects.isEmpty
+          ? const Center(child: Text('案件がありません'))
+          : ListView.builder(
+              shrinkWrap: true,
+              itemCount: _projects.length,
+              itemBuilder: (ctx, i) {
+                final p = _projects[i];
+                return ListTile(
+                  leading: const Icon(Icons.workspaces),
+                  title: Text(p.name),
+                  subtitle: Text('${p.customerName ?? ""}  ${p.pipelineStage}'),
+                  onTap: () => Navigator.pop(context, p),
+                );
+              },
+            ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _createNewProject,
+          child: const Text('新規案件作成'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('キャンセル'),
+        ),
+      ],
     );
   }
 }

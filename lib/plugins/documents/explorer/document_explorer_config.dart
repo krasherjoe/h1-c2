@@ -6,12 +6,22 @@ import 'document_viewer.dart';
 import 'document_editor.dart';
 
 class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
-  final DocumentType? filterType;
+  DocumentExplorerConfig();
 
-  DocumentExplorerConfig({this.filterType});
+  static const _typeOptions = [
+    (value: '', label: 'すべて', icon: Icons.all_inbox),
+    (value: 'invoice', label: '請求書', icon: Icons.receipt_long),
+    (value: 'receipt', label: '領収書', icon: Icons.receipt),
+    (value: 'estimation', label: '見積書', icon: Icons.request_quote),
+    (value: 'order', label: '受注書', icon: Icons.shopping_cart_checkout),
+    (value: 'delivery', label: '納品書', icon: Icons.local_shipping),
+  ];
 
   @override
-  String get explorerTitle => filterType != null ? '${filterType!.label}一覧' : 'D1:伝票管理';
+  String get explorerTitle => 'D1:伝票管理';
+
+  @override
+  List<({String value, String label, IconData icon})> get typeFilterOptions => _typeOptions;
 
   @override
   String get searchHint => '伝票番号・顧客名で検索';
@@ -25,6 +35,10 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   @override
   Future<List<DocumentModel>> fetchItems(String query) async {
     final repo = DocumentRepository();
+    DocumentType? filterType;
+    if (typeFilter.isNotEmpty) {
+      filterType = documentTypeFromString(typeFilter);
+    }
     return repo.fetchAll(
       filterType: filterType,
       query: query,

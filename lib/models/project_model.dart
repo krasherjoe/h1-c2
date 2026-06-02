@@ -50,6 +50,7 @@ class Project {
   final ProjectStatus status;
   final DateTime? startDate;
   final DateTime? endDate;
+  final int? contractMonths;
   final String? notes;
   final int totalAmount;
   final DateTime createdAt;
@@ -68,6 +69,7 @@ class Project {
     this.status = ProjectStatus.active,
     this.startDate,
     this.endDate,
+    this.contractMonths,
     this.notes,
     this.totalAmount = 0,
     required this.createdAt,
@@ -79,6 +81,19 @@ class Project {
     this.currentStageIndex = 0,
   });
 
+  int get elapsedMonths {
+    if (startDate == null) return 0;
+    final now = DateTime.now();
+    return (now.year - startDate!.year) * 12 + now.month - startDate!.month;
+  }
+
+  double get timeProgress {
+    if (startDate == null || contractMonths == null || contractMonths! <= 0) return 0;
+    return (elapsedMonths / contractMonths!).clamp(0.0, 1.0);
+  }
+
+  bool get isOverdue => endDate != null && DateTime.now().isAfter(endDate!);
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'name': name,
@@ -87,6 +102,7 @@ class Project {
         'status': status.name,
         'start_date': startDate?.toIso8601String(),
         'end_date': endDate?.toIso8601String(),
+        'contract_months': contractMonths,
         'notes': notes,
         'total_amount': totalAmount,
         'created_at': createdAt.toIso8601String(),
@@ -119,6 +135,7 @@ class Project {
       endDate: map['end_date'] != null
           ? DateTime.tryParse(map['end_date'] as String? ?? '')
           : null,
+      contractMonths: map['contract_months'] as int?,
       notes: map['notes'] as String?,
       totalAmount: map['total_amount'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String? ?? ''),
@@ -142,6 +159,7 @@ class Project {
     ProjectStatus? status,
     DateTime? startDate,
     DateTime? endDate,
+    int? contractMonths,
     String? notes,
     int? totalAmount,
     DateTime? createdAt,
@@ -160,6 +178,7 @@ class Project {
       status: status ?? this.status,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      contractMonths: contractMonths ?? this.contractMonths,
       notes: notes ?? this.notes,
       totalAmount: totalAmount ?? this.totalAmount,
       createdAt: createdAt ?? this.createdAt,

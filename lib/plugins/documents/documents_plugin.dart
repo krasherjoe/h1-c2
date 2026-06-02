@@ -17,7 +17,8 @@ const _kDocTable = '''
     date TEXT NOT NULL,
     total INTEGER DEFAULT 0,
     status TEXT DEFAULT 'draft',
-    linked_document_id TEXT
+    linked_document_id TEXT,
+    project_id TEXT
   )
 ''';
 
@@ -68,6 +69,11 @@ class DocumentsPlugin extends H1Plugin {
     for (final sql in _kMissingTables) {
       try { await db.execute(sql); } catch (_) {}
     }
+    try {
+      await db.execute(
+        'ALTER TABLE documents ADD COLUMN project_id TEXT',
+      );
+    } catch (_) {}
   }
 
   @override

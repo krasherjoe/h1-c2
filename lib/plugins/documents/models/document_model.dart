@@ -38,6 +38,7 @@ class DocumentModel extends H1ExplorerItem {
   final int total;
   final String status;
   final String? linkedDocumentId;
+  final String? projectId;
   final List<DocumentItem> items;
 
   DocumentModel({
@@ -50,6 +51,7 @@ class DocumentModel extends H1ExplorerItem {
     this.total = 0,
     this.status = 'draft',
     this.linkedDocumentId,
+    this.projectId,
     this.items = const [],
   });
 
@@ -81,6 +83,7 @@ class DocumentModel extends H1ExplorerItem {
     int? total,
     String? status,
     String? linkedDocumentId,
+    String? projectId,
     List<DocumentItem>? items,
   }) {
     return DocumentModel(
@@ -93,6 +96,7 @@ class DocumentModel extends H1ExplorerItem {
       total: total ?? this.total,
       status: status ?? this.status,
       linkedDocumentId: linkedDocumentId ?? this.linkedDocumentId,
+      projectId: projectId ?? this.projectId,
       items: items ?? this.items,
     );
   }
@@ -107,6 +111,7 @@ class DocumentModel extends H1ExplorerItem {
     'total': total,
     'status': status,
     'linked_document_id': linkedDocumentId,
+    'project_id': projectId,
   };
 
   factory DocumentModel.fromMap(Map<String, dynamic> map, {List<DocumentItem> items = const []}) {
@@ -120,6 +125,7 @@ class DocumentModel extends H1ExplorerItem {
       total: map['total'] as int? ?? 0,
       status: map['status'] as String? ?? 'draft',
       linkedDocumentId: map['linked_document_id'] as String?,
+      projectId: map['project_id'] as String?,
       items: items,
     );
   }
