@@ -98,7 +98,6 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
               decoration: const InputDecoration(
                 labelText: '顧客',
                 suffixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
               child: Text(_customerName.isNotEmpty ? _customerName : 'タップして選択'),
             ),
@@ -108,7 +107,6 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
             controller: _amountController,
             decoration: const InputDecoration(
               labelText: '入金額',
-              border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
           ),
@@ -129,7 +127,6 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
               decoration: const InputDecoration(
                 labelText: '日付',
                 suffixIcon: Icon(Icons.calendar_today),
-                border: OutlineInputBorder(),
               ),
               child: Text(
                 '${_selectedDate.year}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.day.toString().padLeft(2, '0')}',
@@ -141,7 +138,6 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
             controller: _noteController,
             decoration: const InputDecoration(
               labelText: '備考',
-              border: OutlineInputBorder(),
             ),
             maxLines: 2,
           ),

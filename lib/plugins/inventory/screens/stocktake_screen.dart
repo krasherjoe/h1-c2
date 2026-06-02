@@ -96,7 +96,6 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               hintText: '実在庫',
-                              border: OutlineInputBorder(),
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                             ),

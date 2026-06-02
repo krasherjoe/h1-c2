@@ -97,7 +97,6 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
               decoration: const InputDecoration(
                 labelText: '商品',
                 suffixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
               child: Text(_productName.isNotEmpty ? _productName : 'タップして選択'),
             ),
@@ -107,7 +106,6 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
             controller: _qtyController,
             decoration: const InputDecoration(
               labelText: '増減数（正=増、負=減）',
-              border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
           ),
@@ -116,7 +114,6 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
             controller: _noteController,
             decoration: const InputDecoration(
               labelText: '理由',
-              border: OutlineInputBorder(),
             ),
             maxLines: 2,
           ),

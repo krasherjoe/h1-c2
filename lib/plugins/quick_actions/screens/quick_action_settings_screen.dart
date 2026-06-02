@@ -73,7 +73,6 @@ class _QuickActionSettingsScreenState extends State<QuickActionSettingsScreen> {
                         controller: nameCtrl,
                         decoration: const InputDecoration(
                           labelText: 'ページ名',
-                          border: OutlineInputBorder(),
                         ),
                         onChanged: (v) {
                           _pages[index].name = v;

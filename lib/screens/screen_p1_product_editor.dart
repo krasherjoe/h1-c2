@@ -122,7 +122,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       controller: _nameCtl,
                       decoration: const InputDecoration(
                         labelText: '商品名 *',
-                        border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.inventory_2),
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty) ? '商品名は必須です' : null,
@@ -135,7 +134,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                             controller: _priceCtl,
                             decoration: const InputDecoration(
                               labelText: '単価',
-                              border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.monetization_on),
                               prefixText: '¥ ',
                             ),
@@ -148,7 +146,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                             controller: _wholesaleCtl,
                             decoration: const InputDecoration(
                               labelText: '仕入価格',
-                              border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.shopping_cart),
                               prefixText: '¥ ',
                             ),
@@ -174,7 +171,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       controller: _barcodeCtl,
                       decoration: const InputDecoration(
                         labelText: 'バーコード',
-                        border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.qr_code),
                       ),
                     ),
@@ -183,7 +179,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       controller: _modelCtl,
                       decoration: const InputDecoration(
                         labelText: '型番',
-                        border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.tag),
                       ),
                     ),
@@ -192,7 +187,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       controller: _manufacturerCtl,
                       decoration: const InputDecoration(
                         labelText: 'メーカー',
-                        border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.factory),
                       ),
                     ),
@@ -201,7 +195,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       controller: _categoryCtl,
                       decoration: const InputDecoration(
                         labelText: 'カテゴリ',
-                        border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.folder),
                       ),
                     ),
@@ -210,7 +203,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       controller: _supplierCtl,
                       decoration: const InputDecoration(
                         labelText: '仕入先',
-                        border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person),
                       ),
                     ),
@@ -219,7 +211,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       controller: _stockCtl,
                       decoration: const InputDecoration(
                         labelText: '在庫数',
-                        border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.inventory),
                       ),
                       keyboardType: TextInputType.number,

@@ -69,7 +69,6 @@ class AppTheme {
       fillColor: Colors.white,
       isDense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      border: OutlineInputBorder(),
     );
   }
 }

@@ -185,7 +185,6 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
     return TextField(
       decoration: const InputDecoration(
         labelText: '仕入先',
-        border: OutlineInputBorder(),
       ),
       controller: TextEditingController(text: _supplierName),
       onChanged: (v) => _supplierName = v,
@@ -209,7 +208,6 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
         decoration: const InputDecoration(
           labelText: '日付',
           suffixIcon: Icon(Icons.calendar_today),
-          border: OutlineInputBorder(),
         ),
         child: Text(
           '${_selectedDate.year}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.day.toString().padLeft(2, '0')}',

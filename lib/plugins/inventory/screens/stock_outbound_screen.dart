@@ -98,7 +98,6 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
               decoration: const InputDecoration(
                 labelText: '商品',
                 suffixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
               child: Text(_productName.isNotEmpty ? _productName : 'タップして選択'),
             ),
@@ -108,7 +107,6 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
             controller: _qtyController,
             decoration: const InputDecoration(
               labelText: '数量',
-              border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
           ),
@@ -129,7 +127,6 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
               decoration: const InputDecoration(
                 labelText: '日付',
                 suffixIcon: Icon(Icons.calendar_today),
-                border: OutlineInputBorder(),
               ),
               child: Text(
                 '${_selectedDate.year}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.day.toString().padLeft(2, '0')}',
@@ -141,7 +138,6 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
             controller: _noteController,
             decoration: const InputDecoration(
               labelText: 'メモ',
-              border: OutlineInputBorder(),
             ),
             maxLines: 2,
           ),

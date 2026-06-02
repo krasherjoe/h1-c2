@@ -93,7 +93,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     controller: _nameController,
                     decoration: const InputDecoration(
                       labelText: '会社名',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) => v == null || v.trim().isEmpty ? '必須です' : null,
                   ),
@@ -103,7 +102,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     decoration: const InputDecoration(
                       labelText: '郵便番号',
                       hintText: '000-0000',
-                      border: OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -111,7 +109,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     controller: _addressController,
                     decoration: const InputDecoration(
                       labelText: '住所',
-                      border: OutlineInputBorder(),
                     ),
                     maxLines: 2,
                   ),
@@ -120,7 +117,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     controller: _telController,
                     decoration: const InputDecoration(
                       labelText: '電話番号',
-                      border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
@@ -129,7 +125,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     controller: _faxController,
                     decoration: const InputDecoration(
                       labelText: 'FAX',
-                      border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
@@ -138,7 +133,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'メールアドレス',
-                      border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),

@@ -97,7 +97,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 controller: TextEditingController(text: _prefix),
                 decoration: const InputDecoration(
                   hintText: '例: SK-',
-                  border: OutlineInputBorder(),
                   isDense: true,
                 ),
                 onSubmitted: (v) {
@@ -146,6 +145,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onSelectionChanged: (v) => _setInputStyle(v.first),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'テスト入力',
+                prefixIcon: Icon(Icons.text_fields),
+              ),
+            ),
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.webhook),
@@ -160,7 +168,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: TextEditingController(text: _webhookUrl),
                     decoration: const InputDecoration(
                       hintText: 'https://mm.ka.sugeee.com/hooks/xxx',
-                      border: OutlineInputBorder(),
                       isDense: true,
                     ),
                     style: const TextStyle(fontSize: 12),

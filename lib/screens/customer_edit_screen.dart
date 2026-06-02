@@ -231,7 +231,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: '表示名（略称）*',
                         hintText: '例: 佐々木製作所',
                         prefixIcon: Icon(Icons.short_text),
-                        border: OutlineInputBorder(),
                       ),
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? '表示名は必須です' : null,
@@ -248,7 +247,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: '正式名称 *',
                         hintText: '例: 株式会社 佐々木製作所',
                         prefixIcon: Icon(Icons.text_fields),
-                        border: OutlineInputBorder(),
                       ),
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? '正式名称は必須です' : null,
@@ -285,7 +283,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                       decoration: const InputDecoration(
                         labelText: '敬称',
                         prefixIcon: Icon(Icons.title),
-                        border: OutlineInputBorder(),
                       ),
                       items: const [
                         DropdownMenuItem(
@@ -319,7 +316,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: '部署名',
                         hintText: '例: 営業部',
                         prefixIcon: Icon(Icons.corporate_fare),
-                        border: OutlineInputBorder(),
                       ),
                     ),
                   ],
@@ -345,7 +341,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: '住所',
                         hintText: '例: 東京都千代田区...',
                         prefixIcon: Icon(Icons.location_on),
-                        border: OutlineInputBorder(),
                       ),
                       maxLines: 2,
                     ),
@@ -356,7 +351,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: '電話番号',
                         hintText: '例: 03-1234-5678',
                         prefixIcon: Icon(Icons.phone),
-                        border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.phone,
                     ),
@@ -367,7 +361,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: 'メールアドレス',
                         hintText: '例: info@example.com',
                         prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -394,7 +387,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: '締日',
                         hintText: '未設定の場合は空欄',
                         prefixIcon: Icon(Icons.calendar_today),
-                        border: OutlineInputBorder(),
                       ),
                       items: [
                         ...List.generate(31, (i) => i + 1).map((day) =>
@@ -414,7 +406,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                         labelText: '支払日',
                         hintText: '未設定の場合は空欄',
                         prefixIcon: Icon(Icons.payment),
-                        border: OutlineInputBorder(),
                       ),
                       items: [
                         ...List.generate(31, (i) => i + 1).map((day) =>
@@ -533,7 +524,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                           labelText: 'インデックス1',
                           hintText: 'あ',
                           prefixIcon: Icon(Icons.looks_one),
-                          border: OutlineInputBorder(),
                           counterText: '',
                         ),
                       ),
@@ -547,7 +537,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                           labelText: 'インデックス2（任意）',
                           hintText: '',
                           prefixIcon: Icon(Icons.looks_two),
-                          border: OutlineInputBorder(),
                           counterText: '',
                         ),
                       ),

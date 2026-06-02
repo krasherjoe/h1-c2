@@ -19,7 +19,6 @@ Future<Project?> showQuickProjectCreateDialog(
         decoration: const InputDecoration(
           labelText: '案件名',
           hintText: '例：サーバー導入プロジェクト',
-          border: OutlineInputBorder(),
         ),
         autofocus: true,
       ),

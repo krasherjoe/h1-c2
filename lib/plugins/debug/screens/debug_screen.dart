@@ -61,7 +61,6 @@ class _DebugScreenState extends State<DebugScreen> {
           decoration: const InputDecoration(
             labelText: 'Personal Access Token',
             hintText: 'Mattermost の PAT を入力',
-            border: OutlineInputBorder(),
           ),
         ),
         actions: [

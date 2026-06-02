@@ -555,7 +555,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             onChanged: (_) => _pushHistory(),
             decoration: const InputDecoration(
               labelText: "取引先 正式名称",
-              border: OutlineInputBorder(),
             ),
             style: TextStyle(color: textColor),
           ),
@@ -566,7 +565,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             maxLines: 2,
             decoration: const InputDecoration(
               labelText: "備考",
-              border: OutlineInputBorder(),
             ),
             style: TextStyle(color: textColor),
           ),

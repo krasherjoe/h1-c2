@@ -64,7 +64,6 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                     decoration: const InputDecoration(
                       hintText: '商品名・バーコードで検索',
                       prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
                       isDense: true,
                     ),
                     onChanged: (v) => setState(() => _query = v),
