@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/product_model.dart';
+import '../../../models/product_category_model.dart';
 import '../../../services/product_repository.dart';
+import '../../../services/product_category_repository.dart';
 import '../../../widgets/h1_form_field.dart';
+import 'category_picker_dialog.dart';
 
 class ProductEditorScreen extends StatefulWidget {
   final Product? product;
@@ -20,9 +23,10 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
   final _barcodeCtl = TextEditingController();
   final _modelCtl = TextEditingController();
   final _manufacturerCtl = TextEditingController();
-  final _categoryCtl = TextEditingController();
   final _supplierCtl = TextEditingController();
   final _stockCtl = TextEditingController();
+  String? _selectedCategoryId;
+  String? _selectedCategoryPath;
   bool _isLocked = false;
   bool _isSaving = false;
 
@@ -39,7 +43,8 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
       _barcodeCtl.text = p.barcode ?? '';
       _modelCtl.text = p.modelNumber ?? '';
       _manufacturerCtl.text = p.manufacturer ?? '';
-      _categoryCtl.text = p.category ?? '';
+      _selectedCategoryId = p.categoryId;
+      _selectedCategoryPath = p.category;
       _supplierCtl.text = p.supplierName ?? '';
       _stockCtl.text = p.stockQuantity?.toString() ?? '';
       _isLocked = p.isLocked;
@@ -54,7 +59,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
     _barcodeCtl.dispose();
     _modelCtl.dispose();
     _manufacturerCtl.dispose();
-    _categoryCtl.dispose();
     _supplierCtl.dispose();
     _stockCtl.dispose();
     super.dispose();
@@ -72,7 +76,8 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
         barcode: _barcodeCtl.text.trim().isEmpty ? null : _barcodeCtl.text.trim(),
         modelNumber: _modelCtl.text.trim().isEmpty ? null : _modelCtl.text.trim(),
         manufacturer: _manufacturerCtl.text.trim().isEmpty ? null : _manufacturerCtl.text.trim(),
-        category: _categoryCtl.text.trim().isEmpty ? null : _categoryCtl.text.trim(),
+        category: _selectedCategoryPath,
+        categoryId: _selectedCategoryId,
         supplierName: _supplierCtl.text.trim().isEmpty ? null : _supplierCtl.text.trim(),
         stockQuantity: int.tryParse(_stockCtl.text),
         isLocked: _isLocked,
@@ -88,6 +93,81 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
         SnackBar(content: Text('保存エラー: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     }
+  }
+
+  Future<void> _pickCategory() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => CategoryPickerDialog(
+        selectedId: _selectedCategoryId,
+      ),
+    );
+    if (result == null) return;
+    if (result.isEmpty) {
+      setState(() {
+        _selectedCategoryId = null;
+        _selectedCategoryPath = null;
+      });
+      return;
+    }
+    final repo = ProductCategoryRepository();
+    final path = await repo.getPath(result);
+    final pathStr = path.map((c) => c.name).join(' > ');
+    setState(() {
+      _selectedCategoryId = result;
+      _selectedCategoryPath = pathStr;
+    });
+  }
+
+  Widget _buildCategoryField(ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outline),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.folder, size: 18, color: theme.colorScheme.tertiary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _selectedCategoryPath ?? 'カテゴリ未選択',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _selectedCategoryPath != null
+                          ? theme.colorScheme.onSurface
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton(
+          onPressed: _pickCategory,
+          child: const Text('選択'),
+        ),
+        if (_selectedCategoryId != null) ...[
+          const SizedBox(width: 4),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _selectedCategoryId = null;
+                _selectedCategoryPath = null;
+              });
+            },
+            child: const Text('クリア'),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -193,13 +273,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _categoryCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'カテゴリ',
-                        prefixIcon: Icon(Icons.folder),
-                      ),
-                    ),
+                    _buildCategoryField(theme),
                     const SizedBox(height: 14),
                     H1FormField(
                       controller: _supplierCtl,

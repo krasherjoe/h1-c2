@@ -6,6 +6,7 @@ import '../../../plugin_system/plugin_permission.dart';
 import '../../../plugin_system/menu_item.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/product_explorer_config.dart';
+import 'screens/category_explorer_screen.dart';
 
 class ProductsPlugin extends H1Plugin {
   @override
@@ -69,11 +70,20 @@ class ProductsPlugin extends H1Plugin {
       icon: Icons.inventory_2,
       description: '商品の登録・編集',
     ),
+    const MenuItem(
+      id: 'CE',
+      title: '商品カテゴリ',
+      route: '/products/categories',
+      category: 'マスター',
+      icon: Icons.category,
+      description: 'カテゴリの階層管理',
+    ),
   ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {
     '/products': (_) => H1Explorer(config: ProductExplorerConfig()),
+    '/products/categories': (_) => const CategoryExplorerScreen(),
   };
 
   @override
