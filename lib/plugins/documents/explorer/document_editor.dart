@@ -10,6 +10,8 @@ import '../../../services/project_repository.dart';
 import '../../../models/project_model.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
+import '../../pricelist/models/price_entry.dart';
+import '../../pricelist/screens/price_explorer_screen.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -241,6 +243,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       builder: (ctx) => _ItemEditDialog(
         existing: null,
         productRepo: _productRepo,
+        customerName: _customerName,
       ),
     );
     if (result != null && mounted) {
@@ -254,6 +257,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       builder: (ctx) => _ItemEditDialog(
         existing: _items[index],
         productRepo: _productRepo,
+        customerName: _customerName,
       ),
     );
     if (result != null && mounted) {
@@ -813,8 +817,9 @@ class _ProjectPickerDialogState extends State<_ProjectPickerDialog> {
 class _ItemEditDialog extends StatefulWidget {
   final _EditingItem? existing;
   final ProductRepository productRepo;
+  final String? customerName;
 
-  _ItemEditDialog({required this.existing, required this.productRepo});
+  _ItemEditDialog({required this.existing, required this.productRepo, this.customerName});
 
   @override
   State<_ItemEditDialog> createState() => _ItemEditDialogState();
@@ -860,6 +865,25 @@ class _ItemEditDialogState extends State<_ItemEditDialog> {
     }
   }
 
+  void _selectFromPriceList() async {
+    final result = await Navigator.push<PriceEntry>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PriceExplorerScreen(
+          initialCustomerName: widget.customerName,
+          selectionMode: true,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _productId = result.productId ?? '';
+        _productName = result.name;
+        _priceController.text = (result.unitPrice ?? 0).toString();
+      });
+    }
+  }
+
   void _submit() {
     final qty = double.tryParse(_qtyController.text) ?? 1;
     final price = int.tryParse(_priceController.text) ?? 0;
@@ -889,6 +913,15 @@ class _ItemEditDialogState extends State<_ItemEditDialog> {
                   suffixIcon: Icon(Icons.search),
                 ),
                 child: Text(_productName.isNotEmpty ? _productName : 'タップして選択'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.price_change, size: 18),
+                label: const Text('価格表から選択'),
+                onPressed: _selectFromPriceList,
               ),
             ),
             const SizedBox(height: 12),

@@ -1,0 +1,79 @@
+import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
+import '../../plugin_system/plugin_interface.dart';
+import '../../plugin_system/plugin_context.dart';
+import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/menu_item.dart';
+import 'screens/price_explorer_screen.dart';
+
+class PriceListPlugin extends H1Plugin {
+  @override
+  String get id => 'com.h1.plugin.pricelist';
+
+  @override
+  String get name => '価格表';
+
+  @override
+  String get version => '1.0.0';
+
+  @override
+  String get description => '価格表の管理';
+
+  @override
+  List<String> get dependencies => ['com.h1.core'];
+
+  @override
+  List<PluginPermission> get requiredPermissions => [
+    PluginPermission.readDatabase,
+    PluginPermission.writeDatabase,
+  ];
+
+  @override
+  Future<void> initialize(PluginContext context) async {
+    debugPrint('[PriceListPlugin] Initialized');
+  }
+
+  @override
+  Future<void> dispose() async {
+    debugPrint('[PriceListPlugin] Disposed');
+  }
+
+  @override
+  List<MenuItem> getMenuItems() => [
+    const MenuItem(
+      id: 'PE',
+      title: '価格表',
+      route: '/pricelist',
+      category: 'マスター',
+      icon: Icons.price_change,
+      description: '価格表の管理',
+    ),
+  ];
+
+  @override
+  Map<String, WidgetBuilder> getRoutes() => {
+    '/pricelist': (_) => const PriceExplorerScreen(),
+  };
+
+  @override
+  Future<void> createTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS price_entries (
+        id TEXT PRIMARY KEY,
+        year TEXT NOT NULL,
+        parent_id TEXT,
+        name TEXT NOT NULL,
+        unit_price INTEGER,
+        product_id TEXT,
+        notes TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(parent_id) REFERENCES price_entries(id)
+      )
+    ''');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_pe_parent ON price_entries(parent_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_pe_year ON price_entries(year)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_pe_name ON price_entries(name)');
+  }
+}
