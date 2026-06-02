@@ -11,7 +11,7 @@ class ProductExplorerConfig extends H1ExplorerConfig<ProductExplorerItem> {
   String _sortKey = 'name_asc';
 
   @override
-  String get explorerTitle => '商品マスター';
+  String get explorerTitle => 'P1:商品マスター';
 
   @override
   String get searchHint => '商品名・バーコードで検索';

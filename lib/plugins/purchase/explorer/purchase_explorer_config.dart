@@ -11,7 +11,7 @@ class PurchaseExplorerConfig extends H1ExplorerConfig<PurchaseModel> {
   PurchaseExplorerConfig({this.filterType});
 
   @override
-  String get explorerTitle => filterType?.label ?? '仕入管理';
+  String get explorerTitle => 'PR:${filterType?.label ?? '仕入管理'}';
 
   @override
   String get searchHint => '伝票番号・仕入先名で検索';

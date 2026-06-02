@@ -223,7 +223,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isNew ? '新規書類' : '書類編集'),
+        title: Text(_isNew ? 'DE:新規書類' : 'DE:書類編集'),
         actions: [
           IconButton(
             icon: Icon(Icons.undo, color: _canUndo ? null : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),

@@ -148,7 +148,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.document.documentType.label} プレビュー'),
+        title: Text('PP:${widget.document.documentType.label} プレビュー'),
       ),
       body: Column(
         children: [

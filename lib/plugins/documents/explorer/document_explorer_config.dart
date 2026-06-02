@@ -11,7 +11,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   DocumentExplorerConfig({this.filterType});
 
   @override
-  String get explorerTitle => filterType?.label ?? '伝票管理';
+  String get explorerTitle => filterType != null ? '${filterType!.label}一覧' : 'D1:伝票管理';
 
   @override
   String get searchHint => '伝票番号・顧客名で検索';

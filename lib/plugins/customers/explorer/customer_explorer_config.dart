@@ -16,7 +16,7 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   CustomerExplorerConfig();
 
   @override
-  String get explorerTitle => '得意先マスター';
+  String get explorerTitle => 'C1:得意先マスター';
 
   @override
   String get searchHint => '顧客名で検索';
