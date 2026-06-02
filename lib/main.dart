@@ -31,6 +31,7 @@ import 'plugins/memorandum/memorandum_plugin.dart';
 import 'plugins/ar/ar_plugin.dart';
 import 'plugins/daily/daily_plugin.dart';
 import 'plugins/pricelist/price_list_plugin.dart';
+import 'plugins/suppliers/suppliers_plugin.dart';
 import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
@@ -100,6 +101,7 @@ void main() async {
   await registry.register(ArPlugin());
   await registry.register(DailyPlugin());
   await registry.register(PriceListPlugin());
+  await registry.register(SuppliersPlugin());
 
   final stateService = PluginStateService();
   final states = await stateService.loadAll(

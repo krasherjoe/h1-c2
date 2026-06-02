@@ -56,6 +56,15 @@ class PriceListPlugin extends H1Plugin {
   };
 
   @override
+  Future<void> migrate(Database db, int fromVersion, int toVersion) async {
+    if (fromVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE price_entries ADD COLUMN supplier_id TEXT');
+      } catch (_) {}
+    }
+  }
+
+  @override
   Future<void> createTables(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS price_entries (
@@ -65,6 +74,7 @@ class PriceListPlugin extends H1Plugin {
         name TEXT NOT NULL,
         unit_price INTEGER,
         product_id TEXT,
+        supplier_id TEXT,
         notes TEXT,
         sort_order INTEGER DEFAULT 0,
         created_at TEXT NOT NULL,

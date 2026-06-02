@@ -5,6 +5,7 @@ class PriceEntry {
   final String name;
   final int? unitPrice;
   final String? productId;
+  final String? supplierId;
   final String? notes;
   final int sortOrder;
   final DateTime createdAt;
@@ -19,6 +20,7 @@ class PriceEntry {
     required this.name,
     this.unitPrice,
     this.productId,
+    this.supplierId,
     this.notes,
     this.sortOrder = 0,
     required this.createdAt,
@@ -32,6 +34,7 @@ class PriceEntry {
     'name': name,
     'unit_price': unitPrice,
     'product_id': productId,
+    'supplier_id': supplierId,
     'notes': notes,
     'sort_order': sortOrder,
     'created_at': createdAt.toIso8601String(),
@@ -45,6 +48,7 @@ class PriceEntry {
     name: map['name'] as String,
     unitPrice: map['unit_price'] as int?,
     productId: map['product_id'] as String?,
+    supplierId: map['supplier_id'] as String?,
     notes: map['notes'] as String?,
     sortOrder: map['sort_order'] as int? ?? 0,
     createdAt: DateTime.parse(map['created_at'] as String),
@@ -59,6 +63,7 @@ class PriceEntry {
     int? unitPrice,
     bool? clearUnitPrice,
     String? productId,
+    String? supplierId,
     String? notes,
     int? sortOrder,
     DateTime? createdAt,
@@ -70,6 +75,7 @@ class PriceEntry {
     name: name ?? this.name,
     unitPrice: clearUnitPrice == true ? null : (unitPrice ?? this.unitPrice),
     productId: productId ?? this.productId,
+    supplierId: supplierId ?? this.supplierId,
     notes: notes ?? this.notes,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,

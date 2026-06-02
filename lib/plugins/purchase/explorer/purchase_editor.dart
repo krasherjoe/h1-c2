@@ -6,6 +6,8 @@ import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
+import '../../suppliers/models/supplier.dart';
+import '../../suppliers/screens/supplier_picker_dialog.dart';
 import 'purchase_preview_page.dart';
 
 class PurchaseEditor extends StatefulWidget {
@@ -22,7 +24,9 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
   final _productRepo = ProductRepository();
 
   late PurchaseType _selectedType;
+  late String _supplierId;
   late String _supplierName;
+  late Supplier? _selectedSupplier;
   late DateTime _selectedDate;
   late List<_EditingItem> _items;
   bool _isSaving = false;
@@ -34,7 +38,9 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
     super.initState();
     final doc = widget.purchase;
     _selectedType = doc?.purchaseType ?? PurchaseType.order;
+    _supplierId = doc?.supplierId ?? '';
     _supplierName = doc?.supplierName ?? '';
+    _selectedSupplier = null;
     _selectedDate = doc?.date ?? DateTime.now();
     _items = (doc?.items ?? []).map((item) => _EditingItem(
       id: item.id,
@@ -71,6 +77,7 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
       final purchase = PurchaseModel(
         id: docId,
         purchaseType: _selectedType,
+        supplierId: _supplierId,
         supplierName: _supplierName,
         documentNumber: docNumber,
         date: _selectedDate,
@@ -213,12 +220,29 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
   }
 
   Widget _buildSupplierField(ThemeData theme) {
-    return H1TextField(
-      decoration: const InputDecoration(
-        labelText: '仕入先',
+    return InkWell(
+      onTap: () async {
+        final supplier = await showSupplierPicker(context);
+        if (supplier != null && mounted) {
+          setState(() {
+            _selectedSupplier = supplier;
+            _supplierId = supplier.id;
+            _supplierName = supplier.displayName;
+          });
+        }
+      },
+      child: InputDecorator(
+        decoration: const InputDecoration(
+          labelText: '仕入先',
+          suffixIcon: Icon(Icons.search),
+        ),
+        child: Text(
+          _supplierName.isNotEmpty ? _supplierName : 'タップして選択',
+          style: TextStyle(
+            color: _supplierName.isNotEmpty ? null : theme.hintColor,
+          ),
+        ),
       ),
-      controller: TextEditingController(text: _supplierName),
-      onChanged: (v) => _supplierName = v,
     );
   }
 
