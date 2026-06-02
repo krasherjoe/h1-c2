@@ -23,6 +23,7 @@ import 'plugins/backup/backup_plugin.dart';
 import 'plugins/conversion/conversion_plugin.dart';
 import 'plugins/conversion/services/data_migration_service.dart';
 import 'plugins/conversion/screens/conversion_guard_screen.dart';
+import 'plugins/analysis/analysis_plugin.dart';
 import 'plugins/audit/audit_plugin.dart';
 import 'plugins/debug/debug_plugin.dart';
 import 'plugins/project/project_plugin.dart';
@@ -84,6 +85,7 @@ void main() async {
   await registry.register(InventoryPlugin());
   await registry.register(PurchasePlugin());
   await registry.register(AnalyticsPlugin());
+  await registry.register(AnalysisPlugin());
   await registry.register(AccountingPlugin());
   await registry.register(QuickActionsPlugin());
   await registry.register(ExplorerPlugin());
