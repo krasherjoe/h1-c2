@@ -121,28 +121,32 @@ class H1FormField extends StatelessWidget {
           autovalidateMode: autovalidateMode,
         );
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Material(
-          type: MaterialType.transparency,
-          child: inputStyle == 'raised'
-              ? Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                        color: (isDark ? Colors.black : const Color(0xFF63666F))
-                            .withValues(alpha: 0.3),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: field,
-                  ),
-                )
-              : field,
+        final Material inkHost = Material(
+          type: MaterialType.canvas,
+          elevation: 0,
+          color: Colors.transparent,
+          child: field,
         );
+        if (inputStyle == 'raised') {
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                  color: (isDark ? Colors.black : const Color(0xFF63666F))
+                      .withValues(alpha: 0.3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: inkHost,
+            ),
+          );
+        }
+        return inkHost;
       },
     );
   }
