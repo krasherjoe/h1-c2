@@ -82,7 +82,7 @@ class H1FormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<String>(
       valueListenable: inputStyleNotifier,
-      builder: (_, inputStyle, __) {
+      builder: (context, inputStyle, _) {
         final field = TextFormField(
           controller: controller,
           focusNode: focusNode,
@@ -121,13 +121,23 @@ class H1FormField extends StatelessWidget {
           autovalidateMode: autovalidateMode,
         );
         if (inputStyle != 'raised') return field;
-        return Material(
-          elevation: 2,
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.transparent,
-          shadowColor: Colors.black26,
-          type: MaterialType.card,
-          child: field,
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+                color: (isDark ? Colors.black : const Color(0xFF63666F))
+                    .withValues(alpha: 0.3),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: field,
+          ),
         );
       },
     );
