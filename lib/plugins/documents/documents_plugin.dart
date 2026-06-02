@@ -7,6 +7,35 @@ import '../../plugin_system/menu_item.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/document_explorer_config.dart';
 
+const _kDocTable = '''
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    document_type TEXT NOT NULL,
+    customer_id TEXT,
+    customer_name TEXT,
+    document_number TEXT,
+    date TEXT NOT NULL,
+    total INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'draft',
+    linked_document_id TEXT
+  )
+''';
+
+const _kDocItemsTable = '''
+  CREATE TABLE IF NOT EXISTS document_items (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL,
+    product_id TEXT,
+    product_name TEXT,
+    quantity REAL DEFAULT 1,
+    unit_price INTEGER DEFAULT 0,
+    tax_rate REAL DEFAULT 0.1,
+    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
+  )
+''';
+
+const _kMissingTables = [_kDocTable, _kDocItemsTable];
+
 class DocumentsPlugin extends H1Plugin {
   @override
   String get id => 'com.h1.plugin.documents';
@@ -32,6 +61,13 @@ class DocumentsPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     debugPrint('[DocumentsPlugin] Initialized');
+  }
+
+  @override
+  Future<void> migrate(Database db, int fromVersion, int toVersion) async {
+    for (final sql in _kMissingTables) {
+      try { await db.execute(sql); } catch (_) {}
+    }
   }
 
   @override
@@ -149,5 +185,8 @@ class DocumentsPlugin extends H1Plugin {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_payment_schedules_status ON payment_schedules(status)',
     );
+
+    await db.execute(_kDocTable);
+    await db.execute(_kDocItemsTable);
   }
 }
