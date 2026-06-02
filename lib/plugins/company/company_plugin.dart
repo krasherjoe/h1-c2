@@ -7,6 +7,7 @@ import '../../plugin_system/menu_item.dart';
 import 'models/company_profile.dart';
 import 'services/company_repository.dart';
 import 'screens/company_profile_screen.dart';
+import 'screens/company_switch_screen.dart';
 
 class CompanyPlugin extends H1Plugin {
   @override String get id => 'com.h1.plugin.company';
@@ -43,11 +44,20 @@ class CompanyPlugin extends H1Plugin {
       icon: Icons.business,
       description: '会社名・住所・印鑑・口座',
     ),
+    const MenuItem(
+      id: 'TM',
+      title: '法人切替',
+      route: '/company/switch',
+      category: 'システム',
+      icon: Icons.swap_horiz,
+      description: '法人の作成・切替・削除',
+    ),
   ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {
     '/company': (_) => const CompanyProfileScreen(),
+    '/company/switch': (_) => const CompanySwitchScreen(),
   };
 
   @override

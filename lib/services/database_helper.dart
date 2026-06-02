@@ -1,9 +1,10 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import 'company_service.dart';
 import 'database/database_schema_core.dart';
 
 export 'database/database_utils.dart';
@@ -54,22 +55,20 @@ class DatabaseHelper {
     }
   }
 
-  String get databaseName => 'h1_core.db';
-
   Future<String> getDatabasePath() async {
-    final dir = await _getDatabaseDirectory();
-    return p.join(dir, databaseName);
+    return CompanyService.getCurrentDbPath();
   }
 
   Future<String> _getDatabaseDirectory() async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await CompanyService.getCompanyDirectory();
     return dir.path;
   }
 
   Future<Database> _initDatabase() async {
-    final dir = await _getDatabaseDirectory();
-    final dbPath = p.join(dir, databaseName);
+    final dbPath = await CompanyService.getCurrentDbPath();
     debugPrint('[DB] データベースパス: $dbPath');
+    final dir = Directory(p.dirname(dbPath));
+    if (!await dir.exists()) await dir.create(recursive: true);
     return openDatabase(
       dbPath,
       version: _databaseVersion,

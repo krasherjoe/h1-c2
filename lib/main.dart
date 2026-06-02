@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/database_helper.dart';
+import 'services/company_service.dart';
 import 'plugin_system/plugin_registry.dart';
 import 'plugin_system/plugin_context.dart';
 import 'plugin_system/core_plugin.dart';
@@ -50,8 +54,26 @@ ThemeMode _loadThemeMode(SharedPreferences prefs) {
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
+Future<void> _migrateIfNeeded() async {
+  final prefs = await SharedPreferences.getInstance();
+  if (prefs.getBool('migrated_v2') == true) return;
+
+  final oldDir = await getApplicationDocumentsDirectory();
+  final oldDb = File(p.join(oldDir.path, 'h1_core.db'));
+  if (await oldDb.exists()) {
+    final companyName = 'default';
+    final newDbPath = await CompanyService.getCurrentDbPath();
+    await oldDb.copy(newDbPath);
+    await CompanyService.setCurrentCompany(companyName);
+    debugPrint('[Migration] 旧DBを移行: $oldDb → $newDbPath');
+  }
+
+  await prefs.setBool('migrated_v2', true);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _migrateIfNeeded();
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
@@ -144,6 +166,12 @@ class _H1CoreAppState extends State<H1CoreApp> {
     themeNotifier.value = _themeMode;
     themeNotifier.addListener(_onThemeChanged);
     inputStyleNotifier.addListener(_onInputStyleChanged);
+    CompanyService.activeCompanyNotifier.addListener(_onCompanyChanged);
+    CompanyService.getCurrentCompany().then((name) {
+      if (name != null && mounted) {
+        CompanyService.activeCompanyNotifier.value = name;
+      }
+    });
     _check();
   }
 
@@ -151,6 +179,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
   void dispose() {
     themeNotifier.removeListener(_onThemeChanged);
     inputStyleNotifier.removeListener(_onInputStyleChanged);
+    CompanyService.activeCompanyNotifier.removeListener(_onCompanyChanged);
     super.dispose();
   }
 
@@ -160,6 +189,11 @@ class _H1CoreAppState extends State<H1CoreApp> {
   }
 
   void _onInputStyleChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _onCompanyChanged() {
     if (!mounted) return;
     setState(() {});
   }
