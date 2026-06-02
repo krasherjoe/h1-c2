@@ -35,6 +35,26 @@ class ProductsPlugin extends H1Plugin {
   }
 
   @override
+  Future<void> migrate(Database db, int fromVersion, int toVersion) async {
+    const missing = <String, String>{
+      'wholesale_price_is_tax_inclusive': 'INTEGER DEFAULT 0',
+      'odoo_id': 'TEXT',
+      'parent_id': 'TEXT',
+      'valid_from': 'TEXT',
+      'valid_to': 'TEXT',
+      'is_current': 'INTEGER DEFAULT 1',
+      'version': 'INTEGER DEFAULT 1',
+      'content_hash': 'TEXT',
+      'previous_hash': 'TEXT',
+    };
+    for (final e in missing.entries) {
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN ${e.key} ${e.value}');
+      } catch (_) {}
+    }
+  }
+
+  @override
   Future<void> dispose() async {
     debugPrint('[ProductsPlugin] Disposed');
   }
@@ -79,6 +99,7 @@ class ProductsPlugin extends H1Plugin {
         default_unit_price INTEGER,
         default_unit_price_is_tax_inclusive INTEGER DEFAULT 0,
         wholesale_price INTEGER DEFAULT 0,
+        wholesale_price_is_tax_inclusive INTEGER DEFAULT 0,
         barcode TEXT,
         model_number TEXT,
         manufacturer TEXT,
@@ -89,6 +110,14 @@ class ProductsPlugin extends H1Plugin {
         supplier_name TEXT,
         is_locked INTEGER DEFAULT 0,
         is_hidden INTEGER DEFAULT 0,
+        odoo_id TEXT,
+        parent_id TEXT,
+        valid_from TEXT,
+        valid_to TEXT,
+        is_current INTEGER DEFAULT 1,
+        version INTEGER DEFAULT 1,
+        content_hash TEXT,
+        previous_hash TEXT,
         description TEXT,
         tags TEXT,
         updated_at TEXT NOT NULL,

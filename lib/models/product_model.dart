@@ -97,6 +97,7 @@ class Product {
       'version': version,
       'content_hash': contentHash,
       'previous_hash': previousHash,
+      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 
