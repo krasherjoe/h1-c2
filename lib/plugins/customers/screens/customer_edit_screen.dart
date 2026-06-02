@@ -7,6 +7,7 @@ import '../../../widgets/customer_rank_badge.dart';
 import '../../../widgets/screen_id_title.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../widgets/h1_form_field.dart';
+import '../../../services/sync_service.dart';
 
 class CustomerEditScreen extends StatefulWidget {
   final Customer? customer;
@@ -144,6 +145,12 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
       isLocked: false,
     );
     await CustomerRepository().saveCustomer(newCustomer);
+    SyncService.pushChange(
+      entityType: 'customer',
+      entityId: newCustomer.id,
+      action: 'save',
+      data: newCustomer.toMap(),
+    );
     Navigator.pop(context, true);
   }
 

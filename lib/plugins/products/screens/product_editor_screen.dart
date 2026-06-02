@@ -6,6 +6,7 @@ import '../../../services/product_repository.dart';
 import '../../../services/product_category_repository.dart';
 import '../../../widgets/h1_form_field.dart';
 import 'category_picker_dialog.dart';
+import '../../../services/sync_service.dart';
 
 class ProductEditorScreen extends StatefulWidget {
   final Product? product;
@@ -84,6 +85,12 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
         isHidden: widget.product?.isHidden ?? false,
       );
       await ProductRepository().saveProduct(product);
+      SyncService.pushChange(
+        entityType: 'product',
+        entityId: product.id,
+        action: 'save',
+        data: product.toMap(),
+      );
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {

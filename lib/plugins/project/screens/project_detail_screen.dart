@@ -9,6 +9,7 @@ import '../../memorandum/models/memorandum_model.dart';
 import '../../memorandum/services/memorandum_repository.dart';
 import '../../memorandum/screens/memorandum_input_screen.dart';
 import '../../memorandum/screens/memorandum_preview_screen.dart';
+import '../../../services/sync_service.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final String? projectId;
@@ -61,6 +62,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     if (_project == null) return;
     try {
       await _repo.updateStage(_project!.id, stage);
+      final updated = _project!.copyWith(pipelineStage: stage);
+      SyncService.pushChange(
+        entityType: 'project',
+        entityId: _project!.id,
+        action: 'save',
+        data: updated.toMap(),
+      );
       await _load();
     } catch (e) {
       if (!mounted) return;

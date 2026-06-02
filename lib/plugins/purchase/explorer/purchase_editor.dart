@@ -6,6 +6,7 @@ import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
+import '../../../services/sync_service.dart';
 import '../../suppliers/models/supplier.dart';
 import '../../suppliers/screens/supplier_picker_dialog.dart';
 import 'purchase_preview_page.dart';
@@ -94,6 +95,12 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
       );
 
       await _repo.save(purchase);
+      SyncService.pushChange(
+        entityType: 'purchase',
+        entityId: docId,
+        action: 'save',
+        data: purchase.toMap(),
+      );
       if (!mounted) return;
       final saved = await _repo.fetchById(docId) ?? purchase;
       if (!mounted) return;

@@ -6,6 +6,7 @@ import '../../../services/customer_repository.dart';
 import '../models/memorandum_model.dart';
 import '../services/memorandum_repository.dart';
 import 'memorandum_preview_screen.dart';
+import '../../../services/sync_service.dart';
 
 class MemorandumInputScreen extends StatefulWidget {
   final Memorandum? memorandum;
@@ -188,6 +189,12 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
         updatedAt: DateTime.now(),
       );
       await _repo.save(m);
+      SyncService.pushChange(
+        entityType: 'memorandum',
+        entityId: m.id,
+        action: 'save',
+        data: m.toMap(),
+      );
       _savedId = m.id;
       _savedDocNumber = m.documentNumber;
       if (!mounted) return;

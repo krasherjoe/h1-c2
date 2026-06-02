@@ -6,6 +6,7 @@ import '../../../widgets/h1_text_field.dart';
 import '../models/price_entry.dart';
 import '../services/price_list_repository.dart';
 import '../services/undo_stack.dart';
+import '../../../services/sync_service.dart';
 
 class PriceExplorerScreen extends StatefulWidget {
   final String? initialYear;
@@ -197,6 +198,12 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
       updatedAt: now,
     );
     await _repo.save(entry);
+    SyncService.pushChange(
+      entityType: 'price_entry',
+      entityId: entry.id,
+      action: 'create_folder',
+      data: entry.toMap(),
+    );
     _undoStack.push(CreateNodeCommand(entry));
     await _reload();
     if (parentId != null && mounted) {
@@ -225,6 +232,12 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
       updatedAt: now,
     );
     await _repo.save(entry);
+    SyncService.pushChange(
+      entityType: 'price_entry',
+      entityId: entry.id,
+      action: 'create',
+      data: entry.toMap(),
+    );
     _undoStack.push(CreateNodeCommand(entry));
     await _reload();
     if (parentId != null && mounted) {
@@ -240,6 +253,12 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     if (name == null || name.isEmpty || name == node.name) return;
     final command = RenameNodeCommand(node.id, node.name, name);
     await command.execute(_db);
+    SyncService.pushChange(
+      entityType: 'price_entry',
+      entityId: node.id,
+      action: 'rename',
+      data: node.toMap(),
+    );
     _undoStack.push(command);
     await _reload();
   }
@@ -256,6 +275,12 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     if (newPrice == null || newPrice == node.unitPrice) return;
     final command = EditPriceCommand(node.id, node.unitPrice, newPrice);
     await command.execute(_db);
+    SyncService.pushChange(
+      entityType: 'price_entry',
+      entityId: node.id,
+      action: 'edit_price',
+      data: node.toMap(),
+    );
     _undoStack.push(command);
     await _reload();
   }
@@ -276,6 +301,12 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     final children = await _getAllDescendants(node.id);
     final command = DeleteNodeCommand(node, children);
     await command.execute(_db);
+    SyncService.pushChange(
+      entityType: 'price_entry',
+      entityId: node.id,
+      action: 'delete',
+      data: node.toMap(),
+    );
     _undoStack.push(command);
     _selected.remove(node.id);
     await _reload();

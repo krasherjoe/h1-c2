@@ -9,6 +9,13 @@
         "-bot-token", "a76xqj6zjig8tbba9fwyhwssfo"
       ],
       "enabled": true
+    },
+    "gmail": {
+      "type": "local",
+      "command": [
+        "/home/user/code/h-1-core/gmail-mcp/gmail_mcp_server.py"
+      ],
+      "enabled": false
     }
   }
 }
