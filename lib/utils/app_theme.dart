@@ -35,6 +35,11 @@ class AppTheme {
         backgroundColor: scheme.primary,
         foregroundColor: scheme.onPrimary,
         surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          color: scheme.onPrimary,
+          fontWeight: FontWeight.w600,
+          fontSize: 18,
+        ),
       ),
       cardTheme: CardThemeData(
         color: isDark ? cardDark : cardLight,
@@ -70,11 +75,20 @@ class AppTheme {
     }
     return InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: isDark ? cardDark : Colors.white,
       contentPadding: pad,
-      border: OutlineInputBorder(borderRadius: radius),
-      enabledBorder: OutlineInputBorder(borderRadius: radius),
-      focusedBorder: OutlineInputBorder(borderRadius: radius),
+      border: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+      ),
     );
   }
 }

@@ -17,7 +17,6 @@ class ScreenAppBarTitle extends StatelessWidget {
     final theme = Theme.of(context);
     final primaryStyle = theme.appBarTheme.titleTextStyle ??
         theme.textTheme.titleMedium?.copyWith(
-          color: Colors.white,
           fontWeight: FontWeight.w600,
         );
 
@@ -29,7 +28,9 @@ class ScreenAppBarTitle extends StatelessWidget {
         if (caption != null)
           Text(
             caption!,
-            style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
+            ),
           ),
       ],
     );
