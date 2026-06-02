@@ -48,12 +48,11 @@ class AppTheme {
 
   static InputDecorationTheme _inputTheme(bool isDark, String style) {
     const radius = BorderRadius.all(Radius.circular(12));
-    const pad = EdgeInsetsDirectional.fromSTEB(12, 22, 12, 12);
+    const pad = EdgeInsetsDirectional.fromSTEB(12, 16, 12, 12);
     if (style == 'raised') {
       return InputDecorationTheme(
         filled: true,
         fillColor: isDark ? const Color(0xFF3E3E42) : Colors.white,
-        isDense: true,
         contentPadding: pad,
         border: OutlineInputBorder(
           borderRadius: radius,
@@ -72,7 +71,6 @@ class AppTheme {
     return InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
-      isDense: true,
       contentPadding: pad,
       border: OutlineInputBorder(borderRadius: radius),
       enabledBorder: OutlineInputBorder(borderRadius: radius),
