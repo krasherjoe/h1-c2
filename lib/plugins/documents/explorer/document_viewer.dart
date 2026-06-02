@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:printing/printing.dart';
-import 'package:pdf/widgets.dart' as pw;
 import '../models/document_model.dart';
 import '../logic/document_converter.dart';
 import '../services/document_repository.dart';
+import 'document_preview_page.dart';
 
 class DocumentViewer extends StatelessWidget {
   final DocumentModel document;
@@ -141,57 +140,16 @@ class DocumentViewer extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        icon: const Icon(Icons.picture_as_pdf),
-        label: const Text('PDF出力'),
-        onPressed: () => _generatePdf(context),
-      ),
-    );
-  }
-
-  Future<void> _generatePdf(BuildContext context) async {
-    try {
-      final pdf = pw.Document();
-      pdf.addPage(
-        pw.Page(
-          build: (ctx) => pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(document.documentType.label, style: const pw.TextStyle(fontSize: 20)),
-              pw.SizedBox(height: 8),
-              pw.Text('No. ${document.documentNumber}'),
-              pw.Text('日付: ${_formatDate(document.date)}'),
-              pw.Text('顧客: ${document.customerName}'),
-              pw.SizedBox(height: 16),
-              pw.TableHelper.fromTextArray(
-                headers: ['商品名', '数量', '単価', '小計'],
-                data: document.items.map((item) => [
-                  item.productName,
-                  _formatQty(item.quantity),
-                  _formatMoney(item.unitPrice),
-                  _formatMoney(item.subtotal),
-                ]).toList(),
-              ),
-              pw.SizedBox(height: 16),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.end,
-                children: [
-                  pw.Text('合計: ${_formatMoney(document.total)}'),
-                ],
-              ),
-            ],
+        icon: const Icon(Icons.preview),
+        label: const Text('プレビュー'),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DocumentPreviewPage(document: document),
           ),
         ),
-      );
-      await Printing.sharePdf(
-        bytes: await pdf.save(),
-        filename: '${document.documentType.name}_${document.documentNumber}.pdf',
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF出力エラー: $e')),
-      );
-    }
+      ),
+    );
   }
 
   String _formatDate(DateTime dt) =>
