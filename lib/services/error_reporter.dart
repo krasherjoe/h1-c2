@@ -1,7 +1,12 @@
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:googleapis/gmail/v1.dart' as gmail;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'google_auth_service.dart';
 
 class ErrorReporter {
   static const _kWebhookUrlKey = 'mattermost_webhook_url';
@@ -53,6 +58,59 @@ class ErrorReporter {
       debugPrint('[ErrorReporter] sent successfully');
     } catch (e) {
       debugPrint('[ErrorReporter] send failed: $e');
+    }
+
+    try {
+      await sendErrorViaGmail(
+        message: message,
+        screenId: screenId,
+        stackTrace: stackTrace,
+      );
+    } catch (_) {}
+  }
+
+  static Future<void> sendErrorViaGmail({
+    required String message,
+    String? screenId,
+    StackTrace? stackTrace,
+  }) async {
+    final client = await GoogleAuthService.instance.getAuthenticatedClient();
+    if (client == null) return;
+    final email = await GoogleAuthService.instance.getEmail();
+    if (email == null) {
+      client.close();
+      return;
+    }
+
+    try {
+      final api = gmail.GmailApi(client);
+      final shortMsg = message.length > 80 ? '${message.substring(0, 80)}...' : message;
+      final subject = screenId != null
+          ? '[Error:h1-core] $screenId: $shortMsg'
+          : '[Error:h1-core] $shortMsg';
+      final stackStr = stackTrace?.toString() ?? '';
+      final bodyContent = '''
+version: $_kAppVersion
+message: $message
+screen: ${screenId ?? 'N/A'}
+
+stack:
+$stackStr
+''';
+
+      final raw = base64UrlEncode(utf8.encode(
+        'To: $email\r\n'
+        'Subject: $subject\r\n'
+        'MIME-Version: 1.0\r\n'
+        'Content-Type: text/plain; charset=UTF-8\r\n\r\n'
+        '$bodyContent',
+      ));
+
+      await api.users.messages.send(gmail.Message(raw: raw), 'me');
+    } catch (e) {
+      debugPrint('[ErrorReporter] Gmail send failed: $e');
+    } finally {
+      client.close();
     }
   }
 

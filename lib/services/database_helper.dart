@@ -11,7 +11,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 3;
+  static const _databaseVersion = 4;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -96,6 +96,27 @@ Future<void> _migrateToVersion(Database db, int version) async {
       try {
         await db.execute('ALTER TABLE projects ADD COLUMN contract_months INTEGER');
       } catch (_) {}
+      break;
+    case 4:
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS sync_log (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          action TEXT NOT NULL,
+          data TEXT NOT NULL,
+          device_id TEXT NOT NULL,
+          parent_id TEXT,
+          synced_at TEXT,
+          created_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_sync_log_entity ON sync_log(entity_type, entity_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_sync_log_unsent ON sync_log(synced_at) WHERE synced_at IS NULL',
+      );
       break;
     default:
       break;

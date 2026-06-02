@@ -5,6 +5,7 @@ import 'package:googleapis/gmail/v1.dart' as gmail;
 import 'package:http/http.dart' as http;
 import 'google_auth_service.dart';
 import 'error_reporter.dart';
+import 'sync_service.dart';
 
 class GmailSender {
   static const _userId = 'me';
@@ -42,10 +43,14 @@ class GmailSender {
 
       final encodedMessage = base64UrlEncode(utf8.encode(header));
       
-      await api.users.messages.send(
+      final sent = await api.users.messages.send(
         gmail.Message(raw: encodedMessage),
         _userId,
       );
+      
+      if (sent.id != null) {
+        SyncService.labelSentPdf(sent.id!);
+      }
       
       client.close();
       return true;

@@ -8,6 +8,7 @@ import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/project_repository.dart';
 import '../../../models/project_model.dart';
+import '../../../services/sync_service.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
 import '../../pricelist/models/price_entry.dart';
@@ -175,6 +176,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
 
       await _repo.save(doc);
       if (!mounted) return;
+      SyncService.pushChange(
+        entityType: 'document',
+        entityId: doc.id,
+        action: 'save',
+        data: doc.toMap(),
+      );
       Navigator.pop(context, true);
     } catch (e, st) {
       ErrorReporter.sendError(

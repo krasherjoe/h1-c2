@@ -23,7 +23,7 @@ class GoogleAuthService {
     _googleSignIn = GoogleSignIn(
       scopes: [
         'email',
-        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/gmail.modify',
       ],
     );
     _initialized = true;

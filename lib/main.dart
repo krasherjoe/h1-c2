@@ -40,6 +40,7 @@ import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
 import 'services/input_style_service.dart';
+import 'services/sync_garbage_collector.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/plugin_management_screen.dart';
 
@@ -172,6 +173,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
         CompanyService.activeCompanyNotifier.value = name;
       }
     });
+    _scheduleGarbageCollection();
     _check();
   }
 
@@ -202,6 +204,12 @@ class _H1CoreAppState extends State<H1CoreApp> {
     final needs = await DataMigrationService.needsConversion(widget.db);
     if (!mounted) return;
     setState(() => _needsConversion = needs);
+  }
+
+  void _scheduleGarbageCollection() {
+    Future.delayed(const Duration(seconds: 10), () {
+      SyncGarbageCollector.runAll();
+    });
   }
 
   Future<void> _runConversion() async {

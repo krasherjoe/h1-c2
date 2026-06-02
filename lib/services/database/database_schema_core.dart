@@ -33,4 +33,24 @@ Future<void> createCoreSchema(Database db) async {
   await db.execute(
     'CREATE INDEX IF NOT EXISTS idx_hash_chain_document ON hash_chain(document_type, document_id)',
   );
+
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS sync_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      data TEXT NOT NULL,
+      device_id TEXT NOT NULL,
+      parent_id TEXT,
+      synced_at TEXT,
+      created_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_sync_log_entity ON sync_log(entity_type, entity_id)',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_sync_log_unsent ON sync_log(synced_at) WHERE synced_at IS NULL',
+  );
 }
