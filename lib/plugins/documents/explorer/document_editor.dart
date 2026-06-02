@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:printing/printing.dart';
 import 'package:uuid/uuid.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
@@ -9,8 +8,6 @@ import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
-import 'document_preview_page.dart';
-import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -96,34 +93,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
 
       await _repo.save(doc);
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DocumentPreviewPage(
-            document: doc,
-            allowFormalIssue: true,
-            onFormalIssue: () async {
-              final updated = doc.copyWith(status: 'confirmed');
-              await _repo.save(updated);
-              if (!context.mounted) return;
-              Navigator.pop(context, true);
-            },
-            showShare: true,
-            onShare: () async {
-              final pdf = await generateDocumentPdf(doc);
-              await Printing.sharePdf(
-                bytes: await pdf.save(),
-                filename: '${doc.documentType.name}_${doc.documentNumber}.pdf',
-              );
-            },
-            showPrint: true,
-            onPrint: () async {
-              final pdf = await generateDocumentPdf(doc);
-              await Printing.layoutPdf(onLayout: (_) => pdf.save());
-            },
-          ),
-        ),
-      );
+      Navigator.pop(context, true);
     } catch (e, st) {
       ErrorReporter.sendError(
         message: '書類保存失敗: $e',

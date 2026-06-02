@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/document_model.dart';
 import '../logic/document_converter.dart';
 import '../services/document_repository.dart';
+import '../../../services/error_reporter.dart';
 import 'document_preview_page.dart';
 
 class DocumentViewer extends StatelessWidget {
@@ -142,12 +143,34 @@ class DocumentViewer extends StatelessWidget {
       child: OutlinedButton.icon(
         icon: const Icon(Icons.preview),
         label: const Text('プレビュー'),
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DocumentPreviewPage(document: document),
-          ),
-        ),
+        onPressed: () {
+          final repo = DocumentRepository();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DocumentPreviewPage(
+                document: document,
+                isUnlocked: document.isDraft,
+                onFormalIssue: () async {
+                  try {
+                    final updated = document.copyWith(status: 'confirmed');
+                    await repo.save(updated);
+                    return true;
+                  } catch (e, st) {
+                    ErrorReporter.sendError(
+                      message: '正式発行失敗: $e',
+                      screenId: '/documents/viewer',
+                      stackTrace: st,
+                    );
+                    return false;
+                  }
+                },
+                showShare: true,
+                showPrint: true,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
