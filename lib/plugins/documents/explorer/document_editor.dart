@@ -203,6 +203,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
   void _wrapWithSnapshot(VoidCallback fn) {
     _takeSnapshot();
     fn();
+    setState(() {});
   }
 
   Future<void> _selectCustomer() async {

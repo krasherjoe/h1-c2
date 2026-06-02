@@ -92,7 +92,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
         data: product.toMap(),
       );
       if (!mounted) return;
-      Navigator.pop(context, true);
+      Navigator.pop(context, product);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSaving = false);

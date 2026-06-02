@@ -151,7 +151,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
       action: 'save',
       data: newCustomer.toMap(),
     );
-    Navigator.pop(context, true);
+    Navigator.pop(context, newCustomer);
   }
 
   @override
