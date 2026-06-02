@@ -6,6 +6,8 @@ import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/menu_item.dart';
 import 'screens/supplier_list_screen.dart';
 import 'screens/supplier_editor_screen.dart';
+import 'screens/supplier_products_screen.dart';
+import 'services/supplier_product_service.dart';
 import '../pricelist/screens/price_explorer_screen.dart';
 
 class SuppliersPlugin extends H1Plugin {
@@ -55,6 +57,14 @@ class SuppliersPlugin extends H1Plugin {
       icon: Icons.monetization_on,
       description: '価格表の管理',
     ),
+    const MenuItem(
+      id: 'SP',
+      title: '仕入商品',
+      route: '/suppliers/products',
+      category: 'マスター',
+      icon: Icons.inventory,
+      description: '仕入商品の一覧・管理',
+    ),
   ];
 
   @override
@@ -62,8 +72,11 @@ class SuppliersPlugin extends H1Plugin {
     '/suppliers': (_) => const SupplierListScreen(),
     '/suppliers/edit': (_) => const SupplierEditorScreen(),
     '/pricelist': (_) => const PriceExplorerScreen(),
+    '/suppliers/products': (_) => const SupplierProductsScreen(),
   };
 
   @override
-  Future<void> createTables(Database db) async {}
+  Future<void> createTables(Database db) async {
+    await SupplierProductService().createTable(db);
+  }
 }
