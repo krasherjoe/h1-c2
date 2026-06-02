@@ -14,12 +14,6 @@ class CompanyService {
   static const _defaultFileName = 'default_company.txt';
 
   static Future<String> _getBasePath() async {
-    try {
-      final docsDir = Directory('/storage/emulated/0/Documents');
-      if (await docsDir.exists()) {
-        return p.join(docsDir.path, _dirName);
-      }
-    } catch (_) {}
     final appDir = await getApplicationDocumentsDirectory();
     return p.join(appDir.path, _dirName);
   }

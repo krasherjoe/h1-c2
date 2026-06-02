@@ -5,5 +5,5 @@
         Google Cloud Console → 認証情報 → OAuth 2.0 クライアントID (Web アプリケーション型)
         で作成した Client ID を以下に設定すること。
     -->
-    <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+    <string name="default_web_client_id" translatable="false">709040059901-ql43o7nmtgb9ngah9eo4a08b7ujfbvnv.apps.googleusercontent.com</string>
 </resources>
