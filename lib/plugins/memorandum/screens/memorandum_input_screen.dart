@@ -36,6 +36,8 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
   final _serviceCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final _monthsCtrl = TextEditingController();
+  final _customerRepCtrl = TextEditingController();
+  final _companyRepCtrl = TextEditingController();
 
   String _customerId = '';
   String _customerName = '';
@@ -66,6 +68,8 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
         _serviceTemplate = '保守サービス';
       }
       _notesCtrl.text = m.notes ?? '';
+      _customerRepCtrl.text = m.customerRepresentative ?? '';
+      _companyRepCtrl.text = m.companyRepresentative ?? '';
       _monthsCtrl.text = m.contractMonths.toString();
     } else {
       _monthsCtrl.text = _contractMonths.toString();
@@ -90,6 +94,8 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
     _serviceCtrl.dispose();
     _notesCtrl.dispose();
     _monthsCtrl.dispose();
+    _customerRepCtrl.dispose();
+    _companyRepCtrl.dispose();
     super.dispose();
   }
 
@@ -173,6 +179,8 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
         serviceContent: _serviceCtrl.text,
         totalAmount: _totalAmount,
         notes: _notesCtrl.text.isEmpty ? null : _notesCtrl.text,
+        customerRepresentative: _customerRepCtrl.text.isEmpty ? null : _customerRepCtrl.text,
+        companyRepresentative: _companyRepCtrl.text.isEmpty ? null : _companyRepCtrl.text,
         projectId: widget.projectId ?? widget.memorandum?.projectId,
         estimateId: widget.estimateId ?? widget.memorandum?.estimateId,
         status: widget.memorandum?.status ?? MemorandumStatus.draft,
@@ -245,6 +253,14 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                   child: Text(
                     _customerName.isEmpty ? 'タップして選択' : _customerName,
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _customerRepCtrl,
+                decoration: const InputDecoration(
+                  labelText: '顧客代表者名',
+                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -450,6 +466,14 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _companyRepCtrl,
+                decoration: const InputDecoration(
+                  labelText: '自社代表者名',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 32),
               SizedBox(

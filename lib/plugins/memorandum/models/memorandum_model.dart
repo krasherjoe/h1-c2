@@ -28,6 +28,8 @@ class Memorandum {
   final String documentNumber;
   final String customerId;
   final String customerName;
+  final String? customerRepresentative;
+  final String? companyRepresentative;
   final DateTime contractDate;
   final DateTime startDate;
   final DateTime endDate;
@@ -50,6 +52,8 @@ class Memorandum {
     required this.documentNumber,
     required this.customerId,
     required this.customerName,
+    this.customerRepresentative,
+    this.companyRepresentative,
     required this.contractDate,
     required this.startDate,
     required this.endDate,
@@ -71,6 +75,8 @@ class Memorandum {
     'document_number': documentNumber,
     'customer_id': customerId,
     'customer_name': customerName,
+    'customer_representative': customerRepresentative,
+    'company_representative': companyRepresentative,
     'contract_date': contractDate.toIso8601String(),
     'start_date': startDate.toIso8601String(),
     'end_date': endDate.toIso8601String(),
@@ -92,6 +98,8 @@ class Memorandum {
     documentNumber: map['document_number'] as String? ?? '',
     customerId: map['customer_id'] as String? ?? '',
     customerName: map['customer_name'] as String? ?? '',
+    customerRepresentative: map['customer_representative'] as String?,
+    companyRepresentative: map['company_representative'] as String?,
     contractDate: DateTime.parse(map['contract_date'] as String? ?? ''),
     startDate: DateTime.parse(map['start_date'] as String? ?? ''),
     endDate: DateTime.parse(map['end_date'] as String? ?? ''),
@@ -119,6 +127,8 @@ class Memorandum {
     String? documentNumber,
     String? customerId,
     String? customerName,
+    String? customerRepresentative,
+    String? companyRepresentative,
     DateTime? contractDate,
     DateTime? startDate,
     DateTime? endDate,
@@ -138,6 +148,8 @@ class Memorandum {
     documentNumber: documentNumber ?? this.documentNumber,
     customerId: customerId ?? this.customerId,
     customerName: customerName ?? this.customerName,
+    customerRepresentative: customerRepresentative ?? this.customerRepresentative,
+    companyRepresentative: companyRepresentative ?? this.companyRepresentative,
     contractDate: contractDate ?? this.contractDate,
     startDate: startDate ?? this.startDate,
     endDate: endDate ?? this.endDate,

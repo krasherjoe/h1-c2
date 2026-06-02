@@ -79,6 +79,8 @@ class MemorandumPlugin extends H1Plugin {
         service_content TEXT NOT NULL,
         total_amount INTEGER NOT NULL,
         notes TEXT,
+        customer_representative TEXT,
+        company_representative TEXT,
         project_id TEXT,
         estimate_id TEXT,
         status TEXT NOT NULL DEFAULT 'draft',
@@ -95,5 +97,11 @@ class MemorandumPlugin extends H1Plugin {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_memorandums_project ON memorandums(project_id)',
     );
+    try {
+      await db.execute('ALTER TABLE memorandums ADD COLUMN customer_representative TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE memorandums ADD COLUMN company_representative TEXT');
+    } catch (_) {}
   }
 }

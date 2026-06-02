@@ -149,7 +149,10 @@ if (companyInfo?.sealPath != null) {
                             pw.SizedBox(height: 8),
                             pw.Align(
                               alignment: pw.Alignment.centerLeft,
-                              child: pw.Text('署名:', style: const pw.TextStyle(fontSize: 10)),
+                              child: memo.customerRepresentative != null
+                                  ? pw.Text('代表取締役 ${memo.customerRepresentative}',
+                                      style: const pw.TextStyle(fontSize: 10))
+                                  : pw.Text('署名:', style: const pw.TextStyle(fontSize: 10)),
                             ),
                             pw.SizedBox(height: 4),
                             pw.Container(
@@ -177,7 +180,10 @@ if (companyInfo?.sealPath != null) {
                             pw.SizedBox(height: 8),
                             pw.Align(
                               alignment: pw.Alignment.centerLeft,
-                              child: pw.Text('署名:', style: const pw.TextStyle(fontSize: 10)),
+                              child: memo.companyRepresentative != null
+                                  ? pw.Text('代表取締役 ${memo.companyRepresentative}',
+                                      style: const pw.TextStyle(fontSize: 10))
+                                  : pw.Text('署名:', style: const pw.TextStyle(fontSize: 10)),
                             ),
                             pw.SizedBox(height: 4),
                             pw.Container(
