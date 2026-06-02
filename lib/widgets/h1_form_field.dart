@@ -128,7 +128,7 @@ class H1FormField extends StatelessWidget {
         if (inputStyle == 'raised') {
           return Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   blurRadius: 8,
@@ -138,10 +138,7 @@ class H1FormField extends StatelessWidget {
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: inkHost,
-            ),
+            child: inkHost,
           );
         }
         return inkHost;
