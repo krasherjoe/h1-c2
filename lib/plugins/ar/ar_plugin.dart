@@ -5,6 +5,7 @@ import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/menu_item.dart';
 import 'screens/ar_dashboard_screen.dart';
+import 'screens/cash_flow_screen.dart';
 import 'screens/payment_processing_screen.dart';
 import 'screens/payment_schedule_screen.dart';
 import 'screens/payment_register_screen.dart';
@@ -73,6 +74,14 @@ class ArPlugin extends H1Plugin {
       icon: Icons.check_circle,
       description: '支払実績登録',
     ),
+    const MenuItem(
+      id: 'CF',
+      title: '資金繰り',
+      route: '/ar/cashflow',
+      category: '売掛・支払',
+      icon: Icons.account_balance,
+      description: '資金繰り表',
+    ),
   ];
 
   @override
@@ -81,6 +90,7 @@ class ArPlugin extends H1Plugin {
     '/ar/receipt': (_) => const PaymentProcessingScreen(),
     '/ar/schedules': (_) => const PaymentScheduleScreen(),
     '/ar/payment': (_) => const PaymentRegisterScreen(),
+    '/ar/cashflow': (_) => const CashFlowScreen(),
   };
 
   @override
