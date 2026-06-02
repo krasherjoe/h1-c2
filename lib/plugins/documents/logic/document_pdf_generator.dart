@@ -212,6 +212,11 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                       decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1))),
                       child: pw.Text(document.customerName, style: const pw.TextStyle(fontSize: 18)),
                     ),
+                    if (document.subject != null && document.subject!.isNotEmpty)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(top: 8),
+                        child: pw.Text(document.subject!, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                      ),
                     pw.SizedBox(height: 10),
                     pw.Text(
                       () {

@@ -74,4 +74,15 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
       null;
 
   VoidCallback? onListChanged;
+
+  Widget buildItemTileContent(BuildContext context, T item) {
+    return ListTile(
+      leading: Icon(item.icon ?? itemIcon),
+      title: Text(item.title),
+      subtitle: item.subtitle != null ? Text(item.subtitle!) : null,
+      trailing: item.badge != null
+          ? Chip(label: Text(item.badge!), visualDensity: VisualDensity.compact)
+          : null,
+    );
+  }
 }

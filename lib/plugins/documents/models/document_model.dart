@@ -39,6 +39,7 @@ class DocumentModel extends H1ExplorerItem {
   final String status;
   final String? linkedDocumentId;
   final String? projectId;
+  final String? subject;
   final List<DocumentItem> items;
 
   DocumentModel({
@@ -52,6 +53,7 @@ class DocumentModel extends H1ExplorerItem {
     this.status = 'draft',
     this.linkedDocumentId,
     this.projectId,
+    this.subject,
     this.items = const [],
   });
 
@@ -59,7 +61,15 @@ class DocumentModel extends H1ExplorerItem {
   String get title => documentNumber;
 
   @override
-  String? get subtitle => customerName;
+  String? get subtitle {
+    if (subject != null && subject!.isNotEmpty) return subject;
+    if (items.isNotEmpty) {
+      const max = 3;
+      final names = items.take(max).map((i) => i.productName).where((n) => n.isNotEmpty).toList();
+      if (names.isNotEmpty) return names.join('、');
+    }
+    return customerName;
+  }
 
   @override
   String? get badge => documentType.label;
@@ -84,6 +94,7 @@ class DocumentModel extends H1ExplorerItem {
     String? status,
     String? linkedDocumentId,
     String? projectId,
+    String? subject,
     List<DocumentItem>? items,
   }) {
     return DocumentModel(
@@ -97,6 +108,7 @@ class DocumentModel extends H1ExplorerItem {
       status: status ?? this.status,
       linkedDocumentId: linkedDocumentId ?? this.linkedDocumentId,
       projectId: projectId ?? this.projectId,
+      subject: subject ?? this.subject,
       items: items ?? this.items,
     );
   }
@@ -112,6 +124,7 @@ class DocumentModel extends H1ExplorerItem {
     'status': status,
     'linked_document_id': linkedDocumentId,
     'project_id': projectId,
+    'subject': subject,
   };
 
   factory DocumentModel.fromMap(Map<String, dynamic> map, {List<DocumentItem> items = const []}) {
@@ -126,6 +139,7 @@ class DocumentModel extends H1ExplorerItem {
       status: map['status'] as String? ?? 'draft',
       linkedDocumentId: map['linked_document_id'] as String?,
       projectId: map['project_id'] as String?,
+      subject: map['subject'] as String?,
       items: items,
     );
   }

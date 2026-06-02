@@ -59,6 +59,51 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   }
 
   @override
+  Widget buildItemTileContent(BuildContext context, DocumentModel item) {
+    final cs = Theme.of(context).colorScheme;
+    final repItems = item.items.take(3).map((i) => i.productName).join('、');
+    final desc = (item.subject != null && item.subject!.isNotEmpty) ? item.subject! : repItems;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Text(item.documentNumber,
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              const Spacer(),
+              _chip(item.documentType.label, cs.primary, cs),
+              if (item.isDraft) ...[
+                const SizedBox(width: 4),
+                _chip('下書き', Colors.orange.shade700, cs),
+              ],
+            ]),
+            const SizedBox(height: 6),
+            Text(item.customerName,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(desc,
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String text, Color color, ColorScheme cs) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(text,
+        style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500)),
+  );
+
+  @override
   Future<bool> canDelete(DocumentModel item) async => item.isDraft;
 
   @override

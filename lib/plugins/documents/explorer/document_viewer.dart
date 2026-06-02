@@ -59,6 +59,8 @@ class DocumentViewer extends StatelessWidget {
         Text(document.documentNumber, style: theme.textTheme.titleLarge),
         const SizedBox(height: 8),
         Text('顧客: ${document.customerName}'),
+        if (document.subject != null && document.subject!.isNotEmpty)
+          Text('件名: ${document.subject}'),
         Text('日付: ${_formatDate(document.date)}'),
         if (document.linkedDocumentId != null)
           Text('元伝票: ${document.linkedDocumentId}'),

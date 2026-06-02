@@ -41,6 +41,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
   String? _projectName;
   bool _isSaving = false;
 
+  final _subjectCtl = TextEditingController();
+
   final _undoStack = <_EditorSnapshot>[];
   final _redoStack = <_EditorSnapshot>[];
 
@@ -57,6 +59,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
     _customerName = doc?.customerName ?? '';
     _selectedDate = doc?.date ?? DateTime.now();
     _projectId = doc?.projectId;
+    _subjectCtl.text = doc?.subject ?? '';
     _items = (doc?.items ?? []).map((item) => _EditingItem(
       id: item.id,
       productId: item.productId,
@@ -76,6 +79,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
     }
   }
 
+  @override
+  void dispose() {
+    _subjectCtl.dispose();
+    super.dispose();
+  }
+
   void _takeSnapshot() {
     _undoStack.add(_EditorSnapshot(
       selectedType: _selectedType,
@@ -84,6 +93,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       selectedDate: _selectedDate,
       projectId: _projectId,
       projectName: _projectName,
+      subject: _subjectCtl.text,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
@@ -102,6 +112,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       selectedDate: _selectedDate,
       projectId: _projectId,
       projectName: _projectName,
+      subject: _subjectCtl.text,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
@@ -115,6 +126,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _selectedDate = s.selectedDate;
       _projectId = s.projectId;
       _projectName = s.projectName;
+      _subjectCtl.text = s.subject;
       _items = s.items;
     });
   }
@@ -130,6 +142,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _selectedDate = s.selectedDate;
       _projectId = s.projectId;
       _projectName = s.projectName;
+      _subjectCtl.text = s.subject;
       _items = s.items;
     });
   }
@@ -156,6 +169,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
 
       final total = _items.fold(0, (sum, item) => sum + (item.quantity * item.unitPrice).round());
 
+      final subj = _subjectCtl.text.trim();
       final doc = DocumentModel(
         id: docId,
         documentType: _selectedType,
@@ -166,6 +180,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
         total: total,
         status: 'draft',
         projectId: _projectId,
+        subject: subj.isEmpty ? null : subj,
         items: _items.map((e) => DocumentItem(
           id: e.id,
           productId: e.productId,
@@ -314,6 +329,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
           const SizedBox(height: 16),
           _buildHeaderCard(cs),
           const SizedBox(height: 12),
+          _buildSubjectField(cs),
+          const SizedBox(height: 12),
           _buildCustomerCard(cs),
           const SizedBox(height: 12),
           _buildProjectCard(cs),
@@ -382,6 +399,31 @@ class _DocumentEditorState extends State<DocumentEditor> {
               const Spacer(),
               Icon(Icons.chevron_right, size: 20, color: cs.onSurfaceVariant),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectField(ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: H1TextField(
+          controller: _subjectCtl,
+          decoration: const InputDecoration(
+            labelText: '件名',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+            isDense: true,
           ),
         ),
       ),
@@ -643,6 +685,7 @@ class _EditorSnapshot {
   final DateTime selectedDate;
   final String? projectId;
   final String? projectName;
+  final String subject;
   final List<_EditingItem> items;
 
   _EditorSnapshot({
@@ -652,6 +695,7 @@ class _EditorSnapshot {
     required this.selectedDate,
     this.projectId,
     this.projectName,
+    this.subject = '',
     required this.items,
   });
 }

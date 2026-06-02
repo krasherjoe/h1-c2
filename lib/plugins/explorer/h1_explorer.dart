@@ -693,21 +693,10 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
         await widget.config.deleteItem(item);
         if (mounted) _loadItems();
       },
-      child: ListTile(
-        leading: Icon(item.icon ?? widget.config.itemIcon),
-        title: Text(item.title),
-        subtitle: item.subtitle != null ? Text(item.subtitle!) : null,
-        trailing: item.badge != null
-            ? Chip(
-                label: Text(
-                  item.badge!,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                visualDensity: VisualDensity.compact,
-              )
-            : null,
+      child: InkWell(
         onTap: () => _onItemTap(item),
         onLongPress: widget.selectionMode ? null : () => _confirmDelete(item),
+        child: widget.config.buildItemTileContent(context, item),
       ),
     );
   }
