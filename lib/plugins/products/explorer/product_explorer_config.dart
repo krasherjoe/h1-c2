@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
+import '../../../services/product_category_repository.dart';
 import '../screens/product_editor_screen.dart';
 import '../logic/product_data_loader.dart';
 import '../logic/product_import_export.dart';
@@ -73,6 +74,54 @@ class ProductExplorerConfig extends H1ExplorerConfig<ProductExplorerItem> {
   Future<void> deleteItem(ProductExplorerItem item) async {
     final repo = ProductRepository();
     await repo.deleteProduct(item.product.id);
+  }
+
+  @override
+  bool get supportsTreeView => true;
+
+  @override
+  Future<List<TreeFolder>> getSubfolders(String? parentId) async {
+    final catRepo = ProductCategoryRepository();
+    final cats = parentId != null
+        ? await catRepo.getChildren(parentId)
+        : await catRepo.getRoots();
+    final folders = <TreeFolder>[];
+    for (final cat in cats) {
+      final count = await catRepo.getProductCount(cat.id);
+      folders.add(TreeFolder(id: cat.id, name: cat.name, itemCount: count, icon: Icons.folder));
+    }
+    return folders;
+  }
+
+  @override
+  Future<List<ProductExplorerItem>> fetchFolderItems(String folderId, String query) async {
+    final repo = ProductRepository();
+    final products = await repo.fetchByCategory(folderId, query: query);
+    final list = List<Product>.from(products);
+    sortProducts(list, _sortKey);
+    return list.map((p) => ProductExplorerItem(p)).toList();
+  }
+
+  @override
+  String? treeItemFolderId(ProductExplorerItem item) => item.product.categoryId;
+
+  @override
+  Future<void> moveItemToFolder(ProductExplorerItem item, String folderId) async {
+    final repo = ProductRepository();
+    final updated = item.product.copyWith(categoryId: folderId);
+    await repo.saveProduct(updated);
+  }
+
+  @override
+  Future<List<TreeFolder>> getBreadcrumbs(String? folderId) async {
+    final crumbs = <TreeFolder>[];
+    if (folderId == null) return crumbs;
+    final catRepo = ProductCategoryRepository();
+    final path = await catRepo.getPath(folderId);
+    for (final cat in path) {
+      crumbs.add(TreeFolder(id: cat.id, name: cat.name));
+    }
+    return crumbs;
   }
 
   @override

@@ -11,6 +11,21 @@ class SortOption {
   });
 }
 
+/// A folder entry in the tree view
+class TreeFolder {
+  final String id;
+  final String name;
+  final int itemCount;
+  final IconData icon;
+
+  const TreeFolder({
+    required this.id,
+    required this.name,
+    this.itemCount = 0,
+    this.icon = Icons.folder,
+  });
+}
+
 abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
   String get explorerTitle;
   String get searchHint;
@@ -37,6 +52,15 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
   /// タイプ別フィルター
   String typeFilter = '';
   List<({String value, String label, IconData icon})> get typeFilterOptions => [];
+
+  /// ツリービュー（パンくず・フォルダ）
+  bool get supportsTreeView => false;
+  String? currentFolderId;
+  Future<List<TreeFolder>> getSubfolders(String? parentId) async => [];
+  Future<List<T>> fetchFolderItems(String folderId, String query) => fetchItems(query);
+  String? treeItemFolderId(T item) => null;
+  Future<void> moveItemToFolder(T item, String folderId) async {}
+  Future<List<TreeFolder>> getBreadcrumbs(String? folderId) async => [];
 
   List<({String id, IconData icon, String label})> get overflowActions => [];
   void onOverflowAction(

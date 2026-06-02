@@ -73,6 +73,39 @@ class ProductRepository {
     }
   }
 
+  Future<List<Product>> fetchByCategory(String categoryId, {String query = ''}) async {
+    try {
+      final db = await _dbHelper.database;
+      final List<Map<String, dynamic>> maps;
+      if (query.isNotEmpty) {
+        maps = await db.rawQuery('''
+          SELECT p.*, COALESCE(mh.is_hidden, p.is_hidden, 0) AS is_hidden
+          FROM products p
+          LEFT JOIN master_hidden mh ON mh.master_type = 'product' AND mh.master_id = p.id
+          WHERE p.category_id = ?
+            AND COALESCE(p.is_current, 1) = 1
+            AND COALESCE(p.valid_to, '9999-12-31') > datetime('now')
+            AND (p.name LIKE ? OR p.barcode LIKE ?)
+          ORDER BY p.name ASC
+        ''', [categoryId, '%$query%', '%$query%']);
+      } else {
+        maps = await db.rawQuery('''
+          SELECT p.*, COALESCE(mh.is_hidden, p.is_hidden, 0) AS is_hidden
+          FROM products p
+          LEFT JOIN master_hidden mh ON mh.master_type = 'product' AND mh.master_id = p.id
+          WHERE p.category_id = ?
+            AND COALESCE(p.is_current, 1) = 1
+            AND COALESCE(p.valid_to, '9999-12-31') > datetime('now')
+          ORDER BY p.name ASC
+        ''', [categoryId]);
+      }
+      return maps.map((m) => Product.fromMap(m)).toList();
+    } catch (e) {
+      debugPrint('[ProductRepo] fetchByCategory error: $e');
+      rethrow;
+    }
+  }
+
   Future<List<Product>> searchProducts(
     String query, {
     bool includeHidden = false,

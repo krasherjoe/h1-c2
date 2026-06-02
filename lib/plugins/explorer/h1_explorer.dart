@@ -29,6 +29,9 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   String _statusFilter = '';
   DateTime? _dateFrom;
   DateTime? _dateTo;
+  bool _treeMode = false;
+  List<TreeFolder> _folders = [];
+  List<TreeFolder> _breadcrumbs = [];
 
   bool get _hasActiveFilters =>
       _statusFilter.isNotEmpty || _dateFrom != null || _dateTo != null ||
@@ -55,12 +58,27 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     widget.config.dateTo = _dateTo;
     setState(() => _isLoading = true);
     try {
-      final items = await widget.config.fetchItems(_query);
-      if (!mounted) return;
-      setState(() {
-        _items = items;
-        _isLoading = false;
-      });
+      if (_treeMode && widget.config.supportsTreeView) {
+        final folders = await widget.config.getSubfolders(widget.config.currentFolderId);
+        final items = widget.config.currentFolderId != null
+            ? await widget.config.fetchFolderItems(widget.config.currentFolderId!, _query)
+            : <T>[];
+        final crumbs = await widget.config.getBreadcrumbs(widget.config.currentFolderId);
+        if (!mounted) return;
+        setState(() {
+          _folders = folders;
+          _items = items;
+          _breadcrumbs = crumbs;
+          _isLoading = false;
+        });
+      } else {
+        final items = await widget.config.fetchItems(_query);
+        if (!mounted) return;
+        setState(() {
+          _items = items;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -147,6 +165,13 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     }
   }
 
+  void _navigateToFolder(String? folderId) {
+    setState(() {
+      widget.config.currentFolderId = folderId;
+    });
+    _loadItems();
+  }
+
   Map<String, List<T>> _groupItems() {
     final grouped = <String, List<T>>{};
     for (final item in _items) {
@@ -201,6 +226,20 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                       ))
                   .toList(),
             ),
+          if (widget.config.supportsTreeView)
+            IconButton(
+              icon: Icon(_treeMode ? Icons.list : Icons.folder_open),
+              tooltip: _treeMode ? 'リスト表示' : 'ツリー表示',
+              onPressed: () {
+                setState(() {
+                  _treeMode = !_treeMode;
+                  if (_treeMode) {
+                    widget.config.currentFolderId = null;
+                  }
+                });
+                _loadItems();
+              },
+            ),
           IconButton(
             icon: Icon(_showSearch ? Icons.close : Icons.search),
             onPressed: () => setState(() => _showSearch = !_showSearch),
@@ -236,6 +275,26 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           if (_showFilter) _buildFilterBar(),
           if (_hasActiveFilters)
             _buildActiveFilters(),
+          if (_treeMode && _breadcrumbs.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                children: _breadcrumbs.map((b) => Row(
+                  children: [
+                    if (_breadcrumbs.first != b)
+                      Icon(Icons.chevron_right, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ActionChip(
+                      avatar: Icon(Icons.folder, size: 14),
+                      label: Text(b.name, style: const TextStyle(fontSize: 12)),
+                      onPressed: b.id == widget.config.currentFolderId ? null : () => _navigateToFolder(b.id),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                )).toList(),
+              ),
+            ),
           Expanded(child: _buildBody()),
         ],
       ),
@@ -456,10 +515,64 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     );
   }
 
+  Widget _buildTreeView() {
+    if (_folders.isEmpty && _items.isEmpty) {
+      return Center(child: Text(widget.config.emptyMessage));
+    }
+    return RefreshIndicator(
+      onRefresh: _loadItems,
+      child: ListView(
+        children: [
+          ..._folders.map((folder) => DragTarget<T>(
+            onAcceptWithDetails: (details) async {
+              await widget.config.moveItemToFolder(details.data, folder.id);
+              _loadItems();
+            },
+            builder: (ctx, candidates, rejected) => Card(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: ListTile(
+                leading: Icon(folder.icon, color: candidates.isNotEmpty ? Colors.amber : null),
+                title: Text(folder.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                trailing: Text('${folder.itemCount}', style: const TextStyle(fontSize: 12)),
+                onTap: () => _navigateToFolder(folder.id),
+              ),
+            ),
+          )),
+          if (_folders.isNotEmpty && _items.isNotEmpty)
+            const Divider(height: 1),
+          ..._items.map((item) => LongPressDraggable<T>(
+            data: item,
+            feedback: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 200,
+                child: ListTile(
+                  leading: Icon(item.icon ?? widget.config.itemIcon),
+                  title: Text(item.title, style: const TextStyle(fontSize: 13)),
+                ),
+              ),
+            ),
+            childWhenDragging: Opacity(
+              opacity: 0.3,
+              child: _buildItemTile(item),
+            ),
+            child: _buildItemTile(item),
+          )),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    if (_treeMode && widget.config.supportsTreeView) {
+      return _buildTreeView();
+    }
+
     if (_items.isEmpty) {
       return Center(child: Text(widget.config.emptyMessage));
     }
