@@ -13,6 +13,8 @@ import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
 import '../../pricelist/models/price_entry.dart';
 import '../../pricelist/screens/price_explorer_screen.dart';
+import '../../customers/screens/customer_edit_screen.dart';
+import '../../products/screens/product_editor_screen.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -739,6 +741,28 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
             ),
           ),
           const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.person_add, size: 18),
+                label: const Text('取引先を追加'),
+                onPressed: () async {
+                  final result = await Navigator.push<Customer>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CustomerEditScreen(),
+                    ),
+                  );
+                  if (result != null && mounted) {
+                    Navigator.pop(context, result);
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
           if (_filtered.isEmpty)
             Expanded(child: Center(child: Text('見つかりませんでした', style: TextStyle(color: cs.onSurfaceVariant))))
           else
@@ -914,7 +938,27 @@ class _ItemEditDialogState extends State<_ItemEditDialog> {
       context: context,
       delegate: _ProductSearchDelegate(repo: widget.productRepo),
     );
-    if (result != null && mounted) {
+    if (result == null || !mounted) return;
+    if (result.startsWith('__new:')) {
+      final name = result.substring(6);
+      final newProduct = await Navigator.push<Product>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductEditorScreen(
+            product: Product(id: const Uuid().v4(), name: name),
+          ),
+        ),
+      );
+      if (newProduct != null && mounted) {
+        setState(() {
+          _productId = newProduct.id;
+          _productName = newProduct.name;
+          _priceController.text = newProduct.defaultUnitPrice.toString();
+        });
+      }
+      return;
+    }
+    if (mounted) {
       final product = await widget.productRepo.getProduct(result);
       if (product != null && mounted) {
         setState(() {
@@ -1048,18 +1092,31 @@ class _ProductSearchDelegate extends SearchDelegate<String> {
           return Center(child: Text('エラー: ${snapshot.error}'));
         }
         final products = snapshot.data ?? [];
-        if (products.isEmpty) return const Center(child: Text('見つかりませんでした'));
-        return ListView.builder(
-          itemCount: products.length,
-          itemBuilder: (ctx, i) {
-            final p = products[i] as Product;
-            return ListTile(
-              title: Text(p.name),
-              subtitle: Text('¥${p.defaultUnitPrice}'),
-              onTap: () => close(context, p.id),
-            );
-          },
-        );
+        final items = <Widget>[
+          ListTile(
+            leading: const Icon(Icons.add_circle, color: Colors.green),
+            title: Text('"$query" を新規登録'),
+            onTap: () => close(context, '__new:$query'),
+          ),
+        ];
+        if (products.isEmpty) {
+          items.add(
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: Text('既存の商品は見つかりませんでした')),
+            ),
+          );
+        } else {
+          for (final p in products) {
+            final product = p as Product;
+            items.add(ListTile(
+              title: Text(product.name),
+              subtitle: Text('¥${product.defaultUnitPrice}'),
+              onTap: () => close(context, product.id),
+            ));
+          }
+        }
+        return ListView(children: items);
       },
     );
   }
