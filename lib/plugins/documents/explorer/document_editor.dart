@@ -50,7 +50,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
     )).toList();
   }
 
-  Future<void> _save({bool confirmed = false}) async {
+  Future<void> _save() async {
     if (_customerName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('顧客を選択してください')),
@@ -80,7 +80,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
         documentNumber: docNumber,
         date: _selectedDate,
         total: total,
-        status: confirmed ? 'confirmed' : 'draft',
+        status: 'draft',
         items: _items.map((e) => DocumentItem(
           id: e.id,
           productId: e.productId,
@@ -266,22 +266,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
   Widget _buildBottomBar() {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: _isSaving ? null : () => _save(confirmed: false),
-              child: const Text('下書き保存'),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: FilledButton(
-              onPressed: _isSaving ? null : () => _save(confirmed: true),
-              child: const Text('確定保存'),
-            ),
-          ),
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton(
+          onPressed: _isSaving ? null : _save,
+          child: const Text('保存'),
+        ),
       ),
     );
   }
