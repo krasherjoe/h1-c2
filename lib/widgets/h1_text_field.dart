@@ -112,10 +112,8 @@ class H1TextField extends StatelessWidget {
           scrollPhysics: scrollPhysics,
           autofillHints: autofillHints,
         );
-        final Material inkHost = Material(
-          type: MaterialType.canvas,
-          elevation: 0,
-          color: Colors.transparent,
+        final Widget inkHost = Material(
+          type: MaterialType.transparency,
           child: field,
         );
         if (inputStyle == 'raised') {

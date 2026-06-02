@@ -121,10 +121,8 @@ class H1FormField extends StatelessWidget {
           autovalidateMode: autovalidateMode,
         );
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final Material inkHost = Material(
-          type: MaterialType.canvas,
-          elevation: 0,
-          color: Colors.transparent,
+        final Widget inkHost = Material(
+          type: MaterialType.transparency,
           child: field,
         );
         if (inputStyle == 'raised') {
