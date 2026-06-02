@@ -1082,7 +1082,6 @@ class _ProductSearchDelegate extends SearchDelegate<String> {
   Widget buildSuggestions(BuildContext context) => _buildSearchResults(context);
 
   Widget _buildSearchResults(BuildContext context) {
-    if (query.isEmpty) return const Center(child: Text('商品名を入力してください'));
     return FutureBuilder<List>(
       future: repo.searchProducts(query),
       builder: (ctx, snapshot) {
@@ -1093,26 +1092,35 @@ class _ProductSearchDelegate extends SearchDelegate<String> {
           return Center(child: Text('エラー: ${snapshot.error}'));
         }
         final products = snapshot.data ?? [];
-        final items = <Widget>[
-          ListTile(
+        final items = <Widget>[];
+        if (query.isNotEmpty) {
+          items.add(ListTile(
             leading: const Icon(Icons.add_circle, color: Colors.green),
             title: Text('"$query" を新規登録'),
             onTap: () => close(context, '__new:$query'),
-          ),
-        ];
+          ));
+        } else {
+          items.add(const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text('最近の商品', style: TextStyle(fontWeight: FontWeight.w500)),
+          ));
+        }
         if (products.isEmpty) {
-          items.add(
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: Text('既存の商品は見つかりませんでした')),
-            ),
-          );
+          items.add(const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: Text('商品が見つかりません')),
+          ));
         } else {
           for (final p in products) {
             final product = p as Product;
             items.add(ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                child: Text(product.name.isNotEmpty ? product.name[0].toUpperCase() : '?',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer)),
+              ),
               title: Text(product.name),
-              subtitle: Text('¥${product.defaultUnitPrice}'),
+              subtitle: Text('¥${product.defaultUnitPrice}', style: const TextStyle(fontSize: 12)),
               onTap: () => close(context, product.id),
             ));
           }
