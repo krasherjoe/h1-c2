@@ -12,6 +12,7 @@ import '../../../services/sys_logger.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import '../../../plugins/customers/explorer/customer_explorer_config.dart';
 import '../../../plugins/customers/models/customer_explorer_item.dart';
+import '../../../widgets/h1_text_field.dart';
 
 // ---- カテゴリ関連ダイアログ ----
 
@@ -21,7 +22,7 @@ Future<String?> showRenameCategoryDialog(BuildContext context, String currentNam
     context: context,
     builder: (ctx) => AlertDialog(
       title: const Text('カテゴリ名を編集'),
-      content: TextField(
+      content: H1TextField(
         controller: ctrl,
         autofocus: true,
         decoration: const InputDecoration(hintText: 'カテゴリ名'),
@@ -100,7 +101,7 @@ Future<String?> showCategoryPicker({
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
+                        child: H1TextField(
                           controller: newCatCtrl,
                           decoration: InputDecoration(
                             hintText: '新規カテゴリ名',
@@ -309,7 +310,7 @@ Future<void> showOptionGroupDialog({
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: TextField(
+                    Expanded(child: H1TextField(
                       controller: ctrl,
                       decoration: const InputDecoration(hintText: 'グループ名（品種・容量など）', isDense: true),
                     )),
@@ -374,7 +375,7 @@ Future<void> showOptionValuesDialog(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: TextField(
+                    Expanded(child: H1TextField(
                       controller: ctrl,
                       decoration: const InputDecoration(hintText: '値を入力', isDense: true),
                     )),
@@ -575,7 +576,7 @@ Future<void> showCustomerPriceDialog({
                     context: ctx,
                     builder: (ctx2) => AlertDialog(
                       title: Text('${customer.displayName} の価格'),
-                      content: TextField(
+                      content: H1TextField(
                         controller: priceCtrl,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: '価格(円)'),

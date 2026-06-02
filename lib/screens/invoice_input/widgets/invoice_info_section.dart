@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../services/edit_log_repository.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class InvoiceInfoSection extends StatelessWidget {
   final FocusNode subjectFocusNode;
@@ -76,7 +77,7 @@ class InvoiceInfoSection extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: _cardDecoration(context),
-          child: TextField(
+          child: H1TextField(
             focusNode: subjectFocusNode,
             controller: subjectController,
             style: TextStyle(color: textColor),

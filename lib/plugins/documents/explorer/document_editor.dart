@@ -6,6 +6,7 @@ import '../../../services/customer_repository.dart';
 import '../../../models/customer_model.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -442,13 +443,13 @@ class _ItemEditDialogState extends State<_ItemEditDialog> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            H1TextField(
               controller: _qtyController,
               decoration: const InputDecoration(labelText: '数量'),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
-            TextField(
+            H1TextField(
               controller: _priceController,
               decoration: const InputDecoration(labelText: '単価'),
               keyboardType: TextInputType.number,

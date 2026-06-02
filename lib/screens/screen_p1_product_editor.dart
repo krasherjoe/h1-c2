@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/product_model.dart';
 import '../services/product_repository.dart';
+import '../widgets/h1_form_field.dart';
 
 class ProductEditorScreen extends StatefulWidget {
   final Product? product;
@@ -118,7 +119,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                   children: [
                     Text('基本情報', style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
-                    TextFormField(
+                    H1FormField(
                       controller: _nameCtl,
                       decoration: const InputDecoration(
                         labelText: '商品名 *',
@@ -130,7 +131,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: H1FormField(
                             controller: _priceCtl,
                             decoration: const InputDecoration(
                               labelText: '単価',
@@ -142,7 +143,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: TextFormField(
+                          child: H1FormField(
                             controller: _wholesaleCtl,
                             decoration: const InputDecoration(
                               labelText: '仕入価格',
@@ -167,7 +168,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                   children: [
                     Text('詳細', style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
-                    TextFormField(
+                    H1FormField(
                       controller: _barcodeCtl,
                       decoration: const InputDecoration(
                         labelText: 'バーコード',
@@ -175,7 +176,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _modelCtl,
                       decoration: const InputDecoration(
                         labelText: '型番',
@@ -183,7 +184,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _manufacturerCtl,
                       decoration: const InputDecoration(
                         labelText: 'メーカー',
@@ -191,7 +192,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _categoryCtl,
                       decoration: const InputDecoration(
                         labelText: 'カテゴリ',
@@ -199,7 +200,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _supplierCtl,
                       decoration: const InputDecoration(
                         labelText: '仕入先',
@@ -207,7 +208,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _stockCtl,
                       decoration: const InputDecoration(
                         labelText: '在庫数',

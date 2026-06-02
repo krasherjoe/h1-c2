@@ -3,6 +3,7 @@ import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
 import '../models/stock_transaction_model.dart';
 import '../services/inventory_repository.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class InventoryListScreen extends StatefulWidget {
   const InventoryListScreen({super.key});
@@ -60,7 +61,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8),
-                  child: TextField(
+                  child: H1TextField(
                     decoration: const InputDecoration(
                       hintText: '商品名・バーコードで検索',
                       prefixIcon: Icon(Icons.search),

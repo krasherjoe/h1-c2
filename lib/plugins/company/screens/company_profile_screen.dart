@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../../plugin_system/plugin_registry.dart';
 import '../models/company_profile.dart';
 import '../services/company_repository.dart';
+import '../../../widgets/h1_form_field.dart';
 
 class CompanyProfileScreen extends StatefulWidget {
   const CompanyProfileScreen({super.key});
@@ -89,7 +90,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  TextFormField(
+                  H1FormField(
                     controller: _nameController,
                     decoration: const InputDecoration(
                       labelText: '会社名',
@@ -97,7 +98,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     validator: (v) => v == null || v.trim().isEmpty ? '必須です' : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  H1FormField(
                     controller: _postalController,
                     decoration: const InputDecoration(
                       labelText: '郵便番号',
@@ -105,7 +106,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  H1FormField(
                     controller: _addressController,
                     decoration: const InputDecoration(
                       labelText: '住所',
@@ -113,7 +114,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  H1FormField(
                     controller: _telController,
                     decoration: const InputDecoration(
                       labelText: '電話番号',
@@ -121,7 +122,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  H1FormField(
                     controller: _faxController,
                     decoration: const InputDecoration(
                       labelText: 'FAX',
@@ -129,7 +130,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  H1FormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'メールアドレス',

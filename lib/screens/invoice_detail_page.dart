@@ -22,6 +22,7 @@ import 'invoice_detail/detail_snapshot.dart';
 import 'invoice_detail/invoice_table_cells.dart';
 import 'receipt_processing_screen.dart';
 import 'invoice_preview_page.dart';
+import '../widgets/h1_text_field.dart';
 
 List<InvoiceItem> _cloneItemsDetail(List<InvoiceItem> source) {
   return source
@@ -550,7 +551,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (_isEditing) ...[
-          TextField(
+          H1TextField(
             controller: _formalNameController,
             onChanged: (_) => _pushHistory(),
             decoration: const InputDecoration(
@@ -559,7 +560,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             style: TextStyle(color: textColor),
           ),
           const SizedBox(height: 12),
-          TextField(
+          H1TextField(
             controller: _notesController,
             onChanged: (_) => _pushHistory(),
             maxLines: 2,

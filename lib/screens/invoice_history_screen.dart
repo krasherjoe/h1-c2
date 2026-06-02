@@ -19,6 +19,7 @@ import '../services/database_helper.dart';
 import '../widgets/swipe_to_unlock.dart';
 // InvoiceFlowScreen import removed; using inline type picker
 import 'invoice_history/invoice_history_list.dart';
+import '../widgets/h1_text_field.dart';
 
 class InvoiceHistoryScreen extends StatefulWidget {
   final bool initialUnlocked;
@@ -1230,7 +1231,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                       ),
                     ],
                   ),
-                  child: TextField(
+                  child: H1TextField(
                     style: TextStyle(color: cs.onSurface),
                     decoration: InputDecoration(
                       hintText: "検索 (顧客名、伝票番号...)",

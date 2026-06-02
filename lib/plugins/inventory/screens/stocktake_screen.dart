@@ -3,6 +3,7 @@ import '../models/stock_transaction_model.dart';
 import '../services/inventory_repository.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class StocktakeScreen extends StatefulWidget {
   const StocktakeScreen({super.key});
@@ -92,7 +93,7 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                         subtitle: Text('現在庫: ${entry.currentStock.toStringAsFixed(0)}'),
                         trailing: SizedBox(
                           width: 100,
-                          child: TextField(
+                          child: H1TextField(
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               hintText: '実在庫',

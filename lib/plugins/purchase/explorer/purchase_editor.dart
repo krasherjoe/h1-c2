@@ -4,6 +4,7 @@ import '../models/purchase_model.dart';
 import '../services/purchase_repository.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class PurchaseEditor extends StatefulWidget {
   final PurchaseModel? purchase;
@@ -182,7 +183,7 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
   }
 
   Widget _buildSupplierField(ThemeData theme) {
-    return TextField(
+    return H1TextField(
       decoration: const InputDecoration(
         labelText: '仕入先',
       ),
@@ -366,13 +367,13 @@ class _ItemEditDialogState extends State<_ItemEditDialog> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            H1TextField(
               controller: _qtyController,
               decoration: const InputDecoration(labelText: '数量'),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
-            TextField(
+            H1TextField(
               controller: _priceController,
               decoration: const InputDecoration(labelText: '単価'),
               keyboardType: TextInputType.number,

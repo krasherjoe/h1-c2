@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/h1_text_field.dart';
 
 class InvoiceTableCell extends StatelessWidget {
   final String text;
@@ -36,7 +37,7 @@ class InvoiceEditableCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: TextField(
+      child: H1TextField(
         controller: TextEditingController(text: initialValue),
         keyboardType: keyboardType,
         style: TextStyle(fontSize: 14, color: textColor),

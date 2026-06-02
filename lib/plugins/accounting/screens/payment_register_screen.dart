@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/accounting_repository.dart';
 import '../../../services/customer_repository.dart';
 import '../../../models/customer_model.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class PaymentRegisterScreen extends StatefulWidget {
   const PaymentRegisterScreen({super.key});
@@ -103,7 +104,7 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          H1TextField(
             controller: _amountController,
             decoration: const InputDecoration(
               labelText: '入金額',
@@ -134,7 +135,7 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          H1TextField(
             controller: _noteController,
             decoration: const InputDecoration(
               labelText: '備考',

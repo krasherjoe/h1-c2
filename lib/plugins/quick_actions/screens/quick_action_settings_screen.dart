@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/quick_action_page.dart';
 import '../services/quick_action_service.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class QuickActionSettingsScreen extends StatefulWidget {
   const QuickActionSettingsScreen({super.key});
@@ -69,7 +70,7 @@ class _QuickActionSettingsScreenState extends State<QuickActionSettingsScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child: H1TextField(
                         controller: nameCtrl,
                         decoration: const InputDecoration(
                           labelText: 'ページ名',

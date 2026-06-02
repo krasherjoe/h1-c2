@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/project_model.dart';
 import '../../../services/project_repository.dart';
+import '../../../widgets/h1_text_field.dart';
 
 Future<Project?> showQuickProjectCreateDialog(
   BuildContext context, {
@@ -14,7 +15,7 @@ Future<Project?> showQuickProjectCreateDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       title: const Text('新規案件を作成'),
-      content: TextField(
+      content: H1TextField(
         controller: controller,
         decoration: const InputDecoration(
           labelText: '案件名',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/debug_service.dart';
 import '../services/update_service.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
   const DebugScreen({super.key});
@@ -56,7 +57,7 @@ class _DebugScreenState extends State<DebugScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Mattermost PAT設定'),
-        content: TextField(
+        content: H1TextField(
           controller: ctl,
           decoration: const InputDecoration(
             labelText: 'Personal Access Token',

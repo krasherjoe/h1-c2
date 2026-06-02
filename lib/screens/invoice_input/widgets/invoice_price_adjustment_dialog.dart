@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../calculator_keypad.dart';
+import '../../../widgets/h1_text_field.dart';
 
 Future<Map<String, dynamic>?> showPriceAdjustmentDialog(
   BuildContext context, {
@@ -80,7 +81,7 @@ Future<Map<String, dynamic>?> showPriceAdjustmentDialog(
                           Row(
                             children: [
                               Expanded(
-                                child: TextField(
+                                child: H1TextField(
                                   controller: manualDiscountController,
                                   keyboardType: TextInputType.none,
                                   decoration: InputDecoration(

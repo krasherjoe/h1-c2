@@ -5,6 +5,7 @@ import '../../../services/customer_repository.dart';
 import '../../../services/customer_data_cleaner.dart';
 import '../../../services/sys_logger.dart';
 import '../../../widgets/custom_field_display_widget.dart';
+import '../../../widgets/h1_text_field.dart';
 
 Future<void> showContactUpdateDialog({
   required BuildContext context,
@@ -22,9 +23,9 @@ Future<void> showContactUpdateDialog({
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(controller: emailController, decoration: const InputDecoration(labelText: 'メール')),
-          TextField(controller: telController, decoration: const InputDecoration(labelText: '電話番号'), keyboardType: TextInputType.phone),
-          TextField(controller: addressController, decoration: const InputDecoration(labelText: '住所')),
+          H1TextField(controller: emailController, decoration: const InputDecoration(labelText: 'メール')),
+          H1TextField(controller: telController, decoration: const InputDecoration(labelText: '電話番号'), keyboardType: TextInputType.phone),
+          H1TextField(controller: addressController, decoration: const InputDecoration(labelText: '住所')),
         ],
       ),
       actions: [

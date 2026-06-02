@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/invoice_models.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class InvoiceItemsSection extends StatelessWidget {
   final List<InvoiceItem> items;
@@ -210,7 +211,7 @@ class InvoiceItemsSection extends StatelessWidget {
                                         context: context,
                                         builder: (ctx) => AlertDialog(
                                           title: const Text('数量を入力'),
-                                          content: TextField(
+                                          content: H1TextField(
                                             controller: ctrl,
                                             keyboardType: TextInputType.number,
                                             autofocus: true,

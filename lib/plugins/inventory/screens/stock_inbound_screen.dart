@@ -3,6 +3,7 @@ import '../models/stock_transaction_model.dart';
 import '../services/inventory_repository.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class StockInboundScreen extends StatefulWidget {
   const StockInboundScreen({super.key});
@@ -104,7 +105,7 @@ class _StockInboundScreenState extends State<StockInboundScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          H1TextField(
             controller: _qtyController,
             decoration: const InputDecoration(
               labelText: '数量',
@@ -135,7 +136,7 @@ class _StockInboundScreenState extends State<StockInboundScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          H1TextField(
             controller: _noteController,
             decoration: const InputDecoration(
               labelText: 'メモ',

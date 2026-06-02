@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../main.dart' show themeNotifier, inputStyleNotifier;
+import '../../../main.dart' show themeNotifier;
+import '../../../services/input_style_service.dart' show inputStyleNotifier;
 import '../../../services/error_reporter.dart';
 import '../../../widgets/screen_id_title.dart';
 import '../services/settings_repository.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -93,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('伝票番号の接頭辞'),
             trailing: SizedBox(
               width: 120,
-              child: TextField(
+              child: H1TextField(
                 controller: TextEditingController(text: _prefix),
                 decoration: const InputDecoration(
                   hintText: '例: SK-',
@@ -107,96 +109,116 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.palette),
-            title: const Text('テーマ'),
-            trailing: SegmentedButton<ThemeMode>(
-              segments: const [
-                ButtonSegment(
-                  value: ThemeMode.system,
-                  label: Text('システム'),
-                  icon: Icon(Icons.settings_brightness),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.light,
-                  label: Text('ライト'),
-                  icon: Icon(Icons.light_mode),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.dark,
-                  label: Text('ダーク'),
-                  icon: Icon(Icons.dark_mode),
-                ),
-              ],
-              selected: {_themeMode},
-              onSelectionChanged: (v) => _setTheme(v.first),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.text_fields),
-            title: const Text('入力フィールドスタイル'),
-            trailing: SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'raised', label: Text('立体'), icon: Icon(Icons.layers)),
-                ButtonSegment(value: 'outlined', label: Text('縁取り'), icon: Icon(Icons.border_style)),
-              ],
-              selected: {_inputStyle},
-              onSelectionChanged: (v) => _setInputStyle(v.first),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'テスト入力',
-                prefixIcon: Icon(Icons.text_fields),
+          _SectionHeader(icon: Icons.palette, title: 'テーマ'),
+          const SizedBox(height: 8),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.system,
+                label: Text('システム'),
+                icon: Icon(Icons.settings_brightness),
               ),
+              ButtonSegment(
+                value: ThemeMode.light,
+                label: Text('ライト'),
+                icon: Icon(Icons.light_mode),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                label: Text('ダーク'),
+                icon: Icon(Icons.dark_mode),
+              ),
+            ],
+            selected: {_themeMode},
+            onSelectionChanged: (v) => _setTheme(v.first),
+          ),
+          const Divider(),
+          _SectionHeader(icon: Icons.text_fields, title: '入力フィールド'),
+          const SizedBox(height: 8),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'raised', label: Text('立体'), icon: Icon(Icons.layers)),
+              ButtonSegment(value: 'outlined', label: Text('縁取り'), icon: Icon(Icons.border_style)),
+            ],
+            selected: {_inputStyle},
+            onSelectionChanged: (v) => _setInputStyle(v.first),
+          ),
+          const SizedBox(height: 8),
+          H1TextField(
+            decoration: const InputDecoration(
+              hintText: 'テスト入力',
+              prefixIcon: Icon(Icons.text_fields),
             ),
           ),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.webhook),
-            title: const Text('Mattermost Webhook URL'),
-            subtitle: const Text('エラー報告送信先'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: TextEditingController(text: _webhookUrl),
-                    decoration: const InputDecoration(
-                      hintText: 'https://mm.ka.sugeee.com/hooks/xxx',
-                      isDense: true,
-                    ),
-                    style: const TextStyle(fontSize: 12),
-                    onSubmitted: (v) {
-                      _webhookUrl = v.trim();
-                      ErrorReporter.setWebhookUrl(_webhookUrl);
-                    },
+          _SectionHeader(
+            icon: Icons.webhook,
+            title: 'Mattermost Webhook URL',
+            subtitle: 'エラー報告送信先',
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: H1TextField(
+                  controller: TextEditingController(text: _webhookUrl),
+                  decoration: const InputDecoration(
+                    hintText: 'https://mm.ka.sugeee.com/hooks/xxx',
+                    isDense: true,
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send, size: 18),
-                  tooltip: 'テスト送信',
-                  onPressed: () {
-                    ErrorReporter.setWebhookUrl(_webhookUrl.trim());
-                    ErrorReporter.sendError(
-                      message: '設定テスト',
-                      detail: '設定画面からのテスト送信です',
-                      screenId: 'settings',
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('テスト送信しました')),
-                    );
+                  style: const TextStyle(fontSize: 12),
+                  onSubmitted: (v) {
+                    _webhookUrl = v.trim();
+                    ErrorReporter.setWebhookUrl(_webhookUrl);
                   },
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send, size: 18),
+                tooltip: 'テスト送信',
+                onPressed: () {
+                  ErrorReporter.setWebhookUrl(_webhookUrl.trim());
+                  ErrorReporter.sendError(
+                    message: '設定テスト',
+                    detail: '設定画面からのテスト送信です',
+                    screenId: 'settings',
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('テスト送信しました')),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  const _SectionHeader({required this.icon, required this.title, this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Icon(icon),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            if (subtitle != null)
+              Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+      ],
     );
   }
 }

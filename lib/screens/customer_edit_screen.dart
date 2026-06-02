@@ -5,6 +5,8 @@ import '../services/customer_repository.dart';
 import '../services/permission_service.dart';
 import '../widgets/customer_rank_badge.dart';
 import '../widgets/screen_id_title.dart';
+import '../widgets/h1_text_field.dart';
+import '../widgets/h1_form_field.dart';
 
 class CustomerEditScreen extends StatefulWidget {
   final Customer? customer;
@@ -225,7 +227,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    TextFormField(
+                    H1FormField(
                       controller: _displayNameCtl,
                       decoration: const InputDecoration(
                         labelText: '表示名（略称）*',
@@ -241,7 +243,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                       },
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _formalNameCtl,
                       decoration: const InputDecoration(
                         labelText: '正式名称 *',
@@ -310,7 +312,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                       }),
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _departmentCtl,
                       decoration: const InputDecoration(
                         labelText: '部署名',
@@ -335,7 +337,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    TextFormField(
+                    H1FormField(
                       controller: _addressCtl,
                       decoration: const InputDecoration(
                         labelText: '住所',
@@ -345,7 +347,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                       maxLines: 2,
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _telCtl,
                       decoration: const InputDecoration(
                         labelText: '電話番号',
@@ -355,7 +357,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
+                    H1FormField(
                       controller: _emailCtl,
                       decoration: const InputDecoration(
                         labelText: 'メールアドレス',
@@ -471,7 +473,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: H1TextField(
                               controller: _rankDiscountCtl,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
@@ -517,7 +519,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: H1FormField(
                         controller: _head1Ctl,
                         maxLength: 1,
                         decoration: const InputDecoration(
@@ -530,7 +532,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: TextFormField(
+                      child: H1FormField(
                         controller: _head2Ctl,
                         maxLength: 1,
                         decoration: const InputDecoration(

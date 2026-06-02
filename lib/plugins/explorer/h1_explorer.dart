@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'h1_explorer_config.dart';
 import 'h1_explorer_item.dart';
+import '../../widgets/h1_text_field.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -190,7 +191,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           if (_showSearch)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: TextField(
+              child: H1TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: widget.config.searchHint,

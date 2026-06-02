@@ -3,6 +3,7 @@ import '../models/stock_transaction_model.dart';
 import '../services/inventory_repository.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class StockAdjustmentScreen extends StatefulWidget {
   const StockAdjustmentScreen({super.key});
@@ -102,7 +103,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          H1TextField(
             controller: _qtyController,
             decoration: const InputDecoration(
               labelText: '増減数（正=増、負=減）',
@@ -110,7 +111,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 12),
-          TextField(
+          H1TextField(
             controller: _noteController,
             decoration: const InputDecoration(
               labelText: '理由',

@@ -28,6 +28,7 @@ import 'plugins/debug/debug_plugin.dart';
 import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
+import 'services/input_style_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/invoice_input/invoice_input_form.dart';
 import 'screens/invoice_history/invoice_history_screen.dart';
@@ -43,7 +44,6 @@ ThemeMode _loadThemeMode(SharedPreferences prefs) {
 }
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
-final ValueNotifier<String> inputStyleNotifier = ValueNotifier('raised');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
