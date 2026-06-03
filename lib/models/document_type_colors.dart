@@ -10,7 +10,7 @@ Color documentTypeColor(DocumentType type, ColorScheme cs, bool isDark) {
     DocumentType.receipt => const Color(0xFF388E3C),
   };
   if (isDark) {
-    return HSLColor.fromColor(base).withLightness(0.18).toColor();
+    return HSLColor.fromColor(base).withLightness(0.55).toColor();
   }
   return base;
 }

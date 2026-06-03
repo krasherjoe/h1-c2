@@ -62,7 +62,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   @override
   Widget buildItemTileContent(BuildContext context, DocumentModel item) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final doctypeColor = documentTypeColor(item.documentType, cs, isDark);
     final repItems = item.items.take(3).map((i) => i.productName).join('、');
     final desc = (item.subject != null && item.subject!.isNotEmpty) ? item.subject! : repItems;

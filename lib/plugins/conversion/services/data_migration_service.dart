@@ -8,9 +8,17 @@ class DataMigrationService {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_conversionDoneKey) == true) return false;
 
-    final tables = await db
-        .rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='documents'");
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='documents'",
+    );
     if (tables.isEmpty) return false;
+
+    final cols = await db.rawQuery('PRAGMA table_info(documents)');
+    final isNewSchema = cols.any((c) => c['name'] == 'document_number');
+    if (isNewSchema) {
+      await prefs.setBool(_conversionDoneKey, true);
+      return false;
+    }
 
     final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM documents');
     return (rows.first['c'] as int? ?? 0) > 0;
