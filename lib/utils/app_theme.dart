@@ -43,9 +43,9 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: isDark ? cardDark : cardLight,
-        elevation: 2,
+        elevation: 3,
         surfaceTintColor: Colors.transparent,
-        shadowColor: isDark ? const Color(0x40000000) : const Color(0x1A000000),
+        shadowColor: isDark ? const Color(0x50000000) : const Color(0x22000000),
       ),
       inputDecorationTheme: _inputTheme(isDark, inputStyle),
     );

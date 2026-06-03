@@ -66,16 +66,15 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final doctypeColor = documentTypeColor(item.documentType, cs, isDark);
     final verticalType = item.documentType.label.split('').join('\n');
     final repItems = item.items.take(3).map((i) => i.productName).join('、');
-    final desc = (item.subject != null && item.subject!.isNotEmpty) ? item.subject! : repItems;
+    final subject = (item.subject != null && item.subject!.isNotEmpty) ? item.subject : null;
     final date = '${item.date.year}/${item.date.month.toString().padLeft(2, '0')}/${item.date.day.toString().padLeft(2, '0')}';
     final money = '¥${item.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     final hasDraft = item.isDraft;
     return Card(
-      elevation: 2,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: 90,
+        height: 88,
         child: Row(
           children: [
             Container(
@@ -89,29 +88,34 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
             const SizedBox(width: 10),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.fromLTRB(0, 8, 8, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Text(date, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                      const Spacer(),
-                      if (hasDraft) _statusBadge('下書き', Colors.orange),
-                    ]),
-                    Text(item.customerName,
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 1),
-                    Row(children: [
-                      Text('📄', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                      const SizedBox(width: 4),
+                      Text(date, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                      const SizedBox(width: 6),
                       Expanded(
-                        child: Text(desc,
-                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                        child: Text(item.customerName,
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface),
                             maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
+                      if (hasDraft) _statusBadge('下書き', Colors.orange),
                     ]),
-                    const SizedBox(height: 1),
+                    if (subject != null)
+                      Text(subject!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Expanded(
+                      child: Row(children: [
+                        Text('📄', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(repItems,
+                              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                      ]),
+                    ),
                     Row(children: [
                       Text('💰', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                       const SizedBox(width: 4),
@@ -122,7 +126,6 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
           ],
         ),
       ),
