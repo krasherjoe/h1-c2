@@ -422,26 +422,10 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildSubjectField(ColorScheme cs) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: H1TextField(
-          controller: _subjectCtl,
-          decoration: const InputDecoration(
-            labelText: '件名',
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
-            isDense: true,
-          ),
-        ),
+    return H1TextField(
+      controller: _subjectCtl,
+      decoration: const InputDecoration(
+        labelText: '件名',
       ),
     );
   }

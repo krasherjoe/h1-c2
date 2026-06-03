@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -194,6 +196,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
     });
     _scheduleGarbageCollection();
     _check();
+    _checkStoragePermission();
   }
 
   @override
@@ -202,6 +205,43 @@ class _H1CoreAppState extends State<H1CoreApp> {
     inputStyleNotifier.removeListener(_onInputStyleChanged);
     CompanyService.activeCompanyNotifier.removeListener(_onCompanyChanged);
     super.dispose();
+  }
+
+  Future<void> _checkStoragePermission() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final probe = File('/storage/emulated/0/Documents/販売アシスト1号code/.perm_check');
+      await probe.parent.create(recursive: true);
+      await probe.writeAsString('');
+      await probe.delete();
+      return;
+    } catch (_) {}
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final granted = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('ストレージ権限が必要です'),
+          content: const Text('データを端末に安全に保存するため、ファイル管理へのアクセス権限が必要です。設定画面で許可してください。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('後で'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('設定を開く'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (granted == true) {
+        const channel = MethodChannel('com.h1.core/settings');
+        await channel.invokeMethod('openManageStorage');
+      }
+    });
   }
 
   void _onThemeChanged() {
@@ -248,6 +288,13 @@ class _H1CoreAppState extends State<H1CoreApp> {
     return MaterialApp(
       title: '販売アシスト1号 コア',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('ja'),
+      supportedLocales: const [Locale('ja'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: AppTheme.light(inputStyle: inputStyle),
       darkTheme: AppTheme.dark(inputStyle: inputStyle),
       themeMode: _themeMode,
