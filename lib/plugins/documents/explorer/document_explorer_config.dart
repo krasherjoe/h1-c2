@@ -61,59 +61,48 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
 
   @override
   Widget buildItemTileContent(BuildContext context, DocumentModel item) {
-    try {
-      final cs = Theme.of(context).colorScheme;
-      final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
-      final doctypeColor = documentTypeColor(item.documentType, cs, isDark);
-      final repItems = item.items.take(3).map((i) => i.productName).join('、');
-      final desc = (item.subject != null && item.subject!.isNotEmpty) ? item.subject! : repItems;
-      return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        clipBehavior: Clip.antiAlias,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 4, color: doctypeColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Text(item.documentNumber,
-                          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                      const Spacer(),
-                      _chip(item.documentType.label, doctypeColor, cs),
-                      if (item.isDraft) ...[
-                        const SizedBox(width: 4),
-                        _chip('下書き', Colors.orange.shade700, cs),
-                      ],
-                    ]),
-                    const SizedBox(height: 6),
-                    Text(item.customerName,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
-                    Text(desc,
-                        style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
+    final cs = Theme.of(context).colorScheme;
+    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final doctypeColor = documentTypeColor(item.documentType, cs, isDark);
+    final repItems = item.items.take(3).map((i) => i.productName).join('、');
+    final desc = (item.subject != null && item.subject!.isNotEmpty) ? item.subject! : repItems;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(width: 4, color: doctypeColor),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Text(item.documentNumber,
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                    const Spacer(),
+                    _chip(item.documentType.label, doctypeColor, cs),
+                    if (item.isDraft) ...[
+                      const SizedBox(width: 4),
+                      _chip('下書き', Colors.orange.shade700, cs),
+                    ],
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(item.customerName,
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(desc,
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
               ),
             ),
-          ],
-        ),
-      );
-    } catch (e, st) {
-      debugPrint('[DEConfig] buildItemTileContent error: $e\n$st');
-      return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Text(item.title, style: const TextStyle(color: Colors.red)),
-        ),
-      );
-    }
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _chip(String text, Color color, ColorScheme cs) => Container(

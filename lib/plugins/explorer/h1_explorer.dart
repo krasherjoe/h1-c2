@@ -712,47 +712,11 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   Widget _buildItemTile(T item) {
-    return Dismissible(
-      key: ValueKey(item.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      confirmDismiss: (_) async {
-        final allowed = await widget.config.canDelete(item);
-        if (!allowed) return false;
-        if (!context.mounted) return false;
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('削除確認'),
-            content: Text('「${item.title}」を削除しますか？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('キャンセル'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('削除'),
-              ),
-            ],
-          ),
-        );
-        return confirmed == true;
-      },
-      onDismissed: (_) async {
-        await widget.config.deleteItem(item);
-        if (mounted) _loadItems();
-      },
-      child: InkWell(
-        onTap: () => _onItemTap(item),
-        onLongPress: widget.selectionMode ? null : () => _confirmDelete(item),
-        child: widget.config.buildItemTileContent(context, item),
-      ),
+    final content = widget.config.buildItemTileContent(context, item);
+    return InkWell(
+      onTap: () => _onItemTap(item),
+      onLongPress: widget.selectionMode ? null : () => _confirmDelete(item),
+      child: content,
     );
   }
 }
