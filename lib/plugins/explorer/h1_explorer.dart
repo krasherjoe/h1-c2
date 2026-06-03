@@ -6,6 +6,7 @@ import 'h1_explorer_item.dart';
 import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
+import '../../services/log_dispatcher.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;

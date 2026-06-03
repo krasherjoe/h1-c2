@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'database_helper.dart';
+import 'debug_console.dart';
+import 'log_dispatcher.dart';
 
 class MmCommandService {
   static final MmCommandService instance = MmCommandService._();
@@ -18,7 +18,6 @@ class MmCommandService {
   static const _kTeamKey = 'mattermost_team_name';
   static const _kChannelName = 'h1-debug';
   static const _kPrefix = '!opencode';
-  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.26+1');
 
   Timer? _timer;
   bool _enabled = false;
@@ -28,7 +27,9 @@ class MmCommandService {
   String? _channelId;
 
   bool get isEnabled => _enabled;
-
+  String? get baseUrl => _baseUrl;
+  String? get pat => _pat;
+  Future<String?> get channelId => _ensureChannelId();
   final ValueNotifier<bool> enabledNotifier = ValueNotifier(false);
 
   Map<String, String> get _headers => {
@@ -48,13 +49,8 @@ class MmCommandService {
   Future<void> setEnabled(bool v) async {
     _enabled = v;
     enabledNotifier.value = v;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kEnabledKey, v);
-    if (v) {
-      start();
-    } else {
-      stop();
-    }
+    (await SharedPreferences.getInstance()).setBool(_kEnabledKey, v);
+    if (v) start(); else stop();
   }
 
   Future<String?> _ensureChannelId() async {
@@ -68,7 +64,6 @@ class MmCommandService {
       if (teamRes.statusCode != 200) return null;
       final team = jsonDecode(teamRes.body);
       final teamId = team['id'] as String;
-
       final chRes = await http.get(
         Uri.parse('$_baseUrl/api/v4/teams/$teamId/channels/name/$_kChannelName'),
         headers: _headers,
@@ -123,133 +118,25 @@ class MmCommandService {
         final createAt = post['create_at'] as int? ?? 0;
         if (createAt > latest) latest = createAt;
         if (!msg.startsWith(_kPrefix)) continue;
-        await _executeCommand(msg, post);
+        final reply = post['parent_id'] != null;
+        if (reply) continue;
+        await _dispatch(msg, post);
       }
-
       await prefs.setInt(_kLastCheckKey, latest);
     } catch (e) {
       debugPrint('[MmCmd] poll failed: $e');
     }
   }
 
-  Future<void> _executeCommand(String msg, Map<String, dynamic> post) async {
-    final parts = msg.split(' ');
-    if (parts.length < 2) return;
-    final cmd = parts[1].toLowerCase();
-    final args = parts.length > 2 ? parts.sublist(2) : <String>[];
-    debugPrint('[MmCmd] executing: $cmd $args');
+  Future<void> _dispatch(String msg, Map<String, dynamic> post) async {
+    final rest = msg.substring(_kPrefix.length).trim();
+    if (rest.isEmpty) return;
+    final parts = rest.split(' ');
+    final name = parts[0];
+    final args = parts.length > 1 ? parts.sublist(1) : <String>[];
+    debugPrint('[MmCmd] dispatch: $name $args');
 
-    String result;
-    try {
-      switch (cmd) {
-        case 'ping':
-          result = 'pong';
-        case 'status':
-          result = await _cmdStatus();
-        case 'db':
-          result = await _cmdDb();
-        case 'dump':
-          result = await _cmdDump();
-        default:
-          result = '不明なコマンド: $cmd';
-      }
-    } catch (e) {
-      result = '実行エラー: $e';
-    }
-
-    await _postResult(result, post['id'] as String?);
-  }
-
-  Future<String> _cmdStatus() async {
-    try {
-      final db = await DatabaseHelper().database;
-      final file = File(db.path);
-      final size = await file.length();
-      final sizeStr = '${(size / 1024).round()}KB';
-      return '✅ 稼働中 | v$_kAppVersion | DB: $sizeStr';
-    } catch (e) {
-      return 'ステータス取得失敗: $e';
-    }
-  }
-
-  Future<String> _cmdDump() async {
-    try {
-      final buf = StringBuffer();
-      buf.writeln('```');
-      buf.writeln('h-1-core 状態ダンプ');
-      buf.writeln('version: $_kAppVersion');
-      buf.writeln('---');
-      final db = await DatabaseHelper().database;
-      final file = File(db.path);
-      final size = await file.length();
-      buf.writeln('DB path: ${file.path}');
-      buf.writeln('DB size: ${(size / 1024).round()}KB (${size} bytes)');
-      buf.writeln('---');
-      try {
-        final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
-        for (final t in tables) {
-          final name = t['name'] as String;
-          final cnt = await db.rawQuery('SELECT COUNT(*) as c FROM "$name"');
-          final c = cnt.first['c'] ?? 0;
-          buf.writeln('  $name: $c rows');
-        }
-      } catch (_) {}
-      buf.writeln('---');
-      buf.writeln('MM base: $_baseUrl');
-      buf.writeln('MM team: $_teamName');
-      buf.writeln('MM channel: $_kChannelName');
-      buf.writeln('PAT設定: ${_pat != null ? 'OK' : '未設定'}');
-      buf.writeln('ポーリング: ${_enabled ? 'ON' : 'OFF'}');
-      buf.writeln('```');
-      return buf.toString();
-    } catch (e) {
-      return 'ダンプ失敗: $e';
-    }
-  }
-
-  Future<String> _cmdDb() async {
-    try {
-      final dbPath = await DatabaseHelper().database.then((db) => db.path);
-      final file = File(dbPath);
-      if (!await file.exists()) return 'DBファイルなし';
-      final bytes = await file.readAsBytes();
-      final channelId = await _ensureChannelId();
-      if (channelId == null) return 'チャンネル取得失敗';
-
-      final uploadReq = http.MultipartRequest(
-        'POST',
-        Uri.parse('$_baseUrl/api/v4/files'),
-      );
-      uploadReq.headers['Authorization'] = 'Bearer $_pat';
-      uploadReq.fields['channel_id'] = channelId;
-      uploadReq.files.add(await http.MultipartFile.fromBytes(
-        'files',
-        bytes,
-        filename: 'h1-core_db_cmd.db',
-      ));
-      final uploadRes = await uploadReq.send();
-      final uploadBody = await uploadRes.stream.bytesToString();
-      if (uploadRes.statusCode != 201) return 'アップロード失敗(${uploadRes.statusCode})';
-      final data = jsonDecode(uploadBody);
-      final fileIds = (data['file_infos'] as List)
-          .map<String>((f) => f['id'] as String).toList();
-
-      await http.post(
-        Uri.parse('$_baseUrl/api/v4/posts'),
-        headers: _headers,
-        body: jsonEncode({
-          'channel_id': channelId,
-          'message': ':floppy_disk: **コマンド経由DB送信**',
-          'file_ids': fileIds,
-        }),
-      );
-      return 'DB送信完了';
-    } catch (e) {
-      return 'DB送信失敗: $e';
-    }
-  }
-
-  Future<void> _postResult(String text, String? rootId) async {
+    final result = await DebugConsole.call(name, args);
     final channelId = await _ensureChannelId();
     if (channelId == null) return;
     try {
@@ -258,12 +145,12 @@ class MmCommandService {
         headers: _headers,
         body: jsonEncode({
           'channel_id': channelId,
-          'message': text,
-          if (rootId != null) 'root_id': rootId,
+          'message': result,
+          'root_id': post['id'],
         }),
       );
     } catch (e) {
-      debugPrint('[MmCmd] post result failed: $e');
+      debugPrint('[MmCmd] post failed: $e');
     }
   }
 }

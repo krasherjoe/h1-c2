@@ -6,6 +6,7 @@ import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/menu_item.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/document_explorer_config.dart';
+import '../../services/debug_console.dart';
 
 const _kDocTable = '''
   CREATE TABLE IF NOT EXISTS documents (
@@ -61,6 +62,13 @@ class DocumentsPlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
+    DebugConsole.register('documents.stats', (_) async {
+      final db = context.database;
+      final cnt = await db.rawQuery('SELECT document_type, COUNT(*) as c FROM documents GROUP BY document_type');
+      final lines = cnt.map((r) => '  ${r['document_type']}: ${r['c']}件').join('\n');
+      final total = cnt.fold(0, (s, r) => s + (r['c'] as int? ?? 0));
+      return '伝票統計:\n$lines\n  合計: $total件';
+    });
     debugPrint('[DocumentsPlugin] Initialized');
   }
 

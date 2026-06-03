@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -42,6 +44,8 @@ import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
 import 'services/mm_command_service.dart';
+import 'services/debug_console.dart';
+import 'services/log_dispatcher.dart';
 import 'services/input_style_service.dart';
 import 'services/sync_garbage_collector.dart';
 import 'screens/dashboard_screen.dart';
@@ -94,6 +98,74 @@ Future<void> _migrateIfNeeded() async {
   await prefs.setBool('migrated_v2', true);
 }
 
+Future<String> _cmdStatus(List<String> _) async {
+  try {
+    final db = await DatabaseHelper().database;
+    final file = File(db.path);
+    final size = await file.length();
+    return '✅ 稼働中 | DB: ${(size / 1024).round()}KB';
+  } catch (e) {
+    return 'ステータス取得失敗: $e';
+  }
+}
+
+Future<String> _cmdDump(List<String> _) async {
+  try {
+    final buf = StringBuffer();
+    buf.writeln('```');
+    buf.writeln('h-1-core 状態ダンプ');
+    final db = await DatabaseHelper().database;
+    final file = File(db.path);
+    final size = await file.length();
+    buf.writeln('DB: ${file.path} (${(size / 1024).round()}KB)');
+    try {
+      final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
+      for (final t in tables) {
+        final name = t['name'] as String;
+        final cnt = await db.rawQuery('SELECT COUNT(*) as c FROM "$name"');
+        buf.writeln('  $name: ${cnt.first['c']}行');
+      }
+    } catch (_) {}
+    buf.writeln('```');
+    return buf.toString();
+  } catch (e) {
+    return 'ダンプ失敗: $e';
+  }
+}
+
+Future<String> _cmdDbSend(List<String> _) async {
+  try {
+    final db = await DatabaseHelper().database;
+    final file = File(db.path);
+    if (!await file.exists()) return 'DBファイルなし';
+    final bytes = await file.readAsBytes();
+    final svc = MmCommandService.instance;
+    final channelId = await svc.channelId;
+    if (channelId == null) return 'チャンネル取得失敗';
+    if (svc.pat == null || svc.baseUrl == null) return 'PAT未設定';
+
+    final uploadReq = http.MultipartRequest(
+      'POST', Uri.parse('${svc.baseUrl}/api/v4/files'),
+    );
+    uploadReq.headers['Authorization'] = 'Bearer ${svc.pat}';
+    uploadReq.fields['channel_id'] = channelId;
+    uploadReq.files.add(await http.MultipartFile.fromBytes('files', bytes, filename: 'h1-core_db_cmd.db'));
+    final uploadRes = await uploadReq.send();
+    final uploadBody = await uploadRes.stream.bytesToString();
+    if (uploadRes.statusCode != 201) return 'アップロード失敗(${uploadRes.statusCode})';
+    final data = jsonDecode(uploadBody);
+    final fileIds = (data['file_infos'] as List).map<String>((f) => f['id'] as String).toList();
+    await http.post(
+      Uri.parse('${svc.baseUrl}/api/v4/posts'),
+      headers: {'Authorization': 'Bearer ${svc.pat}', 'Content-Type': 'application/json'},
+      body: jsonEncode({'channel_id': channelId, 'message': ':floppy_disk: **コマンド経由DB送信**', 'file_ids': fileIds}),
+    );
+    return 'DB送信完了';
+  } catch (e) {
+    return 'DB送信失敗: $e';
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _migrateIfNeeded();
@@ -115,6 +187,13 @@ void main() async {
   };
 
   await MmCommandService.instance.loadConfig();
+  await LogDispatcher.loadConfig();
+
+  DebugConsole.register('ping', (_) async => 'pong');
+  DebugConsole.register('system.status', _cmdStatus);
+  DebugConsole.register('system.dump', _cmdDump);
+  DebugConsole.register('db.send', _cmdDbSend);
+
   if (MmCommandService.instance.isEnabled) {
     MmCommandService.instance.start();
   }
