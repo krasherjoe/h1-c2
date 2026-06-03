@@ -199,8 +199,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
         action: 'save',
         data: doc.toMap(),
       );
+      if (!mounted) return;
+      setState(() => _isSaving = false);
       Navigator.pop(context, true);
     } catch (e, st) {
+      setState(() => _isSaving = false);
       ErrorReporter.sendError(
         message: '書類保存失敗: $e',
         screenId: '/documents/editor',
@@ -210,8 +213,6 @@ class _DocumentEditorState extends State<DocumentEditor> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('保存エラー: $e')),
       );
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -325,6 +326,13 @@ class _DocumentEditorState extends State<DocumentEditor> {
             icon: Icon(Icons.redo, color: _canRedo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
             tooltip: 'やり直す',
             onPressed: _canRedo ? _redo : null,
+          ),
+          IconButton(
+            icon: _isSaving
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Icon(Icons.save, color: cs.onPrimary),
+            tooltip: '保存',
+            onPressed: _isSaving ? null : _save,
           ),
         ],
       ),
