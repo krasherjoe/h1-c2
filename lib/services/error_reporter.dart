@@ -114,6 +114,22 @@ $stackStr
     }
   }
 
+  static Future<void> sendLog({required String message}) async {
+    try {
+      final url = await _getWebhookUrl();
+      if (url.isEmpty) return;
+      await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'text': '🧪 **h-1-core ログ** ($_kAppVersion)\n$message',
+        }),
+      );
+    } catch (e) {
+      debugPrint('[ErrorReporter] sendLog failed: $e');
+    }
+  }
+
   static void showError(
     BuildContext context, {
     required String message,

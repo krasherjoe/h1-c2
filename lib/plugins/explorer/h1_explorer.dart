@@ -28,6 +28,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   List<T> _items = [];
   bool _isLoading = true;
   int? _dbSize;
+  int _lastLogCount = -1;
   String _query = '';
   bool _showSearch = false;
   bool _showFilter = false;
@@ -193,6 +194,11 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       final db = await DatabaseHelper().database;
       final file = File(db.path);
       _dbSize = await file.length();
+      if (_items.length != _lastLogCount) {
+        _lastLogCount = _items.length;
+        final sizeStr = '${(_dbSize! / 1024).round()}KB';
+        ErrorReporter.sendLog(message: '全${_items.length}件 | DB: $sizeStr');
+      }
       if (mounted) setState(() {});
     } catch (_) {
       _dbSize = null;
