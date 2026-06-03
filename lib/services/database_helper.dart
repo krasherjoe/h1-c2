@@ -93,12 +93,25 @@ class DatabaseHelper {
     await _migrateToExternalStorage(dbPath);
     final dir = Directory(p.dirname(dbPath));
     if (!await dir.exists()) await dir.create(recursive: true);
-    return openDatabase(
-      dbPath,
-      version: _databaseVersion,
-      onCreate: createAllTables,
-      onUpgrade: upgradeDatabase,
-    );
+    try {
+      return await openDatabase(
+        dbPath,
+        version: _databaseVersion,
+        onCreate: createAllTables,
+        onUpgrade: upgradeDatabase,
+      );
+    } catch (e) {
+      debugPrint('[DB] openDatabase失敗、app-privateにフォールバック: $e');
+      final appDir = await getApplicationDocumentsDirectory();
+      final fallbackPath = p.join(appDir.path, '販売アシスト1号code', p.basename(dbPath));
+      await Directory(p.dirname(fallbackPath)).create(recursive: true);
+      return openDatabase(
+        fallbackPath,
+        version: _databaseVersion,
+        onCreate: createAllTables,
+        onUpgrade: upgradeDatabase,
+      );
+    }
   }
 }
 

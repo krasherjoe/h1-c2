@@ -17,7 +17,12 @@ class CompanyService {
     if (Platform.isAndroid) {
       final path = '/storage/emulated/0/Documents/$_dirName';
       try {
-        await Directory(path).create(recursive: true);
+        final dir = Directory(path);
+        if (!await dir.exists()) await dir.create(recursive: true);
+        // 実際に書き込めるか確認
+        final probe = File('$path/.perm_probe');
+        await probe.writeAsString('');
+        await probe.delete();
         return path;
       } catch (_) {
         debugPrint('[CompanyService] 外部ストレージアクセス不可、app-privateにフォールバック');
