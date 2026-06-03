@@ -73,7 +73,7 @@ class DatabaseHelper {
         if (await ef.length() > 0) return;
       }
       final appDir = await getApplicationDocumentsDirectory();
-      final internalDir = Directory(p.join(appDir.path, '販売アシスト1号code'));
+      final internalDir = Directory(p.join(appDir.path, '販売アシスト1号core'));
       if (!await internalDir.exists()) return;
       final name = p.basenameWithoutExtension(externalDbPath);
       final internalFile = File(p.join(internalDir.path, '$name.db'));
@@ -103,7 +103,7 @@ class DatabaseHelper {
     } catch (e) {
       debugPrint('[DB] openDatabase失敗、app-privateにフォールバック: $e');
       final appDir = await getApplicationDocumentsDirectory();
-      final fallbackPath = p.join(appDir.path, '販売アシスト1号code', p.basename(dbPath));
+      final fallbackPath = p.join(appDir.path, '販売アシスト1号core', p.basename(dbPath));
       await Directory(p.dirname(fallbackPath)).create(recursive: true);
       return openDatabase(
         fallbackPath,

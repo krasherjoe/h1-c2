@@ -10,7 +10,8 @@ class CompanyService {
   static final ValueNotifier<String?> activeCompanyNotifier = ValueNotifier(null);
 
   static const _prefKey = 'current_company';
-  static const _dirName = '販売アシスト1号code';
+  static const _dirName = '販売アシスト1号core';
+  static const _oldDirName = '販売アシスト1号code';
   static const _defaultFileName = 'default_company.txt';
 
   static Future<String> _getBasePath() async {
@@ -19,17 +20,37 @@ class CompanyService {
       try {
         final dir = Directory(path);
         if (!await dir.exists()) await dir.create(recursive: true);
-        // 実際に書き込めるか確認
         final probe = File('$path/.perm_probe');
         await probe.writeAsString('');
         await probe.delete();
+        await _migrateFromOldDir(path);
         return path;
       } catch (_) {
         debugPrint('[CompanyService] 外部ストレージアクセス不可、app-privateにフォールバック');
       }
     }
     final appDir = await getApplicationDocumentsDirectory();
-    return p.join(appDir.path, _dirName);
+    final path = p.join(appDir.path, _dirName);
+    await _migrateFromOldDir(path);
+    return path;
+  }
+
+  static Future<void> _migrateFromOldDir(String newDir) async {
+    final oldDir = Directory(p.join(p.dirname(newDir), _oldDirName));
+    if (!await oldDir.exists()) return;
+    try {
+      final files = oldDir.listSync().whereType<File>().where((f) => f.path.endsWith('.db'));
+      for (final f in files) {
+        final dest = File(p.join(newDir, p.basename(f.path)));
+        if (!await dest.exists()) {
+          await dest.parent.create(recursive: true);
+          await f.copy(dest.path);
+          debugPrint('[CompanyService] 移行: ${f.path} → $dest');
+        }
+      }
+    } catch (e) {
+      debugPrint('[CompanyService] 旧DB移行失敗: $e');
+    }
   }
 
   static Future<Directory> getCompanyDirectory() async {

@@ -78,22 +78,25 @@ Future<void> _migrateIfNeeded() async {
   }
 
   // 2) 旧バージョン: public Documents に保存された DB を移行 (v1.2.097〜v1.2.102)
-  try {
-    final publicDbDir = Directory('/storage/emulated/0/Documents/販売アシスト1号code');
-    if (await publicDbDir.exists()) {
-      final files = publicDbDir.listSync().whereType<File>().where((f) => f.path.endsWith('.db'));
-      for (final f in files) {
-        final name = p.basenameWithoutExtension(f.path);
-        if (name.startsWith('.')) continue;
-        final destPath = p.join((await CompanyService.getCompanyDirectory()).path, '$name.db');
-        if (!await File(destPath).exists()) {
-          await f.copy(destPath);
-          debugPrint('[Migration] public DB移行: ${f.path} → $destPath');
+  //    新旧両方のディレクトリ名に対応（販売アシスト1号code → 販売アシスト1号core）
+  for (final dirName in ['販売アシスト1号code', '販売アシスト1号core']) {
+    try {
+      final publicDbDir = Directory('/storage/emulated/0/Documents/$dirName');
+      if (await publicDbDir.exists()) {
+        final files = publicDbDir.listSync().whereType<File>().where((f) => f.path.endsWith('.db'));
+        for (final f in files) {
+          final name = p.basenameWithoutExtension(f.path);
+          if (name.startsWith('.')) continue;
+          final destPath = p.join((await CompanyService.getCompanyDirectory()).path, '$name.db');
+          if (!await File(destPath).exists()) {
+            await f.copy(destPath);
+            debugPrint('[Migration] public DB移行: ${f.path} → $destPath');
+          }
         }
       }
+    } catch (e) {
+      debugPrint('[Migration] public DB移行スキップ(権限なし): $e');
     }
-  } catch (e) {
-    debugPrint('[Migration] public DB移行スキップ(権限なし): $e');
   }
 
   await prefs.setBool('migrated_v2', true);
@@ -296,7 +299,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
   Future<void> _checkStoragePermission() async {
     if (!Platform.isAndroid) return;
     try {
-      final probe = File('/storage/emulated/0/Documents/販売アシスト1号code/.perm_check');
+      final probe = File('/storage/emulated/0/Documents/販売アシスト1号core/.perm_check');
       await probe.parent.create(recursive: true);
       await probe.writeAsString('');
       await probe.delete();
