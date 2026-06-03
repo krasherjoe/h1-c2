@@ -1070,6 +1070,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final query = _searchCtrl.text.trim();
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1107,6 +1108,18 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
               onChanged: _search,
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.add_circle, size: 18),
+                label: Text(query.isEmpty ? '新規商品登録' : '「$query」を新規登録'),
+                onPressed: () => _createProduct(_searchCtrl.text.trim()),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
           ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.55,
@@ -1128,16 +1141,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
     final query = _searchCtrl.text.trim();
     final items = <Widget>[];
 
-    if (query.isNotEmpty && _filtered.isEmpty) {
-      items.add(ListTile(
-        leading: const Icon(Icons.add_circle, color: Colors.green),
-        title: Text('「$query」を新規登録'),
-        subtitle: const Text('商品マスターに追加します', style: TextStyle(fontSize: 12)),
-        onTap: () => _createProduct(query),
-      ));
-    }
-
-    if (_filtered.isEmpty && query.isEmpty) {
+    if (_filtered.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
