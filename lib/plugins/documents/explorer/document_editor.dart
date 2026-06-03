@@ -9,12 +9,10 @@ import '../../../services/product_repository.dart';
 import '../../../services/project_repository.dart';
 import '../../../models/project_model.dart';
 import '../../../services/sync_service.dart';
+import '../../../services/database_helper.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
-import '../../pricelist/models/price_entry.dart';
-import '../../pricelist/screens/price_explorer_screen.dart';
 import '../../customers/screens/customer_edit_screen.dart';
-import '../../products/screens/product_editor_screen.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -270,30 +268,20 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Future<void> _addItem() async {
-    final result = await showDialog<_EditingItem>(
+    final result = await showModalBottomSheet<_EditingItem>(
       context: context,
-      builder: (ctx) => _ItemEditDialog(
-        existing: null,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _ProductPickerSheet(
+        customerId: _customerId,
         productRepo: _productRepo,
-        customerName: _customerName,
       ),
     );
     if (result != null && mounted) {
       _wrapWithSnapshot(() => _items.add(result));
-    }
-  }
-
-  Future<void> _editItem(int index) async {
-    final result = await showDialog<_EditingItem>(
-      context: context,
-      builder: (ctx) => _ItemEditDialog(
-        existing: _items[index],
-        productRepo: _productRepo,
-        customerName: _customerName,
-      ),
-    );
-    if (result != null && mounted) {
-      _wrapWithSnapshot(() => _items[index] = result);
     }
   }
 
@@ -302,6 +290,34 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   int get _total => _items.fold(0, (sum, item) => sum + (item.quantity * item.unitPrice).round());
+
+  Future<void> _editPrice(int index) async {
+    final item = _items[index];
+    final ctl = TextEditingController(text: item.unitPrice.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('単価を変更'),
+        content: H1TextField(
+          controller: ctl,
+          decoration: const InputDecoration(labelText: '単価'),
+          keyboardType: TextInputType.number,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () {
+            final v = int.tryParse(ctl.text);
+            if (v != null && v > 0) Navigator.pop(ctx, v);
+          }, child: const Text('OK')),
+        ],
+      ),
+    );
+    ctl.dispose();
+    if (result != null && mounted) {
+      _wrapWithSnapshot(() => _items[index].unitPrice = result);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -531,17 +547,19 @@ class _DocumentEditorState extends State<DocumentEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: () => _editItem(index),
-              child: Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
-            ),
+            Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
             const SizedBox(height: 6),
             Row(
               children: [
-                Expanded(
-                  child: Text('￥${_formatMoney(item.unitPrice)} × ${_formatQty(item.quantity)} = ￥${_formatMoney(subtotal)}',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                GestureDetector(
+                  onTap: () => _editPrice(index),
+                  child: Text('￥${_formatMoney(item.unitPrice)}',
+                    style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
                 ),
+                const SizedBox(width: 4),
+                Text('× ${_formatQty(item.quantity)} = ￥${_formatMoney(subtotal)}',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                const Spacer(),
                 IconButton(
                   icon: Icon(Icons.remove_circle_outline, size: 20, color: cs.onSurfaceVariant),
                   onPressed: () {
@@ -553,17 +571,14 @@ class _DocumentEditorState extends State<DocumentEditor> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
-                GestureDetector(
-                  onTap: () => _showQuantityDialog(index),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(_formatQty(item.quantity),
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(4),
                   ),
+                  child: Text(_formatQty(item.quantity),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
                 ),
                 IconButton(
                   icon: Icon(Icons.add_circle_outline, size: 20, color: cs.onSurfaceVariant),
@@ -585,33 +600,6 @@ class _DocumentEditorState extends State<DocumentEditor> {
         ),
       ),
     );
-  }
-
-  Future<void> _showQuantityDialog(int index) async {
-    final item = _items[index];
-    final controller = TextEditingController(text: item.quantity.toString());
-    final result = await showDialog<double>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('数量を入力'),
-        content: H1TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: '数量'),
-          keyboardType: TextInputType.number,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-          FilledButton(onPressed: () {
-            final v = double.tryParse(controller.text);
-            if (v != null && v > 0) Navigator.pop(ctx, v);
-          }, child: const Text('OK')),
-        ],
-      ),
-    );
-    if (result != null && mounted) {
-      _wrapWithSnapshot(() => _items[index].quantity = result);
-    }
   }
 
   Widget _buildSummarySection(ColorScheme cs) {
@@ -944,233 +932,283 @@ class _ProjectPickerDialogState extends State<_ProjectPickerDialog> {
   }
 }
 
-class _ItemEditDialog extends StatefulWidget {
-  final _EditingItem? existing;
+class _ProductPickerSheet extends StatefulWidget {
+  final String? customerId;
   final ProductRepository productRepo;
-  final String? customerName;
 
-  _ItemEditDialog({required this.existing, required this.productRepo, this.customerName});
+  const _ProductPickerSheet({
+    required this.customerId,
+    required this.productRepo,
+  });
 
   @override
-  State<_ItemEditDialog> createState() => _ItemEditDialogState();
+  State<_ProductPickerSheet> createState() => _ProductPickerSheetState();
 }
 
-class _ItemEditDialogState extends State<_ItemEditDialog> {
-  late String _productId;
-  late String _productName;
-  late TextEditingController _qtyController;
-  late TextEditingController _priceController;
+class _ProductPickerSheetState extends State<_ProductPickerSheet> {
+  List<Product> _products = [];
+  List<Product> _filtered = [];
+  final _searchCtrl = TextEditingController();
+  bool _loading = true;
+  Map<String, int> _customerPrices = {};
+  final _uuid = const Uuid();
 
   @override
   void initState() {
     super.initState();
-    final e = widget.existing;
-    _productId = e?.productId ?? '';
-    _productName = e?.productName ?? '';
-    _qtyController = TextEditingController(text: e?.quantity.toString() ?? '1');
-    _priceController = TextEditingController(text: e?.unitPrice.toString() ?? '0');
+    _load();
   }
 
-  @override
-  void dispose() {
-    _qtyController.dispose();
-    _priceController.dispose();
-    super.dispose();
-  }
+  Future<void> _load() async {
+    final results = await Future.wait([
+      widget.productRepo.searchProducts(''),
+      _loadCustomerPrices(),
+    ]);
+    final products = (results[0] as List).cast<Product>();
+    final customerPrices = results[1] as Map<String, int>;
 
-  void _selectProduct() async {
-    final result = await showSearch<String>(
-      context: context,
-      delegate: _ProductSearchDelegate(repo: widget.productRepo),
-    );
-    if (result == null || !mounted) return;
-    if (result.startsWith('__new:')) {
-      final name = result.substring(6);
-      final newProduct = await Navigator.push<Product>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ProductEditorScreen(
-            product: Product(id: const Uuid().v4(), name: name),
-          ),
-        ),
-      );
-      if (newProduct != null && mounted) {
-        setState(() {
-          _productId = newProduct.id;
-          _productName = newProduct.name;
-          _priceController.text = newProduct.defaultUnitPrice.toString();
-        });
-      }
-      return;
+    final prices = <String, int>{};
+    for (final p in products) {
+      final cp = customerPrices[p.id];
+      prices[p.id] = cp ?? p.defaultUnitPrice;
     }
+    for (final p in products) {
+      if (p.parentId != null && !customerPrices.containsKey(p.id)) {
+        final pp = customerPrices[p.parentId];
+        if (pp != null) prices[p.id] = pp;
+      }
+    }
+
     if (mounted) {
-      final product = await widget.productRepo.getProduct(result);
-      if (product != null && mounted) {
-        setState(() {
-          _productId = product.id;
-          _productName = product.name;
-          _priceController.text = product.defaultUnitPrice.toString();
-        });
-      }
-    }
-  }
-
-  void _selectFromPriceList() async {
-    final result = await Navigator.push<PriceEntry>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PriceExplorerScreen(
-          initialCustomerName: widget.customerName,
-          selectionMode: true,
-        ),
-      ),
-    );
-    if (result != null && mounted) {
       setState(() {
-        _productId = result.productId ?? '';
-        _productName = result.name;
-        _priceController.text = (result.unitPrice ?? 0).toString();
+        _products = products;
+        _filtered = products;
+        _customerPrices = prices;
+        _loading = false;
       });
     }
   }
 
-  void _submit() {
-    final qty = double.tryParse(_qtyController.text) ?? 1;
-    final price = int.tryParse(_priceController.text) ?? 0;
-    if (_productName.isEmpty) return;
-    Navigator.pop(context, _EditingItem(
-      id: widget.existing?.id ?? const Uuid().v4(),
-      productId: _productId,
-      productName: _productName,
-      quantity: qty,
-      unitPrice: price,
-    ));
+  Future<Map<String, int>> _loadCustomerPrices() async {
+    final cid = widget.customerId;
+    if (cid == null || cid.isEmpty) return {};
+    try {
+      final db = await DatabaseHelper().database;
+      final rows = await db.query(
+        'customer_product_prices',
+        where: 'customer_id = ?',
+        whereArgs: [cid],
+      );
+      return {for (final r in rows) (r['product_id'] as String): (r['price'] as int?) ?? 0};
+    } catch (_) {
+      return {};
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.existing == null ? '明細追加' : '明細編集'),
-      content: SingleChildScrollView(
-        child: Column(
+  void _search(String q) {
+    final query = q.trim().toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filtered = _products;
+      } else {
+        _filtered = _products.where((p) =>
+          p.name.toLowerCase().contains(query) ||
+          (p.barcode?.toLowerCase().contains(query) ?? false) ||
+          (p.category?.toLowerCase().contains(query) ?? false)
+        ).toList();
+      }
+    });
+  }
+
+  Future<void> _createProduct(String name) async {
+    final nameCtrl = TextEditingController(text: name);
+    final priceCtrl = TextEditingController(text: '0');
+    final product = await showDialog<Product>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('新規商品'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            InkWell(
-              onTap: _selectProduct,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: '商品',
-                  suffixIcon: Icon(Icons.search),
-                ),
-                child: Text(_productName.isNotEmpty ? _productName : 'タップして選択'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.price_change, size: 18),
-                label: const Text('価格表から選択'),
-                onPressed: _selectFromPriceList,
-              ),
+            H1TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: '商品名'),
+              autofocus: true,
             ),
             const SizedBox(height: 12),
             H1TextField(
-              controller: _qtyController,
-              decoration: const InputDecoration(labelText: '数量'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            H1TextField(
-              controller: _priceController,
+              controller: priceCtrl,
               decoration: const InputDecoration(labelText: '単価'),
               keyboardType: TextInputType.number,
             ),
           ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () async {
+            final p = int.tryParse(priceCtrl.text) ?? 0;
+            final newProduct = Product(
+              id: _uuid.v4(),
+              name: nameCtrl.text.trim(),
+              defaultUnitPrice: p,
+            );
+            await widget.productRepo.saveProduct(newProduct);
+            if (ctx.mounted) Navigator.pop(ctx, newProduct);
+          }, child: const Text('登録')),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('キャンセル'),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('OK'),
-        ),
-      ],
+    );
+    nameCtrl.dispose();
+    priceCtrl.dispose();
+    if (product != null && mounted) {
+      Navigator.pop(context, _EditingItem(
+        id: _uuid.v4(),
+        productId: product.id,
+        productName: product.name,
+        quantity: 1,
+        unitPrice: product.defaultUnitPrice,
+      ));
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  bool _isCustomerPrice(Product product) {
+    if (_customerPrices.containsKey(product.id)) return true;
+    if (product.parentId != null && _customerPrices.containsKey(product.parentId)) return true;
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            width: 32, height: 4,
+            decoration: BoxDecoration(
+              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Text('商品を追加', style: Theme.of(context).textTheme.titleMedium),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('キャンセル'),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: H1TextField(
+              controller: _searchCtrl,
+              decoration: const InputDecoration(
+                hintText: '商品名で検索',
+                prefixIcon: Icon(Icons.search),
+                isDense: true,
+              ),
+              onChanged: _search,
+            ),
+          ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.55,
+            ),
+            child: _loading
+              ? const Center(child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ))
+              : _buildList(cs),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
-}
 
-class _ProductSearchDelegate extends SearchDelegate<String> {
-  final ProductRepository repo;
+  Widget _buildList(ColorScheme cs) {
+    final query = _searchCtrl.text.trim();
+    final items = <Widget>[];
 
-  _ProductSearchDelegate({required this.repo});
+    if (query.isNotEmpty && _filtered.isEmpty) {
+      items.add(ListTile(
+        leading: const Icon(Icons.add_circle, color: Colors.green),
+        title: Text('「$query」を新規登録'),
+        subtitle: const Text('商品マスターに追加します', style: TextStyle(fontSize: 12)),
+        onTap: () => _createProduct(query),
+      ));
+    }
 
-  @override
-  List<Widget>? buildActions(BuildContext context) => [
-    IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
-  ];
+    if (_filtered.isEmpty && query.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              Icon(Icons.search_off, size: 48, color: cs.onSurfaceVariant),
+              const SizedBox(height: 8),
+              Text('商品が見つかりません', style: TextStyle(color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      );
+    }
 
-  @override
-  Widget? buildLeading(BuildContext context) => IconButton(
-    icon: const Icon(Icons.arrow_back),
-    onPressed: () => close(context, ''),
-  );
-
-  @override
-  Widget buildResults(BuildContext context) => _buildSearchResults(context);
-
-  @override
-  Widget buildSuggestions(BuildContext context) => _buildSearchResults(context);
-
-  Widget _buildSearchResults(BuildContext context) {
-    return FutureBuilder<List>(
-      future: repo.searchProducts(query),
-      builder: (ctx, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('エラー: ${snapshot.error}'));
-        }
-        final products = snapshot.data ?? [];
-        final items = <Widget>[];
-        if (query.isNotEmpty) {
-          items.add(ListTile(
-            leading: const Icon(Icons.add_circle, color: Colors.green),
-            title: Text('"$query" を新規登録'),
-            onTap: () => close(context, '__new:$query'),
-          ));
-        } else {
-          items.add(const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text('最近の商品', style: TextStyle(fontWeight: FontWeight.w500)),
-          ));
-        }
-        if (products.isEmpty) {
-          items.add(const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: Text('商品が見つかりません')),
-          ));
-        } else {
-          for (final p in products) {
-            final product = p as Product;
-            items.add(ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                child: Text(product.name.isNotEmpty ? product.name[0].toUpperCase() : '?',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer)),
+    for (final product in _filtered) {
+      final price = _customerPrices[product.id] ?? product.defaultUnitPrice;
+      final isCp = _isCustomerPrice(product);
+      items.add(ListTile(
+        leading: CircleAvatar(
+          backgroundColor: cs.primaryContainer,
+          child: Text(
+            product.name.isNotEmpty ? product.name[0].toUpperCase() : '?',
+            style: TextStyle(fontWeight: FontWeight.bold, color: cs.onPrimaryContainer),
+          ),
+        ),
+        title: Text(product.name),
+        subtitle: Row(
+          children: [
+            Text('¥$price', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            if (isCp) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: cs.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text('顧客別', style: TextStyle(fontSize: 10, color: cs.onTertiaryContainer)),
               ),
-              title: Text(product.name),
-              subtitle: Text('¥${product.defaultUnitPrice}', style: const TextStyle(fontSize: 12)),
-              onTap: () => close(context, product.id),
-            ));
-          }
-        }
-        return ListView(children: items);
-      },
-    );
+            ],
+          ],
+        ),
+        trailing: Icon(Icons.add_circle_outline, size: 20, color: cs.primary),
+        onTap: () {
+          Navigator.pop(context, _EditingItem(
+            id: _uuid.v4(),
+            productId: product.id,
+            productName: product.name,
+            quantity: 1,
+            unitPrice: price,
+          ));
+        },
+      ));
+    }
+
+    return ListView(shrinkWrap: true, children: items);
   }
 }
