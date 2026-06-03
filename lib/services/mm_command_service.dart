@@ -122,7 +122,7 @@ class MmCommandService {
         if (reply) continue;
         await _dispatch(msg, post);
       }
-      await prefs.setInt(_kLastCheckKey, latest);
+      await prefs.setInt(_kLastCheckKey, latest + 1);
     } catch (e) {
       debugPrint('[MmCmd] poll failed: $e');
     }
