@@ -160,6 +160,60 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     );
   }
 
+  void _showProjectMenu(Project project) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(project.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: const Text('ステージ変更'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showStageSheet(project);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+              title: Text('削除', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmDelete(project);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(Project project) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('削除確認'),
+        content: Text('「${project.name}」を削除しますか？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('削除')),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _repo.delete(project.id);
+      _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -319,7 +373,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             ),
           ).then((_) => _load());
         },
-        onLongPress: () => _showStageSheet(project),
+        onLongPress: () => _showProjectMenu(project),
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Column(
@@ -398,7 +452,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             ),
           ).then((_) => _load());
         },
-        onLongPress: () => _showStageSheet(project),
+        onLongPress: () => _showProjectMenu(project),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
