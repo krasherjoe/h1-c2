@@ -13,6 +13,7 @@ import '../../../services/database_helper.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
 import '../../customers/screens/customer_edit_screen.dart';
+import '../../products/screens/product_editor_screen.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -1005,45 +1006,10 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   }
 
   Future<void> _createProduct(String name) async {
-    final nameCtrl = TextEditingController(text: name);
-    final priceCtrl = TextEditingController(text: '0');
-    final product = await showDialog<Product>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('新規商品'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            H1TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: '商品名'),
-              autofocus: true,
-            ),
-            const SizedBox(height: 12),
-            H1TextField(
-              controller: priceCtrl,
-              decoration: const InputDecoration(labelText: '単価'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-          FilledButton(onPressed: () async {
-            final p = int.tryParse(priceCtrl.text) ?? 0;
-            final newProduct = Product(
-              id: _uuid.v4(),
-              name: nameCtrl.text.trim(),
-              defaultUnitPrice: p,
-            );
-            await widget.productRepo.saveProduct(newProduct);
-            if (ctx.mounted) Navigator.pop(ctx, newProduct);
-          }, child: const Text('登録')),
-        ],
-      ),
+    final product = await Navigator.push<Product>(
+      context,
+      MaterialPageRoute(builder: (_) => const ProductEditorScreen()),
     );
-    nameCtrl.dispose();
-    priceCtrl.dispose();
     if (product != null && mounted) {
       Navigator.pop(context, _EditingItem(
         id: _uuid.v4(),
