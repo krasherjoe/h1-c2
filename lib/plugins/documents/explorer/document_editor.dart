@@ -14,6 +14,7 @@ import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
 import '../../customers/screens/customer_edit_screen.dart';
 import '../../products/screens/product_editor_screen.dart';
+import '../../project/screens/project_list_screen.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -244,21 +245,9 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Future<void> _selectProject() async {
-    final projects = await _projectRepo.getAll();
-    if (!mounted) return;
-
-    final filtered = _customerId.isNotEmpty
-        ? projects.where((p) => p.customerId == _customerId).toList()
-        : projects;
-
-    final result = await showDialog<Project>(
-      context: context,
-      builder: (ctx) => _ProjectPickerDialog(
-        projects: filtered,
-        projectRepo: _projectRepo,
-        customerId: _customerId,
-        customerName: _customerName,
-      ),
+    final result = await Navigator.push<Project>(
+      context,
+      MaterialPageRoute(builder: (_) => const ProjectListScreen(selectionMode: true)),
     );
     if (result != null && mounted) {
       _wrapWithSnapshot(() {
@@ -811,111 +800,6 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
   }
 }
 
-class _ProjectPickerDialog extends StatefulWidget {
-  final List<Project> projects;
-  final ProjectRepository projectRepo;
-  final String customerId;
-  final String customerName;
-
-  const _ProjectPickerDialog({
-    required this.projects,
-    required this.projectRepo,
-    required this.customerId,
-    required this.customerName,
-  });
-
-  @override
-  State<_ProjectPickerDialog> createState() => _ProjectPickerDialogState();
-}
-
-class _ProjectPickerDialogState extends State<_ProjectPickerDialog> {
-  late List<Project> _projects;
-
-  @override
-  void initState() {
-    super.initState();
-    _projects = widget.projects;
-  }
-
-  Future<void> _createNewProject() async {
-    final controller = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('新規案件'),
-        content: H1TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: '案件名'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-          FilledButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                Navigator.pop(ctx, controller.text.trim());
-              }
-            },
-            child: const Text('作成'),
-          ),
-        ],
-      ),
-    );
-    if (name == null || !mounted) return;
-    try {
-      final id = await widget.projectRepo.createProject(
-        name: name,
-        customerId: widget.customerId,
-        customerName: widget.customerName,
-      );
-      final project = await widget.projectRepo.getById(id);
-      if (project != null && mounted) {
-        setState(() => _projects = [project, ..._projects]);
-        Navigator.pop(context, project);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('作成エラー: $e')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('案件を選択'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: _projects.isEmpty
-          ? const Center(child: Text('案件がありません'))
-          : ListView.builder(
-              shrinkWrap: true,
-              itemCount: _projects.length,
-              itemBuilder: (ctx, i) {
-                final p = _projects[i];
-                return ListTile(
-                  leading: const Icon(Icons.workspaces),
-                  title: Text(p.name),
-                  subtitle: Text('${p.customerName ?? ""}  ${p.pipelineStage}'),
-                  onTap: () => Navigator.pop(context, p),
-                );
-              },
-            ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _createNewProject,
-          child: const Text('新規案件作成'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('キャンセル'),
-        ),
-      ],
-    );
-  }
-}
 
 class _ProductPickerSheet extends StatefulWidget {
   final String? customerId;

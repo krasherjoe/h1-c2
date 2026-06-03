@@ -19,7 +19,8 @@ const _kDocTable = '''
     total INTEGER DEFAULT 0,
     status TEXT DEFAULT 'draft',
     linked_document_id TEXT,
-    project_id TEXT
+    project_id TEXT,
+    subject TEXT
   )
 ''';
 
@@ -80,6 +81,11 @@ class DocumentsPlugin extends H1Plugin {
     try {
       await db.execute(
         'ALTER TABLE documents ADD COLUMN project_id TEXT',
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        'ALTER TABLE documents ADD COLUMN subject TEXT',
       );
     } catch (_) {}
   }

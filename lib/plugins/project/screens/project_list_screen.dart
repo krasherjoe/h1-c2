@@ -5,7 +5,8 @@ import '../../../widgets/h1_text_field.dart';
 import 'project_detail_screen.dart';
 
 class ProjectListScreen extends StatefulWidget {
-  const ProjectListScreen({super.key});
+  final bool selectionMode;
+  const ProjectListScreen({super.key, this.selectionMode = false});
 
   @override
   State<ProjectListScreen> createState() => _ProjectListScreenState();
@@ -218,7 +219,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('PJ1:案件一覧')),
+      appBar: AppBar(title: Text(widget.selectionMode ? '案件を選択' : 'PJ1:案件一覧')),
       body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _projects.isEmpty
@@ -365,14 +366,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       margin: const EdgeInsets.only(bottom: 6),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProjectDetailScreen(projectId: project.id),
-            ),
-          ).then((_) => _load());
-        },
+        onTap: widget.selectionMode
+          ? () => Navigator.pop(context, project)
+          : () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProjectDetailScreen(projectId: project.id),
+              ),
+            ).then((_) => _load());
+          },
         onLongPress: () => _showProjectMenu(project),
         child: Padding(
           padding: const EdgeInsets.all(10),
@@ -444,14 +447,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProjectDetailScreen(projectId: project.id),
-            ),
-          ).then((_) => _load());
-        },
+        onTap: widget.selectionMode
+          ? () => Navigator.pop(context, project)
+          : () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProjectDetailScreen(projectId: project.id),
+              ),
+            ).then((_) => _load());
+          },
         onLongPress: () => _showProjectMenu(project),
         child: Padding(
           padding: const EdgeInsets.all(16),
