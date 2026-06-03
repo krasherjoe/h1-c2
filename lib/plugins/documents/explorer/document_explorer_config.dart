@@ -74,7 +74,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: 72,
+        height: 90,
         child: Row(
           children: [
             Container(
