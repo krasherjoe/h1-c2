@@ -9,6 +9,7 @@ import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
 import '../../services/mm_command_service.dart';
+import '../../widgets/tabbed_workspace.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -213,7 +214,15 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   Widget build(BuildContext context) {
     final hasSort = widget.config.sortOptions.isNotEmpty;
     final overflowActions = widget.config.overflowActions;
-    return Scaffold(
+    return PopScope(
+      canPop: Navigator.of(context).canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+          tw?.switchToDashboard();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: widget.appBarTitle ?? Text(widget.config.explorerTitle),
         centerTitle: true,
@@ -337,6 +346,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       ),
       ),
       floatingActionButton: _buildFab(),
+    ),
     );
   }
 
@@ -750,7 +760,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
 
   Widget _buildItemTile(T item) {
     final content = widget.config.buildItemTileContent(context, item);
-    return InkWell(
+    return GestureDetector(
       onTap: () => _onItemTap(item),
       onLongPress: widget.selectionMode ? null : () => _confirmDelete(item),
       child: content,

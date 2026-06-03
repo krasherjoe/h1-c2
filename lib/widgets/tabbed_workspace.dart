@@ -54,6 +54,10 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     _confirmCloseTab(index);
   }
 
+  void switchToDashboard() {
+    setState(() => _currentIndex = 0);
+  }
+
   Future<void> _confirmCloseTab(int index) async {
     final tab = _tabs[index];
     final hasDeepNav = tab.navigatorKey.currentState?.canPop() ?? false;
