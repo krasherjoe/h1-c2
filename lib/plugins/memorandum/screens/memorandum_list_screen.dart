@@ -80,41 +80,63 @@ class _MemorandumListScreenState extends State<MemorandumListScreen> {
                     itemCount: _items.length,
                     itemBuilder: (_, i) {
                       final m = _items[i];
-                      return Card(
-                        child: ListTile(
-                          title: Text('${m.documentNumber} ${m.customerName}'),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('${m.monthlyPlan.label(m.customAmount)} × ${m.contractMonths}ヶ月 = ${NumberFormat('#,###').format(m.totalAmount)}円'),
-                              Text('${_df.format(m.startDate)} ~ ${_df.format(m.endDate)}'),
-                              if (m.serviceContent.isNotEmpty) Text(m.serviceContent, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      final dateStr = '${m.contractDate.year}/${m.contractDate.month.toString().padLeft(2, '0')}/${m.contractDate.day.toString().padLeft(2, '0')}';
+                      return GestureDetector(
+                        onTap: () async {
+                          await Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => MemorandumInputScreen(memorandum: m),
+                          ));
+                          if (!mounted) return;
+                          _load();
+                        },
+                        onLongPress: () async {
+                          final result = await showMenu<String>(
+                            context: context,
+                            position: RelativeRect.fromLTRB(100, 100, 100, 100),
+                            items: const [
+                              PopupMenuItem(value: 'delete', child: Text('削除')),
                             ],
-                          ),
-                          trailing: Chip(
-                            label: Text(m.status == MemorandumStatus.draft ? '下書き' : '確定',
-                              style: const TextStyle(fontSize: 12)),
-                            backgroundColor: m.status == MemorandumStatus.draft ? cs.secondaryContainer : cs.tertiaryContainer,
-                          ),
-                          onTap: () async {
-                            await Navigator.push(context, MaterialPageRoute(
-                              builder: (_) => MemorandumInputScreen(memorandum: m),
-                            ));
-                            if (!mounted) return;
-                            _load();
-                          },
-                          onLongPress: () async {
-                            final result = await showMenu<String>(
-                              context: context,
-                              position: RelativeRect.fromLTRB(100, 100, 100, 100),
-                              items: const [
-                                PopupMenuItem(value: 'delete', child: Text('削除')),
+                          );
+                          if (result == 'delete') {
+                            await _delete(m);
+                          }
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(children: [
+                                        Text(dateStr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                        const SizedBox(width: 8),
+                                        Text(m.customerName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                      ]),
+                                      const SizedBox(height: 2),
+                                      Text('${m.monthlyPlan.label(m.customAmount)} × ${m.contractMonths}ヶ月  ${NumberFormat('#,###').format(m.totalAmount)}円',
+                                          style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      if (m.serviceContent.isNotEmpty)
+                                        Text(m.serviceContent, style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ],
+                                  ),
+                                ),
+                                if (m.status == MemorandumStatus.draft)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: cs.secondaryContainer,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text('下書き', style: TextStyle(fontSize: 10)),
+                                  ),
                               ],
-                            );
-                            if (result == 'delete') {
-                              await _delete(m);
-                            }
-                          },
+                            ),
+                          ),
                         ),
                       );
                     },
