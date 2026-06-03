@@ -64,49 +64,72 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final doctypeColor = documentTypeColor(item.documentType, cs, isDark);
+    final verticalType = item.documentType.label.split('').join('\n');
     final repItems = item.items.take(3).map((i) => i.productName).join('、');
     final desc = (item.subject != null && item.subject!.isNotEmpty) ? item.subject! : repItems;
+    final date = '${item.date.year}/${item.date.month.toString().padLeft(2, '0')}/${item.date.day.toString().padLeft(2, '0')}';
+    final money = '¥${item.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    final hasDraft = item.isDraft;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      child: Row(
-        children: [
-          Container(width: 5, height: 72, color: doctypeColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Text(item.documentNumber,
-                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                    const Spacer(),
-                    _typeBadge(item.documentType.label, doctypeColor),
-                    if (item.isDraft) ...[
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        height: 72,
+        child: Row(
+          children: [
+            Container(
+              width: 22,
+              color: doctypeColor,
+              alignment: Alignment.center,
+              child: Text(verticalType,
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, height: 1.15),
+                  textAlign: TextAlign.center),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Text(date, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                      const Spacer(),
+                      if (hasDraft) _statusBadge('下書き', Colors.orange),
+                    ]),
+                    Text(item.customerName,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 1),
+                    Row(children: [
+                      Text('📄', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                       const SizedBox(width: 4),
-                      _typeBadge('下書き', Colors.orange),
-                    ],
-                  ]),
-                  const SizedBox(height: 4),
-                  Text(item.customerName,
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
-                  const SizedBox(height: 2),
-                  Text(desc,
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
+                      Expanded(
+                        child: Text(desc,
+                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                    ]),
+                    const SizedBox(height: 1),
+                    Row(children: [
+                      Text('💰', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                      const SizedBox(width: 4),
+                      Text(money,
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cs.primary)),
+                    ]),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-        ],
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _typeBadge(String text, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+  Widget _statusBadge(String text, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
     decoration: BoxDecoration(
       color: color.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(4),
