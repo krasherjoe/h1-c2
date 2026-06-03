@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../services/database_helper.dart';
+import '../../../services/customer_repository.dart';
+import '../../../models/customer_model.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../models/price_entry.dart';
 import '../services/price_list_repository.dart';
@@ -205,6 +207,57 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
       data: entry.toMap(),
     );
     _undoStack.push(CreateNodeCommand(entry));
+    await _reload();
+    if (parentId != null && mounted) {
+      setState(() {
+        _expanded.add(parentId);
+        _childrenCache.remove(parentId);
+      });
+    }
+  }
+
+  Future<void> _createCustomerFolder({String? parentId}) async {
+    final customers = await CustomerRepository().searchCustomers('');
+    if (!mounted) return;
+    final customer = await showDialog<Customer>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('納入先を選択'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: customers.isEmpty
+            ? const Center(child: Text('顧客が登録されていません'))
+            : ListView.builder(
+                itemCount: customers.length,
+                itemBuilder: (ctx, i) => ListTile(
+                  leading: const Icon(Icons.business),
+                  title: Text(customers[i].displayName),
+                  onTap: () => Navigator.pop(ctx, customers[i]),
+                ),
+              ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル'))],
+      ),
+    );
+    if (customer == null) return;
+    final now = DateTime.now();
+    final entry = PriceEntry(
+      id: const Uuid().v4(),
+      year: _currentYear!,
+      parentId: parentId,
+      name: customer.displayName,
+      customerId: customer.id,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await _repo.save(entry);
+    SyncService.pushChange(
+      entityType: 'price_entry',
+      entityId: entry.id,
+      action: 'create_customer_folder',
+      data: entry.toMap(),
+    );
     await _reload();
     if (parentId != null && mounted) {
       setState(() {
@@ -645,6 +698,11 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
               icon: const Icon(Icons.create_new_folder),
               tooltip: '新規フォルダ',
               onPressed: () => _createFolder(),
+            ),
+            IconButton(
+              icon: const Icon(Icons.business),
+              tooltip: '納入先フォルダ',
+              onPressed: () => _createCustomerFolder(),
             ),
             IconButton(
               icon: const Icon(Icons.add),

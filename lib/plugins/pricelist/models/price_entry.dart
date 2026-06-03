@@ -6,12 +6,14 @@ class PriceEntry {
   final int? unitPrice;
   final String? productId;
   final String? supplierId;
+  final String? customerId;
   final String? notes;
   final int sortOrder;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   bool get isFolder => unitPrice == null;
+  bool get isCustomerFolder => customerId != null && isFolder;
 
   const PriceEntry({
     required this.id,
@@ -21,6 +23,7 @@ class PriceEntry {
     this.unitPrice,
     this.productId,
     this.supplierId,
+    this.customerId,
     this.notes,
     this.sortOrder = 0,
     required this.createdAt,
@@ -35,6 +38,7 @@ class PriceEntry {
     'unit_price': unitPrice,
     'product_id': productId,
     'supplier_id': supplierId,
+    'customer_id': customerId,
     'notes': notes,
     'sort_order': sortOrder,
     'created_at': createdAt.toIso8601String(),
@@ -49,6 +53,7 @@ class PriceEntry {
     unitPrice: map['unit_price'] as int?,
     productId: map['product_id'] as String?,
     supplierId: map['supplier_id'] as String?,
+    customerId: map['customer_id'] as String?,
     notes: map['notes'] as String?,
     sortOrder: map['sort_order'] as int? ?? 0,
     createdAt: DateTime.parse(map['created_at'] as String),
@@ -64,6 +69,8 @@ class PriceEntry {
     bool? clearUnitPrice,
     String? productId,
     String? supplierId,
+    String? customerId,
+    bool? clearCustomerId,
     String? notes,
     int? sortOrder,
     DateTime? createdAt,
@@ -76,6 +83,7 @@ class PriceEntry {
     unitPrice: clearUnitPrice == true ? null : (unitPrice ?? this.unitPrice),
     productId: productId ?? this.productId,
     supplierId: supplierId ?? this.supplierId,
+    customerId: clearCustomerId == true ? null : (customerId ?? this.customerId),
     notes: notes ?? this.notes,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,

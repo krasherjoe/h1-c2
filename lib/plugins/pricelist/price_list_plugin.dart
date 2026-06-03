@@ -65,6 +65,11 @@ class PriceListPlugin extends H1Plugin {
         await db.execute('ALTER TABLE price_entries ADD COLUMN supplier_id TEXT');
       } catch (_) {}
     }
+    if (fromVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE price_entries ADD COLUMN customer_id TEXT');
+      } catch (_) {}
+    }
   }
 
   @override
@@ -78,6 +83,7 @@ class PriceListPlugin extends H1Plugin {
         unit_price INTEGER,
         product_id TEXT,
         supplier_id TEXT,
+        customer_id TEXT,
         notes TEXT,
         sort_order INTEGER DEFAULT 0,
         created_at TEXT NOT NULL,
