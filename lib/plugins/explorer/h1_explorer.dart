@@ -1,12 +1,14 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'h1_explorer_config.dart';
 import 'h1_explorer_item.dart';
 import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
-import '../../services/log_dispatcher.dart';
+import '../../services/mm_command_service.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -37,6 +39,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   DateTime? _dateFrom;
   DateTime? _dateTo;
   bool _treeMode = false;
+  final _diagnosticKey = GlobalKey();
   List<TreeFolder> _folders = [];
   List<TreeFolder> _breadcrumbs = [];
 
@@ -274,9 +277,17 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
             tooltip: 'フィルター',
             onPressed: () => setState(() => _showFilter = !_showFilter),
           ),
+          if (_items.isNotEmpty || _dbSize != null)
+            IconButton(
+              icon: const Icon(Icons.bug_report),
+              tooltip: '診断',
+              onPressed: _captureDiagnostic,
+            ),
         ],
       ),
-      body: Column(
+      body: RepaintBoundary(
+        key: _diagnosticKey,
+        child: Column(
         children: [
           if (_showSearch)
             Padding(
@@ -324,8 +335,39 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           Expanded(child: _buildBody()),
         ],
       ),
+      ),
       floatingActionButton: _buildFab(),
     );
+  }
+
+  Future<void> _captureDiagnostic() async {
+    final buf = StringBuffer();
+    buf.writeln('📷 **D1診断** (${widget.config.explorerTitle})');
+    buf.writeln('items: ${_items.length} | loading: $_isLoading | tree: $_treeMode');
+    buf.writeln('DB: ${_dbSize != null ? "${(_dbSize! / 1024).round()}KB" : "--"}');
+    try {
+      final db = await DatabaseHelper().database;
+      final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
+      for (final t in tables) {
+        final name = t['name'] as String;
+        final cnt = await db.rawQuery('SELECT COUNT(*) as c FROM "$name"');
+        buf.writeln('  $name: ${cnt.first['c']}行');
+      }
+    } catch (_) {}
+    ErrorReporter.sendLog(message: buf.toString());
+
+    try {
+      final boundary = _diagnosticKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 1.5);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final svc = MmCommandService.instance;
+      if (svc.pat == null) return;
+      await svc.uploadFile(byteData.buffer.asUint8List(), 'd1_diagnostic.png');
+    } catch (e) {
+      debugPrint('[H1Explorer] screenshot failed: $e');
+    }
   }
 
   Widget _buildDbInfo() {

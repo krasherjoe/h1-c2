@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'debug_console.dart';
-import 'log_dispatcher.dart';
 
 class MmCommandService {
   static final MmCommandService instance = MmCommandService._();
@@ -151,6 +150,35 @@ class MmCommandService {
       );
     } catch (e) {
       debugPrint('[MmCmd] post failed: $e');
+    }
+  }
+
+  Future<String?> uploadFile(List<int> bytes, String filename, {String? message}) async {
+    final channelId = await _ensureChannelId();
+    if (channelId == null) return 'チャンネル取得失敗';
+    if (_pat == null || _baseUrl == null) return 'PAT未設定';
+    try {
+      final uploadReq = http.MultipartRequest(
+        'POST', Uri.parse('$_baseUrl/api/v4/files'),
+      );
+      uploadReq.headers['Authorization'] = 'Bearer $_pat';
+      uploadReq.fields['channel_id'] = channelId;
+      uploadReq.files.add(await http.MultipartFile.fromBytes('files', bytes, filename: filename));
+      final uploadRes = await uploadReq.send();
+      final uploadBody = await uploadRes.stream.bytesToString();
+      if (uploadRes.statusCode != 201) return 'アップロード失敗(${uploadRes.statusCode})';
+      final data = jsonDecode(uploadBody);
+      final fileIds = (data['file_infos'] as List).map<String>((f) => f['id'] as String).toList();
+      if (message != null && fileIds.isNotEmpty) {
+        await http.post(
+          Uri.parse('$_baseUrl/api/v4/posts'),
+          headers: _headers,
+          body: jsonEncode({'channel_id': channelId, 'message': message, 'file_ids': fileIds}),
+        );
+      }
+      return null;
+    } catch (e) {
+      return 'アップロード例外: $e';
     }
   }
 }
