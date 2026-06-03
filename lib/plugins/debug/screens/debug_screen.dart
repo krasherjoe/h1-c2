@@ -3,6 +3,7 @@ import '../services/debug_service.dart';
 import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
 import '../../../services/google_auth_service.dart';
+import '../../../services/mm_command_service.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -163,6 +164,22 @@ class _DebugScreenState extends State<DebugScreen> {
               onPressed: _configurePat,
               icon: const Icon(Icons.vpn_key, size: 18),
               label: Text(_service.isConfigured ? 'PAT変更' : 'PAT設定'),
+            ),
+            const SizedBox(height: 8),
+            ValueListenableBuilder<bool>(
+              valueListenable: MmCommandService.instance.enabledNotifier,
+              builder: (ctx, enabled, _) => Row(
+                children: [
+                  const Icon(Icons.sync, size: 18, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  const Text('MMポーリング'),
+                  const Spacer(),
+                  Switch(
+                    value: enabled,
+                    onChanged: (v) => MmCommandService.instance.setEnabled(v),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             _googleAuthStatus(cs),

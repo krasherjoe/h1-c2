@@ -41,6 +41,7 @@ import 'plugins/suppliers/suppliers_plugin.dart';
 import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
+import 'services/mm_command_service.dart';
 import 'services/input_style_service.dart';
 import 'services/sync_garbage_collector.dart';
 import 'screens/dashboard_screen.dart';
@@ -112,6 +113,11 @@ void main() async {
     );
     return true;
   };
+
+  await MmCommandService.instance.loadConfig();
+  if (MmCommandService.instance.isEnabled) {
+    MmCommandService.instance.start();
+  }
 
   final db = await DatabaseHelper().database;
   final prefs = await SharedPreferences.getInstance();
