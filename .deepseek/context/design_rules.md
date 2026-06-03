@@ -153,6 +153,13 @@ final textColor = textColorOn(someBackgroundColor);
 
 **基本思想**: 「知ってる人は直感的に使え、知らない人も迷わない」UIを目指す。複数ステップ必要な操作は「選択するだけ」で完結させる。
 
+## GitHub リリース管理
+
+- GitHub 上のリリースは**最新5件のみ保持**する
+- `scripts/push_all.sh` の step 5 で自動削除（`gh release delete`）
+- 保持対象: 最新の `v1.x.x` 5リリース（`sort -V | head -n -5`）
+- 削除対象: それより古い全リリースと対応タグ
+
 ## チェックリスト
 
 - [ ] Scaffold の背景に `surfaceContainerLowest` を使っているか

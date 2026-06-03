@@ -79,7 +79,8 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           _isLoading = false;
         });
       }
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[H1Explorer] _loadItems error: $e\n$st');
       if (!mounted) return;
       setState(() => _isLoading = false);
     }

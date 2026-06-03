@@ -85,6 +85,20 @@ gh release create "$VERSION" \
 git tag "$VERSION"
 
 rm -f "/tmp/$APK_NAME"
+
+# === 5. 古いリリース削除（最新5件のみ保持） ===
+echo ""
+echo "=== 5/5: 古いリリース削除 ==="
+gh release list --limit 200 --json tagName --jq '.[].tagName' \
+  | sort -V \
+  | head -n -5 \
+  | while read tag; do
+      echo "  削除: $tag"
+      gh release delete "$tag" --yes 2>/dev/null || true
+      git push origin --delete "$tag" 2>/dev/null || true
+    done
+echo "✅ 古いリリース削除完了"
+
 echo ""
 echo "🎉 完了: https://github.com/krasherjoe/h1-core/releases/tag/${VERSION}"
 echo "   リリースURL: https://github.com/krasherjoe/h1-core/releases/tag/${VERSION}"

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../../../services/database_helper.dart';
@@ -10,6 +13,15 @@ class DocumentRepository {
 
   Future<List<DocumentModel>> fetchAll({DocumentType? filterType, String query = '', String? statusFilter, DateTime? dateFrom, DateTime? dateTo}) async {
     final db = await _db;
+    debugPrint('[DocRepo] DB opened, fetchAll query="$query" type=$filterType');
+
+    // DBファイルパスを確認
+    try {
+      final dbPath = await _dbHelper.getDatabasePath();
+      debugPrint('[DocRepo] DB path: $dbPath, exists: ${await File(dbPath).exists()}');
+    } catch (e) {
+      debugPrint('[DocRepo] DB path check failed: $e');
+    }
     final conditions = <String>[];
     final args = <dynamic>[];
 
