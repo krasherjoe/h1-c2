@@ -737,13 +737,10 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   Widget _buildList(List<T> items) {
-    return RefreshIndicator(
-      onRefresh: _loadItems,
-      child: ListView.builder(
-        key: _listKey,
-        itemCount: items.length,
-        itemBuilder: (context, index) => _buildItemTile(items[index]),
-      ),
+    return ListView.builder(
+      key: _listKey,
+      itemCount: items.length,
+      itemBuilder: (context, index) => _buildItemTile(items[index]),
     );
   }
 
