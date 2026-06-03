@@ -71,6 +71,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final money = '¥${item.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     final hasDraft = item.isDraft;
     return Card(
+      elevation: 2,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
