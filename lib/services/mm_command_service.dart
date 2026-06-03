@@ -18,6 +18,7 @@ class MmCommandService {
   static const _kTeamKey = 'mattermost_team_name';
   static const _kChannelName = 'h1-debug';
   static const _kPrefix = '!opencode';
+  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.26+1');
 
   Timer? _timer;
   bool _enabled = false;
@@ -147,6 +148,8 @@ class MmCommandService {
           result = await _cmdStatus();
         case 'db':
           result = await _cmdDb();
+        case 'dump':
+          result = await _cmdDump();
         default:
           result = '不明なコマンド: $cmd';
       }
@@ -163,9 +166,44 @@ class MmCommandService {
       final file = File(db.path);
       final size = await file.length();
       final sizeStr = '${(size / 1024).round()}KB';
-      return '✅ 稼働中 | v${MmCommandService._kPrefix} | DB: $sizeStr';
+      return '✅ 稼働中 | v$_kAppVersion | DB: $sizeStr';
     } catch (e) {
       return 'ステータス取得失敗: $e';
+    }
+  }
+
+  Future<String> _cmdDump() async {
+    try {
+      final buf = StringBuffer();
+      buf.writeln('```');
+      buf.writeln('h-1-core 状態ダンプ');
+      buf.writeln('version: $_kAppVersion');
+      buf.writeln('---');
+      final db = await DatabaseHelper().database;
+      final file = File(db.path);
+      final size = await file.length();
+      buf.writeln('DB path: ${file.path}');
+      buf.writeln('DB size: ${(size / 1024).round()}KB (${size} bytes)');
+      buf.writeln('---');
+      try {
+        final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
+        for (final t in tables) {
+          final name = t['name'] as String;
+          final cnt = await db.rawQuery('SELECT COUNT(*) as c FROM "$name"');
+          final c = cnt.first['c'] ?? 0;
+          buf.writeln('  $name: $c rows');
+        }
+      } catch (_) {}
+      buf.writeln('---');
+      buf.writeln('MM base: $_baseUrl');
+      buf.writeln('MM team: $_teamName');
+      buf.writeln('MM channel: $_kChannelName');
+      buf.writeln('PAT設定: ${_pat != null ? 'OK' : '未設定'}');
+      buf.writeln('ポーリング: ${_enabled ? 'ON' : 'OFF'}');
+      buf.writeln('```');
+      return buf.toString();
+    } catch (e) {
+      return 'ダンプ失敗: $e';
     }
   }
 
