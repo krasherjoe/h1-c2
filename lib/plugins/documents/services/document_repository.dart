@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../../../services/database_helper.dart';
-import '../../../services/error_reporter.dart';
 import '../models/document_model.dart';
 
 class DocumentRepository {
@@ -13,18 +10,6 @@ class DocumentRepository {
 
   Future<List<DocumentModel>> fetchAll({DocumentType? filterType, String query = '', String? statusFilter, DateTime? dateFrom, DateTime? dateTo}) async {
     final db = await _db;
-
-    // DBファイルパスを確認
-    try {
-      final dbPath = await _dbHelper.getDatabasePath();
-      final exists = await File(dbPath).exists();
-      ErrorReporter.sendError(
-        message: '[DocRepo] DB path: $dbPath, exists: $exists, query="$query" type=$filterType',
-        screenId: '/documents/explorer',
-      );
-    } catch (e) {
-      ErrorReporter.sendError(message: '[DocRepo] DB path check failed: $e', screenId: '/documents/explorer');
-    }
     final conditions = <String>[];
     final args = <dynamic>[];
 
