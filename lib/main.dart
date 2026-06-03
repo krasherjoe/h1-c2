@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/database_helper.dart';
+import 'services/db_snapshot_service.dart';
 import 'services/company_service.dart';
 import 'plugin_system/plugin_registry.dart';
 import 'plugin_system/plugin_context.dart';
@@ -197,6 +198,22 @@ void main() async {
   DebugConsole.register('system.status', _cmdStatus);
   DebugConsole.register('system.dump', _cmdDump);
   DebugConsole.register('db.send', _cmdDbSend);
+  DebugConsole.register('db.snapshot', (_) async {
+    final path = await DbSnapshotService.snapshot();
+    return path != null ? 'スナップショット作成完了' : 'スナップショット失敗';
+  });
+  DebugConsole.register('db.restore', (args) async {
+    if (args.isEmpty) {
+      final snaps = await DbSnapshotService.list();
+      if (snaps.isEmpty) return 'スナップショットなし';
+      final lines = snaps.asMap().entries.map((e) => '  ${e.key}: ${e.value.split('/').last}').join('\n');
+      return 'スナップショット一覧:\n$lines\n\n使用例: !opencode db.restore 0';
+    }
+    final index = int.tryParse(args[0]);
+    if (index == null) return '数値を指定: !opencode db.restore 0';
+    await DbSnapshotService.restore(index);
+    return '復元完了、アプリを再起動してください';
+  });
 
   if (MmCommandService.instance.isEnabled) {
     MmCommandService.instance.start();

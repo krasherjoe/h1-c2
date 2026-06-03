@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../services/database_helper.dart';
+import '../../../services/db_snapshot_service.dart';
 import '../../../services/customer_repository.dart';
 import '../../../models/customer_model.dart';
 import '../../../widgets/h1_text_field.dart';
@@ -166,6 +167,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
   }
 
   Future<void> _onDrop(String targetFolderId, String draggedId) async {
+    await DbSnapshotService.snapshot();
     final maps = await _db.query(
       'price_entries',
       where: 'id = ?',
@@ -252,6 +254,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
       updatedAt: now,
     );
     await _repo.save(entry);
+    _undoStack.push(CreateNodeCommand(entry));
     SyncService.pushChange(
       entityType: 'price_entry',
       entityId: entry.id,
@@ -265,6 +268,39 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
         _childrenCache.remove(parentId);
       });
     }
+  }
+
+  Future<void> _changeCustomerFolder(PriceEntry node) async {
+    final customers = await CustomerRepository().searchCustomers('');
+    if (!mounted) return;
+    final customer = await showDialog<Customer>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('納入先を変更'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: customers.isEmpty
+            ? const Center(child: Text('顧客が登録されていません'))
+            : ListView.builder(
+                itemCount: customers.length,
+                itemBuilder: (ctx, i) => ListTile(
+                  leading: const Icon(Icons.business),
+                  title: Text(customers[i].displayName),
+                  onTap: () => Navigator.pop(ctx, customers[i]),
+                ),
+              ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル'))],
+      ),
+    );
+    if (customer == null) return;
+    await _db.update(
+      'price_entries',
+      {'customer_id': customer.id, 'name': customer.displayName, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [node.id],
+    );
+    await _reload();
   }
 
   Future<void> _createPriceEntry({String? parentId}) async {
@@ -339,6 +375,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
   }
 
   Future<void> _deleteNode(PriceEntry node) async {
+    await DbSnapshotService.snapshot();
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -430,6 +467,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
         const PopupMenuItem(value: 'copy', child: Text('コピー')),
         const PopupMenuItem(value: 'cut', child: Text('切り取り')),
         const PopupMenuItem(value: 'paste', child: Text('貼り付け')),
+        if (node.isCustomerFolder) const PopupMenuItem(value: 'change_customer', child: Text('顧客変更')),
         const PopupMenuItem(value: 'delete', child: Text('削除')),
       ],
     );
@@ -449,6 +487,8 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
         await _cutNode(node);
       case 'paste':
         await _pasteNode(node);
+      case 'change_customer':
+        await _changeCustomerFolder(node);
       case 'delete':
         await _deleteNode(node);
     }
