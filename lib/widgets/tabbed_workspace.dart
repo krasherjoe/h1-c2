@@ -51,10 +51,64 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
 
   void closeTab(int index) {
     if (index == 0) return;
+    _confirmCloseTab(index);
+  }
+
+  Future<void> _confirmCloseTab(int index) async {
+    final tab = _tabs[index];
+    final hasDeepNav = tab.navigatorKey.currentState?.canPop() ?? false;
+    if (!hasDeepNav) {
+      _doCloseTab(index);
+      return;
+    }
+    if (!mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('タブを閉じる'),
+        content: Text('「${tab.title}」には開いている画面があります。閉じますか？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('閉じる')),
+        ],
+      ),
+    );
+    if (ok == true && mounted) _doCloseTab(index);
+  }
+
+  void _doCloseTab(int index) {
     setState(() {
       _tabs.removeAt(index);
       if (_currentIndex >= _tabs.length) _currentIndex = _tabs.length - 1;
     });
+  }
+
+  Future<void> _confirmCloseAllTabs() async {
+    final count = _tabs.length - 1;
+    if (count == 0) return;
+    final hasDeepNav = _tabs.skip(1).any(
+      (t) => t.navigatorKey.currentState?.canPop() ?? false);
+    final msg = hasDeepNav
+      ? '$count個のタブには開いている画面があります。すべて閉じますか？'
+      : '$count個のタブをすべて閉じますか？';
+    if (!mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('すべてのタブを閉じる'),
+        content: Text(msg),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('すべて閉じる')),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      setState(() {
+        _tabs.removeRange(1, _tabs.length);
+        _currentIndex = 0;
+      });
+    }
   }
 
   @override
@@ -106,6 +160,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     final active = _currentIndex == 0;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = 0),
+      onLongPress: _confirmCloseAllTabs,
       child: Container(
         margin: const EdgeInsets.only(left: 4),
         width: 36,
