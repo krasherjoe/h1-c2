@@ -69,6 +69,10 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.red.shade300, width: 2),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
