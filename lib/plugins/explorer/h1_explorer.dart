@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'h1_explorer_config.dart';
 import 'h1_explorer_item.dart';
 import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
+import '../../services/database_helper.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -24,6 +27,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   final _searchController = TextEditingController();
   List<T> _items = [];
   bool _isLoading = true;
+  int? _dbSize;
   String _query = '';
   bool _showSearch = false;
   bool _showFilter = false;
@@ -80,6 +84,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           _isLoading = false;
         });
       }
+      _updateDbSize();
     } catch (e, st) {
       ErrorReporter.sendError(message: '[H1Explorer] _loadItems: $e', stackTrace: st);
       if (!mounted) return;
@@ -181,6 +186,17 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       grouped.putIfAbsent(key, () => []).add(item);
     }
     return grouped;
+  }
+
+  Future<void> _updateDbSize() async {
+    try {
+      final db = await DatabaseHelper().database;
+      final file = File(db.path);
+      _dbSize = await file.length();
+      if (mounted) setState(() {});
+    } catch (_) {
+      _dbSize = null;
+    }
   }
 
   @override
@@ -297,10 +313,38 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                 )).toList(),
               ),
             ),
+          _buildDbInfo(),
           Expanded(child: _buildBody()),
         ],
       ),
       floatingActionButton: _buildFab(),
+    );
+  }
+
+  Widget _buildDbInfo() {
+    final cs = Theme.of(context).colorScheme;
+    final count = _items.length;
+    final sizeStr = _dbSize != null ? '${(_dbSize! / 1024).round()}KB' : '--';
+    final empty = count == 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            empty ? '全0件' : '全$count件',
+            style: TextStyle(
+              fontSize: 12,
+              color: empty ? cs.error : cs.onSurfaceVariant,
+              fontWeight: empty ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'DB: $sizeStr',
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
     );
   }
 

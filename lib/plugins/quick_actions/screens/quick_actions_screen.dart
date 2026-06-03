@@ -161,7 +161,10 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
               IconButton(
                 icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
                 tooltip: 'クイックアクション設定',
-                onPressed: () => Navigator.pushNamed(context, '/quick_actions/settings'),
+                onPressed: () async {
+                  await Navigator.pushNamed(context, '/quick_actions/settings');
+                  _load();
+                },
               ),
             ],
           ),
