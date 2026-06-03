@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'h1_explorer_config.dart';
 import 'h1_explorer_item.dart';
 import '../../widgets/h1_text_field.dart';
+import '../../services/error_reporter.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -80,7 +81,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
         });
       }
     } catch (e, st) {
-      debugPrint('[H1Explorer] _loadItems error: $e\n$st');
+      ErrorReporter.sendError(message: '[H1Explorer] _loadItems: $e', stackTrace: st);
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
