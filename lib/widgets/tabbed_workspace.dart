@@ -65,16 +65,20 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     return Column(
       children: [
         if (showBar)
-          SizedBox(
-            height: 38,
+          Container(
+            height: 36,
+            color: cs.surface,
             child: Row(
               children: [
+                _buildHomeTab(cs),
+                const SizedBox(width: 4),
                 Expanded(
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    itemCount: _tabs.length,
-                    itemBuilder: (ctx, i) => _buildTabChip(i, cs),
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.only(right: 4),
+                    itemCount: _tabs.length - 1,
+                    itemBuilder: (ctx, i) => _buildTab(i + 1, cs),
                   ),
                 ),
                 _buildAddButton(cs),
@@ -98,39 +102,56 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     );
   }
 
-  Widget _buildTabChip(int i, ColorScheme cs) {
+  Widget _buildHomeTab(ColorScheme cs) {
+    final active = _currentIndex == 0;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = 0),
+      child: Container(
+        margin: const EdgeInsets.only(left: 4),
+        width: 32,
+        decoration: BoxDecoration(
+          color: active ? cs.primaryContainer : cs.surfaceContainerHigh,
+          borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(6),
+            bottomRight: Radius.circular(6),
+          ),
+        ),
+        child: Icon(Icons.home, size: 16,
+          color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+      ),
+    );
+  }
+
+  Widget _buildTab(int i, ColorScheme cs) {
     final tab = _tabs[i];
     final active = i == _currentIndex;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = i),
-      onLongPress: i == 0 ? null : () => closeTab(i),
+      onLongPress: () => closeTab(i),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: active ? cs.primaryContainer : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: active ? cs.primaryContainer : cs.outlineVariant,
+          color: active ? cs.primaryContainer : cs.surfaceContainerHigh,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(6),
+            topRight: Radius.circular(6),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              i == 0 ? Icons.home : Icons.insert_drive_file,
-              size: 14,
-              color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant.withValues(alpha: 0.6),
-            ),
-            const SizedBox(width: 6),
             Text(
               tab.title,
               style: TextStyle(
-                fontSize: 13,
-                color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant.withValues(alpha: 0.6),
-                fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 12,
+                color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            const SizedBox(width: 4),
+            Icon(Icons.close, size: 12,
+              color: active ? cs.onPrimaryContainer.withValues(alpha: 0.5) : cs.onSurfaceVariant.withValues(alpha: 0.4)),
           ],
         ),
       ),
@@ -141,12 +162,12 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     return GestureDetector(
       onTap: _showPluginPicker,
       child: Container(
-        margin: const EdgeInsets.only(right: 8),
+        margin: const EdgeInsets.only(right: 4),
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: cs.outlineVariant),
+          color: cs.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(Icons.add, size: 16, color: cs.onSurfaceVariant),
       ),
