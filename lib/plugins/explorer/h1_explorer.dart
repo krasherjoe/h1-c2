@@ -627,9 +627,11 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     }
 
     if (_items.isEmpty) {
+      ErrorReporter.sendLog(message: '_buildBody: _items.isEmpty, _isLoading=$_isLoading');
       return Center(child: Text(widget.config.emptyMessage));
     }
 
+    ErrorReporter.sendLog(message: '_buildBody: items=${_items.length}, firstId=${_items.first.id}, firstTitle=${_items.first.title}');
     final hasGrouping = _items.any((i) => widget.config.groupKey(i) != null);
     if (!hasGrouping) {
       return _buildList(_items);
