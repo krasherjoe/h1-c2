@@ -41,6 +41,21 @@ BoxShadow(
 
 **禁止**: `Colors.black` / `Colors.black26` / `Colors.black38` の直指定。
 
+## 伝票カード（D1一覧）
+
+- **左端4pxの縦バー**を伝票種別の色（`documentTypeColor`）で表示する
+- 色はテーマ対応（`documentTypeColor()` 関数参照）
+- 種別チップも同じ色に統一する
+- 実装は `document_explorer_config.dart` の `buildItemTileContent()`
+
+| 種別 | 色値（ライトモード） |
+|------|-------------------|
+| 見積 | `#29B6F6`（水色） |
+| 受注 | `cs.secondary` |
+| 納品 | `cs.tertiary` |
+| 請求 | `cs.error` |
+| 領収 | `#388E3C`（緑） |
+
 ## 入力フィールド
 
 設定画面から切替可能:
@@ -145,4 +160,5 @@ final textColor = textColorOn(someBackgroundColor);
 - [ ] テキスト色に `textColorOn()` を使っているか
 - [ ] `Colors.black` / `Colors.white` を直指定していないか
 - [ ] 入力フィールドはテーマの `InputDecorationTheme` に従っているか
+- [ ] 伝票カード左端にdoctype色の縦バーを適用しているか
 - [ ] ダークモードでの見た目を確認したか

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'invoice_models.dart' show DocumentType;
+import '../plugins/documents/models/document_model.dart' show DocumentType;
 
 Color documentTypeColor(DocumentType type, ColorScheme cs, bool isDark) {
   final base = switch (type) {

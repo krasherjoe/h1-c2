@@ -8,6 +8,7 @@ import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
 import '../../../services/error_reporter.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/gmail_sender.dart';
+import '../../communication/communication_plugin.dart';
 
 const _kPreviewDpi = 96.0;
 
@@ -239,25 +240,80 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                     label: 'メール',
                     enabled: widget.showShare,
                     onPressed: () async {
+                      final recipient = await showDialog<String>(
+                        context: context,
+                        builder: (ctx) {
+                          final ctrl = TextEditingController();
+                          return AlertDialog(
+                            title: const Text('送信先メールアドレス'),
+                            content: TextField(
+                              controller: ctrl,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                hintText: 'example@example.com',
+                                labelText: 'To',
+                              ),
+                              autofocus: true,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('キャンセル'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+                                child: const Text('送信'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                      if (recipient == null || recipient.isEmpty || !mounted) return;
+
                       final email = await GoogleAuthService.instance.getEmail();
                       if (!mounted) return;
-                      
+
                       if (email == null) {
                         final ok = await GoogleAuthService.instance.signIn();
-                        if (!ok) return;
+                        if (!ok || !mounted) return;
                       }
-                      
+
                       final bytes = await _buildPdfBytes();
+                      final filename = '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf';
+                      final subject = '${widget.document.documentType.label} ${widget.document.documentNumber}';
+                      final body = '${widget.document.documentType.label}を添付してお送りします。';
+
+                      if (!mounted) return;
+
                       final success = await GmailSender.sendPdf(
-                        to: '',
-                        subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
-                        body: '${widget.document.documentType.label}を添付してお送りします。',
+                        to: recipient,
+                        subject: subject,
+                        body: body,
                         pdfBytes: bytes,
-                        pdfFilename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+                        pdfFilename: filename,
+                      );
+
+                      if (success) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            const SnackBar(content: Text('メールを送信しました')),
+                          );
+                        }
+                        return;
+                      }
+
+                      final osOk = await CommunicationPlugin().sendEmailWithPdf(
+                        pdfBytes: bytes,
+                        filename: filename,
+                        subject: subject,
+                        body: body,
+                        recipients: [recipient],
                       );
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(success ? '送信しました' : '送信できませんでした')),
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                          SnackBar(content: Text(
+                            osOk ? 'OSメールアプリを起動しました' : 'メール送信に失敗しました',
+                          )),
                         );
                       }
                     },
