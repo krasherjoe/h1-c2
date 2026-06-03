@@ -120,43 +120,55 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     final cs = Theme.of(context).colorScheme;
     final showBar = _tabs.length > 1;
 
-    return Column(
-      children: [
-        if (showBar)
-          Container(
-            height: 36,
-            color: cs.surface,
-            child: Row(
-              children: [
-                _buildHomeTab(cs),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    physics: const ClampingScrollPhysics(),
-                    padding: const EdgeInsets.only(right: 4),
-                    itemCount: _tabs.length - 1,
-                    itemBuilder: (ctx, i) => _buildTab(i + 1, cs),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final nav = _tabs[_currentIndex].navigatorKey.currentState;
+        if (nav != null && nav.canPop()) {
+          nav.pop();
+        } else if (_currentIndex != 0) {
+          switchToDashboard();
+        }
+      },
+      child: Column(
+        children: [
+          if (showBar)
+            Container(
+              height: 36,
+              color: cs.surface,
+              child: Row(
+                children: [
+                  _buildHomeTab(cs),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const ClampingScrollPhysics(),
+                      padding: const EdgeInsets.only(right: 4),
+                      itemCount: _tabs.length - 1,
+                      itemBuilder: (ctx, i) => _buildTab(i + 1, cs),
+                    ),
                   ),
-                ),
-                _buildAddButton(cs),
+                  _buildAddButton(cs),
+                ],
+              ),
+            ),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [
+                widget.dashboard,
+                for (final tab in _tabs.skip(1))
+                  TabNavigator(
+                    navigatorKey: tab.navigatorKey,
+                    initialRoute: tab.route,
+                  ),
               ],
             ),
           ),
-        Expanded(
-          child: IndexedStack(
-            index: _currentIndex,
-            children: [
-              widget.dashboard,
-              for (final tab in _tabs.skip(1))
-                TabNavigator(
-                  navigatorKey: tab.navigatorKey,
-                  initialRoute: tab.route,
-                ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

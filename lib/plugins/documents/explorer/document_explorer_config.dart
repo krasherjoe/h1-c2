@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../plugins/explorer/h1_explorer_config.dart';
+import '../../../models/document_type_colors.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import 'document_viewer.dart';
@@ -60,19 +61,59 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
 
   @override
   Widget buildItemTileContent(BuildContext context, DocumentModel item) {
-    return Container(
-      height: 60,
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final doctypeColor = documentTypeColor(item.documentType, cs, isDark);
+    final repItems = item.items.take(3).map((i) => i.productName).join('、');
+    final desc = (item.subject != null && item.subject!.isNotEmpty) ? item.subject! : repItems;
+    return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange.shade400),
-      ),
-      child: Center(
-        child: Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+      child: Row(
+        children: [
+          Container(width: 5, height: 72, color: doctypeColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Text(item.documentNumber,
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                    const Spacer(),
+                    _typeBadge(item.documentType.label, doctypeColor),
+                    if (item.isDraft) ...[
+                      const SizedBox(width: 4),
+                      _typeBadge('下書き', Colors.orange),
+                    ],
+                  ]),
+                  const SizedBox(height: 4),
+                  Text(item.customerName,
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  const SizedBox(height: 2),
+                  Text(desc,
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
     );
   }
+
+  Widget _typeBadge(String text, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(text,
+        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
+  );
 
   @override
   Future<bool> canDelete(DocumentModel item) async => item.isDraft;

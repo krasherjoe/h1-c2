@@ -9,7 +9,6 @@ import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
 import '../../services/mm_command_service.dart';
-import '../../widgets/tabbed_workspace.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -214,15 +213,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   Widget build(BuildContext context) {
     final hasSort = widget.config.sortOptions.isNotEmpty;
     final overflowActions = widget.config.overflowActions;
-    return PopScope(
-      canPop: Navigator.of(context).canPop(),
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
-          tw?.switchToDashboard();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: widget.appBarTitle ?? Text(widget.config.explorerTitle),
         centerTitle: true,
@@ -346,7 +337,6 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       ),
       ),
       floatingActionButton: _buildFab(),
-    ),
     );
   }
 
