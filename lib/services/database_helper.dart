@@ -64,9 +64,27 @@ class DatabaseHelper {
     return dir.path;
   }
 
+  /// 旧DBパス（外部ストレージ時代）から新DBパスへ移行
+  static Future<void> _migrateFromOldPath(String newDbPath) async {
+    try {
+      if (await File(newDbPath).exists()) return; // 既に新DBがある
+      final oldDir = Directory('/storage/emulated/0/Documents/販売アシスト1号code');
+      if (!await oldDir.exists()) return; // 旧DB自体が無い
+      final name = p.basenameWithoutExtension(newDbPath);
+      final oldFile = File(p.join(oldDir.path, '$name.db'));
+      if (!await oldFile.exists()) return; // 旧DBファイルが無い
+      await File(newDbPath).parent.create(recursive: true);
+      await oldFile.copy(newDbPath);
+      debugPrint('[DB] 旧DBから移行完了: $oldFile → $newDbPath');
+    } catch (e) {
+      debugPrint('[DB] 旧DB移行失敗: $e');
+    }
+  }
+
   Future<Database> _initDatabase() async {
     final dbPath = await CompanyService.getCurrentDbPath();
     debugPrint('[DB] データベースパス: $dbPath');
+    await _migrateFromOldPath(dbPath);
     final dir = Directory(p.dirname(dbPath));
     if (!await dir.exists()) await dir.create(recursive: true);
     return openDatabase(

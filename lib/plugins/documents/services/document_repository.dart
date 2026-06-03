@@ -17,8 +17,9 @@ class DocumentRepository {
     // DBファイルパスを確認
     try {
       final dbPath = await _dbHelper.getDatabasePath();
+      final exists = await File(dbPath).exists();
       ErrorReporter.sendError(
-        message: '[DocRepo] DB path: $dbPath, exists: ${File(dbPath).exists()}, query="$query" type=$filterType',
+        message: '[DocRepo] DB path: $dbPath, exists: $exists, query="$query" type=$filterType',
         screenId: '/documents/explorer',
       );
     } catch (e) {
