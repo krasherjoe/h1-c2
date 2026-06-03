@@ -14,6 +14,15 @@ class CompanyService {
   static const _defaultFileName = 'default_company.txt';
 
   static Future<String> _getBasePath() async {
+    if (Platform.isAndroid) {
+      final path = '/storage/emulated/0/Documents/$_dirName';
+      try {
+        await Directory(path).create(recursive: true);
+        return path;
+      } catch (_) {
+        debugPrint('[CompanyService] 外部ストレージアクセス不可、app-privateにフォールバック');
+      }
+    }
     final appDir = await getApplicationDocumentsDirectory();
     return p.join(appDir.path, _dirName);
   }

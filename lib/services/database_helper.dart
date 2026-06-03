@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 
@@ -64,27 +65,32 @@ class DatabaseHelper {
     return dir.path;
   }
 
-  /// 旧DBパス（外部ストレージ時代）から新DBパスへ移行
-  static Future<void> _migrateFromOldPath(String newDbPath) async {
+  /// 内部ストレージから外部ストレージへDBを移行
+  static Future<void> _migrateToExternalStorage(String externalDbPath) async {
     try {
-      if (await File(newDbPath).exists()) return; // 既に新DBがある
-      final oldDir = Directory('/storage/emulated/0/Documents/販売アシスト1号code');
-      if (!await oldDir.exists()) return; // 旧DB自体が無い
-      final name = p.basenameWithoutExtension(newDbPath);
-      final oldFile = File(p.join(oldDir.path, '$name.db'));
-      if (!await oldFile.exists()) return; // 旧DBファイルが無い
-      await File(newDbPath).parent.create(recursive: true);
-      await oldFile.copy(newDbPath);
-      debugPrint('[DB] 旧DBから移行完了: $oldFile → $newDbPath');
+      final ef = File(externalDbPath);
+      if (await ef.exists()) {
+        if (await ef.length() > 0) return;
+      }
+      final appDir = await getApplicationDocumentsDirectory();
+      final internalDir = Directory(p.join(appDir.path, '販売アシスト1号code'));
+      if (!await internalDir.exists()) return;
+      final name = p.basenameWithoutExtension(externalDbPath);
+      final internalFile = File(p.join(internalDir.path, '$name.db'));
+      if (!await internalFile.exists()) return;
+      if (await internalFile.length() == 0) return;
+      await ef.parent.create(recursive: true);
+      await internalFile.copy(externalDbPath);
+      debugPrint('[DB] 内部→外部ストレージ移行完了: $name.db');
     } catch (e) {
-      debugPrint('[DB] 旧DB移行失敗: $e');
+      debugPrint('[DB] 外部ストレージ移行失敗: $e');
     }
   }
 
   Future<Database> _initDatabase() async {
     final dbPath = await CompanyService.getCurrentDbPath();
     debugPrint('[DB] データベースパス: $dbPath');
-    await _migrateFromOldPath(dbPath);
+    await _migrateToExternalStorage(dbPath);
     final dir = Directory(p.dirname(dbPath));
     if (!await dir.exists()) await dir.create(recursive: true);
     return openDatabase(
