@@ -8,6 +8,7 @@ import 'models/company_profile.dart';
 import 'services/company_repository.dart';
 import 'screens/company_profile_screen.dart';
 import 'screens/company_switch_screen.dart';
+import '../../services/debug_console.dart';
 
 class CompanyPlugin extends H1Plugin {
   @override String get id => 'com.h1.plugin.company';
@@ -26,10 +27,18 @@ class CompanyPlugin extends H1Plugin {
       final repo = CompanyRepository(context.database);
       final profile = await repo.loadProfile() ?? const CompanyProfile();
       context.registerService<CompanyProfile>('companyProfile', profile);
-    } catch (e) {
-      debugPrint('[CompanyPlugin] プロファイル読込スキップ(テーブル未作成): $e');
-      context.registerService<CompanyProfile>('companyProfile', const CompanyProfile());
-    }
+    } catch (_) {}
+    DebugConsole.register('company.info', (_) async {
+      try {
+        final repo = CompanyRepository(context.database);
+        final p = await repo.loadProfile();
+        if (p == null) return '自社情報: 未設定';
+        return '自社情報:\n  名称: ${p.name}\n  TEL: ${p.tel ?? "なし"}\n  Email: ${p.email ?? "なし"}\n  住所: ${p.address}';
+      } catch (e) {
+        return '自社情報取得失敗: $e';
+      }
+    });
+    debugPrint('[CompanyPlugin] Initialized');
   }
 
   @override Future<void> dispose() async {}

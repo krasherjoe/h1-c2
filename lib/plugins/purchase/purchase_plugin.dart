@@ -6,6 +6,7 @@ import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/menu_item.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/purchase_explorer_config.dart';
+import '../../services/debug_console.dart';
 
 class PurchasePlugin extends H1Plugin {
   @override
@@ -28,6 +29,12 @@ class PurchasePlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
+    DebugConsole.register('purchase.stats', (_) async {
+      final cnt = await context.database.rawQuery("SELECT purchase_type, COUNT(*) as c FROM purchases GROUP BY purchase_type");
+      final lines = cnt.map((r) => '  ${r['purchase_type']}: ${r['c']}件').join('\n');
+      final total = cnt.fold(0, (s, r) => s + (r['c'] as int? ?? 0));
+      return '購買統計:\n$lines\n  合計: $total件';
+    });
     debugPrint('[PurchasePlugin] Initialized');
   }
 

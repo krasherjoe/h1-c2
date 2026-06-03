@@ -7,6 +7,7 @@ import '../../../plugin_system/menu_item.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/product_explorer_config.dart';
 import 'screens/category_explorer_screen.dart';
+import '../../../services/debug_console.dart';
 
 class ProductsPlugin extends H1Plugin {
   @override
@@ -32,6 +33,10 @@ class ProductsPlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
+    DebugConsole.register('products.stats', (_) async {
+      final cnt = await context.database.rawQuery('SELECT COUNT(*) as c FROM products');
+      return '商品: ${cnt.first['c']}件';
+    });
     debugPrint('[ProductsPlugin] Initialized');
   }
 

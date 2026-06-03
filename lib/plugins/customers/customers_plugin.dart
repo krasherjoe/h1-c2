@@ -6,6 +6,7 @@ import '../../../plugin_system/plugin_permission.dart';
 import '../../../plugin_system/menu_item.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/customer_explorer_config.dart';
+import '../../../services/debug_console.dart';
 
 class CustomersPlugin extends H1Plugin {
   @override
@@ -31,6 +32,10 @@ class CustomersPlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
+    DebugConsole.register('customers.stats', (_) async {
+      final cnt = await context.database.rawQuery('SELECT COUNT(*) as c FROM customers');
+      return '顧客: ${cnt.first['c']}件';
+    });
     debugPrint('[CustomersPlugin] Initialized');
   }
 
