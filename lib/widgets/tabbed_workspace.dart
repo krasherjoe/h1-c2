@@ -108,16 +108,10 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
       onTap: () => setState(() => _currentIndex = 0),
       child: Container(
         margin: const EdgeInsets.only(left: 4),
-        width: 32,
-        decoration: BoxDecoration(
-          color: active ? cs.primaryContainer : cs.surfaceContainerHigh,
-          borderRadius: const BorderRadius.only(
-            topRight: Radius.circular(6),
-            bottomRight: Radius.circular(6),
-          ),
-        ),
-        child: Icon(Icons.home, size: 16,
-          color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+        width: 36,
+        alignment: Alignment.center,
+        child: Icon(Icons.home, size: 20,
+          color: active ? cs.primary : cs.onSurfaceVariant),
       ),
     );
   }
@@ -125,6 +119,8 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
   Widget _buildTab(int i, ColorScheme cs) {
     final tab = _tabs[i];
     final active = i == _currentIndex;
+    final label = tab.title.length > 4 ? '${tab.title.substring(0, 4)}…' : tab.title;
+    final inactiveBg = Color.lerp(cs.primaryContainer, cs.surface, 0.6)!;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = i),
       onLongPress: () => closeTab(i),
@@ -132,27 +128,19 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
         margin: const EdgeInsets.symmetric(horizontal: 2),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: active ? cs.primaryContainer : cs.surfaceContainerHigh,
+          color: active ? cs.primaryContainer : inactiveBg,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(6),
             topRight: Radius.circular(6),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              tab.title,
-              style: TextStyle(
-                fontSize: 12,
-                color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.close, size: 12,
-              color: active ? cs.onPrimaryContainer.withValues(alpha: 0.5) : cs.onSurfaceVariant.withValues(alpha: 0.4)),
-          ],
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -165,11 +153,8 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
         margin: const EdgeInsets.only(right: 4),
         width: 28,
         height: 28,
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(Icons.add, size: 16, color: cs.onSurfaceVariant),
+        alignment: Alignment.center,
+        child: Icon(Icons.add, size: 18, color: cs.onSurfaceVariant),
       ),
     );
   }
