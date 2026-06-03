@@ -6,6 +6,7 @@ import 'plugin_permission.dart';
 import 'plugin_registry.dart';
 import 'dashboard_section.dart';
 import '../widgets/menu_category_header.dart';
+import '../widgets/tabbed_workspace.dart';
 import 'menu_item.dart';
 
 const List<String> _kCategoryOrder = [
@@ -155,7 +156,14 @@ class _CoreMenuSectionState extends State<_CoreMenuSection> {
   Widget _tile(MenuItem item) {
     final cs = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, item.route),
+      onTap: () {
+        final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+        if (tw != null) {
+          tw.openTab(item.title, item.route);
+        } else {
+          Navigator.pushNamed(context, item.route);
+        }
+      },
       child: Container(
         decoration: BoxDecoration(
           color: cs.surface,

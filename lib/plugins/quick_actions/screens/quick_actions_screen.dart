@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/quick_action_service.dart';
 import '../models/quick_action_page.dart';
 import '../widgets/quick_action_button.dart';
+import '../../../widgets/tabbed_workspace.dart';
 
 class QuickActionsPanel extends StatefulWidget {
   const QuickActionsPanel({super.key});
@@ -192,7 +193,14 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                           icon: item.icon,
                           label: item.title,
                           accentColor: QuickActionService.accentFor(item),
-                          onTap: () => Navigator.pushNamed(context, route),
+                          onTap: () {
+                            final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                            if (tw != null && item != null) {
+                              tw.openTab(item.title, item.route);
+                            } else {
+                              Navigator.pushNamed(context, route);
+                            }
+                          },
                           onLongPress: _openReorderSheet,
                         ),
                       );

@@ -49,6 +49,7 @@ import 'services/log_dispatcher.dart';
 import 'services/input_style_service.dart';
 import 'services/sync_garbage_collector.dart';
 import 'screens/dashboard_screen.dart';
+import 'widgets/tabbed_workspace.dart';
 import 'screens/plugin_management_screen.dart';
 
 ThemeMode _loadThemeMode(SharedPreferences prefs) {
@@ -409,6 +410,6 @@ class _H1CoreAppState extends State<H1CoreApp> {
         isConverting: _isConverting,
       );
     }
-    return const DashboardScreen();
+    return TabbedWorkspace(dashboard: const DashboardScreen());
   }
 }
