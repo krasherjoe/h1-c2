@@ -367,16 +367,18 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     ErrorReporter.sendLog(message: buf.toString());
 
     try {
-      final boundary = _diagnosticKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return;
-      final image = await boundary.toImage(pixelRatio: 1.5);
+      final boundary = _diagnosticKey.currentContext?.findRenderObject();
+      if (boundary == null) { ErrorReporter.sendLog(message: '📷 screenshot: boundary null'); return; }
+      final repBoundary = boundary as RenderRepaintBoundary;
+      final image = await repBoundary.toImage(pixelRatio: 1.5);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
+      if (byteData == null) { ErrorReporter.sendLog(message: '📷 screenshot: byteData null'); return; }
       final svc = MmCommandService.instance;
-      if (svc.pat == null) return;
-      await svc.uploadFile(byteData.buffer.asUint8List(), 'd1_diagnostic.png');
+      if (svc.pat == null) { ErrorReporter.sendLog(message: '📷 screenshot: PAT null'); return; }
+      final err = await svc.uploadFile(byteData.buffer.asUint8List(), 'd1_diagnostic.png');
+      if (err != null) ErrorReporter.sendLog(message: '📷 screenshot upload: $err');
     } catch (e) {
-      debugPrint('[H1Explorer] screenshot failed: $e');
+      ErrorReporter.sendLog(message: '📷 screenshot error: $e');
     }
   }
 
