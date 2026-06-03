@@ -144,10 +144,20 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                         color: cs.onSurfaceVariant,
                       ),
                     ),
-                    Text(
-                      _pages[_currentPage].name,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
+                    GestureDetector(
+                      onTap: () {
+                        final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                        if (tw == null) return;
+                        for (final route in _pages[_currentPage].actionIds) {
+                          final item = actions[route];
+                          if (item != null) tw.openTab(item.title, item.route);
+                        }
+                      },
+                      child: Text(
+                        _pages[_currentPage].name,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ],
