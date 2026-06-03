@@ -63,6 +63,7 @@ class DocumentsPlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
+    await _recoverFromConversion(context.database);
     DebugConsole.register('documents.stats', (_) async {
       final db = context.database;
       final cnt = await db.rawQuery('SELECT document_type, COUNT(*) as c FROM documents GROUP BY document_type');
@@ -71,6 +72,67 @@ class DocumentsPlugin extends H1Plugin {
       return '伝票統計:\n$lines\n  合計: $total件';
     });
     debugPrint('[DocumentsPlugin] Initialized');
+  }
+
+  Future<void> _recoverFromConversion(Database db) async {
+    try {
+      final hasInvoices = (await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='invoices'",
+      )).isNotEmpty;
+      if (!hasInvoices) return;
+
+      final invoicesCount = await db.rawQuery('SELECT COUNT(*) AS c FROM invoices');
+      if ((invoicesCount.first['c'] as int? ?? 0) == 0) return;
+
+      final docsCount = await db.rawQuery('SELECT COUNT(*) AS c FROM documents');
+      if ((docsCount.first['c'] as int? ?? 0) > 0) return;
+
+      final rows = await db.rawQuery('SELECT * FROM invoices');
+      for (final row in rows) {
+        final id = row['id'] as String? ?? '';
+        if (id.isEmpty) continue;
+        final type = row['document_type'] as String? ?? 'invoice';
+        final prefix = switch (type) {
+          'estimation' => 'MG', 'order' => 'JU', 'delivery' => 'NH',
+          'invoice' => 'SK', 'receipt' => 'RY', _ => 'XX',
+        };
+        final cnt = (await db.rawQuery(
+          "SELECT COUNT(*) as c FROM documents WHERE document_number LIKE ?",
+          ['$prefix${DateTime.now().year % 100}%'],
+        )).first['c'] as int? ?? 0;
+
+        await db.insert('documents', {
+          'id': id,
+          'document_type': type,
+          'customer_id': row['customer_id'],
+          'customer_name': row['customer_formal_name'] ?? row['customer_id'] ?? '',
+          'document_number': '$prefix${DateTime.now().year % 100}${DateTime.now().month.toString().padLeft(2, '0')}-${(cnt + 1).toString().padLeft(4, '0')}',
+          'date': row['date'] ?? DateTime.now().toIso8601String().substring(0, 10),
+          'total': (row['total_amount'] as num?)?.toInt() ?? 0,
+          'status': row['order_status'] as String? ?? 'draft',
+          'linked_document_id': row['source_document_id'] as String?,
+          'subject': row['subject'] as String?,
+        });
+
+        final items = await db.rawQuery(
+          'SELECT * FROM invoice_items WHERE invoice_id = ?', [id],
+        );
+        for (final item in items) {
+          await db.insert('document_items', {
+            'id': item['id'],
+            'document_id': id,
+            'product_id': item['product_id'],
+            'product_name': item['description'] ?? '',
+            'quantity': item['quantity'] ?? 1,
+            'unit_price': item['unit_price'] ?? 0,
+            'tax_rate': item['tax_rate'] ?? 0.1,
+          });
+        }
+      }
+      debugPrint('[DocumentsPlugin] invoices→documents 復元完了: ${rows.length}件');
+    } catch (e) {
+      debugPrint('[DocumentsPlugin] 復元失敗: $e');
+    }
   }
 
   @override
