@@ -46,6 +46,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 12),
+          child: Icon(Icons.home_outlined),
+        ),
         title: const PluginAppBarTitle(fallbackTitle: 'ダッシュボード'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
