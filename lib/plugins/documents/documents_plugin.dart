@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/document_explorer_config.dart';
 import '../../services/debug_console.dart';
@@ -156,18 +155,6 @@ class DocumentsPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[DocumentsPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'DOC',
-      title: '伝票管理',
-      route: '/documents',
-      category: '販売',
-      icon: Icons.folder_open,
-      description: '見積・納品・請求・領収',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

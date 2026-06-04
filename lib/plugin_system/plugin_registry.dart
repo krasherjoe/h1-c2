@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'plugin_interface.dart';
 import 'plugin_context.dart';
 import 'menu_item.dart';
+import 'generated_manifest.dart';
 import 'screen_definition.dart';
 import '../services/database_helper.dart';
 
@@ -40,12 +41,6 @@ class PluginRegistry {
       }
       if (_screensByRoute.containsKey(screen.route)) {
         throw Exception('Route "${screen.route}" already registered');
-      }
-    }
-
-    for (final item in plugin.getMenuItems()) {
-      if (_screensByRoute.containsKey(item.route)) {
-        throw Exception('Route "${item.route}" already registered as a screen');
       }
     }
 
@@ -111,12 +106,10 @@ class PluginRegistry {
   List<H1Plugin> get activePlugins =>
     _plugins.values.where((p) => isEnabled(p.id)).toList();
 
-  List<MenuItem> getAllMenuItems() {
-    return activePlugins.expand((p) => p.getMenuItems()).toList();
-  }
+  List<MenuItem> getAllMenuItems() => GeneratedManifest.getAll();
 
   Map<String, List<MenuItem>> getMenuItemsByCategory() {
-    final items = getAllMenuItems();
+    final items = GeneratedManifest.getAll();
     final result = <String, List<MenuItem>>{};
     for (final item in items) {
       result.putIfAbsent(item.category, () => []).add(item);

@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import '../../services/debug_console.dart';
 import 'screens/price_explorer_screen.dart';
 import 'commands/pricing_commands.dart';
@@ -40,18 +39,6 @@ class PriceListPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[PriceListPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'PE',
-      title: '価格表',
-      route: '/pricelist',
-      category: 'マスター',
-      icon: Icons.price_change,
-      description: '価格表の管理',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

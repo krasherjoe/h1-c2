@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/menu_item.dart';
 import '../../plugin_system/dashboard_section.dart';
 import 'screens/quick_actions_screen.dart';
 import 'screens/quick_action_settings_screen.dart';
@@ -29,18 +28,6 @@ class QuickActionsPlugin extends H1Plugin {
 
   @override
   Future<void> dispose() async {}
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'QA',
-      title: 'クイックアクション',
-      route: '/quick_actions/settings',
-      category: 'システム',
-      icon: Icons.grid_view,
-      description: 'ショートカットメニュー設定',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

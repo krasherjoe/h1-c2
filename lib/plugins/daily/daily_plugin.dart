@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import 'screens/daily_report_screen.dart';
 import 'screens/time_tracking_screen.dart';
 
@@ -35,26 +34,6 @@ class DailyPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[DailyPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-        const MenuItem(
-          id: 'DR',
-          title: 'DR:日報',
-          route: '/daily/reports',
-          category: '業務',
-          icon: Icons.assignment,
-          description: '3行日報の作成・管理',
-        ),
-        const MenuItem(
-          id: 'TI',
-          title: 'TI:工数管理',
-          route: '/daily/time',
-          category: '業務',
-          icon: Icons.timer,
-          description: '工数記録・タイマー',
-        ),
-      ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

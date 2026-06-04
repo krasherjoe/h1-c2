@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import 'screens/accounts_receivable_screen.dart';
 import 'screens/payment_schedule_screen.dart';
 import 'screens/payment_register_screen.dart';
@@ -37,38 +36,6 @@ class AccountingPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[AccountingPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'AR',
-      title: '売掛管理',
-      route: '/accounting/receivable',
-      category: '会計',
-      icon: Icons.account_balance,
-    ),
-    const MenuItem(
-      id: 'PS',
-      title: '支払スケジュール',
-      route: '/accounting/schedule',
-      category: '会計',
-      icon: Icons.calendar_month,
-    ),
-    const MenuItem(
-      id: 'PR',
-      title: '入金登録',
-      route: '/accounting/payment',
-      category: '会計',
-      icon: Icons.payments,
-    ),
-    const MenuItem(
-      id: 'CF',
-      title: '資金繰り',
-      route: '/accounting/cashflow',
-      category: '会計',
-      icon: Icons.trending_up,
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

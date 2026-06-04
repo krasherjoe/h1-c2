@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../plugin_system/plugin_interface.dart';
 import '../plugin_system/plugin_context.dart';
 import '../plugin_system/plugin_permission.dart';
-import '../plugin_system/menu_item.dart';
 
 class QuotationPlugin extends H1Plugin {
   @override
@@ -35,28 +34,6 @@ class QuotationPlugin extends H1Plugin {
   @override
   Future<void> dispose() async {
     debugPrint('[QuotationPlugin] Disposed');
-  }
-
-  @override
-  List<MenuItem> getMenuItems() {
-    return [
-      const MenuItem(
-        id: 'Q1',
-        title: '見積入力',
-        route: '/quotation/input',
-        category: '販売管理',
-        icon: Icons.description,
-        description: '見積書を作成',
-      ),
-      const MenuItem(
-        id: 'QH',
-        title: '見積履歴',
-        route: '/quotation/history',
-        category: '販売管理',
-        icon: Icons.history,
-        description: '過去の見積を確認',
-      ),
-    ];
   }
 
   @override

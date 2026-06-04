@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/debug_screen.dart';
 
@@ -33,18 +32,6 @@ class DebugPlugin extends H1Plugin {
 
   @override
   Future<void> dispose() async {}
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    MenuItem(
-      id: 'debug',
-      title: 'デバッグ',
-      route: '/debug',
-      category: 'システム',
-      icon: Icons.bug_report,
-      description: 'Mattermost診断・DB送信',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

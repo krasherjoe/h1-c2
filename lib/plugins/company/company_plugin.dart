@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import 'models/company_profile.dart';
 import 'services/company_repository.dart';
 import 'screens/company_profile_screen.dart';
@@ -42,26 +41,6 @@ class CompanyPlugin extends H1Plugin {
   }
 
   @override Future<void> dispose() async {}
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'CI',
-      title: '自社情報',
-      route: '/company',
-      category: 'システム',
-      icon: Icons.business,
-      description: '会社名・住所・印鑑・口座',
-    ),
-    const MenuItem(
-      id: 'TM',
-      title: '法人切替',
-      route: '/company/switch',
-      category: 'システム',
-      icon: Icons.swap_horiz,
-      description: '法人の作成・切替・削除',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

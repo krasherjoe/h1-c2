@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import 'screens/ar_dashboard_screen.dart';
 import 'screens/cash_flow_screen.dart';
 import 'screens/payment_processing_screen.dart';
@@ -41,66 +40,6 @@ class ArPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[ArPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'AR',
-      title: '売掛金管理',
-      route: '/ar',
-      category: '売掛・支払',
-      icon: Icons.account_balance,
-      description: '顧客別未回収額',
-    ),
-    const MenuItem(
-      id: 'RP',
-      title: '入金処理',
-      route: '/ar/receipt',
-      category: '売掛・支払',
-      icon: Icons.payments,
-      description: '入金登録',
-    ),
-    const MenuItem(
-      id: 'PY',
-      title: '支払予定',
-      route: '/ar/schedules',
-      category: '売掛・支払',
-      icon: Icons.calendar_month,
-      description: '支払予定一覧',
-    ),
-    const MenuItem(
-      id: 'PG',
-      title: '支払登録',
-      route: '/ar/payment',
-      category: '売掛・支払',
-      icon: Icons.check_circle,
-      description: '支払実績登録',
-    ),
-    const MenuItem(
-      id: 'CF',
-      title: '資金繰り',
-      route: '/ar/cashflow',
-      category: '売掛・支払',
-      icon: Icons.account_balance,
-      description: '資金繰り表',
-    ),
-    const MenuItem(
-      id: 'LR',
-      title: '台帳',
-      route: '/ar/ledger',
-      category: '売掛・支払',
-      icon: Icons.book,
-      description: '売掛台帳・買掛台帳',
-    ),
-    const MenuItem(
-      id: 'TX',
-      title: '税務レポート',
-      route: '/ar/tax',
-      category: '売掛・支払',
-      icon: Icons.calculate,
-      description: '消費税納付額計算',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

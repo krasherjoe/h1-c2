@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'plugin_permission.dart';
-import 'menu_item.dart';
 import 'plugin_context.dart';
 import 'dashboard_section.dart';
 import 'screen_definition.dart';
@@ -15,7 +14,6 @@ abstract class H1Plugin {
   List<PluginPermission> get requiredPermissions;
   Future<void> initialize(PluginContext context);
   Future<void> dispose();
-  List<MenuItem> getMenuItems();
   Map<String, WidgetBuilder> getRoutes();
   Future<void> createTables(Database db);
   Future<void> migrate(Database db, int fromVersion, int toVersion) async {}

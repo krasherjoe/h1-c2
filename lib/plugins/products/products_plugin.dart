@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../../plugin_system/plugin_interface.dart';
 import '../../../plugin_system/plugin_context.dart';
 import '../../../plugin_system/plugin_permission.dart';
-import '../../../plugin_system/menu_item.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/product_explorer_config.dart';
 import 'screens/category_explorer_screen.dart';
@@ -64,26 +63,6 @@ class ProductsPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[ProductsPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'P1',
-      title: '商品マスター',
-      route: '/products',
-      category: 'マスター',
-      icon: Icons.inventory_2,
-      description: '商品の登録・編集',
-    ),
-    const MenuItem(
-      id: 'CE',
-      title: '商品カテゴリ',
-      route: '/products/categories',
-      category: 'マスター',
-      icon: Icons.category,
-      description: 'カテゴリの階層管理',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

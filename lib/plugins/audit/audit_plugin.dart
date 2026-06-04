@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/audit_screen.dart';
 
@@ -32,17 +31,6 @@ class AuditPlugin extends H1Plugin {
 
   @override
   Future<void> dispose() async {}
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    MenuItem(
-      id: 'audit',
-      title: 'ハッシュチェーン監査',
-      route: '/audit',
-      category: 'tools',
-      icon: Icons.verified_rounded,
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

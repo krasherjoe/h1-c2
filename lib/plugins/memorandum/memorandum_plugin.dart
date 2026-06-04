@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import 'models/memorandum_model.dart';
 import 'screens/memorandum_list_screen.dart';
 import 'screens/memorandum_input_screen.dart';
@@ -40,18 +39,6 @@ class MemorandumPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[MemorandumPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'MEMO',
-      title: '覚書管理',
-      route: '/memorandum',
-      category: '販売',
-      icon: Icons.description,
-      description: '保守サービス覚書の作成・管理',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

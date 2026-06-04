@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../../plugin_system/plugin_interface.dart';
 import '../../../plugin_system/plugin_context.dart';
 import '../../../plugin_system/plugin_permission.dart';
-import '../../../plugin_system/menu_item.dart';
 
 class ExplorerPlugin extends H1Plugin {
   @override
@@ -38,9 +37,6 @@ class ExplorerPlugin extends H1Plugin {
 
   @override
   Future<void> createTables(Database db) async {}
-
-  @override
-  List<MenuItem> getMenuItems() => [];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {};

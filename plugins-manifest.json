@@ -29,9 +29,8 @@
       "id": "com.h1.plugin.suppliers",
       "name": "SuppliersPlugin",
       "screens": [
-        {"id": "SL", "title": "仕入先マスター", "route": "/suppliers", "category": "マスター", "icon": "Icons.person", "description": "仕入先の登録・編集"},
-        {"id": "PE", "title": "価格表", "route": "/pricelist", "category": "マスター", "icon": "Icons.monetization_on", "description": "価格表の管理"},
-        {"id": "SP", "title": "仕入商品", "route": "/suppliers/products", "category": "マスター", "icon": "Icons.inventory", "description": "仕入商品の一覧・管理"}
+        {"id": "SU", "title": "仕入先台帳", "route": "/suppliers/ledger", "category": "在庫・仕入", "icon": "Icons.inventory_2"},
+        {"id": "RE", "title": "仕入先レポート", "route": "/suppliers/report", "category": "在庫・仕入", "icon": "Icons.assessment"}
       ]
     },
     {
@@ -103,10 +102,10 @@
       "id": "com.h1.plugin.accounting",
       "name": "AccountingPlugin",
       "screens": [
-        {"id": "AR", "title": "売掛管理", "route": "/accounting/receivable", "category": "会計", "icon": "Icons.account_balance"},
+        {"id": "RCV", "title": "売掛管理", "route": "/accounting/receivable", "category": "会計", "icon": "Icons.account_balance"},
         {"id": "PS", "title": "支払スケジュール", "route": "/accounting/schedule", "category": "会計", "icon": "Icons.calendar_month"},
         {"id": "PR", "title": "入金登録", "route": "/accounting/payment", "category": "会計", "icon": "Icons.payments"},
-        {"id": "CF", "title": "資金繰り", "route": "/accounting/cashflow", "category": "会計", "icon": "Icons.trending_up"}
+        {"id": "CAS", "title": "資金繰り", "route": "/accounting/cashflow", "category": "会計", "icon": "Icons.trending_up"}
       ]
     },
     {

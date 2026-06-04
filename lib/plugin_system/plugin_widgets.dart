@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'plugin_registry.dart';
+import 'generated_manifest.dart';
 
 class PluginAppBarTitle extends StatelessWidget {
   final String fallbackTitle;
@@ -9,9 +9,9 @@ class PluginAppBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final route = ModalRoute.of(context)?.settings.name ?? '/';
-    final screen = PluginRegistry.instance.getScreenByRoute(route);
-    if (screen != null) {
-      return Text('${screen.id}: ${screen.title}');
+    final item = GeneratedManifest.byRoute(route);
+    if (item != null) {
+      return Text('${item.id}: ${item.title}');
     }
     return Text(fallbackTitle);
   }

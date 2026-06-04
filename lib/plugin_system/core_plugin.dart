@@ -65,7 +65,6 @@ class CorePlugin extends H1Plugin {
   }
   @override Widget? getSettingsScreen() => null;
   @override Map<String, WidgetBuilder> getRoutes() => {};
-  @override List<MenuItem> getMenuItems() => [];
 
   @override
   DashboardSection? get dashboardSection => DashboardSection(

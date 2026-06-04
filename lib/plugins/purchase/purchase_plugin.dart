@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/purchase_explorer_config.dart';
 import '../../services/debug_console.dart';
@@ -42,18 +41,6 @@ class PurchasePlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[PurchasePlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'PUR',
-      title: '仕入管理',
-      route: '/purchase',
-      category: '仕入',
-      icon: Icons.shopping_cart,
-      description: '発注・入荷・返品・支払',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

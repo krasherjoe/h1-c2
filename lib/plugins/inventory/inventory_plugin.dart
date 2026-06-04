@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import 'screens/inventory_list_screen.dart';
 import 'screens/stock_inbound_screen.dart';
 import 'screens/stock_outbound_screen.dart';
@@ -43,90 +42,6 @@ class InventoryPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[InventoryPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'WH',
-      title: '倉庫一覧',
-      route: '/inventory/warehouses',
-      category: '在庫',
-      icon: Icons.warehouse,
-      description: '倉庫マスターの管理',
-    ),
-    const MenuItem(
-      id: 'INV',
-      title: '在庫一覧',
-      route: '/inventory',
-      category: '在庫',
-      icon: Icons.inventory,
-      description: '商品別在庫一覧',
-    ),
-    const MenuItem(
-      id: 'WHI',
-      title: '入庫処理',
-      route: '/inventory/inbound',
-      category: '在庫',
-      icon: Icons.arrow_downward,
-      description: '入庫登録',
-    ),
-    const MenuItem(
-      id: 'WHO',
-      title: '出庫処理',
-      route: '/inventory/outbound',
-      category: '在庫',
-      icon: Icons.arrow_upward,
-      description: '出庫登録',
-    ),
-    const MenuItem(
-      id: 'IQ',
-      title: '在庫照会',
-      route: '/inventory/inquiry',
-      category: '在庫',
-      icon: Icons.search,
-      description: '商品在庫の照会',
-    ),
-    const MenuItem(
-      id: 'STK',
-      title: '棚卸',
-      route: '/inventory/stocktake',
-      category: '在庫',
-      icon: Icons.fact_check,
-      description: '棚卸入力',
-    ),
-    const MenuItem(
-      id: 'IC',
-      title: '棚卸入力(一括)',
-      route: '/inventory/stocktake_input',
-      category: '在庫',
-      icon: Icons.edit_note,
-      description: '一括棚卸入力',
-    ),
-    const MenuItem(
-      id: 'IA',
-      title: '在庫調整',
-      route: '/inventory/adjustment',
-      category: '在庫',
-      icon: Icons.tune,
-      description: '在庫調整',
-    ),
-    const MenuItem(
-      id: 'IM',
-      title: '在庫移動',
-      route: '/inventory/transfer',
-      category: '在庫',
-      icon: Icons.swap_horiz,
-      description: '倉庫間在庫移動',
-    ),
-    const MenuItem(
-      id: 'R4',
-      title: '在庫評価額',
-      route: '/inventory/valuation',
-      category: '在庫',
-      icon: Icons.account_balance,
-      description: '在庫評価額一覧',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/menu_item.dart';
 import 'screens/project_list_screen.dart';
 import 'screens/project_detail_screen.dart';
 
@@ -38,18 +37,6 @@ class ProjectPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[ProjectPlugin] Disposed');
   }
-
-  @override
-  List<MenuItem> getMenuItems() => [
-    const MenuItem(
-      id: 'PRJ',
-      title: '案件管理',
-      route: '/projects',
-      category: '販売',
-      icon: Icons.workspaces,
-      description: '案件の作成・進捗管理',
-    ),
-  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {
