@@ -4,11 +4,10 @@ import '../plugin_system/menu_item.dart';
 import 'tab_navigator.dart';
 
 class _TabInfo {
-  final String id;
   final String title;
   final String route;
   final GlobalKey<NavigatorState> navigatorKey;
-  _TabInfo({required this.id, required this.title, required this.route, required this.navigatorKey});
+  _TabInfo({required this.title, required this.route, required this.navigatorKey});
 }
 
 class TabbedWorkspace extends StatefulWidget {
@@ -32,7 +31,6 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
   void initState() {
     super.initState();
     _tabs.add(_TabInfo(
-      id: '',
       title: 'ダッシュボード',
       route: '__dashboard__',
       navigatorKey: GlobalKey<NavigatorState>(),
@@ -46,7 +44,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
       return;
     }
     setState(() {
-      _tabs.add(_TabInfo(id: id, title: title, route: route, navigatorKey: GlobalKey<NavigatorState>()));
+      _tabs.add(_TabInfo(title: title, route: route, navigatorKey: GlobalKey<NavigatorState>()));
       _currentIndex = _tabs.length - 1;
     });
   }
@@ -121,7 +119,6 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final showBar = _tabs.length > 1;
-    final narrow = _tabs.length > 5;
 
     return PopScope(
       canPop: false,
@@ -150,7 +147,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
                       physics: const ClampingScrollPhysics(),
                       padding: const EdgeInsets.only(right: 4),
                       itemCount: _tabs.length - 1,
-                      itemBuilder: (ctx, i) => _buildTab(i + 1, cs, narrow),
+                      itemBuilder: (ctx, i) => _buildTab(i + 1, cs),
                     ),
                   ),
                   _buildAddButton(cs),
@@ -190,15 +187,15 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     );
   }
 
-  Widget _buildTab(int i, ColorScheme cs, bool narrow) {
+  Widget _buildTab(int i, ColorScheme cs) {
     final tab = _tabs[i];
     final active = i == _currentIndex;
-    final label = _tabLabel(tab, active, narrow);
     final inactiveBg = Color.lerp(cs.primaryContainer, cs.surface, 0.6)!;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = i),
       onLongPress: () => closeTab(i),
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 140),
         margin: const EdgeInsets.symmetric(horizontal: 2),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -211,7 +208,8 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
           ),
         ),
         child: Text(
-          label,
+          tab.title,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 12,
             color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant,
@@ -220,12 +218,6 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
         ),
       ),
     );
-  }
-
-  String _tabLabel(_TabInfo tab, bool active, bool narrow) {
-    if (active) return tab.title;
-    if (narrow) return tab.id;
-    return tab.title.length > 4 ? '${tab.title.substring(0, 4)}…' : tab.title;
   }
 
   Widget _buildAddButton(ColorScheme cs) {
