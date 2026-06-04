@@ -136,11 +136,27 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Text(
-                  'クイックアクション',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
+                child: Row(
+                  children: [
+                    Text(
+                      'クイックアクション',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    GestureDetector(
+                      onTap: () {
+                        final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                        if (tw == null) return;
+                        for (final route in _pages[_currentPage].actionIds) {
+                          final item = actions[route];
+                          if (item != null) tw.openTab(item.title, item.route);
+                        }
+                      },
+                      child: Icon(Icons.open_in_new, size: 14, color: cs.onSurfaceVariant),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
