@@ -186,6 +186,9 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
   Future<void> _reload() async {
     if (_currentYear == null) return;
     await _loadRoots(_currentYear!);
+    for (final id in _expanded) {
+      _childrenCache[id] = await _repo.getChildren(id);
+    }
     if (mounted) setState(() {});
   }
 
@@ -212,9 +215,10 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     _undoStack.push(CreateNodeCommand(entry));
     await _reload();
     if (parentId != null && mounted) {
+      final children = await _repo.getChildren(parentId);
       setState(() {
         _expanded.add(parentId);
-        _childrenCache.remove(parentId);
+        _childrenCache[parentId] = children;
       });
     }
   }
@@ -264,9 +268,10 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     );
     await _reload();
     if (parentId != null && mounted) {
+      final children = await _repo.getChildren(parentId);
       setState(() {
         _expanded.add(parentId);
-        _childrenCache.remove(parentId);
+        _childrenCache[parentId] = children;
       });
     }
   }
@@ -363,9 +368,10 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     _undoStack.push(CreateNodeCommand(entry));
     await _reload();
     if (parentId != null && mounted) {
+      final children = await _repo.getChildren(parentId);
       setState(() {
         _expanded.add(parentId);
-        _childrenCache.remove(parentId);
+        _childrenCache[parentId] = children;
       });
     }
   }
