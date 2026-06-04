@@ -4,10 +4,11 @@ import '../plugin_system/menu_item.dart';
 import 'tab_navigator.dart';
 
 class _TabInfo {
+  final String id;
   final String title;
   final String route;
   final GlobalKey<NavigatorState> navigatorKey;
-  _TabInfo({required this.title, required this.route, required this.navigatorKey});
+  _TabInfo({required this.id, required this.title, required this.route, required this.navigatorKey});
 }
 
 class TabbedWorkspace extends StatefulWidget {
@@ -31,20 +32,21 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
   void initState() {
     super.initState();
     _tabs.add(_TabInfo(
+      id: '',
       title: 'ダッシュボード',
       route: '__dashboard__',
       navigatorKey: GlobalKey<NavigatorState>(),
     ));
   }
 
-  void openTab(String title, String route) {
+  void openTab(String id, String title, String route) {
     final existing = _tabs.indexWhere((t) => t.route == route);
     if (existing >= 0) {
       setState(() => _currentIndex = existing);
       return;
     }
     setState(() {
-      _tabs.add(_TabInfo(title: title, route: route, navigatorKey: GlobalKey<NavigatorState>()));
+      _tabs.add(_TabInfo(id: id, title: title, route: route, navigatorKey: GlobalKey<NavigatorState>()));
       _currentIndex = _tabs.length - 1;
     });
   }
@@ -119,6 +121,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final showBar = _tabs.length > 1;
+    final narrow = _tabs.length > 5;
 
     return PopScope(
       canPop: false,
@@ -147,7 +150,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
                       physics: const ClampingScrollPhysics(),
                       padding: const EdgeInsets.only(right: 4),
                       itemCount: _tabs.length - 1,
-                      itemBuilder: (ctx, i) => _buildTab(i + 1, cs),
+                      itemBuilder: (ctx, i) => _buildTab(i + 1, cs, narrow),
                     ),
                   ),
                   _buildAddButton(cs),
@@ -187,10 +190,10 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     );
   }
 
-  Widget _buildTab(int i, ColorScheme cs) {
+  Widget _buildTab(int i, ColorScheme cs, bool narrow) {
     final tab = _tabs[i];
     final active = i == _currentIndex;
-    final label = _tabLabel(tab, active);
+    final label = _tabLabel(tab, active, narrow);
     final inactiveBg = Color.lerp(cs.primaryContainer, cs.surface, 0.6)!;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = i),
@@ -199,7 +202,9 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
         margin: const EdgeInsets.symmetric(horizontal: 2),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: active ? cs.primaryContainer : inactiveBg,
+          color: active
+              ? Color.lerp(cs.primaryContainer, cs.primary, 0.3)!
+              : inactiveBg,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(6),
             topRight: Radius.circular(6),
@@ -217,12 +222,9 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     );
   }
 
-  String _tabLabel(_TabInfo tab, bool active) {
+  String _tabLabel(_TabInfo tab, bool active, bool narrow) {
     if (active) return tab.title;
-    if (tab.title.length <= 3) {
-      final id = tab.route.replaceFirst('/', '');
-      return id.length > 3 ? '${id.substring(0, 3)}…' : id;
-    }
+    if (narrow) return tab.id;
     return tab.title.length > 4 ? '${tab.title.substring(0, 4)}…' : tab.title;
   }
 
@@ -270,7 +272,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
                   title: Text(item.title, style: const TextStyle(fontSize: 14)),
                   onTap: () {
                     Navigator.pop(ctx);
-                    openTab(item.title, item.route);
+                    openTab(item.id, item.title, item.route);
                   },
                 ),
             ],

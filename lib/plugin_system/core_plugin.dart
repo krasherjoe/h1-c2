@@ -159,7 +159,7 @@ class _CoreMenuSectionState extends State<_CoreMenuSection> {
       onTap: () {
         final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
         if (tw != null) {
-          tw.openTab(item.title, item.route);
+          tw.openTab(item.id, item.title, item.route);
         } else {
           Navigator.pushNamed(context, item.route);
         }

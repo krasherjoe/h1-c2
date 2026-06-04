@@ -139,22 +139,26 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                 child: Row(
                   children: [
                     Text(
-                      'クイックアクション',
+                      'クイックアクション  ',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: cs.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(width: 2),
                     GestureDetector(
                       onTap: () {
                         final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
                         if (tw == null) return;
                         for (final route in _pages[_currentPage].actionIds) {
                           final item = actions[route];
-                          if (item != null) tw.openTab(item.title, item.route);
+                          if (item != null) tw.openTab(item.id, item.title, item.route);
                         }
                       },
-                      child: Icon(Icons.open_in_new, size: 14, color: cs.onSurfaceVariant),
+                      child: Text(
+                        _pages[_currentPage].name,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -202,7 +206,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                           onTap: () {
                             final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
                             if (tw != null && item != null) {
-                              tw.openTab(item.title, item.route);
+                              tw.openTab(item.id, item.title, item.route);
                             } else {
                               Navigator.pushNamed(context, route);
                             }
