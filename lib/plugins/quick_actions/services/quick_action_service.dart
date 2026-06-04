@@ -55,14 +55,14 @@ class QuickActionService {
 
   static Color accentFor(MenuItem item, ColorScheme cs) {
     final category = item.category;
-    if (category.contains('マスタ')) return cs.secondary;
-    if (category.contains('販売')) return cs.primary;
-    if (category.contains('仕入')) return cs.tertiary;
-    if (category.contains('在庫')) return cs.primaryContainer;
+    if (category.contains('マスタ')) return cs.primary;
+    if (category.contains('販売')) return cs.tertiary;
+    if (category.contains('仕入')) return cs.secondary;
+    if (category.contains('在庫')) return cs.error;
     if (category.contains('集計') || category.contains('会計'))
-      return cs.onSurfaceVariant;
+      return cs.primary.withValues(alpha: 0.7);
     if (category.contains('設定') || category.contains('システム'))
-      return cs.secondaryContainer;
-    return cs.onSurfaceVariant;
+      return cs.tertiary.withValues(alpha: 0.7);
+    return cs.onSurface;
   }
 }
