@@ -190,7 +190,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
   Widget _buildTab(int i, ColorScheme cs) {
     final tab = _tabs[i];
     final active = i == _currentIndex;
-    final label = tab.title.length > 4 ? '${tab.title.substring(0, 4)}…' : tab.title;
+    final label = _tabLabel(tab, active);
     final inactiveBg = Color.lerp(cs.primaryContainer, cs.surface, 0.6)!;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = i),
@@ -215,6 +215,15 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
         ),
       ),
     );
+  }
+
+  String _tabLabel(_TabInfo tab, bool active) {
+    if (active) return tab.title;
+    if (tab.title.length <= 3) {
+      final id = tab.route.replaceFirst('/', '');
+      return id.length > 3 ? '${id.substring(0, 3)}…' : id;
+    }
+    return tab.title.length > 4 ? '${tab.title.substring(0, 4)}…' : tab.title;
   }
 
   Widget _buildAddButton(ColorScheme cs) {

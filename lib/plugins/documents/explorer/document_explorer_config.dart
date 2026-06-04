@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/document_type_colors.dart';
 import '../../../utils/theme_utils.dart' hide documentTypeColor;
+import '../../../services/input_style_service.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import 'document_viewer.dart';
@@ -71,7 +72,9 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final date = '${item.date.year}/${item.date.month.toString().padLeft(2, '0')}/${item.date.day.toString().padLeft(2, '0')}';
     final money = '¥${item.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     final hasDraft = item.isDraft;
+    final inputStyle = inputStyleNotifier.value;
     return Card(
+      elevation: inputStyle == 'raised' ? 3 : 0,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(

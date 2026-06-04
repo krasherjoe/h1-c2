@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../plugin_system/plugin_registry.dart';
 import '../../../plugin_system/menu_item.dart';
+import '../../../utils/app_theme.dart';
 import '../models/quick_action_page.dart';
 
 class QuickActionService {
@@ -53,16 +54,16 @@ class QuickActionService {
     return map;
   }
 
-  static Color accentFor(MenuItem item, ColorScheme cs) {
+  static Color accentFor(MenuItem item) {
     final category = item.category;
-    if (category.contains('マスタ')) return cs.primary;
-    if (category.contains('販売')) return cs.tertiary;
-    if (category.contains('仕入')) return cs.secondary;
-    if (category.contains('在庫')) return cs.error;
+    if (category.contains('マスタ')) return AppTheme.accentMaster;
+    if (category.contains('販売')) return AppTheme.accentSales;
+    if (category.contains('仕入')) return AppTheme.accentPurchase;
+    if (category.contains('在庫')) return AppTheme.accentInventory;
     if (category.contains('集計') || category.contains('会計'))
-      return cs.primary.withValues(alpha: 0.7);
+      return AppTheme.accentReport;
     if (category.contains('設定') || category.contains('システム'))
-      return cs.tertiary.withValues(alpha: 0.7);
-    return cs.onSurface;
+      return AppTheme.accentSettings;
+    return AppTheme.accentDefault;
   }
 }

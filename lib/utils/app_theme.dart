@@ -8,6 +8,15 @@ class AppTheme {
   static const cardDark = Color(0xFF3E3E42);
   static const fontFamily = 'IPAexGothic';
 
+  // --- クイックアクションアクセントカラー ---
+  static const accentMaster = Color(0xFFE65100);     // deepOrange 900
+  static const accentSales = Color(0xFF1565C0);      // blue 800
+  static const accentPurchase = Color(0xFF2E7D32);   // green 800
+  static const accentInventory = Color(0xFF6A1B9A);  // purple 900
+  static const accentReport = Color(0xFF37474F);     // blueGrey 800
+  static const accentSettings = Color(0xFF00838F);   // teal 700
+  static const accentDefault = Color(0xFF455A64);    // blueGrey 600
+
   // --- テーマ構築 ---
   static ThemeData light({String inputStyle = 'raised'}) =>
     _build(seedColor: Colors.indigo, brightness: Brightness.light, inputStyle: inputStyle);

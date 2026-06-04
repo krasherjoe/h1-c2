@@ -103,7 +103,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                       key: ValueKey(route),
                       leading: Icon(item?.icon ?? Icons.help_outline,
                         color: item != null
-                          ? QuickActionService.accentFor(item, Theme.of(ctx).colorScheme)
+                          ? QuickActionService.accentFor(item)
                           : null),
                       title: Text(item?.title ?? route),
                       subtitle: Text(route, style: const TextStyle(fontSize: 11)),
@@ -136,31 +136,11 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Row(
-                  children: [
-                    Text(
-                      'クイックアクション  ',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
-                        if (tw == null) return;
-                        for (final route in _pages[_currentPage].actionIds) {
-                          final item = actions[route];
-                          if (item != null) tw.openTab(item.title, item.route);
-                        }
-                      },
-                      child: Text(
-                        _pages[_currentPage].name,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'クイックアクション',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -202,7 +182,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                         child: QuickActionButton(
                           icon: item.icon,
                           label: item.title,
-                          accentColor: QuickActionService.accentFor(item, cs),
+                          accentColor: QuickActionService.accentFor(item),
                           onTap: () {
                             final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
                             if (tw != null && item != null) {
