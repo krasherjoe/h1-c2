@@ -10,6 +10,7 @@ import '../models/price_entry.dart';
 import '../services/price_list_repository.dart';
 import '../services/undo_stack.dart';
 import '../../../services/sync_service.dart';
+import 'product_picker_dialog.dart';
 
 class PriceExplorerScreen extends StatefulWidget {
   final String? initialYear;
@@ -304,18 +305,50 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
   }
 
   Future<void> _createPriceEntry({String? parentId}) async {
-    final name = await _showInputDialog('商品名', '');
-    if (name == null || name.isEmpty) return;
-    final priceStr = await _showInputDialog('単価', '0', keyboardType: TextInputType.number);
-    if (priceStr == null) return;
-    final price = int.tryParse(priceStr) ?? 0;
+    final method = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('価格を追加'),
+        content: const Text('追加方法を選んでください'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, 'manual'), child: const Text('手入力')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, 'picker'), child: const Text('商品から選択')),
+        ],
+      ),
+    );
+    if (method == null) return;
+
     final now = DateTime.now();
+    String name;
+    int price;
+    String? productId;
+
+    if (method == 'picker') {
+      final picked = await showDialog<PickedProduct>(
+        context: context,
+        builder: (_) => const ProductPickerDialog(),
+      );
+      if (picked == null) return;
+      name = picked.name;
+      price = picked.price;
+      productId = picked.productId;
+    } else {
+      final n = await _showInputDialog('商品名', '');
+      if (n == null || n.isEmpty) return;
+      name = n;
+      final priceStr = await _showInputDialog('単価', '0', keyboardType: TextInputType.number);
+      if (priceStr == null) return;
+      price = int.tryParse(priceStr) ?? 0;
+      productId = null;
+    }
+
     final entry = PriceEntry(
       id: const Uuid().v4(),
       year: _currentYear!,
       parentId: parentId,
       name: name,
       unitPrice: price,
+      productId: productId,
       sortOrder: 0,
       createdAt: now,
       updatedAt: now,

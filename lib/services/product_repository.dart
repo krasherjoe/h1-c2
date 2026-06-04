@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../models/product_model.dart';
 import 'database_helper.dart';
 import 'activity_log_repository.dart';
@@ -590,17 +591,180 @@ class ProductRepository {
 
   // ===== オプショングループ =====
 
-  Future<List<ProductOptionGroup>> getOptionGroups(String productId) async => [];
+  Future<List<ProductOptionGroup>> getOptionGroups(String productId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query('product_option_groups',
+      where: 'product_id = ?',
+      whereArgs: [productId],
+      orderBy: 'sort_order ASC',
+    );
+    return maps.map((m) => ProductOptionGroup.fromMap(m)).toList();
+  }
 
-  Future<List<ProductOptionValue>> getOptionValues(String groupId) async => [];
+  Future<List<ProductOptionValue>> getOptionValues(String groupId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query('product_option_values',
+      where: 'group_id = ?',
+      whereArgs: [groupId],
+      orderBy: 'sort_order ASC',
+    );
+    return maps.map((m) => ProductOptionValue.fromMap(m)).toList();
+  }
 
-  Future<void> setVariantOptions(String variantId, List<String> optionValueIds) async {}
+  Future<void> setVariantOptions(String variantId, List<String> optionValueIds) async {
+    final db = await _dbHelper.database;
+    await db.transaction((txn) async {
+      await txn.delete('product_variant_options',
+        where: 'variant_id = ?', whereArgs: [variantId]);
+      for (final valueId in optionValueIds) {
+        await txn.insert('product_variant_options', {
+          'variant_id': variantId,
+          'option_value_id': valueId,
+        });
+      }
+    });
+  }
 
-  Future<void> saveOptionGroup(ProductOptionGroup group) async {}
+  Future<void> saveOptionGroup(ProductOptionGroup group) async {
+    final db = await _dbHelper.database;
+    await db.insert('product_option_groups', group.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace);
+  }
 
-  Future<void> saveOptionValue(ProductOptionValue value) async {}
+  Future<void> saveOptionValue(ProductOptionValue value) async {
+    final db = await _dbHelper.database;
+    await db.insert('product_option_values', value.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace);
+  }
 
-  Future<void> deleteOptionGroup(String id) async {}
+  Future<void> deleteOptionGroup(String id) async {
+    final db = await _dbHelper.database;
+    await db.transaction((txn) async {
+      await txn.delete('product_option_values',
+        where: 'group_id = ?', whereArgs: [id]);
+      await txn.delete('product_option_groups',
+        where: 'id = ?', whereArgs: [id]);
+    });
+  }
 
-  Future<void> deleteOptionValue(String id) async {}
+  Future<void> deleteOptionValue(String id) async {
+    final db = await _dbHelper.database;
+    await db.delete('product_option_values',
+      where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ===== バリアント生成 =====
+
+  /// 親商品のオプション組み合わせからバリアント商品を一括生成する。
+  /// 戻り値は生成されたバリアントのIDリスト。
+  Future<List<String>> generateVariants(String productId) async {
+    final parent = await getProduct(productId);
+    if (parent == null) throw Exception('親商品が見つかりません: $productId');
+
+    final groups = await getOptionGroups(productId);
+    if (groups.isEmpty) return [];
+
+    final groupValues = <String, List<ProductOptionValue>>{};
+    for (final group in groups) {
+      groupValues[group.id] = await getOptionValues(group.id);
+    }
+
+    final combinations = _cartesianProduct(groupValues.values.toList());
+    if (combinations.isEmpty) return [];
+
+    final db = await _dbHelper.database;
+    final variantIds = <String>[];
+    await db.transaction((txn) async {
+      for (final combo in combinations) {
+        final variantId = const Uuid().v4();
+        variantIds.add(variantId);
+
+        int totalModifier = 0;
+        final optionValueIds = <String>[];
+        for (final v in combo) {
+          optionValueIds.add(v.id);
+          totalModifier += v.priceModifier;
+        }
+
+        final variantPrice = (parent.defaultUnitPrice + totalModifier).clamp(0, 999999999);
+        final optionLabels = combo.map((v) => v.value).join(', ');
+        final variantName = '${parent.name} ($optionLabels)';
+
+        final variant = Product(
+          id: variantId,
+          name: variantName,
+          defaultUnitPrice: variantPrice,
+          defaultUnitPriceIsTaxInclusive: parent.defaultUnitPriceIsTaxInclusive,
+          wholesalePrice: parent.wholesalePrice,
+          wholesalePriceIsTaxInclusive: parent.wholesalePriceIsTaxInclusive,
+          categoryId: parent.categoryId,
+          supplierId: parent.supplierId,
+          supplierName: parent.supplierName,
+          isLocked: parent.isLocked,
+          parentId: productId,
+          validFrom: DateTime.now(),
+        );
+
+        await txn.insert('products', variant.toMap());
+
+        for (final valueId in optionValueIds) {
+          await txn.insert('product_variant_options', {
+            'variant_id': variantId,
+            'option_value_id': valueId,
+          });
+        }
+      }
+    });
+
+    return variantIds;
+  }
+
+  /// 親商品に紐づく全バリアントを削除する。
+  Future<void> deleteVariants(String productId) async {
+    final db = await _dbHelper.database;
+    final rows = await db.query('products',
+      columns: ['id'],
+      where: 'parent_id = ?', whereArgs: [productId]);
+    final variantIds = rows.map((r) => r['id'] as String).toList();
+    if (variantIds.isEmpty) return;
+
+    await db.transaction((txn) async {
+      for (final vid in variantIds) {
+        await txn.delete('product_variant_options',
+          where: 'variant_id = ?', whereArgs: [vid]);
+      }
+      final placeholders = variantIds.map((_) => '?').join(',');
+      await txn.execute(
+        'DELETE FROM products WHERE id IN ($placeholders)',
+        variantIds,
+      );
+    });
+  }
+
+  /// バリアントに割り当てられたオプション値を取得する（表示用）。
+  Future<List<ProductOptionValue>> getVariantOptionValues(String variantId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.rawQuery('''
+      SELECT pov.* FROM product_option_values pov
+      INNER JOIN product_variant_options pvo ON pvo.option_value_id = pov.id
+      WHERE pvo.variant_id = ?
+      ORDER BY pov.sort_order ASC
+    ''', [variantId]);
+    return maps.map((m) => ProductOptionValue.fromMap(m)).toList();
+  }
+
+  /// オプション値のリストの直積（デカルト積）を計算する。
+  /// 例: [[A,B], [1,2]] → [[A,1],[A,2],[B,1],[B,2]]
+  List<List<ProductOptionValue>> _cartesianProduct(List<List<ProductOptionValue>> lists) {
+    if (lists.isEmpty) return [];
+    if (lists.length == 1) return lists[0].map((v) => [v]).toList();
+
+    return lists.fold<List<List<ProductOptionValue>>>([[]], (result, values) {
+      return [
+        for (final combo in result)
+          for (final v in values)
+            [...combo, v],
+      ];
+    });
+  }
 }
