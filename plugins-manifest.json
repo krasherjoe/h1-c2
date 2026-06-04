@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-06-04T18:00:00+09:00",
+  "totalScreens": 56,
+  "plugins": [
+    {
+      "id": "com.h1.plugin.products",
+      "name": "ProductsPlugin",
+      "screens": [
+        {"id": "P1", "title": "商品マスター", "route": "/products", "category": "マスター", "icon": "Icons.inventory_2", "description": "商品の登録・編集"},
+        {"id": "CE", "title": "商品カテゴリ", "route": "/products/categories", "category": "マスター", "icon": "Icons.category", "description": "カテゴリの階層管理"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.customers",
+      "name": "CustomersPlugin",
+      "screens": [
+        {"id": "C1", "title": "顧客マスター", "route": "/customers", "category": "マスター", "icon": "Icons.people", "description": "得意先の登録・編集"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.pricelist",
+      "name": "PriceListPlugin",
+      "screens": [
+        {"id": "PE", "title": "価格表", "route": "/pricelist", "category": "マスター", "icon": "Icons.price_change", "description": "価格表の管理"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.suppliers",
+      "name": "SuppliersPlugin",
+      "screens": [
+        {"id": "SL", "title": "仕入先マスター", "route": "/suppliers", "category": "マスター", "icon": "Icons.person", "description": "仕入先の登録・編集"},
+        {"id": "PE", "title": "価格表", "route": "/pricelist", "category": "マスター", "icon": "Icons.monetization_on", "description": "価格表の管理"},
+        {"id": "SP", "title": "仕入商品", "route": "/suppliers/products", "category": "マスター", "icon": "Icons.inventory", "description": "仕入商品の一覧・管理"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.documents",
+      "name": "DocumentsPlugin",
+      "screens": [
+        {"id": "DOC", "title": "伝票管理", "route": "/documents", "category": "販売", "icon": "Icons.folder_open", "description": "見積・納品・請求・領収"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.quotation",
+      "name": "QuotationPlugin",
+      "screens": [
+        {"id": "Q1", "title": "見積入力", "route": "/quotation/input", "category": "販売管理", "icon": "Icons.description", "description": "見積書を作成"},
+        {"id": "QH", "title": "見積履歴", "route": "/quotation/history", "category": "販売管理", "icon": "Icons.history", "description": "過去の見積を確認"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.memorandum",
+      "name": "MemorandumPlugin",
+      "screens": [
+        {"id": "MEMO", "title": "覚書管理", "route": "/memorandum", "category": "販売", "icon": "Icons.description", "description": "保守サービス覚書の作成・管理"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.project",
+      "name": "ProjectPlugin",
+      "screens": [
+        {"id": "PRJ", "title": "案件管理", "route": "/projects", "category": "販売", "icon": "Icons.workspaces", "description": "案件の作成・進捗管理"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.purchase",
+      "name": "PurchasePlugin",
+      "screens": [
+        {"id": "PUR", "title": "仕入管理", "route": "/purchase", "category": "仕入", "icon": "Icons.shopping_cart", "description": "発注・入荷・返品・支払"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.inventory",
+      "name": "InventoryPlugin",
+      "screens": [
+        {"id": "WH", "title": "倉庫一覧", "route": "/inventory/warehouses", "category": "在庫", "icon": "Icons.warehouse", "description": "倉庫マスターの管理"},
+        {"id": "INV", "title": "在庫一覧", "route": "/inventory", "category": "在庫", "icon": "Icons.inventory", "description": "商品別在庫一覧"},
+        {"id": "WHI", "title": "入庫処理", "route": "/inventory/inbound", "category": "在庫", "icon": "Icons.arrow_downward", "description": "入庫登録"},
+        {"id": "WHO", "title": "出庫処理", "route": "/inventory/outbound", "category": "在庫", "icon": "Icons.arrow_upward", "description": "出庫登録"},
+        {"id": "IQ", "title": "在庫照会", "route": "/inventory/inquiry", "category": "在庫", "icon": "Icons.search", "description": "商品在庫の照会"},
+        {"id": "STK", "title": "棚卸", "route": "/inventory/stocktake", "category": "在庫", "icon": "Icons.fact_check", "description": "棚卸入力"},
+        {"id": "IC", "title": "棚卸入力(一括)", "route": "/inventory/stocktake_input", "category": "在庫", "icon": "Icons.edit_note", "description": "一括棚卸入力"},
+        {"id": "IA", "title": "在庫調整", "route": "/inventory/adjustment", "category": "在庫", "icon": "Icons.tune", "description": "在庫調整"},
+        {"id": "IM", "title": "在庫移動", "route": "/inventory/transfer", "category": "在庫", "icon": "Icons.swap_horiz", "description": "倉庫間在庫移動"},
+        {"id": "R4", "title": "在庫評価額", "route": "/inventory/valuation", "category": "在庫", "icon": "Icons.account_balance", "description": "在庫評価額一覧"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.ar",
+      "name": "ArPlugin",
+      "screens": [
+        {"id": "AR", "title": "売掛金管理", "route": "/ar", "category": "売掛・支払", "icon": "Icons.account_balance", "description": "顧客別未回収額"},
+        {"id": "RP", "title": "入金処理", "route": "/ar/receipt", "category": "売掛・支払", "icon": "Icons.payments", "description": "入金登録"},
+        {"id": "PY", "title": "支払予定", "route": "/ar/schedules", "category": "売掛・支払", "icon": "Icons.calendar_month", "description": "支払予定一覧"},
+        {"id": "PG", "title": "支払登録", "route": "/ar/payment", "category": "売掛・支払", "icon": "Icons.check_circle", "description": "支払実績登録"},
+        {"id": "CF", "title": "資金繰り", "route": "/ar/cashflow", "category": "売掛・支払", "icon": "Icons.account_balance", "description": "資金繰り表"},
+        {"id": "LR", "title": "台帳", "route": "/ar/ledger", "category": "売掛・支払", "icon": "Icons.book", "description": "売掛台帳・買掛台帳"},
+        {"id": "TX", "title": "税務レポート", "route": "/ar/tax", "category": "売掛・支払", "icon": "Icons.calculate", "description": "消費税納付額計算"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.accounting",
+      "name": "AccountingPlugin",
+      "screens": [
+        {"id": "AR", "title": "売掛管理", "route": "/accounting/receivable", "category": "会計", "icon": "Icons.account_balance"},
+        {"id": "PS", "title": "支払スケジュール", "route": "/accounting/schedule", "category": "会計", "icon": "Icons.calendar_month"},
+        {"id": "PR", "title": "入金登録", "route": "/accounting/payment", "category": "会計", "icon": "Icons.payments"},
+        {"id": "CF", "title": "資金繰り", "route": "/accounting/cashflow", "category": "会計", "icon": "Icons.trending_up"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.company",
+      "name": "CompanyPlugin",
+      "screens": [
+        {"id": "CI", "title": "自社情報", "route": "/company", "category": "システム", "icon": "Icons.business", "description": "会社名・住所・印鑑・口座"},
+        {"id": "TM", "title": "法人切替", "route": "/company/switch", "category": "システム", "icon": "Icons.swap_horiz", "description": "法人の作成・切替・削除"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.settings",
+      "name": "SettingsPlugin",
+      "screens": [
+        {"id": "SET", "title": "設定", "route": "/settings", "category": "システム", "icon": "Icons.settings", "description": "印刷設定・伝票番号・税率"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.backup",
+      "name": "BackupPlugin",
+      "screens": [
+        {"id": "BK", "title": "バックアップ管理", "route": "/backup", "category": "システム", "icon": "Icons.backup", "description": "DB自動バックアップ・リストア"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.quick_actions",
+      "name": "QuickActionsPlugin",
+      "screens": [
+        {"id": "QA", "title": "クイックアクション", "route": "/quick_actions/settings", "category": "システム", "icon": "Icons.grid_view", "description": "ショートカットメニュー設定"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.debug",
+      "name": "DebugPlugin",
+      "screens": [
+        {"id": "DB", "title": "デバッグ", "route": "/debug", "category": "システム", "icon": "Icons.bug_report", "description": "Mattermost診断・DB送信"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.audit",
+      "name": "AuditPlugin",
+      "screens": [
+        {"id": "AD", "title": "ハッシュチェーン監査", "route": "/audit", "category": "tools", "icon": "Icons.verified_rounded"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.daily",
+      "name": "DailyPlugin",
+      "screens": [
+        {"id": "DR", "title": "日報", "route": "/daily/reports", "category": "業務", "icon": "Icons.assignment", "description": "3行日報の作成・管理"},
+        {"id": "TI", "title": "工数管理", "route": "/daily/time", "category": "業務", "icon": "Icons.timer", "description": "工数記録・タイマー"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.analysis",
+      "name": "AnalysisPlugin",
+      "screens": [
+        {"id": "SA", "title": "売上分析", "route": "/analysis/sales", "category": "レポート", "icon": "Icons.bar_chart", "description": "月別売上・粗利推移"},
+        {"id": "PA", "title": "商品別粗利分析", "route": "/analysis/profits", "category": "レポート", "icon": "Icons.pie_chart", "description": "商品別の売上・粗利"},
+        {"id": "RD", "title": "レポートダッシュボード", "route": "/analysis/dashboard", "category": "レポート", "icon": "Icons.dashboard", "description": "サマリーカード・月次グラフ"},
+        {"id": "FP1", "title": "月次収支", "route": "/analysis/monthly", "category": "レポート", "icon": "Icons.account_balance", "description": "月別売上・仕入・粗利・利益"}
+      ]
+    },
+    {
+      "id": "com.h1.plugin.analytics",
+      "name": "AnalyticsPlugin",
+      "screens": [
+        {"id": "ANL", "title": "分析", "route": "/analytics", "category": "レポート", "icon": "Icons.bar_chart", "description": "売上・利益分析"}
+      ]
+    }
+  ]
+}
