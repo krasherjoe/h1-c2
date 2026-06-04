@@ -203,12 +203,12 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: cs.tertiaryContainer.withValues(alpha: 0.3),
                     child: Text('計測中: $_elapsedDisplay',
                         style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.green.shade700,
+                            color: cs.onTertiaryContainer,
                             fontFamily: 'monospace')),
                   ),
                 Container(
@@ -244,8 +244,8 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.only(right: 16),
                                 color: cs.error,
-                                child: const Icon(Icons.delete,
-                                    color: Colors.white),
+                                child: Icon(Icons.delete,
+                                    color: cs.onError),
                               ),
                               onDismissed: (_) async {
                                 await _repo.delete(log.id);

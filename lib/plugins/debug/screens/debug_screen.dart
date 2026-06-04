@@ -143,12 +143,12 @@ class _DebugScreenState extends State<DebugScreen> {
           children: [
             Text('状態', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            _statusRow(Icons.webhook, 'Webhook', _service.isConfigured),
+            _statusRow(Icons.webhook, 'Webhook', _service.isConfigured, cs),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  const Icon(Icons.cloud, size: 18, color: Colors.grey),
+                  Icon(Icons.cloud, size: 18, color: cs.onSurfaceVariant),
                   const SizedBox(width: 8),
                   const Text('Mattermost'),
                   const Spacer(),
@@ -170,7 +170,7 @@ class _DebugScreenState extends State<DebugScreen> {
               valueListenable: MmCommandService.instance.enabledNotifier,
               builder: (ctx, enabled, _) => Row(
                 children: [
-                  const Icon(Icons.sync, size: 18, color: Colors.grey),
+                  Icon(Icons.sync, size: 18, color: cs.onSurfaceVariant),
                   const SizedBox(width: 8),
                   const Text('MMポーリング'),
                   const Spacer(),
@@ -341,7 +341,7 @@ class _DebugScreenState extends State<DebugScreen> {
         final signedIn = snap.data ?? false;
         return Column(
           children: [
-            _statusRow(Icons.email, 'Gmail連携', signedIn),
+            _statusRow(Icons.email, 'Gmail連携', signedIn, cs),
             if (signedIn)
               FutureBuilder<String?>(
                 future: GoogleAuthService.instance.getEmail(),
@@ -380,17 +380,17 @@ class _DebugScreenState extends State<DebugScreen> {
     );
   }
 
-  Widget _statusRow(IconData icon, String label, bool ok) {
+  Widget _statusRow(IconData icon, String label, bool ok, ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: ok ? Colors.green : Colors.grey),
+          Icon(icon, size: 18, color: ok ? cs.tertiary : cs.onSurfaceVariant),
           const SizedBox(width: 8),
           Text(label),
           const Spacer(),
           Icon(ok ? Icons.check_circle : Icons.cancel, size: 16,
-            color: ok ? Colors.green : Colors.grey),
+            color: ok ? cs.tertiary : cs.onSurfaceVariant),
         ],
       ),
     );

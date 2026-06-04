@@ -90,24 +90,24 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     }
   }
 
-  Color _stageColor(String stage) {
+  Color _stageColor(String stage, ColorScheme cs) {
     switch (stage) {
-      case '見積': return Colors.blue;
-      case '受注': return Colors.green;
-      case '発注': return Colors.orange;
-      case '納品': return Colors.purple;
-      case '請求': return Colors.teal;
-      case '入金済': return Colors.indigo;
-      default: return Colors.grey;
+      case '見積': return cs.secondary;
+      case '受注': return cs.tertiary;
+      case '発注': return cs.error;
+      case '納品': return cs.primaryContainer;
+      case '請求': return cs.secondaryContainer;
+      case '入金済': return cs.primary;
+      default: return cs.onSurfaceVariant;
     }
   }
 
-  Color _statusColor(ProjectStatus status) {
+  Color _statusColor(ProjectStatus status, ColorScheme cs) {
     switch (status) {
-      case ProjectStatus.active: return Colors.green;
-      case ProjectStatus.won: return Colors.blue;
-      case ProjectStatus.lost: return Colors.red;
-      case ProjectStatus.suspended: return Colors.orange;
+      case ProjectStatus.active: return cs.tertiary;
+      case ProjectStatus.won: return cs.primary;
+      case ProjectStatus.lost: return cs.error;
+      case ProjectStatus.suspended: return cs.secondary;
     }
   }
 
@@ -146,7 +146,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             ),
             const Divider(),
             ..._stages.map((stage) => ListTile(
-              leading: Icon(Icons.circle, size: 12, color: _stageColor(stage)),
+              leading: Icon(Icons.circle, size: 12, color: _stageColor(stage, Theme.of(context).colorScheme)),
               title: Text(stage),
               trailing: project.pipelineStage == stage ? const Icon(Icons.check, size: 18) : null,
               onTap: () {
@@ -307,7 +307,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildKanbanColumn(String stage, List<Project> projects, ColorScheme cs) {
-    final color = _stageColor(stage);
+    final color = _stageColor(stage, cs);
     return Container(
       width: 240,
       margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
@@ -397,11 +397,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
-                      color: _statusColor(project.status).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(3),
+                      color: _statusColor(project.status, cs).withValues(alpha: 0.15),
                     ),
                     child: Text(_statusLabel(project.status),
-                      style: TextStyle(fontSize: 9, color: _statusColor(project.status), fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 9, color: _statusColor(project.status, cs), fontWeight: FontWeight.w500)),
                   ),
                   const Spacer(),
                   Text('￥${_formatMoney(project.totalAmount)}',
@@ -422,7 +421,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget _buildTimeProgressBar(Project project, ColorScheme cs) {
     final progress = project.timeProgress;
     final overdue = project.isOverdue;
-    final barColor = overdue ? Colors.red : (progress >= 1.0 ? Colors.orange : cs.primary);
+    final barColor = overdue ? cs.error : (progress >= 1.0 ? cs.secondary : cs.primary);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -472,11 +471,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _statusColor(project.status).withValues(alpha: 0.15),
+                      color: _statusColor(project.status, cs).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(_statusLabel(project.status),
-                      style: TextStyle(fontSize: 11, color: _statusColor(project.status), fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 11, color: _statusColor(project.status, cs), fontWeight: FontWeight.w500)),
                   ),
                 ],
               ),
@@ -495,11 +494,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: _stageColor(project.pipelineStage).withValues(alpha: 0.12),
+                      color: _stageColor(project.pipelineStage, cs).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(project.pipelineStage,
-                      style: TextStyle(fontSize: 12, color: _stageColor(project.pipelineStage), fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 12, color: _stageColor(project.pipelineStage, cs), fontWeight: FontWeight.w500)),
                   ),
                   const Spacer(),
                   Text('￥${_formatMoney(project.totalAmount)}',

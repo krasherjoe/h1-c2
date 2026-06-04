@@ -35,7 +35,7 @@ class _MemorandumListScreenState extends State<MemorandumListScreen> {
         content: Text('覚書 ${m.documentNumber}（${m.customerName}）を削除しますか？'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('削除', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('削除', style: TextStyle(color: Theme.of(context).colorScheme.error))),
         ],
       ),
     );
@@ -112,7 +112,7 @@ class _MemorandumListScreenState extends State<MemorandumListScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(children: [
-                                        Text(dateStr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                        Text(dateStr, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                                         const SizedBox(width: 8),
                                         Text(m.customerName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                       ]),
@@ -120,7 +120,7 @@ class _MemorandumListScreenState extends State<MemorandumListScreen> {
                                       Text('${m.monthlyPlan.label(m.customAmount)} × ${m.contractMonths}ヶ月  ${NumberFormat('#,###').format(m.totalAmount)}円',
                                           style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                                       if (m.serviceContent.isNotEmpty)
-                                        Text(m.serviceContent, style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                        Text(m.serviceContent, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                                             maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ],
                                   ),

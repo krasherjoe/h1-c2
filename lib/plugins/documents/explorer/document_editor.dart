@@ -329,7 +329,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
           ),
           IconButton(
             icon: _isSaving
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
               : Icon(Icons.save, color: cs.onPrimary),
             tooltip: '保存',
             onPressed: _isSaving ? null : _save,
@@ -632,7 +632,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
         child: SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            icon: _isSaving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save),
+            icon: _isSaving ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary)) : const Icon(Icons.save),
             label: Text(_isSaving ? '保存中...' : '下書き保存'),
             onPressed: _isSaving ? null : _save,
           ),

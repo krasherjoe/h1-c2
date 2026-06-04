@@ -53,16 +53,16 @@ class QuickActionService {
     return map;
   }
 
-  static Color accentFor(MenuItem item) {
+  static Color accentFor(MenuItem item, ColorScheme cs) {
     final category = item.category;
-    if (category.contains('マスタ')) return const Color(0xFFE65100);
-    if (category.contains('販売')) return const Color(0xFF1565C0);
-    if (category.contains('仕入')) return const Color(0xFF2E7D32);
-    if (category.contains('在庫')) return const Color(0xFF6A1B9A);
+    if (category.contains('マスタ')) return cs.secondary;
+    if (category.contains('販売')) return cs.primary;
+    if (category.contains('仕入')) return cs.tertiary;
+    if (category.contains('在庫')) return cs.primaryContainer;
     if (category.contains('集計') || category.contains('会計'))
-      return const Color(0xFF37474F);
+      return cs.onSurfaceVariant;
     if (category.contains('設定') || category.contains('システム'))
-      return const Color(0xFF00838F);
-    return const Color(0xFF455A64);
+      return cs.secondaryContainer;
+    return cs.onSurfaceVariant;
   }
 }

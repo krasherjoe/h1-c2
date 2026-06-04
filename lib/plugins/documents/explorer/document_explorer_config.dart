@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/document_type_colors.dart';
+import '../../../utils/theme_utils.dart' hide documentTypeColor;
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import 'document_viewer.dart';
@@ -82,7 +83,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
               color: doctypeColor,
               alignment: Alignment.center,
               child: Text(verticalType,
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, height: 1.15),
+                  style: TextStyle(color: textColorOn(doctypeColor), fontSize: 11, fontWeight: FontWeight.bold, height: 1.15),
                   textAlign: TextAlign.center),
             ),
             const SizedBox(width: 10),

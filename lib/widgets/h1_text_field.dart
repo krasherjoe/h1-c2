@@ -78,6 +78,7 @@ class H1TextField extends StatelessWidget {
       valueListenable: inputStyleNotifier,
       builder: (context, inputStyle, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
+        final cs = Theme.of(context).colorScheme;
         final field = TextField(
           controller: controller,
           focusNode: focusNode,
@@ -124,12 +125,12 @@ class H1TextField extends StatelessWidget {
                 BoxShadow(
                   blurRadius: 4,
                   offset: const Offset(0, 2),
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                  color: cs.shadow.withValues(alpha: isDark ? 0.3 : 0.12),
                 ),
                 BoxShadow(
                   blurRadius: 12,
                   offset: const Offset(0, 4),
-                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+                  color: cs.shadow.withValues(alpha: isDark ? 0.2 : 0.08),
                 ),
               ],
             ),

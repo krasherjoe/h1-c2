@@ -99,11 +99,11 @@ class _TaxReportScreenState extends State<TaxReportScreen> {
                   children: [
                     _buildSummaryCard(cs, '売上高', '¥${_nf.format(_totalSales)}', Icons.trending_up, cs.primary),
                     const SizedBox(height: 8),
-                    _buildSummaryCard(cs, '消費税（売上）', '¥${_nf.format(_totalTaxCollected)}', Icons.receipt_long, Colors.orange),
+                    _buildSummaryCard(cs, '消費税（売上）', '¥${_nf.format(_totalTaxCollected)}', Icons.receipt_long, cs.secondary),
                     const SizedBox(height: 8),
-                    _buildSummaryCard(cs, '仕入高', '¥${_nf.format(_totalPurchases)}', Icons.shopping_cart, Colors.blue),
+                    _buildSummaryCard(cs, '仕入高', '¥${_nf.format(_totalPurchases)}', Icons.shopping_cart, cs.primary),
                     const SizedBox(height: 8),
-                    _buildSummaryCard(cs, '消費税（仕入）', '¥${_nf.format(_totalTaxPaid)}', Icons.receipt, Colors.teal),
+                    _buildSummaryCard(cs, '消費税（仕入）', '¥${_nf.format(_totalTaxPaid)}', Icons.receipt, cs.tertiary),
                     const SizedBox(height: 16),
                     Container(
                       width: double.infinity,
@@ -118,7 +118,7 @@ class _TaxReportScreenState extends State<TaxReportScreen> {
                           Text('納付税額', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                           const SizedBox(height: 4),
                           Text('¥${_nf.format(netTax)}',
-                              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: netTax >= 0 ? cs.error : Colors.green)),
+                              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: netTax >= 0 ? cs.error : cs.tertiary)),
                           Text(netTax >= 0 ? '納付が必要です' : '還付があります',
                               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                         ],

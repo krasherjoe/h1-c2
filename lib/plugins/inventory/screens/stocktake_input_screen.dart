@@ -289,7 +289,7 @@ class _StocktakeInputScreenState extends State<StocktakeInputScreen> {
                                           '${diff > 0 ? '+' : ''}$diff',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            color: diff > 0 ? Colors.green : Colors.red,
+                                            color: diff > 0 ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.error,
                                           ),
                                         ),
                                       ),

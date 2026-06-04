@@ -133,14 +133,14 @@ class _SealCameraScreenState extends State<SealCameraScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
-                  color: Colors.black54,
-                  child: const Column(
+                  color: cs.shadow.withValues(alpha: 0.54),
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         '角印を中央の四角枠に合わせてください',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: cs.onSurface,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -148,7 +148,7 @@ class _SealCameraScreenState extends State<SealCameraScreen> {
                       SizedBox(height: 8),
                       Text(
                         '・内枠 = 角印標準サイズ (約21mm)\n・中枠 = 2cmガイド\n・外枠 = 3cmガイド',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                        style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7), fontSize: 12),
                       ),
                     ],
                   ),
@@ -162,9 +162,9 @@ class _SealCameraScreenState extends State<SealCameraScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close,
-                          color: Colors.white,
+                          color: cs.onSurface,
                           size: 32,
                         ),
                       ),
@@ -177,7 +177,7 @@ class _SealCameraScreenState extends State<SealCameraScreen> {
                           height: 72,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
+                            border: Border.all(color: cs.onSurface, width: 4),
                             color: _isCapturing
                                 ? cs.outline
                                 : cs.surface.withValues(alpha: 0.3),
@@ -186,9 +186,9 @@ class _SealCameraScreenState extends State<SealCameraScreen> {
                             child: Container(
                               width: 56,
                               height: 56,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white,
+                                color: cs.surface,
                               ),
                             ),
                           ),
@@ -218,10 +218,10 @@ class _SealCameraScreenState extends State<SealCameraScreen> {
                   color: cs.surface.withValues(alpha: 0.54),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       '21mm (角印標準)',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: cs.onSurface,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -265,12 +265,12 @@ class _GuideOverlayPainter extends CustomPainter {
       ..strokeWidth = 1.5;
 
     final guide3cmPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.4)
+      ..color = cs.onSurface.withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
     final cornerPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.8)
+      ..color = cs.onSurface.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
 
@@ -318,7 +318,7 @@ class _GuideOverlayPainter extends CustomPainter {
         center.dy - guide3cmSize / 2 + 10,
       ),
       '3cm',
-      Colors.white70,
+      cs.onSurface.withValues(alpha: 0.7),
     );
   }
 

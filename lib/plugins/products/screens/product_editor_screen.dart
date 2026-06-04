@@ -134,18 +134,18 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF3E3E42) : Colors.white,
+              color: isDark ? theme.colorScheme.surfaceContainerHighest : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   blurRadius: 4,
                   offset: const Offset(0, 2),
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                  color: theme.colorScheme.shadow.withValues(alpha: isDark ? 0.3 : 0.12),
                 ),
                 BoxShadow(
                   blurRadius: 12,
                   offset: const Offset(0, 4),
-                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+                  color: theme.colorScheme.shadow.withValues(alpha: isDark ? 0.2 : 0.08),
                 ),
               ],
             ),

@@ -22,13 +22,13 @@ class QuickActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
-    final lightColor = isDark ? const Color(0xFF2A2A3A) : Colors.white;
+    final lightColor = isDark ? cs.surfaceContainerHighest : cs.surface;
     final darkColor = isDark
-        ? const Color(0xFF3A3A4E)
-        : const Color(0xFFEEEEEE);
+        ? cs.surfaceContainerLow
+        : cs.surfaceContainerHighest;
     final textColor = isDark
-        ? Colors.white.withValues(alpha: 0.85)
-        : Colors.grey[800]!;
+        ? cs.onSurface.withValues(alpha: 0.85)
+        : cs.onSurface;
     final btn = Container(
       width: width,
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),

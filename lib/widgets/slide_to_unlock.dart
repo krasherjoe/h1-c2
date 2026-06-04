@@ -154,7 +154,7 @@ class _SlideToUnlockState extends State<SlideToUnlock> {
                     width: thumbSize,
                     height: widget.thumbSize ?? 52,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cs.surface,
                       borderRadius: BorderRadius.circular((widget.thumbSize ?? 52) / 2),
                       boxShadow: [
                         BoxShadow(color: cs.shadow.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4)),

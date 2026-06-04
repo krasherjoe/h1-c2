@@ -147,11 +147,11 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
         children: [
           _card('総売上', '¥${_nf.format(_totalSales)}', Icons.trending_up, cs.primary),
           const SizedBox(width: 8),
-          _card('仕入計', '¥${_nf.format(_totalPurchases)}', Icons.shopping_cart, Colors.orange),
+          _card('仕入計', '¥${_nf.format(_totalPurchases)}', Icons.shopping_cart, cs.secondary),
           const SizedBox(width: 8),
-          _card('粗利', '¥${_nf.format(_totalSales - _totalCost)}', Icons.show_chart, Colors.green),
+          _card('粗利', '¥${_nf.format(_totalSales - _totalCost)}', Icons.show_chart, cs.tertiary),
           const SizedBox(width: 8),
-          _card('利益', '¥${_nf.format(_totalProfit)}', Icons.account_balance, _totalProfit >= 0 ? Colors.blue : cs.error),
+          _card('利益', '¥${_nf.format(_totalProfit)}', Icons.account_balance, _totalProfit >= 0 ? cs.primary : cs.error),
         ],
       ),
     );
@@ -219,7 +219,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
                       DataCell(Text('¥${_nf.format(r.sales)}', style: const TextStyle(fontSize: 12))),
                       DataCell(Text('¥${_nf.format(r.purchases)}', style: const TextStyle(fontSize: 12))),
                       DataCell(Text('¥${_nf.format(r.cost)}', style: const TextStyle(fontSize: 12))),
-                      DataCell(Text('¥${_nf.format(r.grossProfit)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: r.grossProfit >= 0 ? Colors.green : cs.error))),
+                      DataCell(Text('¥${_nf.format(r.grossProfit)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: r.grossProfit >= 0 ? cs.tertiary : cs.error))),
                       DataCell(Text('¥${_nf.format(r.profit)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: r.profit >= 0 ? cs.primary : cs.error))),
                     ]),
                   DataRow(
@@ -227,9 +227,9 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
                     cells: [
                       DataCell(Text('合計', style: TextStyle(fontWeight: FontWeight.bold, color: cs.onSurface))),
                       DataCell(Text('¥${_nf.format(_totalSales)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: cs.primary))),
-                      DataCell(Text('¥${_nf.format(_totalPurchases)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orange))),
+                      DataCell(Text('¥${_nf.format(_totalPurchases)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: cs.secondary))),
                       DataCell(Text('¥${_nf.format(_totalCost)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      DataCell(Text('¥${_nf.format(_totalSales - _totalCost)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.green))),
+                      DataCell(Text('¥${_nf.format(_totalSales - _totalCost)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: cs.tertiary))),
                       DataCell(Text('¥${_nf.format(_totalProfit)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _totalProfit >= 0 ? cs.primary : cs.error))),
                     ],
                   ),

@@ -42,14 +42,14 @@ class DocumentViewer extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: document.isDraft ? Colors.orange.shade100 : Colors.green.shade100,
+                color: document.isDraft ? theme.colorScheme.tertiaryContainer : theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 document.isDraft ? '下書き' : '確定',
                 style: TextStyle(
                   fontSize: 12,
-                  color: document.isDraft ? Colors.orange.shade800 : Colors.green.shade800,
+                  color: document.isDraft ? theme.colorScheme.onTertiaryContainer : theme.colorScheme.onPrimaryContainer,
                 ),
               ),
             ),

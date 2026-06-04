@@ -241,11 +241,11 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                       padding:
                           const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                       decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
+                          color: cs.secondaryContainer.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(3)),
                       child: Text(t,
                           style:
-                              TextStyle(fontSize: 9, color: Colors.blue.shade700)),
+                              TextStyle(fontSize: 9, color: cs.onSecondaryContainer)),
                     )),
               ],
               const Spacer(),

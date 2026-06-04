@@ -288,7 +288,7 @@ class _PurchaseEditorState extends State<PurchaseEditor> {
         title: Text(item.productName),
         subtitle: Text('${_formatQty(item.quantity)} × ${_formatMoney(item.unitPrice)} = ${_formatMoney((item.quantity * item.unitPrice).round())}'),
         trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
+          icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
           onPressed: () => _removeItem(index),
         ),
         onTap: () => _editItem(index),

@@ -103,7 +103,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                       key: ValueKey(route),
                       leading: Icon(item?.icon ?? Icons.help_outline,
                         color: item != null
-                          ? QuickActionService.accentFor(item)
+                          ? QuickActionService.accentFor(item, Theme.of(ctx).colorScheme)
                           : null),
                       title: Text(item?.title ?? route),
                       subtitle: Text(route, style: const TextStyle(fontSize: 11)),
@@ -202,7 +202,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                         child: QuickActionButton(
                           icon: item.icon,
                           label: item.title,
-                          accentColor: QuickActionService.accentFor(item),
+                          accentColor: QuickActionService.accentFor(item, cs),
                           onTap: () {
                             final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
                             if (tw != null && item != null) {

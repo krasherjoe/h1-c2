@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../../services/database_helper.dart';
+import '../../../utils/theme_utils.dart';
 import '../models/ar_models.dart';
 import '../services/payment_repository.dart';
 import '../services/payment_schedule_repository.dart';
@@ -29,12 +30,12 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
   int _totalBalance = 0;
   bool _isLoading = true;
 
-  static const Map<String, Color> _methodChartColors = {
-    'bankTransfer': Colors.blue,
-    'cash': Colors.green,
-    'creditCard': Colors.orange,
-    'advancePayment': Colors.purple,
-    'other': Colors.grey,
+  static Map<String, Color> _methodChartColors(ColorScheme cs) => {
+    'bankTransfer': cs.primary,
+    'cash': cs.tertiary,
+    'creditCard': cs.secondary,
+    'advancePayment': cs.primaryContainer,
+    'other': cs.onSurfaceVariant,
   };
 
   static const Map<String, String> _methodDisplayNames = {
@@ -92,6 +93,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('CF:資金繰り'),
@@ -110,7 +112,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                   const SizedBox(height: 24),
                   _buildMonthlyChart(),
                   const SizedBox(height: 24),
-                  _buildPaymentMethodChart(),
+                  _buildPaymentMethodChart(cs),
                   const SizedBox(height: 24),
                   _buildUpcomingPayments(),
                   const SizedBox(height: 24),
@@ -275,7 +277,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
     );
   }
 
-  Widget _buildPaymentMethodChart() {
+  Widget _buildPaymentMethodChart(ColorScheme cs) {
     final total = _methodTotals.values.fold<int>(0, (a, b) => a + b);
 
     return Card(
@@ -299,14 +301,14 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                         .where((e) => e.value > 0)
                         .map((e) => PieChartSectionData(
                               value: e.value.toDouble(),
-                              color: _methodChartColors[e.key] ?? Colors.grey,
+                              color: (_methodChartColors(cs))[e.key] ?? cs.onSurfaceVariant,
                               radius: 50,
                               title:
                                   '${(e.value / total * 100).toStringAsFixed(0)}%',
-                              titleStyle: const TextStyle(
+                              titleStyle: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: textColorOn((_methodChartColors(cs))[e.key] ?? cs.onSurfaceVariant),
                               ),
                             ))
                         .toList(),
@@ -320,7 +322,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                       children: [
                         Icon(Icons.circle,
                             size: 12,
-                            color: _methodChartColors[e.key] ?? Colors.grey),
+                            color: (_methodChartColors(cs))[e.key] ?? cs.onSurfaceVariant),
                         const SizedBox(width: 8),
                         Text(_methodDisplayNames[e.key] ?? e.key,
                             style: const TextStyle(fontSize: 13)),
@@ -364,8 +366,8 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                     leading: CircleAvatar(
                       backgroundColor: s.getStatusColor(cs),
                       radius: 16,
-                      child: const Icon(Icons.payment,
-                          size: 16, color: Colors.white),
+                      child: Icon(Icons.payment,
+                          size: 16, color: cs.onPrimaryContainer),
                     ),
                   )),
           ],

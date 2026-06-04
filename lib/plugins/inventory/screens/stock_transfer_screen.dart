@@ -292,7 +292,7 @@ class _StockTransferScreenState extends State<StockTransferScreen> {
                                   },
                                   itemBuilder: (_) => [
                                     const PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit), title: Text('編集'), dense: true)),
-                                    const PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text('削除', style: TextStyle(color: Colors.red)), dense: true)),
+                                    PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error), title: Text('削除', style: TextStyle(color: Theme.of(context).colorScheme.error)), dense: true)),
                                   ],
                                 ),
                               ),

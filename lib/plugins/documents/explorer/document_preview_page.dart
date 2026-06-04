@@ -6,6 +6,7 @@ import 'package:printing/printing.dart';
 import '../models/document_model.dart';
 import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
 import '../../../services/error_reporter.dart';
+import '../../../utils/theme_utils.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/gmail_sender.dart';
 import '../../communication/communication_plugin.dart';
@@ -146,7 +147,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: cs.surface, width: 1.5),
                   ),
-                  child: Text(badge, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(badge, style: TextStyle(fontSize: 9, color: textColorOn(Colors.green.shade600), fontWeight: FontWeight.bold)),
                 ),
               ),
           ],

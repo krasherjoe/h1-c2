@@ -14,16 +14,16 @@ class CustomerRankBadge extends StatelessWidget {
   });
 
   static Color rankColor(CustomerRank r, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
     switch (r) {
       case CustomerRank.vip:
-        return isDark ? const Color(0xFFB388FF) : const Color(0xFF6A1B9A);
+        return cs.tertiaryContainer;
       case CustomerRank.gold:
-        return isDark ? const Color(0xFFFFD54F) : const Color(0xFFB8860B);
+        return cs.secondaryContainer;
       case CustomerRank.silver:
-        return isDark ? const Color(0xFFB0BEC5) : const Color(0xFF607D8B);
+        return cs.surfaceContainerHighest;
       case CustomerRank.bronze:
-        return isDark ? const Color(0xFFD7A06B) : const Color(0xFF6D4C41);
+        return cs.primaryContainer;
       case CustomerRank.none:
         return Theme.of(context).disabledColor;
     }

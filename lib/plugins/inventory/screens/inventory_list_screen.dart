@@ -84,16 +84,16 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                               return ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: stock > 0
-                                      ? Colors.green.shade100
-                                      : Colors.grey.shade100,
+                                      ? Theme.of(context).colorScheme.primaryContainer
+                                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                                   child: Text(
                                     stock.toString(),
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       color: stock > 0
-                                          ? Colors.green.shade800
-                                          : Colors.grey.shade600,
+                                          ? Theme.of(context).colorScheme.onPrimaryContainer
+                                          : Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ),
@@ -173,7 +173,7 @@ class _StockHistorySheetState extends State<_StockHistorySheet> {
                           dense: true,
                           leading: Icon(
                             isInbound ? Icons.add_circle : Icons.remove_circle,
-                            color: isInbound ? Colors.green : Colors.red,
+                              color: isInbound ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.error,
                           ),
                           title: Text(t.transactionType.label),
                           subtitle: Text(t.createdAt.toIso8601String().substring(0, 10)),
@@ -181,7 +181,7 @@ class _StockHistorySheetState extends State<_StockHistorySheet> {
                             '${isInbound ? '+' : ''}${t.quantity}',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: isInbound ? Colors.green : Colors.red,
+                            color: isInbound ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.error,
                             ),
                           ),
                         );

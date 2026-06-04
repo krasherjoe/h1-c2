@@ -42,14 +42,14 @@ class PurchaseViewer extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: purchase.isDraft ? Colors.orange.shade100 : Colors.green.shade100,
+                color: purchase.isDraft ? theme.colorScheme.tertiaryContainer : theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 purchase.isDraft ? '下書き' : '確定',
                 style: TextStyle(
                   fontSize: 12,
-                  color: purchase.isDraft ? Colors.orange.shade800 : Colors.green.shade800,
+                  color: purchase.isDraft ? theme.colorScheme.onTertiaryContainer : theme.colorScheme.onPrimaryContainer,
                 ),
               ),
             ),
