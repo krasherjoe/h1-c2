@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
-import 'package:flutter/material.dart' show debugPrint;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -51,6 +49,69 @@ String _docTypeTitle(DocumentType type) {
   }
 }
 
+bool _anyItemHasDiscount(List<DocumentItem> items) =>
+    items.any((i) => i.discountAmount != null || i.discountRate != null);
+
+pw.Widget _buildItemTable(DocumentModel doc, int maxItems, NumberFormat fmt, pw.Font font) {
+  final headers = ['品名', '数量', '単価', '金額'];
+  final hasDiscount = _anyItemHasDiscount(doc.items);
+  final items = doc.items.take(maxItems).toList();
+
+  return pw.Table(
+    border: pw.TableBorder.symmetric(
+      outside: const pw.BorderSide(color: PdfColors.grey400),
+      inside: const pw.BorderSide(color: PdfColors.grey200),
+    ),
+    columnWidths: const {
+      0: pw.FlexColumnWidth(3),
+      1: pw.FlexColumnWidth(1),
+      2: pw.FlexColumnWidth(1.5),
+      3: pw.FlexColumnWidth(1.5),
+    },
+    children: [
+      pw.TableRow(
+        decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+        children: headers.map((h) => pw.Padding(
+          padding: const pw.EdgeInsets.all(6),
+          child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: font, fontSize: 10)),
+        )).toList(),
+      ),
+      ...items.asMap().entries.map((entry) {
+        final i = entry.value;
+        final isEven = entry.key.isEven;
+        final rowChildren = <pw.Widget>[];
+        rowChildren.add(_cell('   ${i.productName}', font, isEven));
+        rowChildren.add(_cell(i.quantity.toString(), font, isEven, alignRight: true));
+        rowChildren.add(_cell(fmt.format(i.unitPrice), font, isEven, alignRight: true));
+        if (hasDiscount && i.discountAmount != null) {
+          rowChildren.add(_cell('${fmt.format(i.subtotal)} (値引${fmt.format(i.discountAmount!)})', font, isEven, alignRight: true));
+        } else if (hasDiscount && i.discountRate != null) {
+          rowChildren.add(_cell('${fmt.format(i.subtotal)} (${(i.discountRate! * 100).round()}%OFF)', font, isEven, alignRight: true));
+        } else {
+          rowChildren.add(_cell(fmt.format(i.subtotal), font, isEven, alignRight: true));
+        }
+        return pw.TableRow(
+          decoration: pw.BoxDecoration(
+            color: isEven ? PdfColors.white : PdfColors.grey100,
+          ),
+          children: rowChildren,
+        );
+      }),
+    ],
+  );
+}
+
+pw.Widget _cell(String text, pw.Font font, bool isEven, {bool alignRight = false}) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+    child: pw.Text(
+      text,
+      style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.black),
+      textAlign: alignRight ? pw.TextAlign.right : pw.TextAlign.left,
+    ),
+  );
+}
+
 String _amountLabel(DocumentType type) {
   switch (type) {
     case DocumentType.invoice:
@@ -63,15 +124,6 @@ String _amountLabel(DocumentType type) {
       return '受注金額';
     case DocumentType.delivery:
       return '納品金額';
-  }
-}
-
-String _tableLastColumnLabel(DocumentType type) {
-  switch (type) {
-    case DocumentType.receipt:
-      return '領収金額';
-    default:
-      return '金額';
   }
 }
 
@@ -284,33 +336,7 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
             ),
           ),
           pw.SizedBox(height: 20),
-          pw.TableHelper.fromTextArray(
-            headers: ['品名', '数量', '単価', _tableLastColumnLabel(document.documentType)],
-            data: document.items
-                .take(maxItems)
-                .map((item) => [
-                      item.productName,
-                      item.quantity.toString(),
-                      amountFormatter.format(item.unitPrice),
-                      amountFormatter.format(item.subtotal),
-                    ])
-                .toList(),
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: ipaex),
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
-            cellAlignment: pw.Alignment.centerLeft,
-            columnWidths: const {
-              0: pw.FlexColumnWidth(3),
-              1: pw.FlexColumnWidth(1),
-              2: pw.FlexColumnWidth(2),
-              3: pw.FlexColumnWidth(2),
-            },
-            cellAlignments: const {
-              0: pw.Alignment.centerLeft,
-              1: pw.Alignment.centerRight,
-              2: pw.Alignment.centerRight,
-              3: pw.Alignment.centerRight,
-            },
-          ),
+          _buildItemTable(document, maxItems, amountFormatter, ipaex),
           pw.SizedBox(height: 20),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
@@ -351,29 +377,6 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
             ),
           ],
           pw.SizedBox(height: 20),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
-            children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  if (document.isDraft)
-                    pw.Text('下書き下書き下書き下書き下書き下書き',
-                        style: pw.TextStyle(
-                            fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.grey500)),
-                ],
-              ),
-              if (document.isDraft)
-                pw.Container(
-                  width: 50,
-                  height: 50,
-                  decoration: const pw.BoxDecoration(
-                    border: pw.Border.fromBorderSide(pw.BorderSide(color: PdfColors.grey400, width: 1)),
-                  ),
-                ),
-            ],
-          ),
         ];
 
         return [pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: content)];
