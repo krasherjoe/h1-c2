@@ -3,12 +3,14 @@ import '../../../services/hash_chain_verify_result.dart';
 import '../../../services/customer_repository.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/invoice_repository.dart';
+import '../../documents/services/document_repository.dart';
 
 class AuditResult {
   final int totalHashEntries;
   final HashChainVerifyResult? lastCustomerCheck;
   final HashChainVerifyResult? lastProductCheck;
   final HashChainVerifyResult? lastInvoiceCheck;
+  final HashChainVerifyResult? lastDocumentCheck;
   final DateTime? lastFullVerifyAt;
   final bool chainHealthy;
 
@@ -17,6 +19,7 @@ class AuditResult {
     this.lastCustomerCheck,
     this.lastProductCheck,
     this.lastInvoiceCheck,
+    this.lastDocumentCheck,
     this.lastFullVerifyAt,
     required this.chainHealthy,
   });
@@ -38,20 +41,24 @@ class AuditService {
     final customerRepo = CustomerRepository();
     final productRepo = ProductRepository();
     final invoiceRepo = InvoiceRepository();
+    final documentRepo = DocumentRepository();
 
     final customerCheck = await customerRepo.verifyTailN(n: 10);
     final productCheck = await productRepo.verifyTailN(n: 10);
     final invoiceCheck = await invoiceRepo.verifyAllLocked();
+    final documentCheck = await documentRepo.verifyAllLocked();
 
     final chainHealthy = customerCheck.isHealthy &&
         productCheck.isHealthy &&
-        invoiceCheck.isHealthy;
+        invoiceCheck.isHealthy &&
+        documentCheck.isHealthy;
 
     return AuditResult(
       totalHashEntries: totalHashEntries,
       lastCustomerCheck: customerCheck,
       lastProductCheck: productCheck,
       lastInvoiceCheck: invoiceCheck,
+      lastDocumentCheck: documentCheck,
       chainHealthy: chainHealthy,
       lastFullVerifyAt: DateTime.now(),
     );

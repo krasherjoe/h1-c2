@@ -94,6 +94,45 @@ class HashUtils {
     return calculateSha256(input);
   }
 
+  static String calculateDocumentHash({
+    required String id,
+    required String documentType,
+    required String customerId,
+    required String customerName,
+    required String documentNumber,
+    required String date,
+    required int total,
+    required String status,
+    String? subject,
+    required bool includeTax,
+    required double taxRate,
+    List<Map<String, dynamic>>? items,
+    bool isLocked = false,
+    int version = 1,
+    String? previousHash,
+  }) {
+    final input = [
+      id,
+      documentType,
+      customerId,
+      customerName,
+      documentNumber,
+      date,
+      total.toString(),
+      status,
+      subject ?? '',
+      includeTax ? '1' : '0',
+      taxRate.toStringAsFixed(4),
+      items?.map((e) =>
+        '${e['productId']}|${e['productName']}|${e['quantity']}|${e['unitPrice']}|${e['discountAmount']}|${e['discountRate']}')
+        .join(';') ?? '',
+      isLocked ? '1' : '0',
+      version.toString(),
+      previousHash ?? '',
+    ].join('|');
+    return calculateSha256(input);
+  }
+
   static bool verifyHashChain({
     required String currentHash,
     required String currentInput,

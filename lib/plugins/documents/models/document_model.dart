@@ -49,6 +49,9 @@ class DocumentModel extends H1ExplorerItem {
   final int? priceAdjustmentUnit;
   final bool isLocked;
   final String? contentHash;
+  final int version;
+  final bool isCurrent;
+  final String? previousHash;
 
   DocumentModel({
     required this.id,
@@ -71,6 +74,9 @@ class DocumentModel extends H1ExplorerItem {
     this.priceAdjustmentUnit,
     this.isLocked = false,
     this.contentHash,
+    this.version = 1,
+    this.isCurrent = true,
+    this.previousHash,
   });
 
   @override
@@ -179,6 +185,9 @@ class DocumentModel extends H1ExplorerItem {
     int? priceAdjustmentUnit,
     bool? isLocked,
     String? contentHash,
+    int? version,
+    bool? isCurrent,
+    String? previousHash,
   }) {
     return DocumentModel(
       id: id ?? this.id,
@@ -201,6 +210,9 @@ class DocumentModel extends H1ExplorerItem {
       priceAdjustmentUnit: priceAdjustmentUnit ?? this.priceAdjustmentUnit,
       isLocked: isLocked ?? this.isLocked,
       contentHash: contentHash ?? this.contentHash,
+      version: version ?? this.version,
+      isCurrent: isCurrent ?? this.isCurrent,
+      previousHash: previousHash ?? this.previousHash,
     );
   }
 
@@ -224,6 +236,9 @@ class DocumentModel extends H1ExplorerItem {
     'price_adjustment_unit': priceAdjustmentUnit,
     'is_locked': isLocked ? 1 : 0,
     'content_hash': contentHash,
+    'version': version,
+    'is_current': isCurrent ? 1 : 0,
+    'previous_hash': previousHash,
   };
 
   factory DocumentModel.fromMap(Map<String, dynamic> map, {List<DocumentItem> items = const []}) {
@@ -248,6 +263,9 @@ class DocumentModel extends H1ExplorerItem {
       priceAdjustmentUnit: map['price_adjustment_unit'] as int?,
       isLocked: (map['is_locked'] as int?) == 1,
       contentHash: map['content_hash'] as String?,
+      version: map['version'] as int? ?? 1,
+      isCurrent: (map['is_current'] as int?) != 0,
+      previousHash: map['previous_hash'] as String?,
     );
   }
 }

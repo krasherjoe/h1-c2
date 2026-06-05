@@ -1,6 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../../../services/database_helper.dart';
+import '../../../services/hash_utils.dart';
+import '../../../services/hash_chain_verify_result.dart';
 import '../models/document_model.dart';
 
 class DocumentRepository {
@@ -34,6 +36,8 @@ class DocumentRepository {
       args.add(dateTo.toIso8601String().substring(0, 10));
     }
     conditions.add('d.status IS NOT NULL');
+    conditions.add('d.is_current IS NOT NULL');
+    conditions.add('d.is_current = 1');
 
     final where = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
     final maps = await db.rawQuery('''
@@ -70,11 +74,70 @@ class DocumentRepository {
   Future<void> save(DocumentModel document) async {
     final db = await _db;
     await db.transaction((txn) async {
+      final existing = await txn.query(
+        'documents',
+        columns: ['id', 'is_locked', 'content_hash', 'version'],
+        where: 'id = ?',
+        whereArgs: [document.id],
+        limit: 1,
+      );
+
+      if (existing.isNotEmpty && (existing.first['is_locked'] as int?) == 1) {
+        throw Exception('ロック済み伝票は変更できません');
+      }
+
+      int newVersion = 1;
+      String? previousHash;
+      if (existing.isNotEmpty) {
+        newVersion = ((existing.first['version'] as int?) ?? 1) + 1;
+        previousHash = existing.first['content_hash'] as String?;
+      }
+
+      final contentHash = HashUtils.calculateDocumentHash(
+        id: document.id,
+        documentType: document.documentType.name,
+        customerId: document.customerId,
+        customerName: document.customerName,
+        documentNumber: document.documentNumber,
+        date: document.date.toIso8601String().substring(0, 10),
+        total: document.total,
+        status: document.status,
+        subject: document.subject,
+        includeTax: document.includeTax,
+        taxRate: document.taxRate,
+        items: document.items.map((i) => <String, dynamic>{
+          'productId': i.productId,
+          'productName': i.productName,
+          'quantity': i.quantity,
+          'unitPrice': i.unitPrice,
+          'discountAmount': i.discountAmount,
+          'discountRate': i.discountRate,
+        }).toList(),
+        isLocked: document.isLocked,
+        version: newVersion,
+        previousHash: previousHash,
+      );
+
+      final docMap = document.toMap();
+      docMap['version'] = newVersion;
+      docMap['previous_hash'] = previousHash ?? '';
+      docMap['content_hash'] = contentHash;
+
+      if (existing.isNotEmpty) {
+        await txn.update(
+          'documents',
+          {'is_current': 0},
+          where: 'id = ?',
+          whereArgs: [document.id],
+        );
+      }
+
       await txn.insert(
         'documents',
-        document.toMap(),
+        docMap,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
+
       for (final item in document.items) {
         await txn.insert(
           'document_items',
@@ -88,6 +151,16 @@ class DocumentRepository {
   Future<void> delete(String id) async {
     final db = await _db;
     await db.transaction((txn) async {
+      final existing = await txn.query(
+        'documents',
+        columns: ['is_locked'],
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      if (existing.isNotEmpty && (existing.first['is_locked'] as int?) == 1) {
+        throw Exception('ロック済み伝票は削除できません');
+      }
       await txn.delete('document_items', where: 'document_id = ?', whereArgs: [id]);
       await txn.delete('documents', where: 'id = ?', whereArgs: [id]);
     });
@@ -113,4 +186,54 @@ class DocumentRepository {
   }
 
   String generateId() => const Uuid().v4();
+
+  Future<HashChainVerifyResult> verifyAllLocked() async {
+    final db = await _db;
+    final rows = await db.query(
+      'documents',
+      where: 'is_locked = 1 AND content_hash IS NOT NULL',
+      orderBy: 'date DESC',
+    );
+    final broken = <String>[];
+    for (final row in rows) {
+      final storedHash = row['content_hash'] as String?;
+      if (storedHash == null) continue;
+      final doc = DocumentModel.fromMap(row);
+      final items = await _fetchItems(db, doc.id);
+
+      final recomputed = HashUtils.calculateDocumentHash(
+        id: doc.id,
+        documentType: doc.documentType.name,
+        customerId: doc.customerId,
+        customerName: doc.customerName,
+        documentNumber: doc.documentNumber,
+        date: doc.date.toIso8601String().substring(0, 10),
+        total: doc.total,
+        status: doc.status,
+        subject: doc.subject,
+        includeTax: doc.includeTax,
+        taxRate: doc.taxRate,
+        items: items.map((i) => <String, dynamic>{
+          'productId': i.productId,
+          'productName': i.productName,
+          'quantity': i.quantity,
+          'unitPrice': i.unitPrice,
+          'discountAmount': i.discountAmount,
+          'discountRate': i.discountRate,
+        }).toList(),
+        isLocked: doc.isLocked,
+        version: doc.version,
+        previousHash: doc.previousHash,
+      );
+
+      if (recomputed != storedHash) {
+        broken.add(doc.id);
+      }
+    }
+    return HashChainVerifyResult(
+      checked: rows.length,
+      brokenIds: broken,
+      verifiedAt: DateTime.now(),
+    );
+  }
 }

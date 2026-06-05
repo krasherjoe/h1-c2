@@ -189,7 +189,10 @@ class DocumentViewer extends StatelessWidget {
                 isUnlocked: document.isDraft,
                 onFormalIssue: () async {
                   try {
-                    final updated = document.copyWith(status: 'confirmed');
+                    final updated = document.copyWith(
+                      status: 'confirmed',
+                      isLocked: true,
+                    );
                     await repo.save(updated);
                     return true;
                   } catch (e, st) {

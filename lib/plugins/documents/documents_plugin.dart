@@ -200,6 +200,21 @@ class DocumentsPlugin extends H1Plugin {
         "ALTER TABLE document_items ADD COLUMN discount_rate REAL",
       );
     } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN version INTEGER DEFAULT 1",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN is_current INTEGER DEFAULT 1",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN previous_hash TEXT",
+      );
+    } catch (_) {}
   }
 
   @override

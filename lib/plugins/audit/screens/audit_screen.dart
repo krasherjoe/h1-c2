@@ -80,6 +80,8 @@ class _AuditScreenState extends State<AuditScreen> {
         _buildDetailCard(theme, '商品', result.lastProductCheck),
         const SizedBox(height: 8),
         _buildDetailCard(theme, '請求書', result.lastInvoiceCheck),
+        const SizedBox(height: 8),
+        _buildDetailCard(theme, '伝票', result.lastDocumentCheck),
       ],
     );
   }
