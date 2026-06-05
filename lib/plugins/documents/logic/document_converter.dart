@@ -24,6 +24,12 @@ DocumentModel convertDocument(DocumentModel source) {
     total: source.total,
     status: 'draft',
     linkedDocumentId: source.id,
+    includeTax: source.includeTax,
+    taxRate: source.taxRate,
+    totalDiscountAmount: source.totalDiscountAmount,
+    totalDiscountRate: source.totalDiscountRate,
+    priceAdjustmentType: source.priceAdjustmentType,
+    priceAdjustmentUnit: source.priceAdjustmentUnit,
     items: source.items.map((item) => DocumentItem(
       id: _IdGenerator().v4(),
       productId: item.productId,
@@ -31,6 +37,8 @@ DocumentModel convertDocument(DocumentModel source) {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       taxRate: item.taxRate,
+      discountAmount: item.discountAmount,
+      discountRate: item.discountRate,
     )).toList(),
   );
 }

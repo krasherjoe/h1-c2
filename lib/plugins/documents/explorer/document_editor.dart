@@ -40,6 +40,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
   String? _projectId;
   String? _projectName;
   bool _isSaving = false;
+  bool _includeTax = false;
+  int? _totalDiscountAmount;
+  double? _totalDiscountRate;
+  String? _priceAdjustmentType;
+  int? _priceAdjustmentUnit;
 
   final _subjectCtl = TextEditingController();
 
@@ -60,6 +65,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
     _selectedDate = doc?.date ?? DateTime.now();
     _projectId = doc?.projectId;
     _subjectCtl.text = doc?.subject ?? '';
+    _includeTax = doc?.includeTax ?? false;
+    _totalDiscountAmount = doc?.totalDiscountAmount;
+    _totalDiscountRate = doc?.totalDiscountRate;
+    _priceAdjustmentType = doc?.priceAdjustmentType;
+    _priceAdjustmentUnit = doc?.priceAdjustmentUnit;
     _items = (doc?.items ?? []).map((item) => _EditingItem(
       id: item.id,
       productId: item.productId,
@@ -67,6 +77,8 @@ class _DocumentEditorState extends State<DocumentEditor> {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       taxRate: item.taxRate,
+      discountAmount: item.discountAmount,
+      discountRate: item.discountRate,
     )).toList();
     if (_projectId != null) _loadProjectName();
   }
@@ -94,9 +106,15 @@ class _DocumentEditorState extends State<DocumentEditor> {
       projectId: _projectId,
       projectName: _projectName,
       subject: _subjectCtl.text,
+      includeTax: _includeTax,
+      totalDiscountAmount: _totalDiscountAmount,
+      totalDiscountRate: _totalDiscountRate,
+      priceAdjustmentType: _priceAdjustmentType,
+      priceAdjustmentUnit: _priceAdjustmentUnit,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
+        discountAmount: e.discountAmount, discountRate: e.discountRate,
       )).toList(),
     ));
     if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
@@ -113,9 +131,15 @@ class _DocumentEditorState extends State<DocumentEditor> {
       projectId: _projectId,
       projectName: _projectName,
       subject: _subjectCtl.text,
+      includeTax: _includeTax,
+      totalDiscountAmount: _totalDiscountAmount,
+      totalDiscountRate: _totalDiscountRate,
+      priceAdjustmentType: _priceAdjustmentType,
+      priceAdjustmentUnit: _priceAdjustmentUnit,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
+        discountAmount: e.discountAmount, discountRate: e.discountRate,
       )).toList(),
     ));
     final s = _undoStack.removeLast();
@@ -127,6 +151,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _projectId = s.projectId;
       _projectName = s.projectName;
       _subjectCtl.text = s.subject;
+      _includeTax = s.includeTax;
+      _totalDiscountAmount = s.totalDiscountAmount;
+      _totalDiscountRate = s.totalDiscountRate;
+      _priceAdjustmentType = s.priceAdjustmentType;
+      _priceAdjustmentUnit = s.priceAdjustmentUnit;
       _items = s.items;
     });
   }
@@ -143,6 +172,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _projectId = s.projectId;
       _projectName = s.projectName;
       _subjectCtl.text = s.subject;
+      _includeTax = s.includeTax;
+      _totalDiscountAmount = s.totalDiscountAmount;
+      _totalDiscountRate = s.totalDiscountRate;
+      _priceAdjustmentType = s.priceAdjustmentType;
+      _priceAdjustmentUnit = s.priceAdjustmentUnit;
       _items = s.items;
     });
   }
@@ -167,29 +201,37 @@ class _DocumentEditorState extends State<DocumentEditor> {
       final docNumber = widget.document?.documentNumber ??
           await _repo.generateDocumentNumber(_selectedType);
 
-      final total = _items.fold(0, (sum, item) => sum + (item.quantity * item.unitPrice).round());
-
       final subj = _subjectCtl.text.trim();
-      final doc = DocumentModel(
+      final docItems = _items.map((e) => DocumentItem(
+        id: e.id,
+        productId: e.productId,
+        productName: e.productName,
+        quantity: e.quantity,
+        unitPrice: e.unitPrice,
+        taxRate: e.taxRate,
+        discountAmount: e.discountAmount,
+        discountRate: e.discountRate,
+      )).toList();
+      final tmp = DocumentModel(
         id: docId,
         documentType: _selectedType,
         customerId: _customerId,
         customerName: _customerName,
         documentNumber: docNumber,
         date: _selectedDate,
-        total: total,
+        total: 0,
         status: 'draft',
         projectId: _projectId,
         subject: subj.isEmpty ? null : subj,
-        items: _items.map((e) => DocumentItem(
-          id: e.id,
-          productId: e.productId,
-          productName: e.productName,
-          quantity: e.quantity,
-          unitPrice: e.unitPrice,
-          taxRate: e.taxRate,
-        )).toList(),
+        includeTax: _includeTax,
+        taxRate: 0.10,
+        totalDiscountAmount: _totalDiscountAmount,
+        totalDiscountRate: _totalDiscountRate,
+        priceAdjustmentType: _priceAdjustmentType,
+        priceAdjustmentUnit: _priceAdjustmentUnit,
+        items: docItems,
       );
+      final doc = tmp.copyWith(total: tmp.totalAmount);
 
       await _repo.save(doc);
       if (!mounted) return;
@@ -280,7 +322,48 @@ class _DocumentEditorState extends State<DocumentEditor> {
     _wrapWithSnapshot(() => _items.removeAt(index));
   }
 
-  int get _total => _items.fold(0, (sum, item) => sum + (item.quantity * item.unitPrice).round());
+  int get _subtotal => _items.fold(0, (sum, item) => sum + item.subtotal);
+
+  int get _discountAmount {
+    int itemDiscount = _items.fold(0, (sum, item) {
+      if (item.discountAmount != null && item.discountAmount! > 0) return sum + item.discountAmount!;
+      if (item.discountRate != null && item.discountRate! > 0) {
+        final base = (item.quantity * item.unitPrice).round();
+        return sum + (base * item.discountRate!).round();
+      }
+      return sum;
+    });
+    if (_totalDiscountAmount != null && _totalDiscountAmount! > 0) return _totalDiscountAmount!;
+    if (_totalDiscountRate != null && _totalDiscountRate! > 0) return (_subtotal * _totalDiscountRate!).round();
+    return itemDiscount;
+  }
+
+  int get _priceAdjustmentDiscount {
+    if (_priceAdjustmentType == null || _priceAdjustmentUnit == null) return 0;
+    if (_priceAdjustmentType == 'manual') return _priceAdjustmentUnit!;
+    final unit = _priceAdjustmentUnit!;
+    final base = _subtotal - _discountAmount;
+    int adj;
+    switch (_priceAdjustmentType) {
+      case 'round_down':
+        adj = (base ~/ unit) * unit;
+      case 'round_up':
+        adj = ((base + unit - 1) ~/ unit) * unit;
+      case 'round_nearest':
+        adj = ((base + unit ~/ 2) ~/ unit) * unit;
+      default:
+        return 0;
+    }
+    return base - adj;
+  }
+
+  int get _totalDiscount => _discountAmount + _priceAdjustmentDiscount;
+
+  int get _taxableAmount => _subtotal - _totalDiscount;
+
+  int get _tax => _includeTax ? (_taxableAmount * 0.10).floor() : 0;
+
+  int get _grandTotal => _taxableAmount + _tax;
 
   Future<void> _editPrice(int index) async {
     final item = _items[index];
@@ -308,6 +391,76 @@ class _DocumentEditorState extends State<DocumentEditor> {
     if (result != null && mounted) {
       _wrapWithSnapshot(() => _items[index].unitPrice = result);
     }
+  }
+
+  Future<void> _editItemDiscount(int index) async {
+    final item = _items[index];
+    final amtCtl = TextEditingController(text: item.discountAmount?.toString() ?? '');
+    final rateCtl = TextEditingController(text: item.discountRate != null ? '${(item.discountRate! * 100).round()}' : '');
+    var mode = item.discountAmount != null ? 0 : (item.discountRate != null ? 1 : 0);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Text('値引設定'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: 0, label: Text('金額')),
+                  ButtonSegment(value: 1, label: Text('率(%)')),
+                ],
+                selected: {mode},
+                onSelectionChanged: (s) => setDlgState(() => mode = s.first),
+              ),
+              const SizedBox(height: 12),
+              H1TextField(
+                controller: mode == 0 ? amtCtl : rateCtl,
+                decoration: InputDecoration(
+                  labelText: mode == 0 ? '値引額 (円)' : '値引率 (%)',
+                ),
+                keyboardType: TextInputType.number,
+                autofocus: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+            TextButton(onPressed: () {
+              _wrapWithSnapshot(() {
+                _items[index].discountAmount = null;
+                _items[index].discountRate = null;
+              });
+              Navigator.pop(ctx);
+            }, child: Text('クリア', style: TextStyle(color: Theme.of(context).colorScheme.error))),
+            FilledButton(onPressed: () {
+              if (mode == 0) {
+                final v = int.tryParse(amtCtl.text);
+                if (v != null && v > 0) {
+                  _wrapWithSnapshot(() {
+                    _items[index].discountAmount = v;
+                    _items[index].discountRate = null;
+                  });
+                  Navigator.pop(ctx);
+                }
+              } else {
+                final v = double.tryParse(rateCtl.text);
+                if (v != null && v > 0 && v <= 100) {
+                  _wrapWithSnapshot(() {
+                    _items[index].discountRate = v / 100;
+                    _items[index].discountAmount = null;
+                  });
+                  Navigator.pop(ctx);
+                }
+              }
+            }, child: const Text('設定')),
+          ],
+        ),
+      ),
+    );
+    amtCtl.dispose();
+    rateCtl.dispose();
   }
 
   @override
@@ -348,6 +501,10 @@ class _DocumentEditorState extends State<DocumentEditor> {
           _buildCustomerCard(cs),
           const SizedBox(height: 12),
           _buildProjectCard(cs),
+          const SizedBox(height: 12),
+          _buildTaxToggle(cs),
+          const SizedBox(height: 12),
+          _buildAdjustmentsButton(cs),
           const SizedBox(height: 20),
           _buildItemsSection(cs),
           const SizedBox(height: 20),
@@ -490,6 +647,141 @@ class _DocumentEditorState extends State<DocumentEditor> {
     );
   }
 
+  Widget _buildAdjustmentsButton(ColorScheme cs) {
+    final hasAdjustment = _totalDiscountAmount != null || _totalDiscountRate != null ||
+        _priceAdjustmentType != null || _priceAdjustmentUnit != null;
+    return OutlinedButton.icon(
+      icon: Icon(Icons.tune, size: 18),
+      label: Text(hasAdjustment ? '調整: 設定済み' : '値引・端数調整'),
+      onPressed: () => _showAdjustmentDialog(),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: hasAdjustment ? cs.primary : cs.onSurfaceVariant,
+        side: BorderSide(color: hasAdjustment ? cs.primary : cs.outlineVariant),
+      ),
+    );
+  }
+
+  Future<void> _showAdjustmentDialog() async {
+    final amtCtl = TextEditingController(text: _totalDiscountAmount?.toString() ?? '');
+    final rateCtl = TextEditingController(
+      text: _totalDiscountRate != null ? '${(_totalDiscountRate! * 100).round()}' : '',
+    );
+    var discMode = _totalDiscountAmount != null ? 0 : (_totalDiscountRate != null ? 1 : 0);
+    var adjType = _priceAdjustmentType ?? '';
+    var adjUnit = _priceAdjustmentUnit ?? 0;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Text('値引・端数調整'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('合計値引き', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                const SizedBox(height: 8),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 0, label: Text('金額')),
+                    ButtonSegment(value: 1, label: Text('率(%)')),
+                  ],
+                  selected: {discMode},
+                  onSelectionChanged: (s) => setDlgState(() => discMode = s.first),
+                ),
+                const SizedBox(height: 8),
+                H1TextField(
+                  controller: discMode == 0 ? amtCtl : rateCtl,
+                  decoration: InputDecoration(
+                    labelText: discMode == 0 ? '値引額 (円)' : '値引率 (%)',
+                    hintText: '0',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 20),
+                Text('端数処理', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: adjType.isEmpty ? null : adjType,
+                  hint: const Text('適用しない'),
+                  items: const [
+                    DropdownMenuItem(value: 'round_down', child: Text('切り捨て')),
+                    DropdownMenuItem(value: 'round_up', child: Text('切り上げ')),
+                    DropdownMenuItem(value: 'round_nearest', child: Text('四捨五入')),
+                    DropdownMenuItem(value: 'manual', child: Text('手動調整')),
+                  ],
+                  onChanged: (v) => setDlgState(() => adjType = v ?? ''),
+                  decoration: const InputDecoration(labelText: '方式'),
+                ),
+                if (adjType.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    value: adjUnit > 0 ? adjUnit : null,
+                    hint: const Text('単位'),
+                    items: [1, 10, 100, 1000].map((u) => DropdownMenuItem(
+                      value: u,
+                      child: Text('¥$u'),
+                    )).toList(),
+                    onChanged: (v) => setDlgState(() => adjUnit = v ?? 0),
+                    decoration: const InputDecoration(labelText: '単位'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+            TextButton(onPressed: () {
+              _wrapWithSnapshot(() {
+                _totalDiscountAmount = null;
+                _totalDiscountRate = null;
+                _priceAdjustmentType = null;
+                _priceAdjustmentUnit = null;
+              });
+              Navigator.pop(ctx);
+            }, child: Text('クリア', style: TextStyle(color: Theme.of(context).colorScheme.error))),
+            FilledButton(onPressed: () {
+              _wrapWithSnapshot(() {
+                if (discMode == 0) {
+                  final v = int.tryParse(amtCtl.text);
+                  _totalDiscountAmount = (v != null && v > 0) ? v : null;
+                  _totalDiscountRate = null;
+                } else {
+                  final v = double.tryParse(rateCtl.text);
+                  _totalDiscountRate = (v != null && v > 0 && v <= 100) ? v / 100 : null;
+                  _totalDiscountAmount = null;
+                }
+                _priceAdjustmentType = adjType.isNotEmpty ? adjType : null;
+                _priceAdjustmentUnit = adjUnit > 0 ? adjUnit : null;
+              });
+              Navigator.pop(ctx);
+            }, child: const Text('適用')),
+          ],
+        ),
+      ),
+    );
+    amtCtl.dispose();
+    rateCtl.dispose();
+  }
+
+  Widget _buildTaxToggle(ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: SwitchListTile(
+        title: Text('消費税を計算', style: TextStyle(fontWeight: FontWeight.w500, color: cs.onSurface)),
+        subtitle: Text(_includeTax ? '税抜金額に10%を加算' : '消費税なし', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        value: _includeTax,
+        onChanged: (v) => _wrapWithSnapshot(() => _includeTax = v),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   Widget _buildItemsSection(ColorScheme cs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +812,9 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildItemCard(int index, _EditingItem item, ColorScheme cs) {
-    final subtotal = (item.quantity * item.unitPrice).round();
+    final subtotal = item.subtotal;
+    final baseSubtotal = (item.quantity * item.unitPrice).round();
+    final hasDiscount = item.discountAmount != null || item.discountRate != null;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       elevation: 0.5,
@@ -539,9 +833,28 @@ class _DocumentEditorState extends State<DocumentEditor> {
                     style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
                 ),
                 const SizedBox(width: 4),
-                Text('× ${_formatQty(item.quantity)} = ￥${_formatMoney(subtotal)}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                if (!hasDiscount)
+                  Text('× ${_formatQty(item.quantity)} = ￥${_formatMoney(subtotal)}',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('× ${_formatQty(item.quantity)} = ￥${_formatMoney(baseSubtotal)}',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, decoration: TextDecoration.lineThrough)),
+                      Text('値引後: ￥${_formatMoney(subtotal)}',
+                        style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.discount, size: 18, color: hasDiscount ? cs.error : cs.onSurfaceVariant),
+                  tooltip: '値引設定',
+                  onPressed: () => _editItemDiscount(index),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
                 IconButton(
                   icon: Icon(Icons.remove_circle_outline, size: 20, color: cs.onSurfaceVariant),
                   onPressed: () {
@@ -585,9 +898,12 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildSummarySection(ColorScheme cs) {
-    final subtotal = _total;
-    final tax = (subtotal * 0.1).round();
-    final total = subtotal + tax;
+    final subtotal = _subtotal;
+    final discount = _totalDiscount;
+    final taxable = _taxableAmount;
+    final tax = _tax;
+    final total = _grandTotal;
+    final hasDiscount = discount > 0;
     return Container(
       decoration: BoxDecoration(
         color: cs.primaryContainer.withValues(alpha: 0.3),
@@ -597,6 +913,14 @@ class _DocumentEditorState extends State<DocumentEditor> {
       child: Column(
         children: [
           _summaryRow('小計', subtotal, cs, labelColor: cs.onSurfaceVariant),
+          if (hasDiscount) ...[
+            const Divider(height: 20),
+            _summaryRow('値引き', -discount, cs, labelColor: cs.error),
+          ],
+          if (taxable != subtotal && hasDiscount) ...[
+            const Divider(height: 20),
+            _summaryRow('税抜合計', taxable, cs, labelColor: cs.onSurfaceVariant),
+          ],
           const Divider(height: 20),
           _summaryRow('消費税 (10%)', tax, cs, labelColor: cs.onSurfaceVariant),
           const Divider(height: 20),
@@ -656,6 +980,11 @@ class _EditorSnapshot {
   final String? projectId;
   final String? projectName;
   final String subject;
+  final bool includeTax;
+  final int? totalDiscountAmount;
+  final double? totalDiscountRate;
+  final String? priceAdjustmentType;
+  final int? priceAdjustmentUnit;
   final List<_EditingItem> items;
 
   _EditorSnapshot({
@@ -666,6 +995,11 @@ class _EditorSnapshot {
     this.projectId,
     this.projectName,
     this.subject = '',
+    this.includeTax = false,
+    this.totalDiscountAmount,
+    this.totalDiscountRate,
+    this.priceAdjustmentType,
+    this.priceAdjustmentUnit,
     required this.items,
   });
 }
@@ -677,6 +1011,8 @@ class _EditingItem {
   double quantity;
   int unitPrice;
   double taxRate;
+  int? discountAmount;
+  double? discountRate;
 
   _EditingItem({
     required this.id,
@@ -685,7 +1021,16 @@ class _EditingItem {
     this.quantity = 1,
     this.unitPrice = 0,
     this.taxRate = 0.1,
+    this.discountAmount,
+    this.discountRate,
   });
+
+  int get subtotal {
+    final base = (quantity * unitPrice).round();
+    if (discountAmount != null && discountAmount! > 0) return base - discountAmount!;
+    if (discountRate != null && discountRate! > 0) return (base * (1 - discountRate!)).round();
+    return base;
+  }
 }
 
 class _CustomerPickerSheet extends StatefulWidget {

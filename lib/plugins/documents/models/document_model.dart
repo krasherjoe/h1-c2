@@ -41,6 +41,14 @@ class DocumentModel extends H1ExplorerItem {
   final String? projectId;
   final String? subject;
   final List<DocumentItem> items;
+  final bool includeTax;
+  final double taxRate;
+  final int? totalDiscountAmount;
+  final double? totalDiscountRate;
+  final String? priceAdjustmentType;
+  final int? priceAdjustmentUnit;
+  final bool isLocked;
+  final String? contentHash;
 
   DocumentModel({
     required this.id,
@@ -55,6 +63,14 @@ class DocumentModel extends H1ExplorerItem {
     this.projectId,
     this.subject,
     this.items = const [],
+    this.includeTax = false,
+    this.taxRate = 0.10,
+    this.totalDiscountAmount,
+    this.totalDiscountRate,
+    this.priceAdjustmentType,
+    this.priceAdjustmentUnit,
+    this.isLocked = false,
+    this.contentHash,
   });
 
   @override
@@ -83,6 +99,65 @@ class DocumentModel extends H1ExplorerItem {
   bool get isDraft => status == 'draft';
   bool get isConfirmed => status == 'confirmed';
 
+  // --- 税・割引 計算 ---
+
+  int get subtotal => items.fold(0, (sum, item) => sum + item.subtotal);
+
+  int get _regularDiscount {
+    int itemDiscount = items.fold(0, (sum, item) {
+      if (item.discountAmount != null && item.discountAmount! > 0) {
+        return sum + item.discountAmount!;
+      }
+      if (item.discountRate != null && item.discountRate! > 0) {
+        final base = (item.quantity * item.unitPrice).round();
+        return sum + (base * item.discountRate!).round();
+      }
+      return sum;
+    });
+    if (totalDiscountAmount != null && totalDiscountAmount! > 0) {
+      return totalDiscountAmount!;
+    }
+    if (totalDiscountRate != null && totalDiscountRate! > 0) {
+      return (subtotal * totalDiscountRate!).round();
+    }
+    return itemDiscount;
+  }
+
+  int get priceAdjustmentDiscount {
+    if (priceAdjustmentType == null || priceAdjustmentUnit == null) return 0;
+    if (priceAdjustmentType == 'manual') return priceAdjustmentUnit!;
+
+    final unit = priceAdjustmentUnit!;
+    final base = subtotal - _regularDiscount;
+    final totalBeforeAdjustment = base;
+
+    int adjustedTotal;
+    switch (priceAdjustmentType) {
+      case 'round_down':
+        adjustedTotal = (totalBeforeAdjustment ~/ unit) * unit;
+      case 'round_up':
+        adjustedTotal = ((totalBeforeAdjustment + unit - 1) ~/ unit) * unit;
+      case 'round_nearest':
+        adjustedTotal = ((totalBeforeAdjustment + unit ~/ 2) ~/ unit) * unit;
+      default:
+        return 0;
+    }
+    return totalBeforeAdjustment - adjustedTotal;
+  }
+
+  int get discountAmount => _regularDiscount + priceAdjustmentDiscount;
+
+  int get taxableAmount {
+    return subtotal - discountAmount;
+  }
+
+  int get tax {
+    if (!includeTax) return 0;
+    return (taxableAmount * taxRate).floor();
+  }
+
+  int get totalAmount => taxableAmount + tax;
+
   DocumentModel copyWith({
     String? id,
     DocumentType? documentType,
@@ -96,6 +171,14 @@ class DocumentModel extends H1ExplorerItem {
     String? projectId,
     String? subject,
     List<DocumentItem>? items,
+    bool? includeTax,
+    double? taxRate,
+    int? totalDiscountAmount,
+    double? totalDiscountRate,
+    String? priceAdjustmentType,
+    int? priceAdjustmentUnit,
+    bool? isLocked,
+    String? contentHash,
   }) {
     return DocumentModel(
       id: id ?? this.id,
@@ -110,6 +193,14 @@ class DocumentModel extends H1ExplorerItem {
       projectId: projectId ?? this.projectId,
       subject: subject ?? this.subject,
       items: items ?? this.items,
+      includeTax: includeTax ?? this.includeTax,
+      taxRate: taxRate ?? this.taxRate,
+      totalDiscountAmount: totalDiscountAmount ?? this.totalDiscountAmount,
+      totalDiscountRate: totalDiscountRate ?? this.totalDiscountRate,
+      priceAdjustmentType: priceAdjustmentType ?? this.priceAdjustmentType,
+      priceAdjustmentUnit: priceAdjustmentUnit ?? this.priceAdjustmentUnit,
+      isLocked: isLocked ?? this.isLocked,
+      contentHash: contentHash ?? this.contentHash,
     );
   }
 
@@ -125,6 +216,14 @@ class DocumentModel extends H1ExplorerItem {
     'linked_document_id': linkedDocumentId,
     'project_id': projectId,
     'subject': subject,
+    'include_tax': includeTax ? 1 : 0,
+    'tax_rate': taxRate,
+    'total_discount_amount': totalDiscountAmount,
+    'total_discount_rate': totalDiscountRate,
+    'price_adjustment_type': priceAdjustmentType,
+    'price_adjustment_unit': priceAdjustmentUnit,
+    'is_locked': isLocked ? 1 : 0,
+    'content_hash': contentHash,
   };
 
   factory DocumentModel.fromMap(Map<String, dynamic> map, {List<DocumentItem> items = const []}) {
@@ -141,6 +240,14 @@ class DocumentModel extends H1ExplorerItem {
       projectId: map['project_id'] as String?,
       subject: map['subject'] as String?,
       items: items,
+      includeTax: (map['include_tax'] as int?) == 1,
+      taxRate: (map['tax_rate'] as num?)?.toDouble() ?? 0.10,
+      totalDiscountAmount: map['total_discount_amount'] as int?,
+      totalDiscountRate: (map['total_discount_rate'] as num?)?.toDouble(),
+      priceAdjustmentType: map['price_adjustment_type'] as String?,
+      priceAdjustmentUnit: map['price_adjustment_unit'] as int?,
+      isLocked: (map['is_locked'] as int?) == 1,
+      contentHash: map['content_hash'] as String?,
     );
   }
 }
@@ -152,6 +259,8 @@ class DocumentItem {
   final double quantity;
   final int unitPrice;
   final double taxRate;
+  final int? discountAmount;
+  final double? discountRate;
 
   const DocumentItem({
     required this.id,
@@ -160,9 +269,20 @@ class DocumentItem {
     this.quantity = 1,
     this.unitPrice = 0,
     this.taxRate = 0.1,
+    this.discountAmount,
+    this.discountRate,
   });
 
-  int get subtotal => (quantity * unitPrice).round();
+  int get subtotal {
+    final base = (quantity * unitPrice).round();
+    if (discountAmount != null && discountAmount! > 0) {
+      return base - discountAmount!;
+    }
+    if (discountRate != null && discountRate! > 0) {
+      return (base * (1 - discountRate!)).round();
+    }
+    return base;
+  }
 
   DocumentItem copyWith({
     String? id,
@@ -171,6 +291,8 @@ class DocumentItem {
     double? quantity,
     int? unitPrice,
     double? taxRate,
+    int? discountAmount,
+    double? discountRate,
   }) {
     return DocumentItem(
       id: id ?? this.id,
@@ -179,6 +301,8 @@ class DocumentItem {
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
       taxRate: taxRate ?? this.taxRate,
+      discountAmount: discountAmount ?? this.discountAmount,
+      discountRate: discountRate ?? this.discountRate,
     );
   }
 
@@ -190,6 +314,8 @@ class DocumentItem {
     'quantity': quantity,
     'unit_price': unitPrice,
     'tax_rate': taxRate,
+    'discount_amount': discountAmount,
+    'discount_rate': discountRate,
   };
 
   factory DocumentItem.fromMap(Map<String, dynamic> map) {
@@ -200,6 +326,8 @@ class DocumentItem {
       quantity: (map['quantity'] as num?)?.toDouble() ?? 1,
       unitPrice: map['unit_price'] as int? ?? 0,
       taxRate: (map['tax_rate'] as num?)?.toDouble() ?? 0.1,
+      discountAmount: map['discount_amount'] as int?,
+      discountRate: (map['discount_rate'] as num?)?.toDouble(),
     );
   }
 }

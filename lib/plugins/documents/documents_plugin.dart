@@ -150,6 +150,56 @@ class DocumentsPlugin extends H1Plugin {
         'ALTER TABLE documents ADD COLUMN subject TEXT',
       );
     } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN include_tax INTEGER DEFAULT 0",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN tax_rate REAL DEFAULT 0.10",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN total_discount_amount INTEGER",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN total_discount_rate REAL",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN price_adjustment_type TEXT",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN price_adjustment_unit INTEGER",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN is_locked INTEGER DEFAULT 0",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN content_hash TEXT",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE document_items ADD COLUMN discount_amount INTEGER",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE document_items ADD COLUMN discount_rate REAL",
+      );
+    } catch (_) {}
   }
 
   @override

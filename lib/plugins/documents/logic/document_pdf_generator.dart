@@ -127,8 +127,10 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
     }
   }
 
-  final subtotal = document.items.map((i) => i.subtotal).fold(0, (a, b) => a + b);
-  final tax = document.total - subtotal;
+  final subtotal = document.subtotal;
+  final discount = document.discountAmount;
+  final taxable = document.taxableAmount;
+  final tax = document.tax;
 
   pdf.addPage(
     pw.MultiPage(
@@ -318,8 +320,12 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                 child: pw.Column(
                   children: [
                     _buildSummaryRow('小計', amountFormatter.format(subtotal)),
+                    if (discount > 0)
+                      _buildSummaryRow('値引き', '-${amountFormatter.format(discount)}'),
+                    if (taxable != subtotal && discount > 0)
+                      _buildSummaryRow('税抜合計', amountFormatter.format(taxable)),
                     if (tax > 0 && !_isExemptNoT(companyInfo))
-                      _buildSummaryRow('消費税 (10%)', amountFormatter.format(tax)),
+                      _buildSummaryRow('消費税 (${(document.taxRate * 100).round()}%)', amountFormatter.format(tax)),
                     pw.Divider(),
                     _buildSummaryRow(
                       _totalLabel(document.documentType),

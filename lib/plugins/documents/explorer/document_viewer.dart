@@ -99,12 +99,46 @@ class DocumentViewer extends StatelessWidget {
   }
 
   Widget _buildTotalSection(ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('合計', style: theme.textTheme.titleMedium),
-        Text(_formatMoney(document.total), style: theme.textTheme.titleMedium),
-      ],
+    final cs = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          if (document.discountAmount > 0) ...[
+            _tr('小計', document.subtotal, cs, labelColor: cs.onSurfaceVariant),
+            _tr('値引き', -document.discountAmount, cs, labelColor: cs.error),
+          ],
+          _tr('税抜合計', document.taxableAmount, cs, labelColor: cs.onSurfaceVariant),
+          _tr('消費税 (${(document.taxRate * 100).round()}%)', document.tax, cs, labelColor: cs.onSurfaceVariant),
+          const Divider(height: 16),
+          _tr('合計', document.total, cs, totalStyle: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _tr(String label, int amount, ColorScheme cs, {bool totalStyle = false, Color? labelColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(
+            fontSize: totalStyle ? 15 : 13,
+            fontWeight: totalStyle ? FontWeight.bold : FontWeight.normal,
+            color: labelColor ?? cs.onSurface,
+          )),
+          Text(_formatMoney(amount), style: TextStyle(
+            fontSize: totalStyle ? 16 : 13,
+            fontWeight: totalStyle ? FontWeight.bold : FontWeight.normal,
+            color: totalStyle ? cs.primary : cs.onSurface,
+          )),
+        ],
+      ),
     );
   }
 
