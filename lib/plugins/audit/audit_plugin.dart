@@ -43,10 +43,12 @@ class AuditPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'audit_screen',
+      id: 'AD',
       title: 'ハッシュチェーン監査',
       route: '/audit',
       builder: (_) => const AuditScreen(),
+      category: 'システム',
+      icon: Icons.verified_rounded,
     ),
   ];
 }

@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'models/memorandum_model.dart';
 import 'screens/memorandum_list_screen.dart';
 import 'screens/memorandum_input_screen.dart';
@@ -34,6 +35,19 @@ class MemorandumPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     debugPrint('[MemorandumPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'MEMO',
+      title: '覚書管理',
+      route: '/memorandum',
+      builder: (_) => const MemorandumListScreen(),
+      category: '販売',
+      icon: Icons.description,
+      description: '保守サービス覚書の作成・管理',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

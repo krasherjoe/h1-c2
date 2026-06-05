@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'screens/supplier_list_screen.dart';
 import 'screens/supplier_editor_screen.dart';
 import 'screens/supplier_products_screen.dart';
@@ -32,6 +33,18 @@ class SuppliersPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     debugPrint('[SuppliersPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'SU',
+      title: '仕入先一覧',
+      route: '/suppliers',
+      builder: (_) => const SupplierListScreen(),
+      category: '在庫・仕入',
+      icon: Icons.inventory_2,
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

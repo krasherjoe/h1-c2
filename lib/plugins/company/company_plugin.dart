@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'models/company_profile.dart';
 import 'services/company_repository.dart';
 import 'screens/company_profile_screen.dart';
@@ -39,6 +40,28 @@ class CompanyPlugin extends H1Plugin {
     });
     debugPrint('[CompanyPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'CI',
+      title: '自社情報',
+      route: '/company',
+      builder: (_) => const CompanyProfileScreen(),
+      category: 'システム',
+      icon: Icons.business,
+      description: '会社名・住所・印鑑・口座',
+    ),
+    ScreenDefinition(
+      id: 'TM',
+      title: '法人切替',
+      route: '/company/switch',
+      builder: (_) => const CompanySwitchScreen(),
+      category: 'システム',
+      icon: Icons.swap_horiz,
+      description: '法人の作成・切替・削除',
+    ),
+  ];
 
   @override Future<void> dispose() async {}
 

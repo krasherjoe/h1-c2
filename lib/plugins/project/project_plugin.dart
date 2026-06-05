@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'screens/project_list_screen.dart';
 import 'screens/project_detail_screen.dart';
 
@@ -32,6 +33,19 @@ class ProjectPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     debugPrint('[ProjectPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'PRJ',
+      title: '案件管理',
+      route: '/projects',
+      builder: (_) => const ProjectListScreen(),
+      category: '販売',
+      icon: Icons.workspaces,
+      description: '案件の作成・進捗管理',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

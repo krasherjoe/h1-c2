@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/purchase_explorer_config.dart';
 import '../../services/debug_console.dart';
@@ -36,6 +37,19 @@ class PurchasePlugin extends H1Plugin {
     });
     debugPrint('[PurchasePlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'PUR',
+      title: '仕入管理',
+      route: '/purchase',
+      builder: (_) => H1Explorer(config: PurchaseExplorerConfig()),
+      category: '仕入',
+      icon: Icons.shopping_cart,
+      description: '発注・入荷・返品・支払',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

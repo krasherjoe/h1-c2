@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../../plugin_system/plugin_interface.dart';
 import '../../../plugin_system/plugin_context.dart';
 import '../../../plugin_system/plugin_permission.dart';
+import '../../../plugin_system/screen_definition.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/product_explorer_config.dart';
 import 'screens/category_explorer_screen.dart';
@@ -58,6 +59,28 @@ class ProductsPlugin extends H1Plugin {
       } catch (_) {}
     }
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'P1',
+      title: '商品マスター',
+      route: '/products',
+      builder: (_) => H1Explorer(config: ProductExplorerConfig()),
+      category: 'マスター',
+      icon: Icons.inventory_2,
+      description: '商品の登録・編集',
+    ),
+    ScreenDefinition(
+      id: 'CE',
+      title: '商品カテゴリ',
+      route: '/products/categories',
+      builder: (_) => const CategoryExplorerScreen(),
+      category: 'マスター',
+      icon: Icons.category,
+      description: 'カテゴリの階層管理',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

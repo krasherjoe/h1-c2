@@ -103,6 +103,73 @@ Future<void> _migrateIfNeeded() async {
   await prefs.setBool('migrated_v2', true);
 }
 
+Future<String> _cmdMmCheck(List<String> _) async {
+  try {
+    final buf = StringBuffer();
+    final prefs = await SharedPreferences.getInstance();
+    final pat = prefs.getString('mattermost_pat');
+    final baseUrl = prefs.getString('mattermost_base_url') ?? 'https://mm.ka.sugeee.com';
+    final teamName = prefs.getString('mattermost_team_name') ?? 'cyb';
+    final webhookUrl = prefs.getString('mattermost_webhook_url');
+
+    buf.writeln('📡 Mattermost 診断');
+    buf.writeln('  URL: $baseUrl');
+    buf.writeln('  チーム: $teamName');
+    buf.writeln('  PAT: ${pat != null ? '✅ 設定済み (${pat.substring(0, 4)}...)': '❌ 未設定'}');
+    buf.writeln('  Webhook: ${webhookUrl != null ? '✅ 設定済み' : '❌ 未設定'}');
+
+    if (pat == null) {
+      buf.writeln('\n❌ PAT未設定のため接続テストをスキップ');
+      return buf.toString();
+    }
+
+    final headers = {'Authorization': 'Bearer $pat', 'Content-Type': 'application/json'};
+
+    buf.writeln('\n--- 接続テスト ---');
+    try {
+      final pingRes = await http.get(Uri.parse('$baseUrl/api/v4/system/ping'), headers: headers);
+      if (pingRes.statusCode == 200) {
+        buf.writeln('  Ping: ✅ ${pingRes.body}');
+      } else {
+        buf.writeln('  Ping: ❌ (${pingRes.statusCode})');
+      }
+    } catch (e) {
+      buf.writeln('  Ping: ❌ $e');
+      buf.writeln('\n❌ サーバーに到達できません');
+      return buf.toString();
+    }
+
+    try {
+      final teamRes = await http.get(Uri.parse('$baseUrl/api/v4/teams/name/$teamName'), headers: headers);
+      if (teamRes.statusCode == 200) {
+        final team = jsonDecode(teamRes.body);
+        buf.writeln('  チーム: ✅ ${team['display_name']} (${team['id']})');
+        final teamId = team['id'] as String;
+
+        final chRes = await http.get(
+          Uri.parse('$baseUrl/api/v4/teams/$teamId/channels/name/h1-debug'),
+          headers: headers,
+        );
+        if (chRes.statusCode == 200) {
+          final ch = jsonDecode(chRes.body);
+          buf.writeln('  チャンネル(h1-debug): ✅ ${ch['display_name']} (${ch['id']})');
+        } else {
+          buf.writeln('  チャンネル(h1-debug): ❌ (${chRes.statusCode})');
+        }
+      } else {
+        buf.writeln('  チーム: ❌ (${teamRes.statusCode})');
+      }
+    } catch (e) {
+      buf.writeln('  チーム/チャンネル取得: ❌ $e');
+    }
+
+    buf.writeln('\n✅ 診断完了');
+    return buf.toString();
+  } catch (e) {
+    return 'mmcheck 失敗: $e';
+  }
+}
+
 Future<String> _cmdStatus(List<String> _) async {
   try {
     final db = await DatabaseHelper().database;
@@ -195,6 +262,7 @@ void main() async {
   await LogDispatcher.loadConfig();
 
   DebugConsole.register('ping', (_) async => 'pong');
+  DebugConsole.register('mmcheck', _cmdMmCheck);
   DebugConsole.register('system.status', _cmdStatus);
   DebugConsole.register('system.dump', _cmdDump);
   DebugConsole.register('db.send', _cmdDbSend);

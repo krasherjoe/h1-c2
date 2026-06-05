@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../plugin_system/plugin_interface.dart';
 import '../plugin_system/plugin_context.dart';
 import '../plugin_system/plugin_permission.dart';
+import '../plugin_system/screen_definition.dart';
 
 class QuotationPlugin extends H1Plugin {
   @override
@@ -30,6 +31,28 @@ class QuotationPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     debugPrint('[QuotationPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'Q1',
+      title: '見積入力',
+      route: '/quotation/input',
+      builder: (_) => const _QuotationInputScreen(),
+      category: '販売',
+      icon: Icons.description,
+      description: '見積書を作成',
+    ),
+    ScreenDefinition(
+      id: 'QH',
+      title: '見積履歴',
+      route: '/quotation/history',
+      builder: (_) => const _QuotationHistoryScreen(),
+      category: '販売',
+      icon: Icons.history,
+      description: '過去の見積を確認',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'screens/sales_analysis_screen.dart';
 import 'screens/product_profit_screen.dart';
 import 'screens/report_dashboard_screen.dart';
@@ -35,6 +36,34 @@ class AnalysisPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[AnalysisPlugin] Disposed');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'SA', title: '売上分析', route: '/analysis/sales',
+      builder: (_) => const SalesAnalysisScreen(),
+      category: 'レポート', icon: Icons.bar_chart,
+      description: '月別売上・粗利推移',
+    ),
+    ScreenDefinition(
+      id: 'PA', title: '商品別粗利分析', route: '/analysis/profits',
+      builder: (_) => const ProductProfitScreen(),
+      category: 'レポート', icon: Icons.pie_chart,
+      description: '商品別の売上・粗利',
+    ),
+    ScreenDefinition(
+      id: 'RD', title: 'レポートダッシュボード', route: '/analysis/dashboard',
+      builder: (_) => const ReportDashboardScreen(),
+      category: 'レポート', icon: Icons.dashboard,
+      description: 'サマリーカード・月次グラフ',
+    ),
+    ScreenDefinition(
+      id: 'FP1', title: '月次収支', route: '/analysis/monthly',
+      builder: (_) => const MonthlyReportScreen(),
+      category: 'レポート', icon: Icons.account_balance,
+      description: '月別売上・仕入・粗利・利益',
+    ),
+  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

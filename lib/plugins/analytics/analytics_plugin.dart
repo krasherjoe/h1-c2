@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'screens/analytics_dashboard_screen.dart';
 
 class AnalyticsPlugin extends H1Plugin {
@@ -32,6 +33,19 @@ class AnalyticsPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[AnalyticsPlugin] Disposed');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'ANL',
+      title: '分析',
+      route: '/analytics',
+      builder: (_) => const AnalyticsDashboardScreen(),
+      category: 'レポート',
+      icon: Icons.bar_chart,
+      description: '売上・利益分析',
+    ),
+  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

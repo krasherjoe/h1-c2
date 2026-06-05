@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'screens/accounts_receivable_screen.dart';
 import 'screens/payment_schedule_screen.dart';
 import 'screens/payment_register_screen.dart';
@@ -36,6 +37,30 @@ class AccountingPlugin extends H1Plugin {
   Future<void> dispose() async {
     debugPrint('[AccountingPlugin] Disposed');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'RCV', title: '売掛管理', route: '/accounting/receivable',
+      builder: (_) => const AccountsReceivableScreen(),
+      category: '会計', icon: Icons.account_balance,
+    ),
+    ScreenDefinition(
+      id: 'PS', title: '支払スケジュール', route: '/accounting/schedule',
+      builder: (_) => const PaymentScheduleScreen(),
+      category: '会計', icon: Icons.calendar_month,
+    ),
+    ScreenDefinition(
+      id: 'PR', title: '入金登録', route: '/accounting/payment',
+      builder: (_) => const PaymentRegisterScreen(),
+      category: '会計', icon: Icons.payments,
+    ),
+    ScreenDefinition(
+      id: 'CAS', title: '資金繰り', route: '/accounting/cashflow',
+      builder: (_) => const CashFlowScreen(),
+      category: '会計', icon: Icons.trending_up,
+    ),
+  ];
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {

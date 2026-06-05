@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'screens/daily_report_screen.dart';
 import 'screens/time_tracking_screen.dart';
 
@@ -29,6 +30,28 @@ class DailyPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     debugPrint('[DailyPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'DR',
+      title: '日報',
+      route: '/daily/reports',
+      builder: (_) => const DailyReportScreen(),
+      category: '業務',
+      icon: Icons.assignment,
+      description: '3行日報の作成・管理',
+    ),
+    ScreenDefinition(
+      id: 'TI',
+      title: '工数管理',
+      route: '/daily/time',
+      builder: (_) => const TimeTrackingScreen(),
+      category: '業務',
+      icon: Icons.timer,
+      description: '工数記録・タイマー',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

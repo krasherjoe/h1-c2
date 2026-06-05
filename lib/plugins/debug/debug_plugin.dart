@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
-import '../../plugin_system/screen_definition.dart';
+import '../../plugin_system/screen_definition.dart' show ScreenDefinition;
 import 'screens/debug_screen.dart';
 
 class DebugPlugin extends H1Plugin {
@@ -23,6 +23,19 @@ class DebugPlugin extends H1Plugin {
   List<PluginPermission> get requiredPermissions => [
     PluginPermission.readDatabase,
     PluginPermission.writeDatabase,
+  ];
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'DB',
+      title: 'デバッグ',
+      route: '/debug',
+      builder: (_) => const DebugScreen(),
+      category: 'システム',
+      icon: Icons.bug_report,
+      description: 'Mattermost診断・DB送信',
+    ),
   ];
 
   @override

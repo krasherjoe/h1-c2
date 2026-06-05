@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'generated_manifest.dart';
+import 'menu_item.dart';
+import 'plugin_registry.dart';
 
 class PluginAppBarTitle extends StatelessWidget {
   final String fallbackTitle;
@@ -9,8 +10,10 @@ class PluginAppBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final route = ModalRoute.of(context)?.settings.name ?? '/';
-    final item = GeneratedManifest.byRoute(route);
-    if (item != null) {
+    final items = PluginRegistry.instance.getAllMenuItems();
+    final idx = items.indexWhere((m) => m.route == route);
+    if (idx >= 0) {
+      final item = items[idx];
       return Text('${item.id}: ${item.title}');
     }
     return Text(fallbackTitle);

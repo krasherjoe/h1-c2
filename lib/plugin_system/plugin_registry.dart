@@ -4,7 +4,6 @@ import 'package:sqflite/sqflite.dart';
 import 'plugin_interface.dart';
 import 'plugin_context.dart';
 import 'menu_item.dart';
-import 'generated_manifest.dart';
 import 'screen_definition.dart';
 import '../services/database_helper.dart';
 
@@ -106,10 +105,25 @@ class PluginRegistry {
   List<H1Plugin> get activePlugins =>
     _plugins.values.where((p) => isEnabled(p.id)).toList();
 
-  List<MenuItem> getAllMenuItems() => GeneratedManifest.getAll();
+  List<MenuItem> getAllMenuItems() {
+    final items = <MenuItem>[];
+    for (final plugin in activePlugins) {
+      for (final screen in plugin.screens) {
+        items.add(MenuItem(
+          id: screen.id,
+          title: screen.title,
+          route: screen.route,
+          category: screen.category,
+          icon: screen.icon,
+          description: screen.description,
+        ));
+      }
+    }
+    return items;
+  }
 
   Map<String, List<MenuItem>> getMenuItemsByCategory() {
-    final items = GeneratedManifest.getAll();
+    final items = getAllMenuItems();
     final result = <String, List<MenuItem>>{};
     for (final item in items) {
       result.putIfAbsent(item.category, () => []).add(item);

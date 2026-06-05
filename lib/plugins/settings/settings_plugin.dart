@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import 'services/settings_repository.dart';
 import 'screens/settings_screen.dart';
 
@@ -32,6 +33,19 @@ class SettingsPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     debugPrint('[SettingsPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'SET',
+      title: '設定',
+      route: '/settings',
+      builder: (_) => const SettingsScreen(),
+      category: 'システム',
+      icon: Icons.settings,
+      description: '印刷設定・伝票番号・税率',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

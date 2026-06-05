@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import '../../services/database_helper.dart';
 import 'screens/backup_screen.dart';
 import 'services/local_backup_service.dart';
@@ -22,6 +23,19 @@ class BackupPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     _runAutoBackup();
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'BK',
+      title: 'バックアップ管理',
+      route: '/backup',
+      builder: (_) => const BackupScreen(),
+      category: 'システム',
+      icon: Icons.backup,
+      description: 'DB自動バックアップ・リストア',
+    ),
+  ];
 
   @override Future<void> dispose() async {}
 

@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../../plugin_system/plugin_interface.dart';
 import '../../../plugin_system/plugin_context.dart';
 import '../../../plugin_system/plugin_permission.dart';
+import '../../../plugin_system/screen_definition.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/customer_explorer_config.dart';
 import '../../../services/debug_console.dart';
@@ -37,6 +38,19 @@ class CustomersPlugin extends H1Plugin {
     });
     debugPrint('[CustomersPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'C1',
+      title: '顧客マスター',
+      route: '/customers',
+      builder: (_) => H1Explorer(config: CustomerExplorerConfig()),
+      category: 'マスター',
+      icon: Icons.people,
+      description: '得意先の登録・編集',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {

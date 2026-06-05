@@ -27,6 +27,17 @@ class TabNavigator extends StatelessWidget {
         }
         return null;
       },
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: Text(settings.name ?? '')),
+            body: Center(
+              child: Text('画面が見つかりません: ${settings.name}'),
+            ),
+          ),
+          settings: settings,
+        );
+      },
     );
   }
 }

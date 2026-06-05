@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/plugin_permission.dart';
+import '../../plugin_system/screen_definition.dart';
 import '../../services/debug_console.dart';
 import 'screens/price_explorer_screen.dart';
 import 'commands/pricing_commands.dart';
@@ -34,6 +35,19 @@ class PriceListPlugin extends H1Plugin {
     DebugConsole.register('pricing.dump', cmdPricingDump);
     debugPrint('[PriceListPlugin] Initialized');
   }
+
+  @override
+  List<ScreenDefinition> get screens => [
+    ScreenDefinition(
+      id: 'PE',
+      title: '価格表',
+      route: '/pricelist',
+      builder: (_) => const PriceExplorerScreen(),
+      category: 'マスター',
+      icon: Icons.price_change,
+      description: '価格表の管理',
+    ),
+  ];
 
   @override
   Future<void> dispose() async {
