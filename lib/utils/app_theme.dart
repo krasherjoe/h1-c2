@@ -87,11 +87,11 @@ class AppTheme {
       contentPadding: pad,
       border: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
+        borderSide: BorderSide(color: isDark ? const Color(0xFF777779) : const Color(0xFF9E9E9E)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: isDark ? const Color(0xFF555559) : const Color(0xFFE0E0E3)),
+        borderSide: BorderSide(color: isDark ? const Color(0xFF777779) : const Color(0xFF9E9E9E)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: radius,
