@@ -72,8 +72,9 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final date = '${item.date.year}/${item.date.month.toString().padLeft(2, '0')}/${item.date.day.toString().padLeft(2, '0')}';
     final money = '¥${item.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     final hasDraft = item.isDraft;
-    final inputStyle = inputStyleNotifier.value;
-    return Card(
+    return ValueListenableBuilder<String>(
+      valueListenable: inputStyleNotifier,
+      builder: (context, inputStyle, _) => Card(
       elevation: inputStyle == 'raised' ? 3 : 0,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       clipBehavior: Clip.antiAlias,
@@ -133,7 +134,8 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _statusBadge(String text, Color color) => Container(

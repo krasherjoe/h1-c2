@@ -1141,7 +1141,6 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
               decoration: InputDecoration(
                 hintText: '顧客名で検索',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onChanged: _search,
             ),
