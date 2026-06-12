@@ -7,6 +7,7 @@ import '../models/memorandum_model.dart';
 import '../services/memorandum_repository.dart';
 import 'memorandum_preview_screen.dart';
 import '../../../services/sync_service.dart';
+import '../../../widgets/h1_text_field.dart';
 
 class MemorandumInputScreen extends StatefulWidget {
   final Memorandum? memorandum;
@@ -255,7 +256,6 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: '得意先',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                   child: Text(
                     _customerName.isEmpty ? 'タップして選択' : _customerName,
@@ -263,11 +263,10 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
+              H1TextField(
                 controller: _customerRepCtrl,
                 decoration: const InputDecoration(
                   labelText: '顧客代表者名',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
               ),
               const SizedBox(height: 16),
@@ -286,7 +285,6 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: '契約日',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                   child: Text(_df.format(_contractDate)),
                 ),
@@ -307,17 +305,15 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: '開始日',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                   child: Text(_df.format(_startDate)),
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
+              H1TextField(
                 controller: _monthsCtrl,
                 decoration: const InputDecoration(
                   labelText: '契約月数',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 keyboardType: TextInputType.number,
                 onChanged: (v) {
@@ -385,10 +381,9 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
               if (_monthlyPlan == MonthlyPlan.planCustom)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: TextField(
+                  child: H1TextField(
                     decoration: const InputDecoration(
                       labelText: '月額（円）',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                       prefixText: '¥ ',
                     ),
                     keyboardType: TextInputType.number,
@@ -437,7 +432,6 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 initialValue: _serviceTemplate.isEmpty ? null : _serviceTemplate,
                 decoration: const InputDecoration(
                   labelText: 'サービス種別',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 items: const [
                   DropdownMenuItem(value: '保守サービス', child: Text('保守サービス')),
@@ -457,29 +451,26 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              TextField(
+              H1TextField(
                 controller: _serviceCtrl,
                 decoration: const InputDecoration(
                   labelText: 'サービス内容（編集可）',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 maxLines: 5,
               ),
               const SizedBox(height: 16),
-              TextField(
+              H1TextField(
                 controller: _notesCtrl,
                 decoration: const InputDecoration(
                   labelText: '特記事項（任意）',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
-              TextField(
+              H1TextField(
                 controller: _companyRepCtrl,
                 decoration: const InputDecoration(
                   labelText: '自社代表者名',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
               ),
               const SizedBox(height: 32),
