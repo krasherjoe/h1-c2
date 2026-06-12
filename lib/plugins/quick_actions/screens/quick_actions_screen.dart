@@ -18,8 +18,8 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
   List<QuickActionPage> _pages = [];
   int _currentPage = 0;
   bool _loading = true;
-  bool _reorderMode = false;
-  List<String> _editIds = [];
+  int? _dragIndex;
+  int? _dragOverIndex;
   late AnimationController _shakeCtrl;
 
   @override
@@ -183,33 +183,19 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                 ),
               ),
               const Spacer(),
-              if (_reorderMode)
-                TextButton.icon(
-                  icon: const Icon(Icons.check, size: 18),
-                  label: const Text('完了'),
-                  onPressed: () {
-                    _shakeCtrl.stop();
-                    final page = _pages[_currentPage];
-                    page.actionIds = _editIds;
-                    _service.savePages(_pages);
-                    setState(() => _reorderMode = false);
-                  },
-                )
-              else ...[
-                IconButton(
-                  icon: Icon(Icons.reorder, size: 20, color: cs.onSurfaceVariant),
-                  tooltip: '並び替え',
-                  onPressed: _openReorderSheet,
-                ),
-                IconButton(
-                  icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
-                  tooltip: 'クイックアクション設定',
-                  onPressed: () async {
-                    await Navigator.pushNamed(context, '/quick_actions/settings');
-                    _load();
-                  },
-                ),
-              ],
+              IconButton(
+                icon: Icon(Icons.reorder, size: 20, color: cs.onSurfaceVariant),
+                tooltip: '並び替え',
+                onPressed: _openReorderSheet,
+              ),
+              IconButton(
+                icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
+                tooltip: 'クイックアクション設定',
+                onPressed: () async {
+                  await Navigator.pushNamed(context, '/quick_actions/settings');
+                  _load();
+                },
+              ),
             ],
           ),
         ),
@@ -220,75 +206,123 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
             onPageChanged: (i) => setState(() => _currentPage = i),
             children: _pages.map((page) {
               final gap = 4.0;
-              final ids = _reorderMode ? _editIds : page.actionIds;
+              final ids = page.actionIds;
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _reorderMode
-                  ? ReorderableListView.builder(
-                      padding: EdgeInsets.zero,
-                      itemCount: ids.length,
-                      onReorder: (oldI, newI) {
-                        setState(() {
-                          if (newI > oldI) newI--;
-                          final item = ids.removeAt(oldI);
-                          ids.insert(newI, item);
-                        });
-                      },
-                      itemBuilder: (ctx, i) {
-                        final route = ids[i];
-                        final item = actions[route];
-                        return AnimatedBuilder(
-                          key: ValueKey(route),
-                          animation: _shakeCtrl,
-                          builder: (context, child) => Transform.rotate(
-                            angle: _shakeCtrl.value * 0.04 - 0.02,
-                            child: child,
-                          ),
-                          child: ListTile(
-                            dense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                            leading: Icon(item?.icon ?? Icons.help_outline,
-                              color: item != null ? QuickActionService.accentFor(item) : null),
-                            title: Text(item?.title ?? route, style: const TextStyle(fontSize: 14)),
-                            trailing: ReorderableDragStartListener(
-                              index: i,
-                              child: const Icon(Icons.drag_handle),
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : Center(
+                child: Center(
                       child: Wrap(
                         alignment: WrapAlignment.center,
                         spacing: gap,
                         runSpacing: 6,
-                        children: ids.map((route) {
+                        children: ids.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final route = entry.value;
                           final item = actions[route];
                           if (item == null) return const SizedBox.shrink();
-                          return SizedBox(
-                            width: 72,
-                            child: QuickActionButton(
-                              icon: item.icon,
-                              label: item.title,
-                              accentColor: QuickActionService.accentFor(item),
-                              onTap: () {
-                                final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
-                                if (tw != null && item != null) {
-                                  tw.openTab(item.id, item.title, item.route);
-                                } else {
-                                  Navigator.pushNamed(context, route);
-                                }
-                              },
-                              onLongPress: () {
-                                HapticFeedback.mediumImpact();
-                                _shakeCtrl.repeat(reverse: true);
-                                setState(() {
-                                  _reorderMode = true;
-                                  _editIds = List<String>.from(page.actionIds);
-                                });
-                              },
-                            ),
+                          final isOver = _dragOverIndex == i;
+                          return DragTarget<int>(
+                            onWillAcceptWithDetails: (details) {
+                              if (details.data != i) {
+                                setState(() => _dragOverIndex = i);
+                                return true;
+                              }
+                              return false;
+                            },
+                            onLeave: (_) {
+                              if (_dragOverIndex == i) {
+                                setState(() => _dragOverIndex = null);
+                              }
+                            },
+                            onAcceptWithDetails: (details) {
+                              final from = details.data;
+                              if (from != i) {
+                                final ids = page.actionIds;
+                                final id = ids.removeAt(from);
+                                final to = from < i ? i - 1 : i;
+                                ids.insert(to, id);
+                                _service.savePages(_pages);
+                              }
+                              setState(() => _dragOverIndex = null);
+                            },
+                            builder: (context, candidate, rejected) {
+                              return LongPressDraggable<int>(
+                                data: i,
+                                onDragStarted: () {
+                                  HapticFeedback.mediumImpact();
+                                  _shakeCtrl.repeat(reverse: true);
+                                  setState(() => _dragIndex = i);
+                                },
+                                onDragEnd: (_) {
+                                  _shakeCtrl.stop();
+                                  setState(() { _dragIndex = null; _dragOverIndex = null; });
+                                },
+                                onDraggableCanceled: (_, _) {
+                                  _shakeCtrl.stop();
+                                  setState(() { _dragIndex = null; _dragOverIndex = null; });
+                                },
+                                feedback: Material(
+                                  elevation: 8,
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: SizedBox(
+                                    width: 72,
+                                    child: QuickActionButton(
+                                      icon: item.icon,
+                                      label: item.title,
+                                      accentColor: QuickActionService.accentFor(item),
+                                    ),
+                                  ),
+                                ),
+                                childWhenDragging: Opacity(
+                                  opacity: 0.25,
+                                  child: SizedBox(
+                                    width: 72,
+                                    child: QuickActionButton(
+                                      icon: item.icon,
+                                      label: item.title,
+                                      accentColor: QuickActionService.accentFor(item),
+                                    ),
+                                  ),
+                                ),
+                                child: AnimatedBuilder(
+                                  animation: _shakeCtrl,
+                                  builder: (context, child) {
+                                    final shake = _shakeCtrl.value * 0.04 - 0.02;
+                                    return Transform.rotate(
+                                      angle: _dragIndex != null ? shake : 0,
+                                      child: child,
+                                    );
+                                  },
+                                  child: SizedBox(
+                                    width: 72,
+                                    child: isOver
+                                      ? Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(16),
+                                            color: QuickActionService.accentFor(item).withValues(alpha: 0.15),
+                                          ),
+                                          child: QuickActionButton(
+                                            icon: item.icon,
+                                            label: item.title,
+                                            accentColor: QuickActionService.accentFor(item),
+                                          ),
+                                        )
+                                      : QuickActionButton(
+                                          icon: item.icon,
+                                          label: item.title,
+                                          accentColor: QuickActionService.accentFor(item),
+                                          onTap: () {
+                                            final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                                            if (tw != null && item != null) {
+                                              tw.openTab(item.id, item.title, item.route);
+                                            } else {
+                                              Navigator.pushNamed(context, route);
+                                            }
+                                          },
+                                        ),
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         }).toList(),
                       ),
