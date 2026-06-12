@@ -30,6 +30,9 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   String get searchHint => '伝票番号・顧客名で検索';
 
   @override
+  bool get showSearch => true;
+
+  @override
   IconData get itemIcon => Icons.description;
 
   @override
