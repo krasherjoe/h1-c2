@@ -11,7 +11,7 @@ import '../../../services/google_auth_service.dart';
 import '../../../services/gmail_sender.dart';
 import '../../communication/communication_plugin.dart';
 
-const _kPreviewDpi = 96.0;
+const _kPreviewDpi = 130.0;
 
 class DocumentPreviewPage extends StatefulWidget {
   final DocumentModel document;
@@ -190,7 +190,6 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                     canChangePageFormat: false,
                     canChangeOrientation: false,
                     canDebug: false,
-                    actions: const [],
                   ),
           ),
           SafeArea(
@@ -323,19 +322,55 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                       }
                     },
                     onLongPress: () async {
-                      final bytes = await _buildPdfBytes();
-                      final filename = '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf';
-                      final subject = '${widget.document.documentType.label} ${widget.document.documentNumber}';
-                      final body = '${widget.document.documentType.label}を添付してお送りします。';
-                      final recipients = widget.customerEmail != null && widget.customerEmail!.isNotEmpty
-                          ? [widget.customerEmail!] : <String>[];
-                      await CommunicationPlugin().sendEmailWithPdf(
-                        pdfBytes: bytes,
-                        filename: filename,
-                        subject: subject,
-                        body: body,
-                        recipients: recipients,
+                      final scaffold = ScaffoldMessenger.of(context);
+                      scaffold.showSnackBar(
+                        const SnackBar(content: Text('PDFを準備中...'), duration: Duration(seconds: 1)),
                       );
+                      try {
+                        final bytes = await _buildPdfBytes();
+                        final filename = '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf';
+                        final subject = '${widget.document.documentType.label} ${widget.document.documentNumber}';
+                        final body = '${widget.document.documentType.label}を添付してお送りします。';
+                        final recipients = widget.customerEmail != null && widget.customerEmail!.isNotEmpty
+                            ? [widget.customerEmail!] : <String>[];
+
+                        final ok = await GmailSender.sendPdf(
+                          to: recipients.isNotEmpty ? recipients.first : '',
+                          subject: subject,
+                          body: body,
+                          pdfBytes: bytes,
+                          pdfFilename: filename,
+                        );
+                        if (ok) {
+                          if (mounted) {
+                            scaffold.showSnackBar(
+                              const SnackBar(content: Text('メールを送信しました')),
+                            );
+                          }
+                          return;
+                        }
+
+                        final osOk = await CommunicationPlugin().sendEmailWithPdf(
+                          pdfBytes: bytes,
+                          filename: filename,
+                          subject: subject,
+                          body: body,
+                          recipients: recipients,
+                        );
+                        if (mounted) {
+                          scaffold.showSnackBar(
+                            SnackBar(content: Text(
+                              osOk ? 'メールアプリを起動しました' : 'メール送信に失敗しました',
+                            )),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          scaffold.showSnackBar(
+                            SnackBar(content: Text('メール送信エラー: $e')),
+                          );
+                        }
+                      }
                     },
                   ),
                   const SizedBox(width: 4),
