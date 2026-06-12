@@ -240,64 +240,70 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                       ))
                   .toList(),
             ),
-          if (overflowActions.isNotEmpty)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              tooltip: 'その他',
-              onSelected: (id) => widget.config.onOverflowAction(
-                context,
-                id,
-                onListChanged: _loadItems,
-              ),
-              itemBuilder: (_) => overflowActions
-                  .map((a) => PopupMenuItem<String>(
-                        value: a.id,
-                        child: ListTile(
-                          leading: Icon(a.icon),
-                          title: Text(a.label),
-                          dense: true,
-                        ),
-                      ))
-                  .toList(),
-            ),
-          IconButtonTheme(
-            data: IconButtonThemeData(
-              style: IconButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-              ),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (widget.config.supportsTreeView)
-            IconButton(
-              icon: Icon(_treeMode ? Icons.list : Icons.folder_open),
-              tooltip: _treeMode ? 'リスト表示' : 'ツリー表示',
-              onPressed: () {
-                setState(() {
-                  _treeMode = !_treeMode;
-                  if (_treeMode) {
-                    widget.config.currentFolderId = null;
-                  }
-                });
-                _loadItems();
-              },
-            ),
-          IconButton(
-            icon: Icon(_showSearch ? Icons.close : Icons.search),
-            onPressed: () => setState(() => _showSearch = !_showSearch),
-          ),
-          IconButton(
-            icon: Icon(_showFilter ? Icons.filter_list_off : Icons.filter_list),
-            tooltip: 'フィルター',
-            onPressed: () => setState(() => _showFilter = !_showFilter),
-          ),
-          if (_items.isNotEmpty || _dbSize != null)
-            IconButton(
-              icon: const Icon(Icons.bug_report),
-              tooltip: '診断',
-              onPressed: _captureDiagnostic,
-            ),
-            ]),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'メニュー',
+            onSelected: (id) {
+              switch (id) {
+                case '_filter':
+                  setState(() => _showFilter = !_showFilter);
+                  break;
+                case '_tree':
+                  setState(() {
+                    _treeMode = !_treeMode;
+                    if (_treeMode) widget.config.currentFolderId = null;
+                  });
+                  _loadItems();
+                  break;
+                case '_diagnostic':
+                  _captureDiagnostic();
+                  break;
+                default:
+                  widget.config.onOverflowAction(context, id, onListChanged: _loadItems);
+              }
+            },
+            itemBuilder: (_) {
+              final items = <PopupMenuItem<String>>[];
+              items.add(PopupMenuItem<String>(
+                value: '_filter',
+                child: ListTile(
+                  leading: Icon(_showFilter ? Icons.filter_list_off : Icons.filter_list),
+                  title: Text(_showFilter ? 'フィルター解除' : 'フィルター'),
+                  dense: true,
+                ),
+              ));
+              if (widget.config.supportsTreeView) {
+                items.add(PopupMenuItem<String>(
+                  value: '_tree',
+                  child: ListTile(
+                    leading: Icon(_treeMode ? Icons.list : Icons.folder_open),
+                    title: Text(_treeMode ? 'リスト表示' : 'ツリー表示'),
+                    dense: true,
+                  ),
+                ));
+              }
+              if (_items.isNotEmpty || _dbSize != null) {
+                items.add(PopupMenuItem<String>(
+                  value: '_diagnostic',
+                  child: ListTile(
+                    leading: const Icon(Icons.bug_report),
+                    title: const Text('診断'),
+                    dense: true,
+                  ),
+                ));
+              }
+              for (final a in overflowActions) {
+                items.add(PopupMenuItem<String>(
+                  value: a.id,
+                  child: ListTile(
+                    leading: Icon(a.icon),
+                    title: Text(a.label),
+                    dense: true,
+                  ),
+                ));
+              }
+              return items;
+            },
           ),
         ],
       ),
