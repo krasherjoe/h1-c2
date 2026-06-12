@@ -74,10 +74,13 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final hasDraft = item.isDraft;
     return ValueListenableBuilder<String>(
       valueListenable: inputStyleNotifier,
-      builder: (context, inputStyle, _) => Card(
-      elevation: inputStyle == 'raised' ? 3 : 0,
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      clipBehavior: Clip.antiAlias,
+      builder: (context, inputStyle, _) {
+        final isRaised = inputStyle == 'raised';
+        return Card(
+        elevation: isRaised ? 2 : 0,
+        shadowColor: isRaised ? cs.shadow.withValues(alpha: 0.3) : Colors.transparent,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        clipBehavior: Clip.antiAlias,
       child: SizedBox(
         height: 88,
         child: Row(
@@ -134,8 +137,9 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
           ],
         ),
       ),
-    ),
-  );
+    );
+  },
+);
   }
 
   Widget _statusBadge(String text, Color color) => Container(
