@@ -308,112 +308,162 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   Widget _buildKanbanColumn(String stage, List<Project> projects, ColorScheme cs) {
     final color = _stageColor(stage, cs);
-    return Container(
-      width: 240,
-      margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 10, height: 10,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 8),
-                Text(stage, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text('${projects.length}',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
-                ),
-              ],
-            ),
+    return DragTarget<String>(
+      onAcceptWithDetails: (details) {
+        final project = _projects.firstWhere((p) => p.id == details.data);
+        _changeStage(project, stage);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        return Container(
+          width: 240,
+          margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+          decoration: BoxDecoration(
+            color: isHovering ? color.withValues(alpha: 0.08) : cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: isHovering ? Border.all(color: color, width: 2) : null,
           ),
-          Expanded(
-            child: projects.isEmpty
-              ? Center(
-                  child: Text('なし', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(6),
-                  itemCount: projects.length,
-                  itemBuilder: (ctx, i) => _buildKanbanCard(projects[i], cs),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                 ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10, height: 10,
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(stage, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('${projects.length}',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: projects.isEmpty
+                  ? Center(
+                      child: Text('なし', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(6),
+                      itemCount: projects.length,
+                      itemBuilder: (ctx, i) => _buildKanbanCard(projects[i], cs),
+                    ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildKanbanCard(Project project, ColorScheme cs) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      child: InkWell(
+    return LongPressDraggable<String>(
+      data: project.id,
+      feedback: Material(
+        elevation: 6,
         borderRadius: BorderRadius.circular(8),
-        onTap: widget.selectionMode
-          ? () => Navigator.pop(context, project)
-          : () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProjectDetailScreen(projectId: project.id),
-              ),
-            ).then((_) => _load());
-          },
-        onLongPress: () => _showProjectMenu(project),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(project.name,
-                maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cs.onSurface)),
-              if (project.customerName != null && project.customerName!.isNotEmpty) ...[
-                const SizedBox(height: 3),
-                Text(project.customerName!,
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              ],
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: _statusColor(project.status, cs).withValues(alpha: 0.15),
-                    ),
-                    child: Text(_statusLabel(project.status),
-                      style: TextStyle(fontSize: 9, color: _statusColor(project.status, cs), fontWeight: FontWeight.w500)),
-                  ),
-                  const Spacer(),
-                  Text('￥${_formatMoney(project.totalAmount)}',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
-                ],
-              ),
-              if (project.contractMonths != null && project.contractMonths! > 0) ...[
-                const SizedBox(height: 6),
-                _buildTimeProgressBar(project, cs),
-              ],
-            ],
+        child: SizedBox(
+          width: 220,
+          child: _buildKanbanCardContent(project, cs),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: Card(
+          margin: const EdgeInsets.only(bottom: 6),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(project.name, style: const TextStyle(fontSize: 13)),
           ),
         ),
+      ),
+      child: _buildKanbanCardContent(project, cs),
+    );
+  }
+
+  Widget _buildKanbanCardContent(Project project, ColorScheme cs) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: Stack(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: widget.selectionMode
+              ? () => Navigator.pop(context, project)
+              : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProjectDetailScreen(projectId: project.id),
+                  ),
+                ).then((_) => _load());
+              },
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 36, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(project.name,
+                    maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cs.onSurface)),
+                  if (project.customerName != null && project.customerName!.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(project.customerName!,
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: _statusColor(project.status, cs).withValues(alpha: 0.15),
+                        ),
+                        child: Text(_statusLabel(project.status),
+                          style: TextStyle(fontSize: 9, color: _statusColor(project.status, cs), fontWeight: FontWeight.w500)),
+                      ),
+                      const Spacer(),
+                      Text('￥${_formatMoney(project.totalAmount)}',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
+                    ],
+                  ),
+                  if (project.contractMonths != null && project.contractMonths! > 0) ...[
+                    const SizedBox(height: 6),
+                    _buildTimeProgressBar(project, cs),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 2, right: 2,
+            child: SizedBox(
+              width: 28, height: 28,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: Icon(Icons.more_horiz, size: 16, color: cs.onSurfaceVariant),
+                onPressed: () => _showProjectMenu(project),
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
