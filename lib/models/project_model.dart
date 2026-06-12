@@ -60,6 +60,7 @@ class Project {
   final int progress;
   final String? schemeId;
   final int currentStageIndex;
+  final int sortOrder;
 
   const Project({
     required this.id,
@@ -79,6 +80,7 @@ class Project {
     this.progress = 0,
     this.schemeId,
     this.currentStageIndex = 0,
+    this.sortOrder = 0,
   });
 
   int get elapsedMonths {
@@ -112,6 +114,7 @@ class Project {
         'progress': progress,
         'scheme_id': schemeId,
         'current_stage_index': currentStageIndex,
+        'sort_order': sortOrder,
       };
 
   factory Project.fromMap(Map<String, dynamic> map) {
@@ -148,6 +151,7 @@ class Project {
       progress: (map['progress'] as int?) ?? 0,
       schemeId: map['scheme_id'] as String?,
       currentStageIndex: (map['current_stage_index'] as int?) ?? 0,
+      sortOrder: (map['sort_order'] as int?) ?? 0,
     );
   }
 
@@ -169,6 +173,7 @@ class Project {
     int? progress,
     String? schemeId,
     int? currentStageIndex,
+    int? sortOrder,
   }) {
     return Project(
       id: id ?? this.id,
@@ -188,6 +193,7 @@ class Project {
       progress: progress ?? this.progress,
       schemeId: schemeId ?? this.schemeId,
       currentStageIndex: currentStageIndex ?? this.currentStageIndex,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 }

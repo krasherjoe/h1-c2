@@ -81,5 +81,8 @@ class ProjectPlugin extends H1Plugin {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)',
     );
+    try {
+      await db.execute('ALTER TABLE projects ADD COLUMN sort_order INTEGER DEFAULT 0');
+    } catch (_) {}
   }
 }

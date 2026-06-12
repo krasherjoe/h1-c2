@@ -10,8 +10,16 @@ class ProjectRepository {
 
   Future<List<Project>> getAll() async {
     final db = await _db;
-    final maps = await db.query('projects', orderBy: 'updated_at DESC');
+    final maps = await db.query('projects', orderBy: 'sort_order ASC, updated_at DESC');
     return maps.map(Project.fromMap).toList();
+  }
+
+  Future<void> updateOrder(String id, int order) async {
+    final db = await _db;
+    await db.update('projects', {
+      'sort_order': order,
+      'updated_at': DateTime.now().toIso8601String(),
+    }, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<Project?> getById(String id) async {
@@ -46,6 +54,8 @@ class ProjectRepository {
     final db = await _db;
     final id = const Uuid().v4();
     final now = DateTime.now();
+    final maxOrder = await db.rawQuery('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM projects');
+    final nextOrder = (maxOrder.first['n'] as num?)?.toInt() ?? 0;
     await db.insert('projects', {
       'id': id,
       'name': name,
@@ -58,6 +68,7 @@ class ProjectRepository {
       'current_stage_index': 0,
       'total_amount': 0,
       'contract_months': contractMonths,
+      'sort_order': nextOrder,
       'created_at': now.toIso8601String(),
       'updated_at': now.toIso8601String(),
     });

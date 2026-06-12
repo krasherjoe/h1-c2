@@ -282,10 +282,24 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget _buildListView(ColorScheme cs) {
     return RefreshIndicator(
       onRefresh: _load,
-      child: ListView.builder(
+      child: ReorderableListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         itemCount: _projects.length,
-        itemBuilder: (ctx, i) => _buildProjectCard(_projects[i], cs),
+        onReorder: (oldI, newI) {
+          setState(() {
+            if (newI > oldI) newI--;
+            final item = _projects.removeAt(oldI);
+            _projects.insert(newI, item);
+          });
+          for (int i = 0; i < _projects.length; i++) {
+            _repo.updateOrder(_projects[i].id, i);
+          }
+        },
+        itemBuilder: (ctx, i) => Padding(
+          key: ValueKey(_projects[i].id),
+          padding: EdgeInsets.zero,
+          child: _buildProjectCard(_projects[i], cs),
+        ),
       ),
     );
   }
