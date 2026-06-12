@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/supplier_list_screen.dart';
 import 'screens/supplier_editor_screen.dart';
@@ -23,11 +22,6 @@ class SuppliersPlugin extends H1Plugin {
   @override
   String get description => '仕入先マスターの管理';
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

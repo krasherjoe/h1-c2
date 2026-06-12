@@ -143,10 +143,6 @@ class _PluginManagementScreenState extends State<PluginManagementScreen> {
                   _buildSection('依存関係', plugin.dependencies),
                   const SizedBox(height: 8),
                 ],
-                if (plugin.requiredPermissions.isNotEmpty) ...[
-                  _buildSection('必要な権限',
-                      plugin.requiredPermissions.map((p) => p.label).toList()),
-                ],
               ],
             ),
           ),

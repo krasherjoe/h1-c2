@@ -83,6 +83,8 @@ class DocumentViewer extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item.productName),
+                    if (item.variantLabel != null && item.variantLabel!.isNotEmpty)
+                      Text(item.variantLabel!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     Text(
                       '${_formatQty(item.quantity)} × ${_formatMoney(item.unitPrice)}',
                       style: theme.textTheme.bodySmall,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/daily_report_screen.dart';
 import 'screens/time_tracking_screen.dart';
@@ -20,11 +19,6 @@ class DailyPlugin extends H1Plugin {
   @override
   String get description => '日報、工数管理、Todo';
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-        PluginPermission.readDatabase,
-        PluginPermission.writeDatabase,
-      ];
 
   @override
   Future<void> initialize(PluginContext context) async {

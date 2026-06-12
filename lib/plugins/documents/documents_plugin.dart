@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/document_explorer_config.dart';
@@ -55,11 +54,6 @@ class DocumentsPlugin extends H1Plugin {
   @override
   List<String> get dependencies => ['com.h1.core'];
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {
@@ -213,6 +207,11 @@ class DocumentsPlugin extends H1Plugin {
     try {
       await db.execute(
         "ALTER TABLE documents ADD COLUMN previous_hash TEXT",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE document_items ADD COLUMN variant_label TEXT",
       );
     } catch (_) {}
   }

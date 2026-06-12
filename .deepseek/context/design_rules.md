@@ -160,6 +160,19 @@ final textColor = textColorOn(someBackgroundColor);
 - 保持対象: 最新の `v1.x.x` 5リリース（`sort -V | head -n -5`）
 - 削除対象: それより古い全リリースと対応タグ
 
+## PDFプレビューボタンの配置ルール
+
+PDFプレビュー機能を持つ画面では、AppBarアクションの**必ず同じ位置**にPDFアイコンボタンを配置すること。
+
+- **アイコン**: `Icons.picture_as_pdf`
+- **位置**: Undo / Redo の次、保存ボタンの直前
+- **条件**: PDFプレビューが可能な画面は**すべて**このルールに従う。一つでも例外があるとUIの一貫性が崩れる
+- **該当画面**: `DocumentEditor`（編集中プレビュー）、`DocumentViewer`（保存後プレビュー）など
+
+```
+AppBar actions: [Undo] [Redo] [PDF] [Save]
+```
+
 ## チェックリスト
 
 - [ ] Scaffold の背景に `surfaceContainerLowest` を使っているか

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'plugin_interface.dart';
 import 'plugin_context.dart';
-import 'plugin_permission.dart';
 import 'plugin_registry.dart';
 import 'dashboard_section.dart';
 import '../widgets/menu_category_header.dart';
@@ -29,7 +28,6 @@ class CorePlugin extends H1Plugin {
   @override String get version => '1.0.0';
   @override String get description => 'h-1-core 基盤システム';
   @override List<String> get dependencies => [];
-  @override List<PluginPermission> get requiredPermissions => [];
   @override Future<void> initialize(PluginContext context) async {}
   @override Future<void> dispose() async {}
   @override

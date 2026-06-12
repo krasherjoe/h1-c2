@@ -16,7 +16,6 @@ import 'plugin_system/plugin_registry.dart';
 import 'plugin_system/plugin_context.dart';
 import 'plugin_system/core_plugin.dart';
 import 'plugin_system/plugin_state_service.dart';
-import 'plugins/quotation_plugin.dart';
 import 'plugins/documents/documents_plugin.dart';
 import 'plugins/customers/customers_plugin.dart';
 import 'plugins/products/products_plugin.dart';
@@ -297,7 +296,6 @@ void main() async {
 
   // プラグイン登録
   await registry.register(CorePlugin());
-  await registry.register(QuotationPlugin());
   await registry.register(DocumentsPlugin());
   await registry.register(CustomersPlugin());
   await registry.register(ProductsPlugin());

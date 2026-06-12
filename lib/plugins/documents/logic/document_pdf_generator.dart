@@ -80,7 +80,10 @@ pw.Widget _buildItemTable(DocumentModel doc, int maxItems, NumberFormat fmt, pw.
         final i = entry.value;
         final isEven = entry.key.isEven;
         final rowChildren = <pw.Widget>[];
-        rowChildren.add(_cell('   ${i.productName}', font, isEven));
+        final label = i.variantLabel != null && i.variantLabel!.isNotEmpty
+            ? '   ${i.productName}  ${i.variantLabel}'
+            : '   ${i.productName}';
+        rowChildren.add(_cell(label, font, isEven));
         rowChildren.add(_cell(i.quantity.toString(), font, isEven, alignRight: true));
         rowChildren.add(_cell(fmt.format(i.unitPrice), font, isEven, alignRight: true));
         if (hasDiscount && i.discountAmount != null) {

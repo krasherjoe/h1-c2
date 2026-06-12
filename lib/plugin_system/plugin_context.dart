@@ -4,7 +4,6 @@ import 'package:sqflite/sqflite.dart';
 import '../services/invoice_repository.dart';
 import '../services/customer_repository.dart';
 import '../services/product_repository.dart';
-import 'plugin_event_bus.dart';
 
 class PluginContext {
   final Database database;
@@ -18,7 +17,6 @@ class PluginContext {
   InvoiceRepository get invoiceRepository => InvoiceRepository();
   CustomerRepository get customerRepository => CustomerRepository();
   ProductRepository get productRepository => ProductRepository();
-  PluginEventBus get eventBus => PluginEventBus.instance;
 
   static final Map<String, dynamic> _services = {};
 

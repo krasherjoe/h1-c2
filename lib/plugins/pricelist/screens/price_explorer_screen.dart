@@ -10,7 +10,7 @@ import '../models/price_entry.dart';
 import '../services/price_list_repository.dart';
 import '../services/undo_stack.dart';
 import '../../../services/sync_service.dart';
-import 'product_picker_dialog.dart';
+import '../../products/widgets/variant_picker_sheet.dart';
 
 class PriceExplorerScreen extends StatefulWidget {
   final String? initialYear;
@@ -329,13 +329,18 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
     String? productId;
 
     if (method == 'picker') {
-      final picked = await showDialog<PickedProduct>(
+      final picked = await showModalBottomSheet<PickedItem>(
         context: context,
-        builder: (_) => const ProductPickerDialog(),
+        isScrollControlled: true,
+        useSafeArea: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (_) => const VariantPickerSheet(),
       );
       if (picked == null) return;
-      name = picked.name;
-      price = picked.price;
+      name = picked.productName;
+      price = picked.unitPrice;
       productId = picked.productId;
     } else {
       final n = await _showInputDialog('商品名', '');

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../services/database_helper.dart';
 import 'screens/backup_screen.dart';
@@ -13,11 +12,6 @@ class BackupPlugin extends H1Plugin {
   @override String get name => 'バックアップ';
   @override String get version => '1.0.0';
   @override String get description => 'ローカル自動バックアップ・リストア（7年保存対応）';
-  @override List<String> get dependencies => ['com.h1.core'];
-  @override List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

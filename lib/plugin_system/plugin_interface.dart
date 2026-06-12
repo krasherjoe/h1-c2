@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-import 'plugin_permission.dart';
 import 'plugin_context.dart';
 import 'dashboard_section.dart';
 import 'screen_definition.dart';
@@ -11,7 +10,6 @@ abstract class H1Plugin {
   String get version;
   String get description;
   List<String> get dependencies => ['com.h1.core'];
-  List<PluginPermission> get requiredPermissions;
   Future<void> initialize(PluginContext context);
   Future<void> dispose();
   Map<String, WidgetBuilder> getRoutes();

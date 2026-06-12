@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/purchase_explorer_config.dart';
@@ -21,11 +20,6 @@ class PurchasePlugin extends H1Plugin {
   @override
   String get description => '仕入発注・入荷・返品・支払';
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

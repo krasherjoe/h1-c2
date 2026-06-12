@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'services/settings_repository.dart';
 import 'screens/settings_screen.dart';
@@ -23,11 +22,6 @@ class SettingsPlugin extends H1Plugin {
   @override
   List<String> get dependencies => ['com.h1.plugin.company'];
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

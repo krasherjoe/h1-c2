@@ -4,17 +4,15 @@ import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import '../../../services/customer_repository.dart';
 import '../../../models/customer_model.dart';
-import '../../../models/product_model.dart';
-import '../../../services/product_repository.dart';
 import '../../../services/project_repository.dart';
 import '../../../models/project_model.dart';
 import '../../../services/sync_service.dart';
-import '../../../services/database_helper.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../services/error_reporter.dart';
 import '../../customers/screens/customer_edit_screen.dart';
-import '../../products/screens/product_editor_screen.dart';
+import '../../products/widgets/variant_picker_sheet.dart';
 import '../../project/screens/project_list_screen.dart';
+import 'document_preview_page.dart';
 
 class DocumentEditor extends StatefulWidget {
   final DocumentModel? document;
@@ -28,8 +26,8 @@ class DocumentEditor extends StatefulWidget {
 class _DocumentEditorState extends State<DocumentEditor> {
   final _repo = DocumentRepository();
   final _customerRepo = CustomerRepository();
-  final _productRepo = ProductRepository();
   final _projectRepo = ProjectRepository();
+  final _uuid = const Uuid();
   static const _maxUndo = 30;
 
   late DocumentType _selectedType;
@@ -79,6 +77,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       taxRate: item.taxRate,
       discountAmount: item.discountAmount,
       discountRate: item.discountRate,
+      variantLabel: item.variantLabel,
     )).toList();
     if (_projectId != null) _loadProjectName();
   }
@@ -115,6 +114,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
         discountAmount: e.discountAmount, discountRate: e.discountRate,
+        variantLabel: e.variantLabel,
       )).toList(),
     ));
     if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
@@ -140,6 +140,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
         id: e.id, productId: e.productId, productName: e.productName,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
         discountAmount: e.discountAmount, discountRate: e.discountRate,
+        variantLabel: e.variantLabel,
       )).toList(),
     ));
     final s = _undoStack.removeLast();
@@ -181,6 +182,41 @@ class _DocumentEditorState extends State<DocumentEditor> {
     });
   }
 
+  DocumentModel _buildPreviewDoc() {
+    final docItems = _items.map((e) => DocumentItem(
+      id: e.id,
+      productId: e.productId,
+      productName: e.productName,
+      quantity: e.quantity,
+      unitPrice: e.unitPrice,
+      taxRate: e.taxRate,
+      discountAmount: e.discountAmount,
+      discountRate: e.discountRate,
+      variantLabel: e.variantLabel,
+    )).toList();
+    final subj = _subjectCtl.text.trim();
+    final tmp = DocumentModel(
+      id: widget.document?.id ?? _repo.generateId(),
+      documentType: _selectedType,
+      customerId: _customerId,
+      customerName: _customerName,
+      documentNumber: widget.document?.documentNumber ?? '（仮番号）',
+      date: _selectedDate,
+      total: 0,
+      status: 'draft',
+      projectId: _projectId,
+      subject: subj.isEmpty ? null : subj,
+      includeTax: _includeTax,
+      taxRate: 0.10,
+      totalDiscountAmount: _totalDiscountAmount,
+      totalDiscountRate: _totalDiscountRate,
+      priceAdjustmentType: _priceAdjustmentType,
+      priceAdjustmentUnit: _priceAdjustmentUnit,
+      items: docItems,
+    );
+    return tmp.copyWith(total: tmp.totalAmount);
+  }
+
   Future<void> _save() async {
     if (_customerName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,37 +237,10 @@ class _DocumentEditorState extends State<DocumentEditor> {
       final docNumber = widget.document?.documentNumber ??
           await _repo.generateDocumentNumber(_selectedType);
 
-      final subj = _subjectCtl.text.trim();
-      final docItems = _items.map((e) => DocumentItem(
-        id: e.id,
-        productId: e.productId,
-        productName: e.productName,
-        quantity: e.quantity,
-        unitPrice: e.unitPrice,
-        taxRate: e.taxRate,
-        discountAmount: e.discountAmount,
-        discountRate: e.discountRate,
-      )).toList();
-      final tmp = DocumentModel(
+      final doc = _buildPreviewDoc().copyWith(
         id: docId,
-        documentType: _selectedType,
-        customerId: _customerId,
-        customerName: _customerName,
         documentNumber: docNumber,
-        date: _selectedDate,
-        total: 0,
-        status: 'draft',
-        projectId: _projectId,
-        subject: subj.isEmpty ? null : subj,
-        includeTax: _includeTax,
-        taxRate: 0.10,
-        totalDiscountAmount: _totalDiscountAmount,
-        totalDiscountRate: _totalDiscountRate,
-        priceAdjustmentType: _priceAdjustmentType,
-        priceAdjustmentUnit: _priceAdjustmentUnit,
-        items: docItems,
       );
-      final doc = tmp.copyWith(total: tmp.totalAmount);
 
       await _repo.save(doc);
       if (!mounted) return;
@@ -256,6 +265,20 @@ class _DocumentEditorState extends State<DocumentEditor> {
         SnackBar(content: Text('保存エラー: $e')),
       );
     }
+  }
+
+  void _preview() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DocumentPreviewPage(
+          document: _buildPreviewDoc(),
+          allowFormalIssue: false,
+          showShare: true,
+          showPrint: true,
+        ),
+      ),
+    );
   }
 
   void _wrapWithSnapshot(VoidCallback fn) {
@@ -301,20 +324,24 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Future<void> _addItem() async {
-    final result = await showModalBottomSheet<_EditingItem>(
+    final result = await showModalBottomSheet<PickedItem>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => _ProductPickerSheet(
-        customerId: _customerId,
-        productRepo: _productRepo,
-      ),
+      builder: (_) => VariantPickerSheet(customerId: _customerId),
     );
     if (result != null && mounted) {
-      _wrapWithSnapshot(() => _items.add(result));
+      _wrapWithSnapshot(() => _items.add(_EditingItem(
+        id: _uuid.v4(),
+        productId: result.productId,
+        productName: result.productName,
+        quantity: 1,
+        unitPrice: result.unitPrice,
+        variantLabel: result.variantLabel,
+      )));
     }
   }
 
@@ -479,6 +506,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
             icon: Icon(Icons.redo, color: _canRedo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
             tooltip: 'やり直す',
             onPressed: _canRedo ? _redo : null,
+          ),
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf, color: cs.onPrimary),
+            tooltip: 'PDFプレビュー',
+            onPressed: _preview,
           ),
           IconButton(
             icon: _isSaving
@@ -824,6 +856,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
+            if (item.variantLabel != null && item.variantLabel!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(item.variantLabel!, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant)),
+              ),
             const SizedBox(height: 6),
             Row(
               children: [
@@ -1013,6 +1050,7 @@ class _EditingItem {
   double taxRate;
   int? discountAmount;
   double? discountRate;
+  String? variantLabel;
 
   _EditingItem({
     required this.id,
@@ -1023,6 +1061,7 @@ class _EditingItem {
     this.taxRate = 0.1,
     this.discountAmount,
     this.discountRate,
+    this.variantLabel,
   });
 
   int get subtotal {
@@ -1154,252 +1193,3 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
 }
 
 
-class _ProductPickerSheet extends StatefulWidget {
-  final String? customerId;
-  final ProductRepository productRepo;
-
-  const _ProductPickerSheet({
-    required this.customerId,
-    required this.productRepo,
-  });
-
-  @override
-  State<_ProductPickerSheet> createState() => _ProductPickerSheetState();
-}
-
-class _ProductPickerSheetState extends State<_ProductPickerSheet> {
-  List<Product> _products = [];
-  List<Product> _filtered = [];
-  final _searchCtrl = TextEditingController();
-  bool _loading = true;
-  Map<String, int> _customerPrices = {};
-  final _uuid = const Uuid();
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final results = await Future.wait([
-      widget.productRepo.searchProducts(''),
-      _loadCustomerPrices(),
-    ]);
-    final products = (results[0] as List).cast<Product>();
-    final customerPrices = results[1] as Map<String, int>;
-
-    final prices = <String, int>{};
-    for (final p in products) {
-      final cp = customerPrices[p.id];
-      prices[p.id] = cp ?? p.defaultUnitPrice;
-    }
-    for (final p in products) {
-      if (p.parentId != null && !customerPrices.containsKey(p.id)) {
-        final pp = customerPrices[p.parentId];
-        if (pp != null) prices[p.id] = pp;
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _products = products;
-        _filtered = products;
-        _customerPrices = prices;
-        _loading = false;
-      });
-    }
-  }
-
-  Future<Map<String, int>> _loadCustomerPrices() async {
-    final cid = widget.customerId;
-    if (cid == null || cid.isEmpty) return {};
-    try {
-      final db = await DatabaseHelper().database;
-      final rows = await db.query(
-        'customer_product_prices',
-        where: 'customer_id = ?',
-        whereArgs: [cid],
-      );
-      return {for (final r in rows) (r['product_id'] as String): (r['price'] as int?) ?? 0};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  void _search(String q) {
-    final query = q.trim().toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filtered = _products;
-      } else {
-        _filtered = _products.where((p) =>
-          p.name.toLowerCase().contains(query) ||
-          (p.barcode?.toLowerCase().contains(query) ?? false) ||
-          (p.category?.toLowerCase().contains(query) ?? false)
-        ).toList();
-      }
-    });
-  }
-
-  Future<void> _createProduct(String name) async {
-    final product = await Navigator.push<Product>(
-      context,
-      MaterialPageRoute(builder: (_) => const ProductEditorScreen()),
-    );
-    if (product != null && mounted) {
-      Navigator.pop(context, _EditingItem(
-        id: _uuid.v4(),
-        productId: product.id,
-        productName: product.name,
-        quantity: 1,
-        unitPrice: product.defaultUnitPrice,
-      ));
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  bool _isCustomerPrice(Product product) {
-    if (_customerPrices.containsKey(product.id)) return true;
-    if (product.parentId != null && _customerPrices.containsKey(product.parentId)) return true;
-    return false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final query = _searchCtrl.text.trim();
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            width: 32, height: 4,
-            decoration: BoxDecoration(
-              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(
-              children: [
-                Text('商品を追加', style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('キャンセル'),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: H1TextField(
-              controller: _searchCtrl,
-              decoration: const InputDecoration(
-                hintText: '商品名で検索',
-                prefixIcon: Icon(Icons.search),
-                isDense: true,
-              ),
-              onChanged: _search,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.add_circle, size: 18),
-                label: Text(query.isEmpty ? '新規商品登録' : '「$query」を新規登録'),
-                onPressed: () => _createProduct(_searchCtrl.text.trim()),
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.55,
-            ),
-            child: _loading
-              ? const Center(child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(),
-                ))
-              : _buildList(cs),
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildList(ColorScheme cs) {
-    final query = _searchCtrl.text.trim();
-    final items = <Widget>[];
-
-    if (_filtered.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            children: [
-              Icon(Icons.search_off, size: 48, color: cs.onSurfaceVariant),
-              const SizedBox(height: 8),
-              Text('商品が見つかりません', style: TextStyle(color: cs.onSurfaceVariant)),
-            ],
-          ),
-        ),
-      );
-    }
-
-    for (final product in _filtered) {
-      final price = _customerPrices[product.id] ?? product.defaultUnitPrice;
-      final isCp = _isCustomerPrice(product);
-      items.add(ListTile(
-        leading: CircleAvatar(
-          backgroundColor: cs.primaryContainer,
-          child: Text(
-            product.name.isNotEmpty ? product.name[0].toUpperCase() : '?',
-            style: TextStyle(fontWeight: FontWeight.bold, color: cs.onPrimaryContainer),
-          ),
-        ),
-        title: Text(product.name),
-        subtitle: Row(
-          children: [
-            Text('¥$price', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-            if (isCp) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(
-                  color: cs.tertiaryContainer,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text('顧客別', style: TextStyle(fontSize: 10, color: cs.onTertiaryContainer)),
-              ),
-            ],
-          ],
-        ),
-        trailing: Icon(Icons.add_circle_outline, size: 20, color: cs.primary),
-        onTap: () {
-          Navigator.pop(context, _EditingItem(
-            id: _uuid.v4(),
-            productId: product.id,
-            productName: product.name,
-            quantity: 1,
-            unitPrice: price,
-          ));
-        },
-      ));
-    }
-
-    return ListView(shrinkWrap: true, children: items);
-  }
-}

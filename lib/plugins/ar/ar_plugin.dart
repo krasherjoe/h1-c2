@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/ar_dashboard_screen.dart';
 import 'screens/cash_flow_screen.dart';
@@ -26,11 +25,6 @@ class ArPlugin extends H1Plugin {
   @override
   String get description => '売掛金管理・入金処理・支払予定・支払登録';
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

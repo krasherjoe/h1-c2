@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/audit_screen.dart';
 
@@ -19,10 +18,6 @@ class AuditPlugin extends H1Plugin {
   @override
   String get description => '改ざん検出・ハッシュチェーン検証';
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

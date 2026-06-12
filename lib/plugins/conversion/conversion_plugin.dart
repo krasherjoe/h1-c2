@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import 'services/data_migration_service.dart';
 import 'screens/conversion_guard_screen.dart';
 
@@ -20,11 +19,6 @@ class ConversionPlugin extends H1Plugin {
   @override
   String get description => 'V1→V2 データベース変換';
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../plugin_system/plugin_interface.dart';
 import '../../../plugin_system/plugin_context.dart';
-import '../../../plugin_system/plugin_permission.dart';
 
 class ExplorerPlugin extends H1Plugin {
   @override
@@ -20,10 +19,6 @@ class ExplorerPlugin extends H1Plugin {
   @override
   List<String> get dependencies => ['com.h1.core'];
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

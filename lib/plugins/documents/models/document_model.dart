@@ -279,6 +279,7 @@ class DocumentItem {
   final double taxRate;
   final int? discountAmount;
   final double? discountRate;
+  final String? variantLabel;
 
   const DocumentItem({
     required this.id,
@@ -289,6 +290,7 @@ class DocumentItem {
     this.taxRate = 0.1,
     this.discountAmount,
     this.discountRate,
+    this.variantLabel,
   });
 
   int get subtotal {
@@ -311,6 +313,7 @@ class DocumentItem {
     double? taxRate,
     int? discountAmount,
     double? discountRate,
+    String? variantLabel,
   }) {
     return DocumentItem(
       id: id ?? this.id,
@@ -321,6 +324,7 @@ class DocumentItem {
       taxRate: taxRate ?? this.taxRate,
       discountAmount: discountAmount ?? this.discountAmount,
       discountRate: discountRate ?? this.discountRate,
+      variantLabel: variantLabel ?? this.variantLabel,
     );
   }
 
@@ -334,6 +338,7 @@ class DocumentItem {
     'tax_rate': taxRate,
     'discount_amount': discountAmount,
     'discount_rate': discountRate,
+    'variant_label': variantLabel,
   };
 
   factory DocumentItem.fromMap(Map<String, dynamic> map) {
@@ -346,6 +351,7 @@ class DocumentItem {
       taxRate: (map['tax_rate'] as num?)?.toDouble() ?? 0.1,
       discountAmount: map['discount_amount'] as int?,
       discountRate: (map['discount_rate'] as num?)?.toDouble(),
+      variantLabel: map['variant_label'] as String?,
     );
   }
 }

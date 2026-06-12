@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'models/company_profile.dart';
 import 'services/company_repository.dart';
@@ -15,11 +14,6 @@ class CompanyPlugin extends H1Plugin {
   @override String get name => '自社情報';
   @override String get version => '1.0.0';
   @override String get description => '会社情報・印鑑・銀行口座の管理';
-  @override List<String> get dependencies => ['com.h1.core'];
-  @override List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   Future<void> initialize(PluginContext context) async {

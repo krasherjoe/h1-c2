@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/screen_definition.dart' show ScreenDefinition;
 import 'screens/debug_screen.dart';
 
@@ -19,11 +18,6 @@ class DebugPlugin extends H1Plugin {
   @override
   String get description => 'Mattermost連携デバッグ・診断';
 
-  @override
-  List<PluginPermission> get requiredPermissions => [
-    PluginPermission.readDatabase,
-    PluginPermission.writeDatabase,
-  ];
 
   @override
   List<ScreenDefinition> get screens => [

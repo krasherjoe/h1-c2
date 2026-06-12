@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
-import '../../plugin_system/plugin_permission.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../plugin_system/dashboard_section.dart';
@@ -22,7 +21,6 @@ class QuickActionsPlugin extends H1Plugin {
   String get description => 'ホーム画面風のショートカット';
 
   @override
-  List<PluginPermission> get requiredPermissions => [];
 
   @override
   List<ScreenDefinition> get screens => [
