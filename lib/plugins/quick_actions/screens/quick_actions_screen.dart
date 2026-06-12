@@ -238,13 +238,13 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                         final route = ids[i];
                         final item = actions[route];
                         return AnimatedBuilder(
+                          key: ValueKey(route),
                           animation: _shakeCtrl,
                           builder: (context, child) => Transform.rotate(
                             angle: _shakeCtrl.value * 0.04 - 0.02,
                             child: child,
                           ),
                           child: ListTile(
-                            key: ValueKey(route),
                             dense: true,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                             leading: Icon(item?.icon ?? Icons.help_outline,
