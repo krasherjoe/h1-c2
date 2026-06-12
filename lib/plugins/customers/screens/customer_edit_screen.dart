@@ -121,37 +121,45 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final isLocked = widget.customer?.isLocked ?? false;
-    final newId = isLocked ? Uuid().v4() : (widget.customer?.id ?? Uuid().v4());
-    final newCustomer = Customer(
-      id: newId,
-      displayName: _stripHonorific(_displayNameCtl.text.trim()),
-      formalName: _stripHonorific(_formalNameCtl.text.trim()),
-      title: _selectedTitle,
-      department: _departmentCtl.text.trim().isEmpty
-          ? null
-          : _departmentCtl.text.trim(),
-      address: _addressCtl.text.trim().isEmpty ? null : _addressCtl.text.trim(),
-      tel: _telCtl.text.trim().isEmpty ? null : _telCtl.text.trim(),
-      email: _emailCtl.text.trim().isEmpty ? null : _emailCtl.text.trim(),
-      headChar1: _head1Ctl.text.trim().isEmpty ? null : _head1Ctl.text.trim(),
-      headChar2: _head2Ctl.text.trim().isEmpty ? null : _head2Ctl.text.trim(),
-      closingDay: _closingDay,
-      paymentDay: _paymentDay,
-      rank: _rank,
-      rankDiscountRate: _rankDiscountRate,
-      lat: _customer?.lat,
-      lng: _customer?.lng,
-      isLocked: false,
-    );
-    await CustomerRepository().saveCustomer(newCustomer);
-    SyncService.pushChange(
-      entityType: 'customer',
-      entityId: newCustomer.id,
-      action: 'save',
-      data: newCustomer.toMap(),
-    );
-    Navigator.pop(context, newCustomer);
+    try {
+      final isLocked = widget.customer?.isLocked ?? false;
+      final newId = isLocked ? Uuid().v4() : (widget.customer?.id ?? Uuid().v4());
+      final newCustomer = Customer(
+        id: newId,
+        displayName: _stripHonorific(_displayNameCtl.text.trim()),
+        formalName: _stripHonorific(_formalNameCtl.text.trim()),
+        title: _selectedTitle,
+        department: _departmentCtl.text.trim().isEmpty
+            ? null
+            : _departmentCtl.text.trim(),
+        address: _addressCtl.text.trim().isEmpty ? null : _addressCtl.text.trim(),
+        tel: _telCtl.text.trim().isEmpty ? null : _telCtl.text.trim(),
+        email: _emailCtl.text.trim().isEmpty ? null : _emailCtl.text.trim(),
+        headChar1: _head1Ctl.text.trim().isEmpty ? null : _head1Ctl.text.trim(),
+        headChar2: _head2Ctl.text.trim().isEmpty ? null : _head2Ctl.text.trim(),
+        closingDay: _closingDay,
+        paymentDay: _paymentDay,
+        rank: _rank,
+        rankDiscountRate: _rankDiscountRate,
+        lat: _customer?.lat,
+        lng: _customer?.lng,
+        isLocked: false,
+      );
+      await CustomerRepository().saveCustomer(newCustomer);
+      SyncService.pushChange(
+        entityType: 'customer',
+        entityId: newCustomer.id,
+        action: 'save',
+        data: newCustomer.toMap(),
+      );
+      if (!mounted) return;
+      Navigator.pop(context, newCustomer);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存エラー: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+      );
+    }
   }
 
   @override
@@ -166,7 +174,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) _save(); },
+            onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
             icon: Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary),
             label: Text(
               '保存',
@@ -557,7 +565,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             const SizedBox(height: 28),
 
             FilledButton.icon(
-              onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) _save(); },
+            onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
               icon: const Icon(Icons.check),
               label: Text(
                 _isEdit ? '変更を保存' : '顧客を登録',

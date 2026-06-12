@@ -22,6 +22,9 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   String get searchHint => '顧客名で検索';
 
   @override
+  bool get showSearch => true;
+
+  @override
   IconData get itemIcon => Icons.person;
 
   @override
@@ -134,13 +137,13 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
 
   void _openNewEditor(BuildContext context) async {
     try {
-      final result = await Navigator.push<bool>(
+      final result = await Navigator.push<dynamic>(
         context,
         MaterialPageRoute(
           builder: (_) => CustomerEditScreen(),
         ),
       );
-      if (result == true && context.mounted) {
+      if (result != null && context.mounted) {
         onListChanged?.call();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('登録しました')),

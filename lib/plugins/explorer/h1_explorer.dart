@@ -34,6 +34,8 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   int _lastLogCount = -1;
   String _query = '';
   bool _showSearch = false;
+
+
   bool _showFilter = false;
   String _statusFilter = '';
   DateTime? _dateFrom;
@@ -50,6 +52,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   @override
   void initState() {
     super.initState();
+    _showSearch = widget.config.showSearch;
     widget.config.onListChanged = _loadItems;
     _loadItems();
   }
