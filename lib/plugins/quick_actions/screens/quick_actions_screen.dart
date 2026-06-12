@@ -19,7 +19,6 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
   int _currentPage = 0;
   bool _loading = true;
   int? _dragIndex;
-  int? _dragOverIndex;
   late AnimationController _shakeCtrl;
 
   @override
@@ -219,111 +218,88 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                           final route = entry.value;
                           final item = actions[route];
                           if (item == null) return const SizedBox.shrink();
-                          final isOver = _dragOverIndex == i;
-                          return DragTarget<int>(
-                            onWillAcceptWithDetails: (details) {
-                              if (details.data != i) {
-                                setState(() => _dragOverIndex = i);
-                                return true;
-                              }
-                              return false;
-                            },
-                            onLeave: (_) {
-                              if (_dragOverIndex == i) {
-                                setState(() => _dragOverIndex = null);
-                              }
-                            },
-                            onAcceptWithDetails: (details) {
-                              final from = details.data;
-                              if (from != i) {
-                                final ids = page.actionIds;
-                                final id = ids.removeAt(from);
-                                final to = from < i ? i - 1 : i;
-                                ids.insert(to, id);
-                                _service.savePages(_pages);
-                              }
-                              setState(() => _dragOverIndex = null);
-                            },
-                            builder: (context, candidate, rejected) {
-                              return LongPressDraggable<int>(
-                                data: i,
-                                onDragStarted: () {
-                                  HapticFeedback.mediumImpact();
-                                  _shakeCtrl.repeat(reverse: true);
-                                  setState(() => _dragIndex = i);
-                                },
-                                onDragEnd: (_) {
-                                  _shakeCtrl.stop();
-                                  setState(() { _dragIndex = null; _dragOverIndex = null; });
-                                },
-                                onDraggableCanceled: (_, _) {
-                                  _shakeCtrl.stop();
-                                  setState(() { _dragIndex = null; _dragOverIndex = null; });
-                                },
-                                feedback: Material(
-                                  elevation: 8,
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: SizedBox(
-                                    width: 72,
-                                    child: QuickActionButton(
-                                      icon: item.icon,
-                                      label: item.title,
-                                      accentColor: QuickActionService.accentFor(item),
-                                    ),
-                                  ),
-                                ),
-                                childWhenDragging: Opacity(
-                                  opacity: 0.25,
-                                  child: SizedBox(
-                                    width: 72,
-                                    child: QuickActionButton(
-                                      icon: item.icon,
-                                      label: item.title,
-                                      accentColor: QuickActionService.accentFor(item),
-                                    ),
-                                  ),
-                                ),
-                                child: AnimatedBuilder(
-                                  animation: _shakeCtrl,
-                                  builder: (context, child) {
-                                    final shake = _shakeCtrl.value * 0.12 - 0.06;
-                                    return Transform.rotate(
-                                      angle: _dragIndex != null ? shake : 0,
-                                      child: child,
-                                    );
+                          return KeyedSubtree(
+                            key: ValueKey('qa_slot_$route'),
+                            child: DragTarget<int>(
+                              onAcceptWithDetails: (details) {
+                                final from = details.data;
+                                if (from != i) {
+                                  final ids = page.actionIds;
+                                  final id = ids.removeAt(from);
+                                  final to = from < i ? i - 1 : i;
+                                  ids.insert(to, id);
+                                  _service.savePages(_pages);
+                                }
+                              },
+                              builder: (context, candidate, rejected) {
+                                return LongPressDraggable<int>(
+                                  data: i,
+                                  onDragStarted: () {
+                                    HapticFeedback.mediumImpact();
+                                    _shakeCtrl.repeat(reverse: true);
+                                    setState(() => _dragIndex = i);
                                   },
-                                  child: SizedBox(
-                                    width: 72,
-                                    child: isOver
-                                      ? Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(16),
-                                            color: QuickActionService.accentFor(item).withValues(alpha: 0.15),
-                                          ),
-                                          child: QuickActionButton(
-                                            icon: item.icon,
-                                            label: item.title,
-                                            accentColor: QuickActionService.accentFor(item),
-                                          ),
-                                        )
-                                      : QuickActionButton(
-                                          icon: item.icon,
-                                          label: item.title,
-                                          accentColor: QuickActionService.accentFor(item),
-                                          onTap: () {
-                                            final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
-                                            if (tw != null && item != null) {
-                                              tw.openTab(item.id, item.title, item.route);
-                                            } else {
-                                              Navigator.pushNamed(context, route);
-                                            }
-                                          },
-                                        ),
+                                  onDragEnd: (_) {
+                                    _shakeCtrl.stop();
+                                    setState(() => _dragIndex = null);
+                                  },
+                                  onDraggableCanceled: (_, _) {
+                                    _shakeCtrl.stop();
+                                    setState(() => _dragIndex = null);
+                                  },
+                                  feedback: Material(
+                                    elevation: 8,
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: SizedBox(
+                                      width: 72,
+                                      child: QuickActionButton(
+                                        icon: item.icon,
+                                        label: item.title,
+                                        accentColor: QuickActionService.accentFor(item),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              );
+                                  childWhenDragging: Opacity(
+                                    opacity: 0.25,
+                                    child: SizedBox(
+                                      width: 72,
+                                      child: QuickActionButton(
+                                        icon: item.icon,
+                                        label: item.title,
+                                        accentColor: QuickActionService.accentFor(item),
+                                      ),
+                                    ),
+                                  ),
+                                  child: AnimatedBuilder(
+                                    animation: _shakeCtrl,
+                                    builder: (context, child) {
+                                      final shake = _shakeCtrl.value * 0.12 - 0.06;
+                                      return Transform.rotate(
+                                        angle: _dragIndex != null ? shake : 0,
+                                        child: child,
+                                      );
+                                    },
+                                    child: SizedBox(
+                                      width: 72,
+                                      child: QuickActionButton(
+                                        icon: item.icon,
+                                        label: item.title,
+                                        accentColor: QuickActionService.accentFor(item),
+                                        onTap: () {
+                                          final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                                          if (tw != null && item != null) {
+                                            tw.openTab(item.id, item.title, item.route);
+                                          } else {
+                                            Navigator.pushNamed(context, route);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                );
                             },
-                          );
+                          ),
+                        );
                         }).toList(),
                       ),
                     ),

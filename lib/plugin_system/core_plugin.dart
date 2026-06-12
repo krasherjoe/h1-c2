@@ -134,17 +134,18 @@ class _CoreMenuSectionState extends State<_CoreMenuSection> {
             collapsed: collapsed,
             onToggle: () => _toggleCategory(category),
           ),
-          AnimatedCrossFade(
+          AnimatedSize(
             alignment: Alignment.topCenter,
-            firstChild: Column(
-              children: items.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _tile(e),
-              )).toList(),
-            ),
-            secondChild: const SizedBox.shrink(),
-            crossFadeState: collapsed ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 200),
+            curve: Curves.fastOutSlowIn,
+            child: collapsed
+              ? const SizedBox.shrink()
+              : Column(
+                  children: items.map((e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _tile(e),
+                  )).toList(),
+                ),
           ),
         ],
       ),
