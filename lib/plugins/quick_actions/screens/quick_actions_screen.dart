@@ -286,7 +286,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                                 child: AnimatedBuilder(
                                   animation: _shakeCtrl,
                                   builder: (context, child) {
-                                    final shake = _shakeCtrl.value * 0.04 - 0.02;
+                                    final shake = _shakeCtrl.value * 0.12 - 0.06;
                                     return Transform.rotate(
                                       angle: _dragIndex != null ? shake : 0,
                                       child: child,

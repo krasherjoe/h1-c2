@@ -135,6 +135,7 @@ class _CoreMenuSectionState extends State<_CoreMenuSection> {
             onToggle: () => _toggleCategory(category),
           ),
           AnimatedCrossFade(
+            alignment: Alignment.topCenter,
             firstChild: Column(
               children: items.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
