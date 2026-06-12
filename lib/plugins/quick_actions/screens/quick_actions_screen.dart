@@ -162,6 +162,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                       ),
                       child: GestureDetector(
                         onTap: () {
+                          HapticFeedback.lightImpact();
                           final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
                           if (tw == null) return;
                           for (final route in _pages[_currentPage].actionIds) {
