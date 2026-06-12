@@ -4,6 +4,7 @@ import '../services/quick_action_service.dart';
 import '../models/quick_action_page.dart';
 import '../widgets/quick_action_button.dart';
 import '../../../widgets/tabbed_workspace.dart';
+import '../../../plugin_system/menu_item.dart';
 
 class QuickActionsPanel extends StatefulWidget {
   const QuickActionsPanel({super.key});
@@ -20,6 +21,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
   bool _loading = true;
   int? _dragIndex;
   late AnimationController _shakeCtrl;
+
 
   @override
   void initState() {
@@ -218,88 +220,29 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                           final route = entry.value;
                           final item = actions[route];
                           if (item == null) return const SizedBox.shrink();
-                          return KeyedSubtree(
-                            key: ValueKey('qa_slot_$route'),
-                            child: DragTarget<int>(
-                              onAcceptWithDetails: (details) {
-                                final from = details.data;
-                                if (from != i) {
-                                  final ids = page.actionIds;
-                                  final id = ids.removeAt(from);
-                                  final to = from < i ? i - 1 : i;
-                                  ids.insert(to, id);
-                                  _service.savePages(_pages);
-                                }
-                              },
-                              builder: (context, candidate, rejected) {
-                                return LongPressDraggable<int>(
-                                  data: i,
-                                  onDragStarted: () {
-                                    HapticFeedback.mediumImpact();
-                                    _shakeCtrl.repeat(reverse: true);
-                                    setState(() => _dragIndex = i);
-                                  },
-                                  onDragEnd: (_) {
-                                    _shakeCtrl.stop();
-                                    setState(() => _dragIndex = null);
-                                  },
-                                  onDraggableCanceled: (_, _) {
-                                    _shakeCtrl.stop();
-                                    setState(() => _dragIndex = null);
-                                  },
-                                  feedback: Material(
-                                    elevation: 8,
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: SizedBox(
-                                      width: 72,
-                                      child: QuickActionButton(
-                                        icon: item.icon,
-                                        label: item.title,
-                                        accentColor: QuickActionService.accentFor(item),
-                                      ),
-                                    ),
-                                  ),
-                                  childWhenDragging: Opacity(
-                                    opacity: 0.25,
-                                    child: SizedBox(
-                                      width: 72,
-                                      child: QuickActionButton(
-                                        icon: item.icon,
-                                        label: item.title,
-                                        accentColor: QuickActionService.accentFor(item),
-                                      ),
-                                    ),
-                                  ),
-                                  child: AnimatedBuilder(
-                                    animation: _shakeCtrl,
-                                    builder: (context, child) {
-                                      final shake = _shakeCtrl.value * 0.12 - 0.06;
-                                      return Transform.rotate(
-                                        angle: _dragIndex != null ? shake : 0,
-                                        child: child,
-                                      );
-                                    },
-                                    child: SizedBox(
-                                      width: 72,
-                                      child: QuickActionButton(
-                                        icon: item.icon,
-                                        label: item.title,
-                                        accentColor: QuickActionService.accentFor(item),
-                                        onTap: () {
-                                          final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
-                                          if (tw != null && item != null) {
-                                            tw.openTab(item.id, item.title, item.route);
-                                          } else {
-                                            Navigator.pushNamed(context, route);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                );
+                          return _DragSlot(
+                            index: i,
+                            item: item,
+                            route: route,
+                            itemsLength: ids.length,
+                            shakeCtrl: _shakeCtrl,
+                            isDragging: _dragIndex != null,
+                            onDragStarted: () {
+                              HapticFeedback.mediumImpact();
+                              _shakeCtrl.repeat(reverse: true);
+                              setState(() => _dragIndex = i);
                             },
-                          ),
-                        );
+                            onDragEnd: () {
+                              _shakeCtrl.stop();
+                              setState(() => _dragIndex = null);
+                            },
+                            onReorder: (from, to) {
+                              final ids = page.actionIds;
+                              final id = ids.removeAt(from);
+                              ids.insert(to, id);
+                              _service.savePages(_pages);
+                            },
+                          );
                         }).toList(),
                       ),
                     ),
@@ -329,6 +272,128 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
             ),
           ),
       ],
+    );
+  }
+}
+
+class _DragSlot extends StatefulWidget {
+  final int index;
+  final MenuItem item;
+  final String route;
+  final int itemsLength;
+  final Animation<double> shakeCtrl;
+  final bool isDragging;
+  final VoidCallback onDragStarted;
+  final VoidCallback onDragEnd;
+  final void Function(int from, int to) onReorder;
+
+  const _DragSlot({
+    required this.index,
+    required this.item,
+    required this.route,
+    required this.itemsLength,
+    required this.shakeCtrl,
+    required this.isDragging,
+    required this.onDragStarted,
+    required this.onDragEnd,
+    required this.onReorder,
+  });
+
+  @override
+  State<_DragSlot> createState() => _DragSlotState();
+}
+
+class _DragSlotState extends State<_DragSlot> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) {
+        if (details.data != widget.index && mounted) {
+          setState(() => _hovered = true);
+        }
+        return details.data != widget.index;
+      },
+      onLeave: (_) {
+        if (mounted) setState(() => _hovered = false);
+      },
+      onAcceptWithDetails: (details) {
+        _hovered = false;
+        widget.onReorder(details.data, widget.index);
+      },
+      builder: (context, candidate, rejected) {
+        return LongPressDraggable<int>(
+          data: widget.index,
+          onDragStarted: widget.onDragStarted,
+          onDragEnd: (_) => widget.onDragEnd(),
+          onDraggableCanceled: (_, _) => widget.onDragEnd(),
+          feedback: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: 72,
+              child: QuickActionButton(
+                icon: widget.item.icon,
+                label: widget.item.title,
+                accentColor: QuickActionService.accentFor(widget.item),
+              ),
+            ),
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.25,
+            child: SizedBox(
+              width: 72,
+              child: QuickActionButton(
+                icon: widget.item.icon,
+                label: widget.item.title,
+                accentColor: QuickActionService.accentFor(widget.item),
+              ),
+            ),
+          ),
+          child: SizedBox(
+            width: 72,
+            child: _hovered
+              ? Container(
+                  height: 72,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: QuickActionService.accentFor(widget.item).withValues(alpha: 0.15),
+                    border: Border.all(
+                      color: QuickActionService.accentFor(widget.item).withValues(alpha: 0.4),
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(Icons.add, color: QuickActionService.accentFor(widget.item).withValues(alpha: 0.5)),
+                  ),
+                )
+              : AnimatedBuilder(
+                  animation: widget.shakeCtrl,
+                  builder: (context, child) {
+                    final shake = widget.shakeCtrl.value * 0.12 - 0.06;
+                    return Transform.rotate(
+                      angle: widget.isDragging ? shake : 0,
+                      child: child,
+                    );
+                  },
+                  child: QuickActionButton(
+                    icon: widget.item.icon,
+                    label: widget.item.title,
+                    accentColor: QuickActionService.accentFor(widget.item),
+                    onTap: () {
+                      final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                      if (tw != null) {
+                        tw.openTab(widget.item.id, widget.item.title, widget.item.route);
+                      } else {
+                        Navigator.pushNamed(context, widget.route);
+                      }
+                    },
+                  ),
+                ),
+          ),
+        );
+      },
     );
   }
 }
