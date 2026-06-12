@@ -54,7 +54,6 @@ bool _anyItemHasDiscount(List<DocumentItem> items) =>
     items.any((i) => i.discountAmount != null || i.discountRate != null);
 
 pw.Widget _buildItemTable(DocumentModel doc, int maxItems, NumberFormat fmt, pw.Font font) {
-  final headers = ['品名', '数量', '単価', '金額'];
   final hasDiscount = _anyItemHasDiscount(doc.items);
   final items = doc.items.take(maxItems).toList();
 
@@ -64,7 +63,7 @@ pw.Widget _buildItemTable(DocumentModel doc, int maxItems, NumberFormat fmt, pw.
       inside: const pw.BorderSide(color: PdfColors.grey200),
     ),
     columnWidths: const {
-      0: pw.FlexColumnWidth(3),
+      0: pw.FlexColumnWidth(3.5),
       1: pw.FlexColumnWidth(1),
       2: pw.FlexColumnWidth(1.5),
       3: pw.FlexColumnWidth(1.5),
@@ -72,10 +71,12 @@ pw.Widget _buildItemTable(DocumentModel doc, int maxItems, NumberFormat fmt, pw.
     children: [
       pw.TableRow(
         decoration: const pw.BoxDecoration(color: PdfColors.grey300),
-        children: headers.map((h) => pw.Padding(
-          padding: const pw.EdgeInsets.all(6),
-          child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: font, fontSize: 10)),
-        )).toList(),
+        children: [
+          _headerCell('品名', font),
+          _headerCell('数量', font, alignRight: true),
+          _headerCell('単価', font, alignRight: true),
+          _headerCell('金額', font, alignRight: true),
+        ],
       ),
       ...items.asMap().entries.map((entry) {
         final i = entry.value;
@@ -102,6 +103,17 @@ pw.Widget _buildItemTable(DocumentModel doc, int maxItems, NumberFormat fmt, pw.
         );
       }),
     ],
+  );
+}
+
+pw.Widget _headerCell(String text, pw.Font font, {bool alignRight = false}) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.all(6),
+    child: pw.Text(
+      text,
+      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: font, fontSize: 10),
+      textAlign: alignRight ? pw.TextAlign.right : pw.TextAlign.left,
+    ),
   );
 }
 
@@ -268,7 +280,7 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                   children: [
                     pw.Container(
                       decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1))),
-                      child: pw.Text(document.customerName, style: const pw.TextStyle(fontSize: 18)),
+                      child: pw.Text('${document.customerName} 様', style: const pw.TextStyle(fontSize: 18)),
                     ),
                     if (document.subject != null && document.subject!.isNotEmpty)
                       pw.Padding(
@@ -302,23 +314,24 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                   children: [
                     if (companyInfo != null) ...[
                       pw.Text(companyInfo.name, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                      if (companyInfo.zipCode != null) pw.Text('〒${companyInfo.zipCode}'),
-                      if (companyInfo.address != null) pw.Text(companyInfo.address!),
-                      if (companyInfo.address2 != null && companyInfo.address2!.isNotEmpty)
-                        pw.Text(companyInfo.address2!),
-                      if (companyInfo.tel != null) pw.Text('TEL: ${companyInfo.tel}'),
-                      if (companyInfo.fax != null && companyInfo.fax!.isNotEmpty)
-                        pw.Text('FAX: ${companyInfo.fax}'),
-                      if (companyInfo.email != null && companyInfo.email!.isNotEmpty)
-                        pw.Text(companyInfo.email!),
-                      if (companyInfo.url != null && companyInfo.url!.isNotEmpty)
-                        pw.Text(companyInfo.url!),
+                      pw.SizedBox(height: 2),
+                      if (companyInfo.zipCode != null) ...[pw.Text('〒${companyInfo.zipCode}'), pw.SizedBox(height: 2)],
+                      if (companyInfo.address != null) ...[pw.Text(companyInfo.address!), pw.SizedBox(height: 2)],
+                      if (companyInfo.address2 != null && companyInfo.address2!.isNotEmpty) ...[pw.Text(companyInfo.address2!), pw.SizedBox(height: 2)],
+                      if (companyInfo.tel != null) ...[pw.Text('TEL: ${companyInfo.tel}'), pw.SizedBox(height: 2)],
+                      if (companyInfo.fax != null && companyInfo.fax!.isNotEmpty) ...[pw.Text('FAX: ${companyInfo.fax}'), pw.SizedBox(height: 2)],
+                      if (companyInfo.email != null && companyInfo.email!.isNotEmpty) ...[pw.Text(companyInfo.email!), pw.SizedBox(height: 2)],
+                      if (companyInfo.url != null && companyInfo.url!.isNotEmpty) ...[pw.Text(companyInfo.url!), pw.SizedBox(height: 2)],
                       if (companyInfo.registrationNumber != null &&
                           companyInfo.registrationNumber!.isNotEmpty &&
-                          companyInfo.taxDisplayMode != 'hidden')
+                          companyInfo.taxDisplayMode != 'hidden') ...[
                         pw.Text('登録番号: ${companyInfo.registrationNumber!}',
                             style: const pw.TextStyle(fontSize: 10)),
-                      ..._buildBankAccountPdfLines(companyInfo, ipaex),
+                        pw.SizedBox(height: 2),
+                      ],
+                      if (document.documentType == DocumentType.invoice ||
+                          document.documentType == DocumentType.receipt)
+                        ..._buildBankAccountPdfLines(companyInfo, ipaex),
                     ],
                   ],
                 ),

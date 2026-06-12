@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/document_model.dart';
 import '../logic/document_converter.dart';
 import '../services/document_repository.dart';
+import '../../../services/customer_repository.dart';
 import '../../../services/error_reporter.dart';
 import 'document_preview_page.dart';
 
@@ -181,8 +182,14 @@ class DocumentViewer extends StatelessWidget {
       child: OutlinedButton.icon(
         icon: const Icon(Icons.preview),
         label: const Text('プレビュー'),
-        onPressed: () {
+        onPressed: () async {
           final repo = DocumentRepository();
+          String? customerEmail;
+          if (document.customerId.isNotEmpty) {
+            final customer = await CustomerRepository().getById(document.customerId);
+            customerEmail = customer?.email;
+          }
+          if (!context.mounted) return;
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -208,6 +215,7 @@ class DocumentViewer extends StatelessWidget {
                 },
                 showShare: true,
                 showPrint: true,
+                customerEmail: customerEmail,
               ),
             ),
           );

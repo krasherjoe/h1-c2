@@ -267,7 +267,13 @@ class _DocumentEditorState extends State<DocumentEditor> {
     }
   }
 
-  void _preview() {
+  Future<void> _preview() async {
+    String? customerEmail;
+    if (_customerId.isNotEmpty) {
+      final customer = await CustomerRepository().getById(_customerId);
+      customerEmail = customer?.email;
+    }
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -276,6 +282,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
           allowFormalIssue: false,
           showShare: true,
           showPrint: true,
+          customerEmail: customerEmail,
         ),
       ),
     );

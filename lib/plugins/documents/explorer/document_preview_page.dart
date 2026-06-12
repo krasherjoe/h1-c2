@@ -22,6 +22,7 @@ class DocumentPreviewPage extends StatefulWidget {
   final bool showPrint;
   final VoidCallback? onShare;
   final VoidCallback? onPrint;
+  final String? customerEmail;
 
   const DocumentPreviewPage({
     super.key,
@@ -33,6 +34,7 @@ class DocumentPreviewPage extends StatefulWidget {
     this.showPrint = true,
     this.onShare,
     this.onPrint,
+    this.customerEmail,
   });
 
   @override
@@ -112,6 +114,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
     required String label,
     required bool enabled,
     VoidCallback? onPressed,
+    VoidCallback? onLongPress,
     String? badge,
   }) {
     final cs = Theme.of(context).colorScheme;
@@ -123,10 +126,12 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
           children: [
             ElevatedButton(
               onPressed: enabled ? onPressed : null,
+              onLongPress: enabled ? onLongPress : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: enabled ? cs.primary : null,
                 foregroundColor: cs.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -158,7 +163,6 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDraft = widget.document.isDraft && !_issued;
     final effectiveIsLocked = !widget.document.isDraft || _issued;
 
     return Scaffold(
@@ -200,7 +204,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                     label: effectiveIsLocked ? '正式発行🔒' : '正式発行',
                     badge: _issued ? '済' : null,
                     enabled: _canFormalIssue,
-                    onPressed: _canFormalIssue
+                    onLongPress: _canFormalIssue
                         ? () async {
                             final confirmed = await _showFormalIssueWarning(context);
                             if (!confirmed) return;
@@ -317,6 +321,21 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                           )),
                         );
                       }
+                    },
+                    onLongPress: () async {
+                      final bytes = await _buildPdfBytes();
+                      final filename = '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf';
+                      final subject = '${widget.document.documentType.label} ${widget.document.documentNumber}';
+                      final body = '${widget.document.documentType.label}を添付してお送りします。';
+                      final recipients = widget.customerEmail != null && widget.customerEmail!.isNotEmpty
+                          ? [widget.customerEmail!] : <String>[];
+                      await CommunicationPlugin().sendEmailWithPdf(
+                        pdfBytes: bytes,
+                        filename: filename,
+                        subject: subject,
+                        body: body,
+                        recipients: recipients,
+                      );
                     },
                   ),
                   const SizedBox(width: 4),
