@@ -16,6 +16,8 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
   List<QuickActionPage> _pages = [];
   int _currentPage = 0;
   bool _loading = true;
+  bool _reorderMode = false;
+  List<String> _editIds = [];
 
   @override
   void initState() {
@@ -144,19 +146,27 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                         color: cs.onSurfaceVariant,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
-                        if (tw == null) return;
-                        for (final route in _pages[_currentPage].actionIds) {
-                          final item = actions[route];
-                          if (item != null) tw.openTab(item.id, item.title, item.route);
-                        }
-                      },
-                      child: Text(
-                        _pages[_currentPage].name,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: cs.onSurfaceVariant,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                        color: cs.primaryContainer.withValues(alpha: 0.5),
+                      ),
+                      child: GestureDetector(
+                        onTap: () {
+                          final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                          if (tw == null) return;
+                          for (final route in _pages[_currentPage].actionIds) {
+                            final item = actions[route];
+                            if (item != null) tw.openTab(item.id, item.title, item.route);
+                          }
+                        },
+                        child: Text(
+                          _pages[_currentPage].name,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: cs.onPrimaryContainer,
+                          ),
                         ),
                       ),
                     ),
@@ -164,19 +174,32 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                 ),
               ),
               const Spacer(),
-              IconButton(
-                icon: Icon(Icons.reorder, size: 20, color: cs.onSurfaceVariant),
-                tooltip: '並び替え',
-                onPressed: _openReorderSheet,
-              ),
-              IconButton(
-                icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
-                tooltip: 'クイックアクション設定',
-                onPressed: () async {
-                  await Navigator.pushNamed(context, '/quick_actions/settings');
-                  _load();
-                },
-              ),
+              if (_reorderMode)
+                TextButton.icon(
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('完了'),
+                  onPressed: () {
+                    final page = _pages[_currentPage];
+                    page.actionIds = _editIds;
+                    _service.savePages(_pages);
+                    setState(() => _reorderMode = false);
+                  },
+                )
+              else ...[
+                IconButton(
+                  icon: Icon(Icons.reorder, size: 20, color: cs.onSurfaceVariant),
+                  tooltip: '並び替え',
+                  onPressed: _openReorderSheet,
+                ),
+                IconButton(
+                  icon: Icon(Icons.settings, size: 20, color: cs.onSurfaceVariant),
+                  tooltip: 'クイックアクション設定',
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, '/quick_actions/settings');
+                    _load();
+                  },
+                ),
+              ],
             ],
           ),
         ),
@@ -187,36 +210,70 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
             onPageChanged: (i) => setState(() => _currentPage = i),
             children: _pages.map((page) {
               final gap = 4.0;
+              final ids = _reorderMode ? _editIds : page.actionIds;
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Center(
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: gap,
-                    runSpacing: 6,
-                    children: page.actionIds.map((route) {
-                      final item = actions[route];
-                      if (item == null) return const SizedBox.shrink();
-                      return SizedBox(
-                        width: 72,
-                        child: QuickActionButton(
-                          icon: item.icon,
-                          label: item.title,
-                          accentColor: QuickActionService.accentFor(item),
-                          onTap: () {
-                            final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
-                            if (tw != null && item != null) {
-                              tw.openTab(item.id, item.title, item.route);
-                            } else {
-                              Navigator.pushNamed(context, route);
-                            }
-                          },
-                          onLongPress: _openReorderSheet,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+                child: _reorderMode
+                  ? ReorderableListView.builder(
+                      padding: EdgeInsets.zero,
+                      itemCount: ids.length,
+                      onReorder: (oldI, newI) {
+                        setState(() {
+                          if (newI > oldI) newI--;
+                          final item = ids.removeAt(oldI);
+                          ids.insert(newI, item);
+                        });
+                      },
+                      itemBuilder: (ctx, i) {
+                        final route = ids[i];
+                        final item = actions[route];
+                        return ListTile(
+                          key: ValueKey(route),
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                          leading: Icon(item?.icon ?? Icons.help_outline,
+                            color: item != null ? QuickActionService.accentFor(item) : null),
+                          title: Text(item?.title ?? route, style: const TextStyle(fontSize: 14)),
+                          trailing: ReorderableDragStartListener(
+                            index: i,
+                            child: const Icon(Icons.drag_handle),
+                          ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: gap,
+                        runSpacing: 6,
+                        children: ids.map((route) {
+                          final item = actions[route];
+                          if (item == null) return const SizedBox.shrink();
+                          return SizedBox(
+                            width: 72,
+                            child: QuickActionButton(
+                              icon: item.icon,
+                              label: item.title,
+                              accentColor: QuickActionService.accentFor(item),
+                              onTap: () {
+                                final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+                                if (tw != null && item != null) {
+                                  tw.openTab(item.id, item.title, item.route);
+                                } else {
+                                  Navigator.pushNamed(context, route);
+                                }
+                              },
+                              onLongPress: () {
+                                setState(() {
+                                  _reorderMode = true;
+                                  _editIds = List<String>.from(page.actionIds);
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
               );
             }).toList(),
           ),
