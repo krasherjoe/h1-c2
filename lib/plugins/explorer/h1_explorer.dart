@@ -221,11 +221,6 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
         title: widget.appBarTitle ?? Text(widget.config.explorerTitle),
         centerTitle: true,
         actions: [
-          Theme(
-            data: Theme.of(context).copyWith(
-              visualDensity: VisualDensity.compact,
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
           if (hasSort)
             PopupMenuButton<String>(
               icon: const Icon(Icons.sort),
@@ -262,6 +257,14 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                       ))
                   .toList(),
             ),
+          IconButtonTheme(
+            data: IconButtonThemeData(
+              style: IconButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+              ),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
           if (widget.config.supportsTreeView)
             IconButton(
               icon: Icon(_treeMode ? Icons.list : Icons.folder_open),
