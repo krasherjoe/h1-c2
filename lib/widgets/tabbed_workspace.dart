@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../plugin_system/plugin_registry.dart';
 import '../plugin_system/menu_item.dart';
 import 'tab_navigator.dart';
@@ -175,7 +176,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
   Widget _buildHomeTab(ColorScheme cs) {
     final active = _currentIndex == 0;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = 0),
+      onTap: () { HapticFeedback.lightImpact(); setState(() => _currentIndex = 0); },
       onLongPress: _confirmCloseAllTabs,
       child: Container(
         margin: const EdgeInsets.only(left: 4),
@@ -192,7 +193,7 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     final active = i == _currentIndex;
     final inactiveBg = Color.lerp(cs.primaryContainer, cs.surface, 0.6)!;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = i),
+      onTap: () { HapticFeedback.lightImpact(); setState(() => _currentIndex = i); },
       onLongPress: () => closeTab(i),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 140),
