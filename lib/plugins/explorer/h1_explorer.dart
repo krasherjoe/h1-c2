@@ -220,6 +220,9 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       appBar: AppBar(
         title: widget.appBarTitle ?? Text(widget.config.explorerTitle),
         centerTitle: true,
+        leading: Navigator.of(context).canPop()
+            ? const BackButton()
+            : null,
         actions: [
           if (hasSort)
             PopupMenuButton<String>(
