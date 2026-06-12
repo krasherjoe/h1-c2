@@ -97,6 +97,46 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog> {
                       ),
                     ),
                   ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('新規カテゴリ追加'),
+                      onPressed: () async {
+                        final ctrl = TextEditingController();
+                        final name = await showDialog<String>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('カテゴリ名'),
+                            content: TextField(
+                              controller: ctrl,
+                              autofocus: true,
+                              decoration: const InputDecoration(
+                                hintText: '例: 消耗品',
+                                isDense: true,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('キャンセル'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+                                child: const Text('作成'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (name != null && name.isNotEmpty) {
+                          final id = await _repo.getOrCreateCategoryId(name);
+                          if (!mounted) return;
+                          Navigator.pop(context, id);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Expanded(
                     child: ListView(
                       children: _buildFlatList().map((fn) {
