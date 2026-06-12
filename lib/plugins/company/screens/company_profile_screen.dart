@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,6 +26,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   CompanyInfo? _info;
   bool _isLoading = true;
   final _companyRepo = CompanyRepository();
+  List<CompanyBankAccount> _bankAccounts = List.generate(
+    3, (_) => const CompanyBankAccount(),
+  );
 
   @override
   void initState() {
@@ -58,6 +62,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       _telController.text = info.tel ?? '';
       _faxController.text = info.fax ?? '';
       _emailController.text = info.email ?? '';
+      _bankAccounts = _parseBankAccounts(info.bankAccounts);
     }
     setState(() {
       _info = info;
@@ -65,8 +70,25 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     });
   }
 
+  List<CompanyBankAccount> _parseBankAccounts(String? json) {
+    if (json == null || json.isEmpty) {
+      return List.generate(3, (_) => const CompanyBankAccount());
+    }
+    try {
+      final list = (jsonDecode(json) as List).cast<Map<String, dynamic>>();
+      final accounts = list.map((e) => CompanyBankAccount.fromJson(e)).toList();
+      while (accounts.length < 3) {
+        accounts.add(const CompanyBankAccount());
+      }
+      return accounts.take(3).toList();
+    } catch (_) {
+      return List.generate(3, (_) => const CompanyBankAccount());
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final bankJson = jsonEncode(_bankAccounts.map((a) => a.toJson()).toList());
     final info = (_info ?? CompanyInfo(name: '')).copyWith(
       name: _nameController.text.trim(),
       zipCode: _postalController.text.trim().isEmpty ? null : _postalController.text.trim(),
@@ -74,6 +96,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       tel: _telController.text.trim().isEmpty ? null : _telController.text.trim(),
       fax: _faxController.text.trim().isEmpty ? null : _faxController.text.trim(),
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+      bankAccounts: bankJson,
     );
     await _companyRepo.saveCompanyInfo(info);
     setState(() => _info = info);
@@ -219,6 +242,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 24),
+                  _buildBankSection(),
+                  const SizedBox(height: 24),
 
                   // 角印管理セクション
                   _buildSealSection(),
@@ -231,6 +256,131 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildBankSection() {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(12),
+        color: cs.primaryContainer.withValues(alpha: 0.15),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.account_balance, color: cs.primary, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                '振込先口座',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < 3; i++) _buildBankSlot(i, cs),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBankSlot(int index, ColorScheme cs) {
+    final account = _bankAccounts[index];
+    return Padding(
+      padding: EdgeInsets.only(top: index > 0 ? 16 : 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(account.isActive ? Icons.check_box : Icons.check_box_outline_blank,
+                size: 20, color: account.isActive ? cs.primary : cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text('口座${index + 1}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              const Spacer(),
+              SizedBox(
+                height: 28,
+                child: Switch(
+                  value: account.isActive,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onChanged: (v) {
+                    setState(() {
+                      _bankAccounts[index] = account.copyWith(isActive: v);
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          if (account.isActive) ...[
+            const SizedBox(height: 8),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: '銀行名', isDense: true, border: OutlineInputBorder(),
+              ),
+              controller: TextEditingController(text: account.bankName)
+                ..selection = TextSelection.collapsed(offset: account.bankName.length),
+              onChanged: (v) => _bankAccounts[index] = account.copyWith(bankName: v),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: '支店名', isDense: true, border: OutlineInputBorder(),
+              ),
+              controller: TextEditingController(text: account.branchName)
+                ..selection = TextSelection.collapsed(offset: account.branchName.length),
+              onChanged: (v) => _bankAccounts[index] = account.copyWith(branchName: v),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: account.accountType,
+                    decoration: const InputDecoration(
+                      labelText: '口座種別', isDense: true, border: OutlineInputBorder(),
+                    ),
+                    items: ['普通', '当座', 'その他']
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 14))))
+                      .toList(),
+                    onChanged: (v) {
+                      if (v != null) {
+                        setState(() => _bankAccounts[index] = account.copyWith(accountType: v));
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      labelText: '口座番号', isDense: true, border: OutlineInputBorder(),
+                    ),
+                    controller: TextEditingController(text: account.accountNumber)
+                      ..selection = TextSelection.collapsed(offset: account.accountNumber.length),
+                    keyboardType: TextInputType.number,
+                    onChanged: (v) => _bankAccounts[index] = account.copyWith(accountNumber: v),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: '口座名義', isDense: true, border: OutlineInputBorder(),
+              ),
+              controller: TextEditingController(text: account.holderName)
+                ..selection = TextSelection.collapsed(offset: account.holderName.length),
+              onChanged: (v) => _bankAccounts[index] = account.copyWith(holderName: v),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

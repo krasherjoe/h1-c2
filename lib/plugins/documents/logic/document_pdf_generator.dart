@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
@@ -317,6 +318,7 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                           companyInfo.taxDisplayMode != 'hidden')
                         pw.Text('登録番号: ${companyInfo.registrationNumber!}',
                             style: const pw.TextStyle(fontSize: 10)),
+                      ..._buildBankAccountPdfLines(companyInfo, ipaex),
                     ],
                   ],
                 ),
@@ -408,4 +410,30 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
   );
 
   return pdf;
+}
+
+List<pw.Widget> _buildBankAccountPdfLines(CompanyInfo company, pw.Font font) {
+  final json = company.bankAccounts;
+  if (json == null || json.isEmpty) return [];
+  try {
+    final list = (jsonDecode(json) as List).cast<Map<String, dynamic>>();
+    final accounts = list.map((e) => CompanyBankAccount.fromJson(e)).toList();
+    final active = accounts.where((a) => a.isActive).toList();
+    if (active.isEmpty) return [];
+    final lines = <pw.Widget>[
+      pw.SizedBox(height: 4),
+      pw.Text('振込先:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, font: font)),
+    ];
+    for (final a in active) {
+      final parts = <String>[a.bankName];
+      if (a.branchName.isNotEmpty) parts.add(a.branchName);
+      parts.add(a.accountType);
+      if (a.accountNumber.isNotEmpty) parts.add(a.accountNumber);
+      if (a.holderName.isNotEmpty) parts.add(a.holderName);
+      lines.add(pw.Text(parts.join(' '), style: pw.TextStyle(fontSize: 8, font: font)));
+    }
+    return lines;
+  } catch (_) {
+    return [];
+  }
 }
