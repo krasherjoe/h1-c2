@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/quick_action_service.dart';
 import '../models/quick_action_page.dart';
 import '../widgets/quick_action_button.dart';
@@ -10,7 +11,8 @@ class QuickActionsPanel extends StatefulWidget {
   State<QuickActionsPanel> createState() => _QuickActionsPanelState();
 }
 
-class _QuickActionsPanelState extends State<QuickActionsPanel> {
+class _QuickActionsPanelState extends State<QuickActionsPanel>
+    with SingleTickerProviderStateMixin {
   final _service = QuickActionService();
   final _pageCtrl = PageController();
   List<QuickActionPage> _pages = [];
@@ -18,15 +20,21 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
   bool _loading = true;
   bool _reorderMode = false;
   List<String> _editIds = [];
+  late AnimationController _shakeCtrl;
 
   @override
   void initState() {
     super.initState();
+    _shakeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _load();
   }
 
   @override
   void dispose() {
+    _shakeCtrl.dispose();
     _pageCtrl.dispose();
     super.dispose();
   }
@@ -150,7 +158,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(100),
-                        color: cs.primaryContainer.withValues(alpha: 0.5),
+                        color: cs.surface,
                       ),
                       child: GestureDetector(
                         onTap: () {
@@ -179,6 +187,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                   icon: const Icon(Icons.check, size: 18),
                   label: const Text('完了'),
                   onPressed: () {
+                    _shakeCtrl.stop();
                     final page = _pages[_currentPage];
                     page.actionIds = _editIds;
                     _service.savePages(_pages);
@@ -227,16 +236,23 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                       itemBuilder: (ctx, i) {
                         final route = ids[i];
                         final item = actions[route];
-                        return ListTile(
-                          key: ValueKey(route),
-                          dense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                          leading: Icon(item?.icon ?? Icons.help_outline,
-                            color: item != null ? QuickActionService.accentFor(item) : null),
-                          title: Text(item?.title ?? route, style: const TextStyle(fontSize: 14)),
-                          trailing: ReorderableDragStartListener(
-                            index: i,
-                            child: const Icon(Icons.drag_handle),
+                        return AnimatedBuilder(
+                          animation: _shakeCtrl,
+                          builder: (context, child) => Transform.rotate(
+                            angle: _shakeCtrl.value * 0.04 - 0.02,
+                            child: child,
+                          ),
+                          child: ListTile(
+                            key: ValueKey(route),
+                            dense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                            leading: Icon(item?.icon ?? Icons.help_outline,
+                              color: item != null ? QuickActionService.accentFor(item) : null),
+                            title: Text(item?.title ?? route, style: const TextStyle(fontSize: 14)),
+                            trailing: ReorderableDragStartListener(
+                              index: i,
+                              child: const Icon(Icons.drag_handle),
+                            ),
                           ),
                         );
                       },
@@ -264,6 +280,8 @@ class _QuickActionsPanelState extends State<QuickActionsPanel> {
                                 }
                               },
                               onLongPress: () {
+                                HapticFeedback.mediumImpact();
+                                _shakeCtrl.repeat(reverse: true);
                                 setState(() {
                                   _reorderMode = true;
                                   _editIds = List<String>.from(page.actionIds);
