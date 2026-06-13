@@ -82,6 +82,9 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
         return Card(
         elevation: isRaised ? 2 : 0,
         shadowColor: isRaised ? cs.shadow.withValues(alpha: 0.3) : Colors.transparent,
+        color: hasDraft
+            ? (isDark ? cs.surfaceContainerHigh.withValues(alpha: 0.6) : cs.surfaceContainerLow)
+            : null,
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         clipBehavior: Clip.antiAlias,
       child: SizedBox(
