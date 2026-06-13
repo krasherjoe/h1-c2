@@ -147,28 +147,27 @@ class DocumentViewer extends StatelessWidget {
 
   Widget _buildConvertButton(BuildContext context) {
     final next = nextDocumentType(document.documentType);
-    if (next == null) return const SizedBox.shrink();
+    final label = copyButtonLabel(document.documentType);
+    if (next == null || label.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         icon: const Icon(Icons.arrow_forward),
-        label: Text('${next.label}へ変換'),
+        label: Text(label),
         onPressed: () async {
           try {
             final repo = DocumentRepository();
-            final newDoc = convertDocument(document.copyWith(
-              id: repo.generateId(),
-              documentNumber: await repo.generateDocumentNumber(next),
-            ));
-            await repo.save(newDoc);
+            final newDoc = copyAsNextDocument(document);
+            final docNumber = await repo.generateDocumentNumber(next);
+            await repo.save(newDoc.copyWith(documentNumber: docNumber));
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${next.label}伝票を作成しました')),
+              SnackBar(content: Text('${next.label}伝票を作成しました（元の${document.documentType.label}はそのままです）')),
             );
           } catch (e) {
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('変換エラー: $e')),
+              SnackBar(content: Text('作成エラー: $e')),
             );
           }
         },

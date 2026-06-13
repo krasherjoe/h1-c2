@@ -1,3 +1,4 @@
+import 'package:uuid/uuid.dart';
 import '../models/document_model.dart';
 
 DocumentType? nextDocumentType(DocumentType current) {
@@ -10,16 +11,31 @@ DocumentType? nextDocumentType(DocumentType current) {
   };
 }
 
-DocumentModel convertDocument(DocumentModel source) {
+String _nextLabel(DocumentType current) {
+  return switch (current) {
+    DocumentType.estimation => '受注',
+    DocumentType.order => '納品',
+    DocumentType.delivery => '請求',
+    DocumentType.invoice => '領収',
+    DocumentType.receipt => '',
+  };
+}
+
+String copyButtonLabel(DocumentType current) {
+  final next = _nextLabel(current);
+  return next.isNotEmpty ? 'コピーして${next}を作成' : '';
+}
+
+DocumentModel copyAsNextDocument(DocumentModel source) {
   final next = nextDocumentType(source.documentType);
-  if (next == null) throw ArgumentError('これ以上変換できません: ${source.documentType.label}');
+  if (next == null) throw ArgumentError('これ以上作成できません: ${source.documentType.label}');
 
   return DocumentModel(
-    id: source.id,
+    id: const Uuid().v4(),
     documentType: next,
     customerId: source.customerId,
     customerName: source.customerName,
-    documentNumber: source.documentNumber,
+    documentNumber: '',
     date: DateTime.now(),
     total: source.total,
     status: 'draft',
@@ -31,7 +47,7 @@ DocumentModel convertDocument(DocumentModel source) {
     priceAdjustmentType: source.priceAdjustmentType,
     priceAdjustmentUnit: source.priceAdjustmentUnit,
     items: source.items.map((item) => DocumentItem(
-      id: _IdGenerator().v4(),
+      id: const Uuid().v4(),
       productId: item.productId,
       productName: item.productName,
       quantity: item.quantity,
@@ -39,11 +55,7 @@ DocumentModel convertDocument(DocumentModel source) {
       taxRate: item.taxRate,
       discountAmount: item.discountAmount,
       discountRate: item.discountRate,
+      variantLabel: item.variantLabel,
     )).toList(),
   );
-}
-
-class _IdGenerator {
-  int _counter = 0;
-  String v4() => 'conv_${DateTime.now().millisecondsSinceEpoch}_${_counter++}';
 }
