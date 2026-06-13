@@ -50,8 +50,9 @@ class _DocumentEditorState extends State<DocumentEditor> {
   final _redoStack = <_EditorSnapshot>[];
 
   bool get _isNew => widget.document == null;
-  bool get _canUndo => _undoStack.isNotEmpty;
-  bool get _canRedo => _redoStack.isNotEmpty;
+  bool get _isLocked => widget.document?.isLocked ?? false;
+  bool get _canUndo => _undoStack.isNotEmpty && !_isLocked;
+  bool get _canRedo => _redoStack.isNotEmpty && !_isLocked;
 
   @override
   void initState() {
@@ -502,24 +503,33 @@ class _DocumentEditorState extends State<DocumentEditor> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isNew ? 'DE:新規書類' : 'DE:書類編集'),
+        title: Text(_isNew ? 'DE:新規書類' : (_isLocked ? 'DE:書類参照' : 'DE:書類編集')),
         actions: [
-          IconButton(
-            icon: Icon(Icons.undo, color: _canUndo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
-            tooltip: '元に戻す',
-            onPressed: _canUndo ? _undo : null,
-          ),
-          IconButton(
-            icon: Icon(Icons.redo, color: _canRedo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
-            tooltip: 'やり直す',
-            onPressed: _canRedo ? _redo : null,
-          ),
+          if (!_isLocked) ...[
+            IconButton(
+              icon: Icon(Icons.undo, color: _canUndo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
+              tooltip: '元に戻す',
+              onPressed: _canUndo ? _undo : null,
+            ),
+            IconButton(
+              icon: Icon(Icons.redo, color: _canRedo ? cs.onPrimary : cs.onPrimary.withValues(alpha: 0.3)),
+              tooltip: 'やり直す',
+              onPressed: _canRedo ? _redo : null,
+            ),
+          ],
           IconButton(
             icon: Icon(Icons.picture_as_pdf, color: cs.onPrimary),
             tooltip: 'PDFプレビュー',
             onPressed: _preview,
           ),
-          IconButton(
+          if (_isLocked)
+            IconButton(
+              icon: Icon(Icons.close, color: cs.onPrimary),
+              tooltip: '閉じる',
+              onPressed: () => Navigator.pop(context),
+            )
+          else
+            IconButton(
             icon: _isSaving
               ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
               : Icon(Icons.save, color: cs.onPrimary),
@@ -993,6 +1003,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildBottomBar() {
+    if (_isLocked) return const SizedBox.shrink();
     return SafeArea(
       top: false,
       child: Padding(

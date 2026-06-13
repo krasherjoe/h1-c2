@@ -13,96 +13,167 @@ class DocumentViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
       children: [
-        _buildHeader(context, theme),
-        const Divider(height: 24),
-        _buildItemsSection(context, theme),
-        const Divider(height: 24),
-        _buildTotalSection(theme),
-        if (document.isConfirmed) ...[
-          const Divider(height: 24),
-          _buildConvertButton(context),
-        ],
+        _buildHeader(context, cs),
+        const SizedBox(height: 16),
+        _buildCustomerSection(context, cs),
+        const SizedBox(height: 16),
+        _buildSubjectSection(cs),
+        const SizedBox(height: 16),
+        _buildDivider(cs),
+        _buildItemsHeader(cs),
+        const SizedBox(height: 8),
+        ...document.items.map((item) => _buildItemCard(item, cs)),
+        const SizedBox(height: 12),
+        _buildTotalSection(cs),
+        const SizedBox(height: 16),
+        if (document.isConfirmed) _buildConvertButton(context),
         const SizedBox(height: 12),
         _buildPdfButton(context),
       ],
     );
   }
 
-  Widget _buildHeader(BuildContext context, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader(BuildContext context, ColorScheme cs) {
+    final docTypeColor = () {
+      switch (document.documentType) {
+        case DocumentType.estimation: return cs.secondary;
+        case DocumentType.order: return cs.tertiary;
+        case DocumentType.delivery: return cs.primaryContainer;
+        case DocumentType.invoice: return cs.error;
+        case DocumentType.receipt: return const Color(0xFF388E3C);
+      }
+    }();
+    return Row(
       children: [
-        Row(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: docTypeColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(document.documentType.label,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: docTypeColor)),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: document.isDraft ? cs.tertiaryContainer : cs.primaryContainer,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            document.isDraft ? '下書き' : '確定',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+              color: document.isDraft ? cs.onTertiaryContainer : cs.onPrimaryContainer),
+          ),
+        ),
+        const Spacer(),
+        Text(document.documentNumber,
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+      ],
+    );
+  }
+
+  Widget _buildCustomerSection(BuildContext context, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.business, size: 16, color: cs.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(document.customerName, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface)),
+          ]),
+          const SizedBox(height: 6),
+          Row(children: [
+            Icon(Icons.calendar_today, size: 14, color: cs.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text('${document.date.year}/${document.date.month.toString().padLeft(2, '0')}/${document.date.day.toString().padLeft(2, '0')}',
+              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const Spacer(),
+            if (document.linkedDocumentId != null)
+              Row(children: [
+                Icon(Icons.link, size: 14, color: cs.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text('元伝票', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              ]),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubjectSection(ColorScheme cs) {
+    if (document.subject == null || document.subject!.isEmpty) return const SizedBox.shrink();
+    return Row(children: [
+      Icon(Icons.subject, size: 16, color: cs.onSurfaceVariant),
+      const SizedBox(width: 6),
+      Expanded(child: Text(document.subject!, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
+    ]);
+  }
+
+  Widget _buildDivider(ColorScheme cs) {
+    return Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.3));
+  }
+
+  Widget _buildItemsHeader(ColorScheme cs) {
+    return Row(children: [
+      Text('明細', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
+      const Spacer(),
+      Text('${document.items.length}点', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+    ]);
+  }
+
+  Widget _buildItemCard(DocumentItem item, ColorScheme cs) {
+    final hasDiscount = item.discountAmount != null || item.discountRate != null;
+    final baseSubtotal = (item.quantity * item.unitPrice).round();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      elevation: 0.5,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Chip(label: Text(document.documentType.label)),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: document.isDraft ? theme.colorScheme.tertiaryContainer : theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(4),
+            Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
+            if (item.variantLabel != null && item.variantLabel!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(item.variantLabel!, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant)),
               ),
-              child: Text(
-                document.isDraft ? '下書き' : '確定',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: document.isDraft ? theme.colorScheme.onTertiaryContainer : theme.colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ),
+            const SizedBox(height: 6),
+            Row(children: [
+              Text('¥${_formatMoney(item.unitPrice)}',
+                style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              if (!hasDiscount)
+                Text('× ${_formatQty(item.quantity)} = ¥${_formatMoney(item.subtotal)}',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
+              else ...[
+                Text('× ${_formatQty(item.quantity)} = ¥${_formatMoney(baseSubtotal)}',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, decoration: TextDecoration.lineThrough)),
+                const SizedBox(width: 4),
+                Text('¥${_formatMoney(item.subtotal)}',
+                  style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+              ],
+            ]),
           ],
         ),
-        const SizedBox(height: 12),
-        Text(document.documentNumber, style: theme.textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Text('顧客: ${document.customerName}'),
-        if (document.subject != null && document.subject!.isNotEmpty)
-          Text('件名: ${document.subject}'),
-        Text('日付: ${_formatDate(document.date)}'),
-        if (document.linkedDocumentId != null)
-          Text('元伝票: ${document.linkedDocumentId}'),
-      ],
+      ),
     );
   }
 
-  Widget _buildItemsSection(BuildContext context, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('明細', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        ...document.items.map((item) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.productName),
-                    if (item.variantLabel != null && item.variantLabel!.isNotEmpty)
-                      Text(item.variantLabel!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    Text(
-                      '${_formatQty(item.quantity)} × ${_formatMoney(item.unitPrice)}',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              Text(_formatMoney(item.subtotal)),
-            ],
-          ),
-        )),
-      ],
-    );
-  }
-
-  Widget _buildTotalSection(ThemeData theme) {
-    final cs = theme.colorScheme;
+  Widget _buildTotalSection(ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -151,7 +222,7 @@ class DocumentViewer extends StatelessWidget {
     if (next == null || label.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton.icon(
+      child: OutlinedButton.icon(
         icon: const Icon(Icons.arrow_forward),
         label: Text(label),
         onPressed: () async {
@@ -178,7 +249,7 @@ class DocumentViewer extends StatelessWidget {
   Widget _buildPdfButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
+      child: FilledButton.icon(
         icon: const Icon(Icons.preview),
         label: const Text('プレビュー'),
         onPressed: () async {
@@ -222,9 +293,6 @@ class DocumentViewer extends StatelessWidget {
       ),
     );
   }
-
-  String _formatDate(DateTime dt) =>
-    '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
 
   String _formatMoney(int amount) =>
     '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
