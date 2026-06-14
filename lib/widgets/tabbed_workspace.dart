@@ -195,25 +195,27 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
     return GestureDetector(
       onTap: () { HapticFeedback.lightImpact(); setState(() => _currentIndex = i); },
       onLongPress: () => closeTab(i),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 140),
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: active
-              ? Color.lerp(cs.primaryContainer, cs.primary, 0.3)!
-              : inactiveBg,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          tab.title,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 12,
-            color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
+      child: IntrinsicWidth(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 140),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active
+                ? Color.lerp(cs.primaryContainer, cs.primary, 0.3)!
+                : inactiveBg,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            tab.title,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: active ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),
