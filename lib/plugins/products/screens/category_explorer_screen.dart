@@ -29,19 +29,9 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   final _expandedCategories = <String>{};
 
-  // --- 間隔・サイズ定数 ---
-  static const _kCardMarginH = 1.0;
-  static const _kCardMarginV = 1.5;
-  static const _kCardPadH = 6.0;
-  static const _kCardPadV = 3.0;
-  static const _kItemGap = 3.0;
-  static const _kIconTextGap = 6.0;
-  static const _kIconSizes = [18.0, 22.0, 26.0];
-  static const _kTextSizes = [12.0, 14.0, 15.0];
-  static const _kSubTextSizes = [10.0, 11.0, 12.0];
-  static const _kPriceSizes = [12.0, 13.0, 14.0];
-  static const _kCategoryIconSizes = [16.0, 20.0, 24.0];
-  static const _kFolderSizes = [18.0, 22.0, 26.0];
+  // --- デザインシステム定数 (D1基準) ---
+  static const _kSpacing = 8.0;   // D1と統一: Card margin = 8
+  static const _kPadding = 6.0;   // D1と統一: Card内padding = 6
 
   @override
   void initState() {
@@ -205,7 +195,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final products = _products.where((p) => p.categoryId == cat.id).toList();
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
-    final spacing = _kItemGap;
+    final spacing = _kSpacing;
     debugPrint('[P1] treeItem: ${cat.name}(id=${cat.id}) products=${products.length} expanded=$isExpanded');
 
     return DragTarget<Product>(
@@ -292,7 +282,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildUncategorizedSection(ColorScheme cs, bool showShadows) {
     final uncategorized = _products.where((p) => p.categoryId == null).toList();
-    final spacing = _kItemGap;
+    final spacing = _kSpacing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -348,29 +338,25 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildProductCardContent(Product product, int depth, ColorScheme cs, bool showShadows) {
     final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
-    final iconSize = _kIconSizes[_displaySize];
-    final textS = _kTextSizes[_displaySize];
-    final subS = _kSubTextSizes[_displaySize];
-    final priceS = _kPriceSizes[_displaySize];
+    final iconSize = [18.0, 22.0, 26.0][_displaySize];
+    final textS = [12.0, 14.0, 15.0][_displaySize];
+    final subS = [10.0, 11.0, 12.0][_displaySize];
+    final priceS = [12.0, 13.0, 14.0][_displaySize];
     return Card(
-      margin: EdgeInsets.only(
-        left: (depth > 0 ? depth * 16.0 : 0) + _kCardMarginH,
-        right: _kCardMarginH,
-        top: _kCardMarginV,
-      ),
+      margin: EdgeInsets.symmetric(horizontal: _kSpacing / 2, vertical: _kSpacing / 2),
       elevation: showShadows ? 2 : 0,
       shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.3) : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () => _openProductViewer(product),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: _kCardPadH, vertical: _kCardPadV),
+          padding: const EdgeInsets.symmetric(horizontal: _kPadding, vertical: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(Icons.inventory_2, size: iconSize, color: cs.primary,
                   shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
-              SizedBox(width: _kIconTextGap),
+              SizedBox(width: _kPadding),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,15 +385,21 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       valueListenable: inputStyleNotifier,
       builder: (context, inputStyle, _) {
         final showShadows = inputStyle == 'raised';
+        final screenW = MediaQuery.of(context).size.width;
+        final cols = screenW > 600 ? 2 : 1;
+        final cardW = cols > 1 ? (screenW - _kSpacing * (cols + 1)) / cols : screenW - _kSpacing * 2;
         return RefreshIndicator(
           onRefresh: _load,
           child: products.isEmpty
               ? Center(child: Text(_searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません'))
               : ListView.builder(
                   key: ValueKey('list_${products.length}_$_searchQuery'),
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(_kSpacing),
                   itemCount: products.length,
-                  itemBuilder: (ctx, i) => _buildProductCard(products[i], 0, cs, showShadows: showShadows),
+                  itemBuilder: (ctx, i) => SizedBox(
+                    width: cardW,
+                    child: _buildProductCard(products[i], 0, cs, showShadows: showShadows),
+                  ),
                 ),
         );
       },
