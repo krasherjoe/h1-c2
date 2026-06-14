@@ -203,8 +203,6 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       _dbSize = await file.length();
       if (_items.length != _lastLogCount) {
         _lastLogCount = _items.length;
-        final sizeStr = '${(_dbSize! / 1024).round()}KB';
-        ErrorReporter.sendLog(message: '全${_items.length}件 | DB: $sizeStr');
       }
       if (mounted) setState(() {});
     } catch (_) {
