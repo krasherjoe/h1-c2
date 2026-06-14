@@ -79,15 +79,22 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
       valueListenable: inputStyleNotifier,
       builder: (context, inputStyle, _) {
         final isRaised = inputStyle == 'raised';
-        return Card(
-        elevation: isRaised ? 2 : 0,
-        shadowColor: isRaised ? cs.shadow.withValues(alpha: 0.3) : Colors.transparent,
-        color: hasDraft
+        final cardBg = hasDraft
             ? (isDark ? cs.surfaceContainerHigh.withValues(alpha: 0.6) : cs.surfaceContainerLow)
-            : null,
+            : (Theme.of(context).cardTheme.color ?? cs.surface);
+        return Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-        clipBehavior: Clip.antiAlias,
-      child: SizedBox(
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isRaised ? [
+            BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(color: cs.shadow.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4)),
+          ] : null,
+        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
         height: (88 * MediaQuery.textScalerOf(context).scale(1.0)).ceilToDouble(),
         child: Row(
           children: [
@@ -143,6 +150,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
           ],
         ),
       ),
+    ),
     );
   },
 );
