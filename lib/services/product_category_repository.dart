@@ -87,7 +87,7 @@ class ProductCategoryRepository {
     await db.delete('product_categories', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<void> moveNode(String id, String newParentId) async {
+  Future<void> moveNode(String id, String? newParentId) async {
     final db = await _db;
     await db.update(
       'product_categories',
