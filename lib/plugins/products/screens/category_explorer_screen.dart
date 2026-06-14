@@ -29,6 +29,20 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   final _expandedCategories = <String>{};
 
+  // --- 間隔・サイズ定数 ---
+  static const _kCardMarginH = 2.0;
+  static const _kCardMarginV = 3.0;
+  static const _kCardPadH = 8.0;
+  static const _kCardPadV = 5.0;
+  static const _kItemGap = 6.0;
+  static const _kIconTextGap = 8.0;
+  static const _kIconSizes = [18.0, 22.0, 26.0];
+  static const _kTextSizes = [12.0, 14.0, 15.0];
+  static const _kSubTextSizes = [10.0, 11.0, 12.0];
+  static const _kPriceSizes = [12.0, 13.0, 14.0];
+  static const _kCategoryIconSizes = [16.0, 20.0, 24.0];
+  static const _kFolderSizes = [18.0, 22.0, 26.0];
+
   @override
   void initState() {
     super.initState();
@@ -191,7 +205,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final products = _products.where((p) => p.categoryId == cat.id).toList();
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
-    final spacing = [2.0, 4.0, 6.0][_displaySize];
+    final spacing = _kItemGap;
     debugPrint('[P1] treeItem: ${cat.name}(id=${cat.id}) products=${products.length} expanded=$isExpanded');
 
     return DragTarget<Product>(
@@ -278,7 +292,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildUncategorizedSection(ColorScheme cs, bool showShadows) {
     final uncategorized = _products.where((p) => p.categoryId == null).toList();
-    final spacing = [2.0, 4.0, 6.0][_displaySize];
+    final spacing = _kItemGap;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -334,41 +348,44 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildProductCardContent(Product product, int depth, ColorScheme cs, bool showShadows) {
     final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    final iconSize = _kIconSizes[_displaySize];
+    final textS = _kTextSizes[_displaySize];
+    final subS = _kSubTextSizes[_displaySize];
+    final priceS = _kPriceSizes[_displaySize];
     return Card(
-      margin: EdgeInsets.only(left: (depth > 0 ? depth * 16.0 : 0) + 0.5, right: 0.5, bottom: 1),
+      margin: EdgeInsets.only(
+        left: (depth > 0 ? depth * 16.0 : 0) + _kCardMarginH,
+        right: _kCardMarginH,
+        top: _kCardMarginV,
+      ),
       elevation: showShadows ? 2 : 0,
       shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.3) : null,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         onTap: () => _openProductViewer(product),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary,
-                    shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: [12, 14, 15][_displaySize].toDouble(), fontWeight: FontWeight.w500)),
-                      if (product.barcode != null)
-                        Text('バーコード: ${product.barcode}',
-                          style: TextStyle(fontSize: [10, 11, 12][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
-                    ],
-                  ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: _kCardPadH, vertical: _kCardPadV),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.inventory_2, size: iconSize, color: cs.primary,
+                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
+              SizedBox(width: _kIconTextGap),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: textS, fontWeight: FontWeight.w500)),
+                    if (product.barcode != null)
+                      Text('バーコード: ${product.barcode}',
+                        style: TextStyle(fontSize: subS, color: cs.onSurfaceVariant)),
+                  ],
                 ),
-                Text(priceStr, style: TextStyle(
-                  fontSize: [12, 13, 14][_displaySize].toDouble(),
-                  fontWeight: FontWeight.bold, color: cs.primary)),
-              ],
-            ),
+              ),
+              Text(priceStr, style: TextStyle(
+                fontSize: priceS, fontWeight: FontWeight.bold, color: cs.primary)),
+            ],
           ),
         ),
       ),
