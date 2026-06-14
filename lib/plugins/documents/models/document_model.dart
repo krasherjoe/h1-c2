@@ -80,7 +80,7 @@ class DocumentModel extends H1ExplorerItem {
   });
 
   @override
-  String get title => documentNumber;
+  String get title => 'DV:${id.split('-').first}';
 
   @override
   String? get subtitle {

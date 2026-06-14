@@ -92,7 +92,7 @@ class DocumentViewer extends StatelessWidget {
           Row(children: [
             Icon(Icons.business, size: 16, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text(document.customerName, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface)),
+            Expanded(child: Text(document.customerName, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface))),
           ]),
           const SizedBox(height: 6),
           Row(children: [
@@ -101,12 +101,21 @@ class DocumentViewer extends StatelessWidget {
             Text('${document.date.year}/${document.date.month.toString().padLeft(2, '0')}/${document.date.day.toString().padLeft(2, '0')}',
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             const Spacer(),
-            if (document.linkedDocumentId != null)
-              Row(children: [
-                Icon(Icons.link, size: 14, color: cs.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text('元伝票', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              ]),
+            Text(document.documentNumber,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 4),
+          Row(children: [
+            Icon(Icons.tag, size: 14, color: cs.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text('ID: ${document.id.substring(0, 8)}...',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            if (document.linkedDocumentId != null) ...[
+              const Spacer(),
+              Icon(Icons.link, size: 14, color: cs.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text('元伝票', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            ],
           ]),
         ],
       ),
