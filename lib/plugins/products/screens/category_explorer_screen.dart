@@ -1,7 +1,10 @@
-import 'dart:math' as math;
+import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../models/product_model.dart';
+import '../../../services/product_repository.dart';
 import '../../../services/product_category_repository.dart';
 import '../../../models/product_category_model.dart';
+import '../screens/product_editor_screen.dart';
 import '../logic/category_tree_utils.dart';
 
 class CategoryExplorerScreen extends StatefulWidget {
@@ -10,400 +13,484 @@ class CategoryExplorerScreen extends StatefulWidget {
   State<CategoryExplorerScreen> createState() => _CategoryExplorerScreenState();
 }
 
-class _CategoryExplorerScreenState extends State<CategoryExplorerScreen>
-    with SingleTickerProviderStateMixin {
-  final _repo = ProductCategoryRepository();
-  List<ProductCategory> _all = [];
+class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
+  final _productRepo = ProductRepository();
+  final _catRepo = ProductCategoryRepository();
+
+  List<Product> _products = [];
+  List<ProductCategory> _categories = [];
   bool _loading = true;
-  String? _currentParentId; // 現在地。null=ルート
-  bool _editMode = false;
-  late final AnimationController _wiggle;
+  bool _isTreeView = true;
+  int _displaySize = 1; // 0=S, 1=M, 2=L
+  String _searchQuery = '';
+  String? _selectedCategoryId;
+
+  final _expandedCategories = <String>{};
 
   @override
   void initState() {
     super.initState();
-    _wiggle = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
     _load();
-  }
-
-  @override
-  void dispose() {
-    _wiggle.dispose();
-    super.dispose();
   }
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final all = await _repo.getAll();
+    final products = await _productRepo.getAllProducts();
+    final categories = await _catRepo.getAll();
     if (!mounted) return;
     setState(() {
-      _all = all;
+      _products = products;
+      _categories = categories;
       _loading = false;
-      if (_currentParentId != null && !_all.any((c) => c.id == _currentParentId)) {
-        _currentParentId = null;
-      }
     });
   }
 
-  // 移動後の軽量リロード(_loading を立てずちらつきを防ぐ。編集モードは維持)
-  Future<void> _reloadKeepingState() async {
-    final all = await _repo.getAll();
-    if (!mounted) return;
-    setState(() {
-      _all = all;
-      if (_currentParentId != null && !_all.any((c) => c.id == _currentParentId)) {
-        _currentParentId = null;
-      }
-    });
-  }
-
-  Map<String, ProductCategory> _indexById() {
-    final m = <String, ProductCategory>{};
-    for (final c in _all) {
-      m[c.id] = c;
+  List<Product> get _filteredProducts {
+    var list = _products;
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      list = list.where((p) =>
+        p.name.toLowerCase().contains(q) ||
+        (p.barcode?.toLowerCase().contains(q) ?? false) ||
+        (p.modelNumber?.toLowerCase().contains(q) ?? false)
+      ).toList();
     }
-    return m;
-  }
-
-  Map<String, String?> _parentOf() {
-    final m = <String, String?>{};
-    for (final c in _all) {
-      m[c.id] = c.parentId;
+    if (_selectedCategoryId != null) {
+      list = list.where((p) => p.categoryId == _selectedCategoryId).toList();
     }
-    return m;
-  }
-
-  List<ProductCategory> get _currentChildren =>
-      _all.where((c) => c.parentId == _currentParentId).toList();
-
-  String? _upParentId() => _indexById()[_currentParentId]?.parentId;
-
-  List<ProductCategory> _breadcrumbChain() {
-    final byId = _indexById();
-    final chain = <ProductCategory>[];
-    final visited = <String>{};
-    String? cur = _currentParentId;
-    while (cur != null) {
-      final c = byId[cur];
-      if (c == null) break;
-      if (!visited.add(cur)) break;
-      chain.add(c);
-      cur = c.parentId;
-    }
-    return chain.reversed.toList();
-  }
-
-  void _enter(ProductCategory c) {
-    setState(() => _currentParentId = c.id);
-  }
-
-  void _goUp() {
-    setState(() => _currentParentId = _upParentId());
-  }
-
-  void _jumpTo(String? parentId) {
-    setState(() => _currentParentId = parentId);
-  }
-
-  void _enterEditMode() {
-    if (_editMode) return;
-    setState(() => _editMode = true);
-    _wiggle.repeat();
-  }
-
-  void _exitEditMode() {
-    if (!_editMode) return;
-    setState(() => _editMode = false);
-    _wiggle.stop();
-    _wiggle.value = 0;
-  }
-
-  // 【層1 + no-op】ドロップ可否(視覚フィードバックにも使用)
-  bool _canDrop(ProductCategory moving, String? newParentId) {
-    if (moving.parentId == newParentId) return false; // no-op
-    if (wouldCreateCycle(
-          movingId: moving.id,
-          newParentId: newParentId,
-          parentOf: _parentOf(),
-        )) {
-      return false; // 自分自身/子孫への移動は拒否
-    }
-    return true;
-  }
-
-  // 【層2/3/4】実行(保存直前に再チェック)
-  Future<void> _move(ProductCategory moving, String? newParentId) async {
-    if (moving.parentId == newParentId) return; // 層4: no-op
-    if (wouldCreateCycle(
-          movingId: moving.id,
-          newParentId: newParentId,
-          parentOf: _parentOf(),
-        )) {
-      return; // 層2/3: 念のため拒否
-    }
-    await _repo.moveNode(moving.id, newParentId);
-    await _reloadKeepingState();
+    return list;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _buildBreadcrumb(),
-        const Divider(height: 1),
-        Expanded(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _editMode ? _exitEditMode : null, // 空白タップで解除
-            child: _buildGrid(),
+    final cs = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('P1:商品マスター'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(_isTreeView ? Icons.view_list : Icons.view_module),
+            tooltip: _isTreeView ? 'リスト表示' : 'ツリー表示',
+            onPressed: () => setState(() => _isTreeView = !_isTreeView),
           ),
-        ),
-      ],
+          IconButton(
+            icon: Icon(_displaySize == 0 ? Icons.view_list : _displaySize == 1 ? Icons.view_module : Icons.view_day),
+            tooltip: _displaySize == 0 ? 'S表示' : _displaySize == 1 ? 'M表示' : 'L表示',
+            onPressed: () => setState(() => _displaySize = (_displaySize + 1) % 3),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildSearchBar(cs),
+          if (!_isTreeView) _buildCategoryFilter(cs),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _isTreeView
+                    ? _buildTreeView(cs)
+                    : _buildListView(cs),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _createProduct,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
-  Widget _buildBreadcrumb() {
-    final chain = _breadcrumbChain();
-    final items = <Widget>[
-      _crumb('ルート', () => _jumpTo(null), isLast: chain.isEmpty),
-    ];
-    for (var i = 0; i < chain.length; i++) {
-      items.add(const Icon(Icons.chevron_right, size: 18, color: Colors.grey));
-      final c = chain[i];
-      items.add(_crumb(c.name, () => _jumpTo(c.id), isLast: i == chain.length - 1));
-    }
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(children: items),
-            ),
-          ),
+  Widget _buildSearchBar(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: '商品名で検索...',
+          prefixIcon: const Icon(Icons.search),
+          border: const OutlineInputBorder(),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
-        if (_editMode)
-          Padding(
+        onChanged: (v) => setState(() => _searchQuery = v),
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilter(ColorScheme cs) {
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        children: [
+          FilterChip(
+            label: const Text('すべて'),
+            selected: _selectedCategoryId == null,
+            onSelected: (_) => setState(() => _selectedCategoryId = null),
+          ),
+          const SizedBox(width: 8),
+          ..._categories.map((cat) => Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: TextButton(onPressed: _exitEditMode, child: const Text('完了')),
+            child: FilterChip(
+              label: Text(cat.name),
+              selected: _selectedCategoryId == cat.id,
+              onSelected: (_) => setState(() => _selectedCategoryId = cat.id),
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  // --- ツリー表示 ---
+  Widget _buildTreeView(ColorScheme cs) {
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          ..._categories.where((c) => c.parentId == null).map((cat) =>
+            _buildCategoryTreeItem(cat, 0, cs)),
+          if (_products.any((p) => p.categoryId == null))
+            _buildUncategorizedSection(cs),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryTreeItem(ProductCategory cat, int depth, ColorScheme cs) {
+    final children = _categories.where((c) => c.parentId == cat.id).toList();
+    final products = _products.where((p) => p.categoryId == cat.id).toList();
+    final hasChildren = children.isNotEmpty;
+    final isExpanded = _expandedCategories.contains(cat.id);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: hasChildren ? () => setState(() {
+            if (isExpanded) _expandedCategories.remove(cat.id);
+            else _expandedCategories.add(cat.id);
+          }) : null,
+          child: Container(
+            padding: EdgeInsets.only(left: depth * 20.0, right: 8, top: 8, bottom: 8),
+            child: Row(
+              children: [
+                Icon(
+                  hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
+                  size: [16, 20, 24][_displaySize].toDouble(),
+                  color: cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(), color: const Color(0xFFFFCA28)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(cat.name,
+                    style: TextStyle(
+                      fontSize: [12, 14, 16][_displaySize].toDouble(),
+                      fontWeight: FontWeight.w500,
+                    )),
+                ),
+                Text('${products.length + children.length}',
+                  style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
+                const SizedBox(width: 8),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
+                  onSelected: (v) => _handleCategoryAction(v, cat),
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'rename', child: Text('名前変更')),
+                    const PopupMenuItem(value: 'add_sub', child: Text('サブカテゴリ追加')),
+                    const PopupMenuItem(value: 'delete', child: Text('削除')),
+                  ],
+                ),
+              ],
+            ),
           ),
+        ),
+        if (isExpanded) ...[
+          ...products.map((p) => _buildProductCard(p, depth + 1, cs)),
+          ...children.map((child) => _buildCategoryTreeItem(child, depth + 1, cs)),
+        ],
       ],
     );
   }
 
-  Widget _crumb(String label, VoidCallback onTap, {required bool isLast}) {
-    return InkWell(
-      onTap: isLast ? null : onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: isLast ? FontWeight.bold : FontWeight.normal,
-            color: isLast ? null : Theme.of(context).colorScheme.primary,
+  Widget _buildUncategorizedSection(ColorScheme cs) {
+    final uncategorized = _products.where((p) => p.categoryId == null).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Icon(Icons.label, size: [18, 22, 26][_displaySize].toDouble(), color: cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text('未分類',
+                style: TextStyle(
+                  fontSize: [12, 14, 16][_displaySize].toDouble(),
+                  fontWeight: FontWeight.w500,
+                )),
+              const SizedBox(width: 8),
+              Text('${uncategorized.length}',
+                style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
+            ],
           ),
         ),
-      ),
+        ...uncategorized.map((p) => _buildProductCard(p, 0, cs)),
+      ],
     );
   }
 
-  Widget _buildGrid() {
-    final children = _currentChildren;
-    final showUp = _currentParentId != null;
-    final itemCount = children.length + (showUp ? 1 : 0);
-
-    if (itemCount == 0) {
-      return const Center(child: Text('カテゴリがありません'));
-    }
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 120,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        if (showUp && index == 0) {
-          return _editMode ? _buildUpDropTarget() : _UpCell(onTap: _goUp);
-        }
-        final i = index - (showUp ? 1 : 0);
-        final c = children[i];
-        final cell = _Wiggle(
-          animation: _wiggle,
-          enabled: _editMode,
-          phase: i.isEven ? 0.0 : math.pi,
-          child: _FolderCell(
-            category: c,
-            onTap: () => _enter(c),
-            onLongPress: _enterEditMode,
-          ),
-        );
-        if (!_editMode) return cell;
-        return _buildFolderDropDrag(c, cell);
-      },
-    );
-  }
-
-  // フォルダ: ドロップ先(DragTarget) かつ ドラッグ元(Draggable)
-  Widget _buildFolderDropDrag(ProductCategory c, Widget cell) {
-    return DragTarget<ProductCategory>(
-      onWillAcceptWithDetails: (d) => _canDrop(d.data, c.id),
-      onAcceptWithDetails: (d) {
-        _move(d.data, c.id);
-      },
-      builder: (context, candidate, rejected) {
-        return _dropHighlight(
-          active: candidate.isNotEmpty,
-          child: Draggable<ProductCategory>(
-            data: c,
-            feedback: _dragFeedback(c.name),
-            childWhenDragging: Opacity(
-              opacity: 0.3,
-              child: _FolderCell(category: c, onTap: () {}, onLongPress: () {}),
-            ),
-            child: cell,
-          ),
-        );
-      },
-    );
-  }
-
-  // 「..」: ドロップ先のみ(親階層へ戻す)
-  Widget _buildUpDropTarget() {
-    final up = _upParentId();
-    return DragTarget<ProductCategory>(
-      onWillAcceptWithDetails: (d) => _canDrop(d.data, up),
-      onAcceptWithDetails: (d) {
-        _move(d.data, up);
-      },
-      builder: (context, candidate, rejected) {
-        return _dropHighlight(
-          active: candidate.isNotEmpty,
-          child: _UpCell(onTap: _goUp),
-        );
-      },
-    );
-  }
-
-  Widget _dropHighlight({required bool active, required Widget child}) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: active ? Theme.of(context).colorScheme.primary : Colors.transparent,
-          width: 2,
-        ),
+  Widget _buildProductCard(Product product, int depth, ColorScheme cs) {
+    final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    return LongPressDraggable<Product>(
+      data: product,
+      feedback: Material(
+        elevation: 6,
         borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 200,
+          child: Card(child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.inventory_2, size: 24, color: cs.primary),
+                const SizedBox(height: 4),
+                Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          )),
+        ),
       ),
-      child: child,
+      childWhenDragging: Opacity(
+        opacity: 0.25,
+        child: _buildProductCardContent(product, depth, cs),
+      ),
+      child: _buildProductCardContent(product, depth, cs),
     );
   }
 
-  Widget _dragFeedback(String name) {
-    return Material(
-      color: Colors.transparent,
-      child: Opacity(
-        opacity: 0.9,
-        child: SizedBox(
-          width: 96,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Icon(Icons.folder, size: 56, color: Color(0xFFFFCA28)),
-              const SizedBox(height: 8),
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13),
+  Widget _buildProductCardContent(Product product, int depth, ColorScheme cs) {
+    final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    return Card(
+      margin: EdgeInsets.only(left: depth * 20.0, bottom: 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _openProductViewer(product),
+        child: Padding(
+          padding: EdgeInsets.all([8, 10, 12][_displaySize].toDouble()),
+          child: Row(
+            children: [
+              Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: [12, 14, 15][_displaySize].toDouble(), fontWeight: FontWeight.w500)),
+                    if (product.barcode != null)
+                      Text('バーコード: ${product.barcode}',
+                        style: TextStyle(fontSize: [10, 11, 12][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
+                  ],
+                ),
               ),
+              Text(priceStr, style: TextStyle(
+                fontSize: [12, 13, 14][_displaySize].toDouble(),
+                fontWeight: FontWeight.bold, color: cs.primary)),
             ],
           ),
         ),
       ),
     );
   }
+
+  // --- リスト表示 ---
+  Widget _buildListView(ColorScheme cs) {
+    final products = _filteredProducts;
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: products.isEmpty
+          ? Center(child: Text(_searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: products.length,
+              itemBuilder: (ctx, i) => _buildProductCard(products[i], 0, cs),
+            ),
+    );
+  }
+
+  // --- 操作 ---
+  void _createProduct() async {
+    final result = await Navigator.push<Product>(
+      context,
+      MaterialPageRoute(builder: (_) => const ProductEditorScreen()),
+    );
+    if (result != null) _load();
+  }
+
+  void _openProductViewer(Product product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ProductViewer(
+          product: product,
+          onEdit: (p) async {
+            final result = await Navigator.push<Product>(
+              context,
+              MaterialPageRoute(builder: (_) => ProductEditorScreen(product: p)),
+            );
+            if (result != null) _load();
+          },
+          onDelete: () async {
+            await _productRepo.deleteProduct(product.id);
+            _load();
+          },
+        ),
+      ),
+    ).then((_) => _load());
+  }
+
+  void _handleCategoryAction(String action, ProductCategory cat) async {
+    switch (action) {
+      case 'rename':
+        final controller = TextEditingController(text: cat.name);
+        final name = await showDialog<String>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('カテゴリ名変更'),
+            content: TextField(controller: controller, autofocus: true),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('保存')),
+            ],
+          ),
+        );
+        if (name != null && name.isNotEmpty) {
+          await _catRepo.save(cat.copyWith(name: name));
+          _load();
+        }
+        break;
+      case 'add_sub':
+        final controller = TextEditingController();
+        final name = await showDialog<String>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('サブカテゴリ追加'),
+            content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(hintText: 'カテゴリ名')),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('追加')),
+            ],
+          ),
+        );
+        if (name != null && name.isNotEmpty) {
+          await _catRepo.save(ProductCategory(id: DateTime.now().millisecondsSinceEpoch.toString(), name: name, parentId: cat.id));
+          _load();
+        }
+        break;
+      case 'delete':
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('カテゴリ削除'),
+            content: Text('「${cat.name}」を削除しますか？'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('削除')),
+            ],
+          ),
+        );
+        if (confirm == true) {
+          await _catRepo.delete(cat.id);
+          _load();
+        }
+        break;
+    }
+  }
 }
 
-class _Wiggle extends StatelessWidget {
-  final Animation<double> animation; // 0..1 を繰り返す
-  final bool enabled;
-  final double phase;
-  final Widget child;
-  const _Wiggle({
-    required this.animation,
-    required this.enabled,
-    required this.phase,
-    required this.child,
+// --- ビューアー画面 ---
+class _ProductViewer extends StatelessWidget {
+  final Product product;
+  final Future<void> Function(Product) onEdit;
+  final VoidCallback onDelete;
+
+  const _ProductViewer({
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (!enabled) return child;
-    return AnimatedBuilder(
-      animation: animation,
-      child: child,
-      builder: (context, child) {
-        final angle = math.sin(animation.value * math.pi * 2 + phase) * 0.045; // ±約2.6度
-        return Transform.rotate(angle: angle, child: child);
-      },
-    );
-  }
-}
-
-class _UpCell extends StatelessWidget {
-  final VoidCallback onTap;
-  const _UpCell({required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const <Widget>[
-          Icon(Icons.drive_folder_upload, size: 56, color: Colors.blueGrey),
-          SizedBox(height: 8),
-          Text('..', style: TextStyle(fontSize: 13)),
+    final cs = Theme.of(context).colorScheme;
+    final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(product.name),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            tooltip: '削除',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('削除確認'),
+                  content: Text('「${product.name}」を削除しますか？'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('削除')),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                onDelete();
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: '編集',
+            onPressed: () => onEdit(product),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _infoRow('商品名', product.name, cs),
+          _infoRow('単価', priceStr, cs),
+          if (product.barcode != null) _infoRow('バーコード', product.barcode!, cs),
+          if (product.modelNumber != null) _infoRow('型番', product.modelNumber!, cs),
+          if (product.manufacturer != null) _infoRow('メーカー', product.manufacturer!, cs),
+          if (product.category != null) _infoRow('カテゴリ', product.category!, cs),
+          if (product.supplierName != null) _infoRow('仕入先', product.supplierName!, cs),
+          if (product.stockQuantity != null) _infoRow('在庫数', '${product.stockQuantity}', cs),
         ],
       ),
     );
   }
-}
 
-class _FolderCell extends StatelessWidget {
-  final ProductCategory category;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-  const _FolderCell({
-    required this.category,
-    required this.onTap,
-    required this.onLongPress,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Icon(Icons.folder, size: 56, color: Color(0xFFFFCA28)),
-          const SizedBox(height: 8),
-          Text(
-            category.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13),
+  Widget _infoRow(String label, String value, ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
           ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
