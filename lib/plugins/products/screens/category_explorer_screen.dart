@@ -335,7 +335,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   Widget _buildProductCardContent(Product product, int depth, ColorScheme cs, bool showShadows) {
     final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     return Card(
-      margin: EdgeInsets.only(left: (depth > 0 ? depth * 16.0 : 0) + 1, right: 1, bottom: 2),
+      margin: EdgeInsets.only(left: (depth > 0 ? depth * 16.0 : 0) + 0.5, right: 0.5, bottom: 1),
       elevation: showShadows ? 2 : 0,
       shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.3) : null,
       child: InkWell(
@@ -344,7 +344,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
