@@ -80,7 +80,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
       builder: (context, inputStyle, _) {
         final isRaised = inputStyle == 'raised';
         final cardBg = hasDraft
-            ? (isDark ? cs.surfaceContainerHigh.withValues(alpha: 0.6) : cs.surfaceContainerLow)
+            ? cs.surfaceContainerLow
             : (Theme.of(context).cardTheme.color ?? cs.surface);
         return Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
