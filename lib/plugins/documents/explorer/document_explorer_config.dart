@@ -88,7 +88,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
         clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: 88,
+        height: (88 * MediaQuery.textScalerOf(context).scale(1.0)).ceilToDouble(),
         child: Row(
           children: [
             Container(
