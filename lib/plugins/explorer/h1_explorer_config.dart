@@ -30,6 +30,7 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
   String get explorerTitle;
   String get searchHint;
   bool get showSearch => false;
+  bool get defaultTreeView => false;
   IconData get itemIcon;
   String get emptyMessage;
 

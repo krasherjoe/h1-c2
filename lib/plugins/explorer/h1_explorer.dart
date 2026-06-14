@@ -9,6 +9,7 @@ import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
 import '../../services/mm_command_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -41,6 +42,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   DateTime? _dateFrom;
   DateTime? _dateTo;
   bool _treeMode = false;
+  int _displaySize = 1; // 0=S, 1=M, 2=L
   final _diagnosticKey = GlobalKey();
   List<TreeFolder> _folders = [];
   List<TreeFolder> _breadcrumbs = [];
@@ -52,9 +54,23 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   @override
   void initState() {
     super.initState();
+    _treeMode = widget.config.defaultTreeView;
     _showSearch = widget.config.showSearch;
+    _loadDisplaySize();
     widget.config.onListChanged = _loadItems;
     _loadItems();
+  }
+
+  Future<void> _loadDisplaySize() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _displaySize = prefs.getInt('explorer_display_size') ?? 1);
+  }
+
+  void _cycleDisplaySize() async {
+    _displaySize = (_displaySize + 1) % 3;
+    setState(() {});
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('explorer_display_size', _displaySize);
   }
 
   @override
@@ -302,6 +318,12 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
               }
               return items;
             },
+          ),
+          IconButton(
+            icon: Icon(_displaySize == 0 ? Icons.view_list : _displaySize == 1 ? Icons.view_module : Icons.view_day,
+                size: 20),
+            tooltip: _displaySize == 0 ? 'S表示' : _displaySize == 1 ? 'M表示' : 'L表示',
+            onPressed: _cycleDisplaySize,
           ),
         ],
       ),
@@ -644,10 +666,16 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
               _loadItems();
             },
             builder: (ctx, candidates, rejected) => Card(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              margin: EdgeInsets.symmetric(horizontal: 12, vertical: [2.0, 4.0, 6.0][_displaySize]),
               child: ListTile(
-                leading: Icon(folder.icon, color: candidates.isNotEmpty ? Colors.amber : null),
-                title: Text(folder.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                dense: _displaySize == 0,
+                contentPadding: _displaySize == 2
+                    ? const EdgeInsets.symmetric(horizontal: 16, vertical: 4)
+                    : null,
+                leading: Icon(folder.icon, color: candidates.isNotEmpty ? Colors.amber : null,
+                    size: [18.0, 20.0, 22.0][_displaySize]),
+                title: Text(folder.name,
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: [13.0, 14.0, 16.0][_displaySize])),
                 trailing: Text('${folder.itemCount}', style: const TextStyle(fontSize: 12)),
                 onTap: () => _navigateToFolder(folder.id),
               ),
@@ -770,10 +798,15 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
 
   Widget _buildItemTile(T item) {
     final content = widget.config.buildItemTileContent(context, item);
+    final paddingV = [4.0, 8.0, 12.0][_displaySize];
+    final scale = [0.85, 1.0, 1.15][_displaySize];
     return GestureDetector(
       onTap: () => _onItemTap(item),
       onLongPress: widget.selectionMode ? null : () => _confirmDelete(item),
-      child: content,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: paddingV),
+        child: Transform.scale(scale: scale, alignment: Alignment.centerLeft, child: content),
+      ),
     );
   }
 }

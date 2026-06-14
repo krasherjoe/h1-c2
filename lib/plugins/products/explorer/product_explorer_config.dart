@@ -80,6 +80,9 @@ class ProductExplorerConfig extends H1ExplorerConfig<ProductExplorerItem> {
   bool get supportsTreeView => true;
 
   @override
+  bool get defaultTreeView => true;
+
+  @override
   Future<List<TreeFolder>> getSubfolders(String? parentId) async {
     final catRepo = ProductCategoryRepository();
     final cats = parentId != null
