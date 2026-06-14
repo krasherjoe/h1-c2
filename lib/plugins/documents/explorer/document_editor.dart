@@ -251,7 +251,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
       );
 
       await _repo.save(doc);
-      await _repo.addEditLog(doc.id, '保存');
+      final typeLabel = doc.documentType.label;
+      final itemCount = doc.items.length;
+      final totalStr = '¥${doc.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+      await _repo.addEditLog(doc.id, '保存',
+        details: '$typeLabel #${doc.documentNumber} ${doc.customerName} $totalStr ${itemCount}明細');
       if (!mounted) return;
       SyncService.pushChange(
         entityType: 'document',
@@ -1035,12 +1039,18 @@ class _DocumentEditorState extends State<DocumentEditor> {
               color: cs.surfaceContainerLow,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Row(children: [
-              Text('${log.createdAt.month}/${log.createdAt.day} ${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-              const SizedBox(width: 8),
-              Text(log.action,
-                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Text('${log.createdAt.month}/${log.createdAt.day} ${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
+                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                const SizedBox(width: 8),
+                Text(log.action,
+                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+              ]),
+              if (log.details.isNotEmpty)
+                Text(log.details,
+                  style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
+                  maxLines: 2, overflow: TextOverflow.ellipsis),
             ]),
           )),
         ],

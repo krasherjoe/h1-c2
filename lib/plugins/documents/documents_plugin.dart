@@ -68,6 +68,10 @@ class DocumentsPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     await _recoverFromConversion(context.database);
     try {
+      await context.database.execute(
+        'ALTER TABLE document_edit_logs ADD COLUMN details TEXT NOT NULL DEFAULT \'\'');
+    } catch (_) {}
+    try {
       final cutoff = DateTime.now().subtract(const Duration(days: 14)).toIso8601String();
       await context.database.delete('document_edit_logs',
         where: 'created_at < ?', whereArgs: [cutoff]);

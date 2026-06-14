@@ -238,11 +238,12 @@ class DocumentRepository {
     );
   }
 
-  Future<void> addEditLog(String docId, String action) async {
+  Future<void> addEditLog(String docId, String action, {String details = ''}) async {
     final db = await _db;
     await db.insert('document_edit_logs', {
       'document_id': docId,
       'action': action,
+      'details': details,
       'created_at': DateTime.now().toIso8601String(),
     });
   }
