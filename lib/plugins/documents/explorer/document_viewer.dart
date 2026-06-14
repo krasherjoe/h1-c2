@@ -153,17 +153,17 @@ class DocumentViewer extends StatelessWidget {
               ),
             const SizedBox(height: 6),
             Row(children: [
-              Text('¥${_formatMoney(item.unitPrice)}',
+              Text(_formatMoney(item.unitPrice),
                 style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600)),
               const SizedBox(width: 4),
               if (!hasDiscount)
-                Text('× ${_formatQty(item.quantity)} = ¥${_formatMoney(item.subtotal)}',
+                Text('× ${_formatQty(item.quantity)} = ${_formatMoney(item.subtotal)}',
                   style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
               else ...[
-                Text('× ${_formatQty(item.quantity)} = ¥${_formatMoney(baseSubtotal)}',
+                Text('× ${_formatQty(item.quantity)} = ${_formatMoney(baseSubtotal)}',
                   style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, decoration: TextDecoration.lineThrough)),
                 const SizedBox(width: 4),
-                Text('¥${_formatMoney(item.subtotal)}',
+                Text(_formatMoney(item.subtotal),
                   style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
               ],
             ]),
