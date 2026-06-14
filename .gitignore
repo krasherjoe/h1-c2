@@ -48,3 +48,4 @@ gmail-mcp/credentials/*.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+*.md
