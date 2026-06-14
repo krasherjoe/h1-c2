@@ -254,8 +254,18 @@ class _DocumentEditorState extends State<DocumentEditor> {
       final typeLabel = doc.documentType.label;
       final itemCount = doc.items.length;
       final totalStr = '¥${doc.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+      final diffParts = <String>[];
+      if (widget.document != null) {
+        final oldNames = widget.document!.items.map((i) => i.productName).toSet();
+        final newNames = doc.items.map((i) => i.productName).toSet();
+        final added = newNames.difference(oldNames);
+        final removed = oldNames.difference(newNames);
+        if (added.isNotEmpty) diffParts.add('追加:${added.join(",")}');
+        if (removed.isNotEmpty) diffParts.add('削除:${removed.join(",")}');
+      }
+      final diffStr = diffParts.isNotEmpty ? ' / ${diffParts.join(" / ")}' : '';
       await _repo.addEditLog(doc.id, '保存',
-        details: '$typeLabel #${doc.documentNumber} ${doc.customerName} $totalStr ${itemCount}明細');
+        details: '$typeLabel #${doc.documentNumber} ${doc.customerName} $totalStr ${itemCount}明細$diffStr');
       if (!mounted) return;
       SyncService.pushChange(
         entityType: 'document',

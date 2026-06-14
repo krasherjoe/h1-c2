@@ -82,7 +82,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: docTypeColor.withValues(alpha: 0.15),
+            color: docTypeColor.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(_document.documentType.label,
@@ -380,6 +380,10 @@ class _DocumentViewerState extends State<DocumentViewer> {
                       isLocked: true,
                     );
                     await repo.save(updated);
+                    final typeLabel = _document.documentType.label;
+                    final totalStr = '¥${_document.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+                    await repo.addEditLog(_document.id, '正式発行',
+                      details: '$typeLabel #${_document.documentNumber} ${totalStr}');
                     return true;
                   } catch (e, st) {
                     ErrorReporter.sendError(

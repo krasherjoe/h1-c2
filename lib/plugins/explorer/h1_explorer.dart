@@ -929,6 +929,10 @@ class _H1ExplorerViewerScreenState<T extends H1ExplorerItem> extends State<_H1Ex
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context, true),
+        ),
         title: Text(widget.item.title),
         centerTitle: true,
         actions: [
