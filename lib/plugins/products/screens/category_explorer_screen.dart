@@ -30,12 +30,12 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   final _expandedCategories = <String>{};
 
   // --- 間隔・サイズ定数 ---
-  static const _kCardMarginH = 2.0;
-  static const _kCardMarginV = 3.0;
-  static const _kCardPadH = 8.0;
-  static const _kCardPadV = 5.0;
-  static const _kItemGap = 6.0;
-  static const _kIconTextGap = 8.0;
+  static const _kCardMarginH = 1.0;
+  static const _kCardMarginV = 1.5;
+  static const _kCardPadH = 6.0;
+  static const _kCardPadV = 3.0;
+  static const _kItemGap = 3.0;
+  static const _kIconTextGap = 6.0;
   static const _kIconSizes = [18.0, 22.0, 26.0];
   static const _kTextSizes = [12.0, 14.0, 15.0];
   static const _kSubTextSizes = [10.0, 11.0, 12.0];
