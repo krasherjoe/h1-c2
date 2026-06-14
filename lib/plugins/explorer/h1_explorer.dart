@@ -944,6 +944,12 @@ class _H1ExplorerViewerScreenState<T extends H1ExplorerItem> extends State<_H1Ex
         ],
       ),
       body: widget.config.buildViewer(context, widget.item),
+      floatingActionButton: widget.item.canEdit
+          ? FloatingActionButton(
+              onPressed: _edit,
+              child: const Icon(Icons.edit),
+            )
+          : null,
     );
   }
 }
