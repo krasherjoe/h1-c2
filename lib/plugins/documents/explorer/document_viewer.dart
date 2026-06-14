@@ -92,13 +92,17 @@ class _DocumentViewerState extends State<DocumentViewer> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: _document.isDraft ? cs.tertiaryContainer : cs.primaryContainer,
+            color: _document.isDraft
+                ? docTypeColor.withValues(alpha: 0.15)
+                : docTypeColor,
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             _document.isDraft ? '下書き' : '確定',
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-              color: _document.isDraft ? cs.onTertiaryContainer : cs.onPrimaryContainer),
+              color: _document.isDraft
+                  ? docTypeColor
+                  : (docTypeColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white)),
           ),
         ),
         const Spacer(),
