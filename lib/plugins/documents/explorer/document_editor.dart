@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/document_model.dart';
+import '../models/document_edit_log.dart';
 import '../services/document_repository.dart';
 import '../../../services/customer_repository.dart';
 import '../../../models/customer_model.dart';
@@ -48,6 +49,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
 
   final _undoStack = <_EditorSnapshot>[];
   final _redoStack = <_EditorSnapshot>[];
+  List<DocumentEditLog> _editLogs = [];
 
   bool get _isNew => widget.document == null;
   bool get _isLocked => widget.document?.isLocked ?? false;
@@ -69,6 +71,11 @@ class _DocumentEditorState extends State<DocumentEditor> {
     _totalDiscountRate = doc?.totalDiscountRate;
     _priceAdjustmentType = doc?.priceAdjustmentType;
     _priceAdjustmentUnit = doc?.priceAdjustmentUnit;
+    if (doc != null) {
+      _repo.getEditLogs(doc.id).then((logs) {
+        if (mounted) setState(() => _editLogs = logs);
+      });
+    }
     _items = (doc?.items ?? []).map((item) => _EditingItem(
       id: item.id,
       productId: item.productId,
@@ -244,6 +251,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       );
 
       await _repo.save(doc);
+      await _repo.addEditLog(doc.id, '保存');
       if (!mounted) return;
       SyncService.pushChange(
         entityType: 'document',
@@ -560,7 +568,13 @@ class _DocumentEditorState extends State<DocumentEditor> {
           _buildSummarySection(cs),
         ],
       ),
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildEditLogSection(cs),
+          _buildBottomBar(),
+        ],
+      ),
     );
   }
 
@@ -999,6 +1013,38 @@ class _DocumentEditorState extends State<DocumentEditor> {
           color: totalStyle ? cs.primary : cs.onSurface,
         )),
       ],
+    );
+  }
+
+  Widget _buildEditLogSection(ColorScheme cs) {
+    if (_editLogs.isEmpty) return const SizedBox.shrink();
+    return Container(
+      color: cs.surface,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('📝 編集履歴(2週間保持しています)',
+            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 4),
+          ...(_editLogs.take(5)).map((log) => Container(
+            margin: const EdgeInsets.only(bottom: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(children: [
+              Text('${log.createdAt.month}/${log.createdAt.day} ${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
+                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 8),
+              Text(log.action,
+                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            ]),
+          )),
+        ],
+      ),
     );
   }
 

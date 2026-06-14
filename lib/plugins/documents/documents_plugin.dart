@@ -36,7 +36,16 @@ const _kDocItemsTable = '''
   )
 ''';
 
-const _kMissingTables = [_kDocTable, _kDocItemsTable];
+const _kDocEditLogTable = '''
+  CREATE TABLE IF NOT EXISTS document_edit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+''';
+
+const _kMissingTables = [_kDocTable, _kDocItemsTable, _kDocEditLogTable];
 
 class DocumentsPlugin extends H1Plugin {
   @override
@@ -58,6 +67,11 @@ class DocumentsPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     await _recoverFromConversion(context.database);
+    try {
+      final cutoff = DateTime.now().subtract(const Duration(days: 14)).toIso8601String();
+      await context.database.delete('document_edit_logs',
+        where: 'created_at < ?', whereArgs: [cutoff]);
+    } catch (_) {}
     DebugConsole.register('documents.stats', (_) async {
       final db = context.database;
       final cnt = await db.rawQuery('SELECT document_type, COUNT(*) as c FROM documents GROUP BY document_type');

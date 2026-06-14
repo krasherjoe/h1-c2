@@ -1,40 +1,65 @@
 import 'package:flutter/material.dart';
 import '../models/document_model.dart';
+import '../models/document_edit_log.dart';
 import '../logic/document_converter.dart';
 import '../services/document_repository.dart';
 import '../../../services/customer_repository.dart';
 import '../../../services/error_reporter.dart';
 import 'document_preview_page.dart';
 
-class DocumentViewer extends StatelessWidget {
+class DocumentViewer extends StatefulWidget {
   final DocumentModel document;
 
   const DocumentViewer({super.key, required this.document});
 
   @override
+  State<DocumentViewer> createState() => _DocumentViewerState();
+}
+
+class _DocumentViewerState extends State<DocumentViewer> {
+  DocumentModel get document => widget.document;
+  List<DocumentEditLog> _editLogs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEditLogs();
+  }
+
+  void _loadEditLogs() async {
+    final logs = await DocumentRepository().getEditLogs(widget.document.id);
+    if (mounted) setState(() => _editLogs = logs);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-      children: [
-        _buildHeader(context, cs),
-        const SizedBox(height: 16),
-        _buildCustomerSection(context, cs),
-        const SizedBox(height: 16),
-        _buildSubjectSection(cs),
-        const SizedBox(height: 16),
-        _buildDivider(cs),
-        _buildItemsHeader(cs),
-        const SizedBox(height: 8),
-        ...document.items.map((item) => _buildItemCard(item, cs)),
-        const SizedBox(height: 12),
-        _buildTotalSection(cs),
-        const SizedBox(height: 16),
-        if (document.isConfirmed) _buildConvertButton(context),
-        const SizedBox(height: 12),
-        _buildPdfButton(context),
-      ],
-    );
+    return Column(children: [
+      Expanded(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+          children: [
+            _buildHeader(context, cs),
+            const SizedBox(height: 16),
+            _buildCustomerSection(context, cs),
+            const SizedBox(height: 16),
+            _buildSubjectSection(cs),
+            const SizedBox(height: 16),
+            _buildDivider(cs),
+            _buildItemsHeader(cs),
+            const SizedBox(height: 8),
+            ...widget.document.items.map((item) => _buildItemCard(item, cs)),
+            const SizedBox(height: 12),
+            _buildTotalSection(cs),
+            const SizedBox(height: 16),
+            if (widget.document.isConfirmed) _buildConvertButton(context),
+            const SizedBox(height: 12),
+            _buildPdfButton(context),
+          ],
+        ),
+      ),
+      _buildEditLogSection(cs),
+    ]);
   }
 
   Widget _buildHeader(BuildContext context, ColorScheme cs) {
@@ -313,6 +338,38 @@ class DocumentViewer extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildEditLogSection(ColorScheme cs) {
+    if (_editLogs.isEmpty) return const SizedBox.shrink();
+    return Container(
+      color: cs.surface,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('📝 編集履歴(2週間保持しています)',
+            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 4),
+          ...(_editLogs.take(5)).map((log) => Container(
+            margin: const EdgeInsets.only(bottom: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(children: [
+              Text('${log.createdAt.month}/${log.createdAt.day} ${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
+                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 8),
+              Text(log.action,
+                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            ]),
+          )),
+        ],
       ),
     );
   }

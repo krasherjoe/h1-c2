@@ -4,6 +4,7 @@ import '../../../services/database_helper.dart';
 import '../../../services/hash_utils.dart';
 import '../../../services/hash_chain_verify_result.dart';
 import '../models/document_model.dart';
+import '../models/document_edit_log.dart';
 
 class DocumentRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -235,5 +236,22 @@ class DocumentRepository {
       brokenIds: broken,
       verifiedAt: DateTime.now(),
     );
+  }
+
+  Future<void> addEditLog(String docId, String action) async {
+    final db = await _db;
+    await db.insert('document_edit_logs', {
+      'document_id': docId,
+      'action': action,
+      'created_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<List<DocumentEditLog>> getEditLogs(String docId) async {
+    final db = await _db;
+    final maps = await db.query('document_edit_logs',
+      where: 'document_id = ?', whereArgs: [docId],
+      orderBy: 'created_at DESC', limit: 5);
+    return maps.map(DocumentEditLog.fromMap).toList();
   }
 }
