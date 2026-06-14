@@ -937,17 +937,6 @@ class _DocumentEditorState extends State<DocumentEditor> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
-                IconButton(
-                  icon: Icon(Icons.remove_circle_outline, size: 20, color: cs.onSurfaceVariant),
-                  onPressed: () {
-                    if (item.quantity > 1) {
-                      _wrapWithSnapshot(() => item.quantity -= 1);
-                    }
-                  },
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
@@ -956,13 +945,6 @@ class _DocumentEditorState extends State<DocumentEditor> {
                   ),
                   child: Text(_formatQty(item.quantity),
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add_circle_outline, size: 20, color: cs.onSurfaceVariant),
-                  onPressed: () => _wrapWithSnapshot(() => item.quantity += 1),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
                 IconButton(
                   icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
