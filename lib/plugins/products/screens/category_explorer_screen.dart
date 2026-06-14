@@ -343,7 +343,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final subS = [10.0, 11.0, 12.0][_displaySize];
     final priceS = [12.0, 13.0, 14.0][_displaySize];
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: _kSpacing / 2, vertical: _kSpacing / 2),
+      margin: EdgeInsets.symmetric(horizontal: _kSpacing / 2, vertical: 2.0),
       elevation: showShadows ? 2 : 0,
       shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.3) : null,
       child: InkWell(
@@ -385,9 +385,6 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       valueListenable: inputStyleNotifier,
       builder: (context, inputStyle, _) {
         final showShadows = inputStyle == 'raised';
-        final screenW = MediaQuery.of(context).size.width;
-        final cols = screenW > 600 ? 2 : 1;
-        final cardW = cols > 1 ? (screenW - _kSpacing * (cols + 1)) / cols : screenW - _kSpacing * 2;
         return RefreshIndicator(
           onRefresh: _load,
           child: products.isEmpty
@@ -396,9 +393,15 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                   key: ValueKey('list_${products.length}_$_searchQuery'),
                   padding: EdgeInsets.all(_kSpacing),
                   itemCount: products.length,
-                  itemBuilder: (ctx, i) => SizedBox(
-                    width: cardW,
-                    child: _buildProductCard(products[i], 0, cs, showShadows: showShadows),
+                  itemBuilder: (ctx, i) => LayoutBuilder(
+                    builder: (context, constraints) {
+                      final availableW = constraints.maxWidth;
+                      final cols = availableW > 600 ? 2 : 1;
+                      final cardW = cols > 1 
+                        ? (availableW - _kSpacing * (cols + 1)) / cols 
+                        : availableW - _kSpacing * 2;
+                      return SizedBox(width: cardW, child: _buildProductCard(products[i], 0, cs, showShadows: showShadows));
+                    },
                   ),
                 ),
         );
