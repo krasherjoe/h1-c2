@@ -3,8 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../../plugin_system/plugin_interface.dart';
 import '../../../plugin_system/plugin_context.dart';
 import '../../../plugin_system/screen_definition.dart';
-import '../../../plugins/explorer/h1_explorer.dart';
-import 'explorer/product_explorer_config.dart';
 import 'screens/category_explorer_screen.dart';
 import '../../../services/debug_console.dart';
 
@@ -58,21 +56,12 @@ class ProductsPlugin extends H1Plugin {
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
       id: 'P1',
-      title: '商品マスター',
-      route: '/products',
-      builder: (_) => H1Explorer(config: ProductExplorerConfig()),
-      category: 'マスター',
-      icon: Icons.inventory_2,
-      description: '商品の登録・編集',
-    ),
-    ScreenDefinition(
-      id: 'CE',
       title: '商品カテゴリ',
-      route: '/products/categories',
+      route: '/products',
       builder: (_) => const CategoryExplorerScreen(),
       category: 'マスター',
       icon: Icons.category,
-      description: 'カテゴリの階層管理',
+      description: 'カテゴリ階層ブラウザ＆商品管理',
     ),
   ];
 
@@ -83,8 +72,7 @@ class ProductsPlugin extends H1Plugin {
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {
-    '/products': (_) => H1Explorer(config: ProductExplorerConfig()),
-    '/products/categories': (_) => const CategoryExplorerScreen(),
+    '/products': (_) => const CategoryExplorerScreen(),
   };
 
   @override
