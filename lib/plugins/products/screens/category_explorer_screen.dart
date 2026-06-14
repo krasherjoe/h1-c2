@@ -164,13 +164,23 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final products = _products.where((p) => p.categoryId == cat.id).toList();
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
+    final spacing = [2.0, 4.0, 6.0][_displaySize];
 
     return DragTarget<Product>(
       onWillAcceptWithDetails: (details) => details.data.categoryId != cat.id,
       onAcceptWithDetails: (details) async {
-        final updated = details.data.copyWith(categoryId: cat.id);
-        await _productRepo.saveProduct(updated);
-        _load();
+        try {
+          final updated = details.data.copyWith(categoryId: cat.id);
+          await _productRepo.saveProduct(updated);
+          setState(() => _expandedCategories.add(cat.id));
+          await _load();
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('商品移動エラー: $e')),
+            );
+          }
+        }
       },
       builder: (ctx, candidates, rejected) {
         final isHighlighted = candidates.isNotEmpty;
@@ -183,32 +193,36 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                 else _expandedCategories.add(cat.id);
               }) : null,
               child: Container(
-                padding: EdgeInsets.only(left: depth * 20.0, right: 8, top: 8, bottom: 8),
+                padding: EdgeInsets.only(left: depth * 20.0, right: 8, top: spacing, bottom: spacing),
                 decoration: isHighlighted ? BoxDecoration(
                   color: cs.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ) : null,
                 child: Row(
-                  children: [
-                    Icon(
-                      hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
-                      size: [16, 20, 24][_displaySize].toDouble(),
-                      color: isHighlighted ? cs.primary : cs.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(),
-                        color: isHighlighted ? cs.primary : const Color(0xFFFFCA28)),
-                    const SizedBox(width: 8),
+              children: [
+                Icon(
+                  hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
+                  size: [16, 20, 24][_displaySize].toDouble(),
+                  color: isHighlighted ? cs.primary : cs.onSurfaceVariant,
+                  shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))],
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(),
+                    color: isHighlighted ? cs.primary : const Color(0xFFFFCA28),
+                    shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))]),
+                const SizedBox(width: 8),
                     Expanded(
                       child: Text(cat.name,
                         style: TextStyle(
                           fontSize: [12, 14, 16][_displaySize].toDouble(),
                           fontWeight: FontWeight.w500,
                           color: isHighlighted ? cs.primary : null,
+                          shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))],
                         )),
                     ),
                     Text('${products.length + children.length}',
-                      style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
+                      style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
+                          shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))])),
                     const SizedBox(width: 8),
                     PopupMenuButton<String>(
                       icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
@@ -235,23 +249,27 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildUncategorizedSection(ColorScheme cs) {
     final uncategorized = _products.where((p) => p.categoryId == null).toList();
+    final spacing = [2.0, 4.0, 6.0][_displaySize];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: spacing),
           child: Row(
             children: [
-              Icon(Icons.label, size: [18, 22, 26][_displaySize].toDouble(), color: cs.onSurfaceVariant),
+              Icon(Icons.label, size: [18, 22, 26][_displaySize].toDouble(), color: cs.onSurfaceVariant,
+                  shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))]),
               const SizedBox(width: 8),
               Text('未分類',
                 style: TextStyle(
                   fontSize: [12, 14, 16][_displaySize].toDouble(),
                   fontWeight: FontWeight.w500,
+                  shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))],
                 )),
               const SizedBox(width: 8),
               Text('${uncategorized.length}',
-                style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
+                style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
+                    shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))])),
             ],
           ),
         ),
@@ -287,20 +305,25 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildProductCardContent(Product product, int depth, ColorScheme cs) {
     final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    final cardPadding = [8.0, 10.0, 12.0][_displaySize];
     return Card(
-      margin: EdgeInsets.only(left: depth * 20.0, bottom: 4),
+      margin: EdgeInsets.only(left: (depth > 0 ? depth * 16.0 : 0) + 4, right: 4, bottom: 4),
+      elevation: 2,
+      shadowColor: cs.shadow.withValues(alpha: 0.15),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openProductViewer(product),
         child: Padding(
-          padding: EdgeInsets.all([8, 10, 12][_displaySize].toDouble()),
+          padding: EdgeInsets.all(cardPadding),
           child: Row(
             children: [
-              Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary),
-              const SizedBox(width: 12),
+              Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary,
+                  shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))]),
+              SizedBox(width: cardPadding),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: [12, 14, 15][_displaySize].toDouble(), fontWeight: FontWeight.w500)),
