@@ -300,7 +300,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
             ],
           ),
         ),
-        ...uncategorized.map((p) => _buildProductCard(p, 0, cs)),
+        ...uncategorized.map((p) => _buildProductCard(p, 0, cs, showShadows: showShadows)),
       ],
     );
   }
@@ -333,6 +333,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   Widget _buildProductCardContent(Product product, int depth, ColorScheme cs, bool showShadows) {
     final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     final cardPadding = [8.0, 10.0, 12.0][_displaySize];
+    final minHeight = [48.0, 56.0, 64.0][_displaySize];
     return Card(
       margin: EdgeInsets.only(left: (depth > 0 ? depth * 16.0 : 0) + 4, right: 4, bottom: 4),
       elevation: showShadows ? 2 : 0,
@@ -340,30 +341,34 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openProductViewer(product),
-        child: Padding(
-          padding: EdgeInsets.all(cardPadding),
-          child: Row(
-            children: [
-              Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary,
-                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
-              SizedBox(width: cardPadding),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: [12, 14, 15][_displaySize].toDouble(), fontWeight: FontWeight.w500)),
-                    if (product.barcode != null)
-                      Text('バーコード: ${product.barcode}',
-                        style: TextStyle(fontSize: [10, 11, 12][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
-                  ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: minHeight),
+          child: Padding(
+            padding: EdgeInsets.all(cardPadding),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary,
+                    shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
+                SizedBox(width: cardPadding),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: [12, 14, 15][_displaySize].toDouble(), fontWeight: FontWeight.w500)),
+                      if (product.barcode != null)
+                        Text('バーコード: ${product.barcode}',
+                          style: TextStyle(fontSize: [10, 11, 12][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
+                    ],
+                  ),
                 ),
-              ),
-              Text(priceStr, style: TextStyle(
-                fontSize: [12, 13, 14][_displaySize].toDouble(),
-                fontWeight: FontWeight.bold, color: cs.primary)),
-            ],
+                Text(priceStr, style: TextStyle(
+                  fontSize: [12, 13, 14][_displaySize].toDouble(),
+                  fontWeight: FontWeight.bold, color: cs.primary)),
+              ],
+            ),
           ),
         ),
       ),
@@ -382,6 +387,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           child: products.isEmpty
               ? Center(child: Text(_searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません'))
               : ListView.builder(
+                  key: ValueKey('list_${products.length}_$_searchQuery'),
                   padding: const EdgeInsets.all(12),
                   itemCount: products.length,
                   itemBuilder: (ctx, i) => _buildProductCard(products[i], 0, cs, showShadows: showShadows),
