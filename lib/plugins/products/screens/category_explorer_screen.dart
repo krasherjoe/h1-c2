@@ -5,6 +5,7 @@ import '../../../services/product_repository.dart';
 import '../../../services/product_category_repository.dart';
 import '../../../models/product_category_model.dart';
 import '../../../services/input_style_service.dart';
+import '../../../services/error_reporter.dart';
 import '../screens/product_editor_screen.dart';
 import '../logic/category_tree_utils.dart';
 
@@ -34,6 +35,14 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     _load();
   }
 
+  void _autoExpandFirstLevel() {
+    final rootCategories = _categories.where((c) => c.parentId == null).toList();
+    for (final cat in rootCategories) {
+      _expandedCategories.add(cat.id);
+    }
+    debugPrint('[P1] auto-expanded: ${_expandedCategories.toList()}');
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
     final products = await _productRepo.getAllProducts();
@@ -44,6 +53,11 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       _categories = categories;
       _loading = false;
     });
+    final logMsg = 'P1 ログ: products=${_products.length}, categories=${_categories.length}, expanded=$_expandedCategories, showShadows=${inputStyleNotifier.value == "raised"}';
+    debugPrint(logMsg);
+    ErrorReporter.sendLog(message: logMsg);
+    debugPrint('[P1] sample products: ${_products.take(3).map((p) => '${p.name}(${p.categoryId})').join(', ')}');
+    _autoExpandFirstLevel();
   }
 
   List<Product> get _filteredProducts {
@@ -150,14 +164,19 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       valueListenable: inputStyleNotifier,
       builder: (context, inputStyle, _) {
         final showShadows = inputStyle == 'raised';
+        final rootCategories = _categories.where((c) => c.parentId == null).toList();
+        final uncategorizedProducts = _products.where((p) => p.categoryId == null).toList();
+        final treeLog = 'P1 ツリー: rootCategories=${rootCategories.length}, uncategorized=${uncategorizedProducts.length}, showShadows=$showShadows, expanded=$_expandedCategories';
+        debugPrint(treeLog);
+        ErrorReporter.sendLog(message: treeLog);
         return RefreshIndicator(
           onRefresh: _load,
           child: ListView(
             padding: const EdgeInsets.all(12),
             children: [
-              ..._categories.where((c) => c.parentId == null).map((cat) =>
+              ...rootCategories.map((cat) =>
                 _buildCategoryTreeItem(cat, 0, cs, showShadows)),
-              if (_products.any((p) => p.categoryId == null))
+              if (uncategorizedProducts.isNotEmpty)
                 _buildUncategorizedSection(cs, showShadows),
             ],
           ),
@@ -172,6 +191,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
     final spacing = [2.0, 4.0, 6.0][_displaySize];
+    debugPrint('[P1] treeItem: ${cat.name}(id=${cat.id}) products=${products.length} expanded=$isExpanded');
 
     return DragTarget<Product>(
       onWillAcceptWithDetails: (details) => details.data.categoryId != cat.id,
@@ -211,12 +231,12 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                   hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
                   size: [16, 20, 24][_displaySize].toDouble(),
                   color: isHighlighted ? cs.primary : cs.onSurfaceVariant,
-                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null,
+                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null,
                 ),
                 const SizedBox(width: 8),
                 Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(),
                     color: isHighlighted ? cs.primary : const Color(0xFFFFCA28),
-                    shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null),
+                    shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
                 const SizedBox(width: 8),
                     Expanded(
                       child: Text(cat.name,
@@ -224,12 +244,12 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                           fontSize: [12, 14, 16][_displaySize].toDouble(),
                           fontWeight: FontWeight.w500,
                           color: isHighlighted ? cs.primary : null,
-                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))] : null,
+                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.3))] : null,
                         )),
                     ),
                     Text('${products.length + children.length}',
                       style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))] : null)),
+                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.25))] : null)),
                     const SizedBox(width: 8),
                     PopupMenuButton<String>(
                       icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
@@ -265,18 +285,18 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           child: Row(
             children: [
               Icon(Icons.label, size: [18, 22, 26][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null),
+                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
               const SizedBox(width: 8),
               Text('未分類',
                 style: TextStyle(
                   fontSize: [12, 14, 16][_displaySize].toDouble(),
                   fontWeight: FontWeight.w500,
-                  shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))] : null,
+                  shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.3))] : null,
                 )),
               const SizedBox(width: 8),
               Text('${uncategorized.length}',
                 style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                    shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))] : null)),
+                    shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.25))] : null)),
             ],
           ),
         ),
@@ -316,7 +336,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     return Card(
       margin: EdgeInsets.only(left: (depth > 0 ? depth * 16.0 : 0) + 4, right: 4, bottom: 4),
       elevation: showShadows ? 2 : 0,
-      shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.15) : null,
+      shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.3) : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openProductViewer(product),
@@ -325,7 +345,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           child: Row(
             children: [
               Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary,
-                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null),
+                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
               SizedBox(width: cardPadding),
               Expanded(
                 child: Column(
