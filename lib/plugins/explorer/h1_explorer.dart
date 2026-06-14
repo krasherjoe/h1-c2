@@ -91,7 +91,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
         final folders = await widget.config.getSubfolders(widget.config.currentFolderId);
         final items = widget.config.currentFolderId != null
             ? await widget.config.fetchFolderItems(widget.config.currentFolderId!, _query)
-            : <T>[];
+            : await widget.config.fetchItems(_query);
         final crumbs = await widget.config.getBreadcrumbs(widget.config.currentFolderId);
         if (!mounted) return;
         setState(() {
