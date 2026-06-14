@@ -889,12 +889,16 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   Widget _buildItemTile(T item) {
     final content = widget.config.buildItemTileContent(context, item);
     final paddingV = [1.0, 2.0, 3.0][_displaySize];
+    final textScale = [0.85, 1.0, 1.15][_displaySize];
     return GestureDetector(
       onTap: () => _onItemTap(item),
       onLongPress: widget.selectionMode ? null : () => _confirmDelete(item),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: paddingV),
-        child: content,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: content,
+        ),
       ),
     );
   }
