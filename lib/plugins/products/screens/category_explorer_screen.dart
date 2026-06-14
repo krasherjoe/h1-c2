@@ -165,54 +165,71 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: hasChildren ? () => setState(() {
-            if (isExpanded) _expandedCategories.remove(cat.id);
-            else _expandedCategories.add(cat.id);
-          }) : null,
-          child: Container(
-            padding: EdgeInsets.only(left: depth * 20.0, right: 8, top: 8, bottom: 8),
-            child: Row(
-              children: [
-                Icon(
-                  hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
-                  size: [16, 20, 24][_displaySize].toDouble(),
-                  color: cs.onSurfaceVariant,
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(), color: const Color(0xFFFFCA28)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(cat.name,
-                    style: TextStyle(
-                      fontSize: [12, 14, 16][_displaySize].toDouble(),
-                      fontWeight: FontWeight.w500,
-                    )),
-                ),
-                Text('${products.length + children.length}',
-                  style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
-                const SizedBox(width: 8),
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
-                  onSelected: (v) => _handleCategoryAction(v, cat),
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'rename', child: Text('名前変更')),
-                    const PopupMenuItem(value: 'add_sub', child: Text('サブカテゴリ追加')),
-                    const PopupMenuItem(value: 'delete', child: Text('削除')),
+    return DragTarget<Product>(
+      onWillAcceptWithDetails: (details) => details.data.categoryId != cat.id,
+      onAcceptWithDetails: (details) async {
+        final updated = details.data.copyWith(categoryId: cat.id);
+        await _productRepo.saveProduct(updated);
+        _load();
+      },
+      builder: (ctx, candidates, rejected) {
+        final isHighlighted = candidates.isNotEmpty;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: hasChildren ? () => setState(() {
+                if (isExpanded) _expandedCategories.remove(cat.id);
+                else _expandedCategories.add(cat.id);
+              }) : null,
+              child: Container(
+                padding: EdgeInsets.only(left: depth * 20.0, right: 8, top: 8, bottom: 8),
+                decoration: isHighlighted ? BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ) : null,
+                child: Row(
+                  children: [
+                    Icon(
+                      hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
+                      size: [16, 20, 24][_displaySize].toDouble(),
+                      color: isHighlighted ? cs.primary : cs.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(),
+                        color: isHighlighted ? cs.primary : const Color(0xFFFFCA28)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(cat.name,
+                        style: TextStyle(
+                          fontSize: [12, 14, 16][_displaySize].toDouble(),
+                          fontWeight: FontWeight.w500,
+                          color: isHighlighted ? cs.primary : null,
+                        )),
+                    ),
+                    Text('${products.length + children.length}',
+                      style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant)),
+                    const SizedBox(width: 8),
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
+                      onSelected: (v) => _handleCategoryAction(v, cat),
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: 'rename', child: Text('名前変更')),
+                        const PopupMenuItem(value: 'add_sub', child: Text('サブカテゴリ追加')),
+                        const PopupMenuItem(value: 'delete', child: Text('削除')),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-        if (isExpanded) ...[
-          ...products.map((p) => _buildProductCard(p, depth + 1, cs)),
-          ...children.map((child) => _buildCategoryTreeItem(child, depth + 1, cs)),
-        ],
-      ],
+            if (isExpanded) ...[
+              ...products.map((p) => _buildProductCard(p, depth + 1, cs)),
+              ...children.map((child) => _buildCategoryTreeItem(child, depth + 1, cs)),
+            ],
+          ],
+        );
+      },
     );
   }
 
@@ -244,27 +261,20 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   }
 
   Widget _buildProductCard(Product product, int depth, ColorScheme cs) {
-    final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     return LongPressDraggable<Product>(
       data: product,
       feedback: Material(
-        elevation: 6,
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: 200,
-          child: Card(child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.inventory_2, size: 24, color: cs.primary),
-                const SizedBox(height: 4),
-                Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-              ],
-            ),
-          )),
+        elevation: 8,
+        color: Colors.transparent,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: cs.primaryContainer,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(blurRadius: 8, color: cs.shadow.withValues(alpha: 0.3))],
+          ),
+          child: Icon(Icons.inventory_2, size: 24, color: cs.primary),
         ),
       ),
       childWhenDragging: Opacity(
