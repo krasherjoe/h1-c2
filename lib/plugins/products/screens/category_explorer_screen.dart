@@ -4,6 +4,7 @@ import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/product_category_repository.dart';
 import '../../../models/product_category_model.dart';
+import '../../../services/input_style_service.dart';
 import '../screens/product_editor_screen.dart';
 import '../logic/category_tree_utils.dart';
 
@@ -145,21 +146,27 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   // --- ツリー表示 ---
   Widget _buildTreeView(ColorScheme cs) {
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          ..._categories.where((c) => c.parentId == null).map((cat) =>
-            _buildCategoryTreeItem(cat, 0, cs)),
-          if (_products.any((p) => p.categoryId == null))
-            _buildUncategorizedSection(cs),
-        ],
-      ),
+    return ValueListenableBuilder<String>(
+      valueListenable: inputStyleNotifier,
+      builder: (context, inputStyle, _) {
+        final showShadows = inputStyle == 'raised';
+        return RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.all(12),
+            children: [
+              ..._categories.where((c) => c.parentId == null).map((cat) =>
+                _buildCategoryTreeItem(cat, 0, cs, showShadows)),
+              if (_products.any((p) => p.categoryId == null))
+                _buildUncategorizedSection(cs, showShadows),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildCategoryTreeItem(ProductCategory cat, int depth, ColorScheme cs) {
+  Widget _buildCategoryTreeItem(ProductCategory cat, int depth, ColorScheme cs, bool showShadows) {
     final children = _categories.where((c) => c.parentId == cat.id).toList();
     final products = _products.where((p) => p.categoryId == cat.id).toList();
     final hasChildren = children.isNotEmpty;
@@ -199,17 +206,17 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ) : null,
                 child: Row(
-              children: [
+                  children: [
                 Icon(
                   hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
                   size: [16, 20, 24][_displaySize].toDouble(),
                   color: isHighlighted ? cs.primary : cs.onSurfaceVariant,
-                  shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))],
+                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null,
                 ),
                 const SizedBox(width: 8),
                 Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(),
                     color: isHighlighted ? cs.primary : const Color(0xFFFFCA28),
-                    shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))]),
+                    shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null),
                 const SizedBox(width: 8),
                     Expanded(
                       child: Text(cat.name,
@@ -217,12 +224,12 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                           fontSize: [12, 14, 16][_displaySize].toDouble(),
                           fontWeight: FontWeight.w500,
                           color: isHighlighted ? cs.primary : null,
-                          shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))],
+                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))] : null,
                         )),
                     ),
                     Text('${products.length + children.length}',
                       style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                          shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))])),
+                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))] : null)),
                     const SizedBox(width: 8),
                     PopupMenuButton<String>(
                       icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
@@ -238,8 +245,8 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
               ),
             ),
             if (isExpanded) ...[
-              ...products.map((p) => _buildProductCard(p, depth + 1, cs)),
-              ...children.map((child) => _buildCategoryTreeItem(child, depth + 1, cs)),
+          ...products.map((p) => _buildProductCard(p, depth + 1, cs, showShadows: showShadows)),
+          ...children.map((child) => _buildCategoryTreeItem(child, depth + 1, cs, showShadows)),
             ],
           ],
         );
@@ -247,7 +254,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     );
   }
 
-  Widget _buildUncategorizedSection(ColorScheme cs) {
+  Widget _buildUncategorizedSection(ColorScheme cs, bool showShadows) {
     final uncategorized = _products.where((p) => p.categoryId == null).toList();
     final spacing = [2.0, 4.0, 6.0][_displaySize];
     return Column(
@@ -258,18 +265,18 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           child: Row(
             children: [
               Icon(Icons.label, size: [18, 22, 26][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                  shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))]),
+                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null),
               const SizedBox(width: 8),
               Text('未分類',
                 style: TextStyle(
                   fontSize: [12, 14, 16][_displaySize].toDouble(),
                   fontWeight: FontWeight.w500,
-                  shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))],
+                  shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.15))] : null,
                 )),
               const SizedBox(width: 8),
               Text('${uncategorized.length}',
                 style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                    shadows: [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))])),
+                    shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.1))] : null)),
             ],
           ),
         ),
@@ -278,7 +285,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     );
   }
 
-  Widget _buildProductCard(Product product, int depth, ColorScheme cs) {
+  Widget _buildProductCard(Product product, int depth, ColorScheme cs, {bool showShadows = true}) {
     return LongPressDraggable<Product>(
       data: product,
       feedback: Material(
@@ -297,19 +304,19 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       ),
       childWhenDragging: Opacity(
         opacity: 0.25,
-        child: _buildProductCardContent(product, depth, cs),
+        child: _buildProductCardContent(product, depth, cs, showShadows),
       ),
-      child: _buildProductCardContent(product, depth, cs),
+      child: _buildProductCardContent(product, depth, cs, showShadows),
     );
   }
 
-  Widget _buildProductCardContent(Product product, int depth, ColorScheme cs) {
+  Widget _buildProductCardContent(Product product, int depth, ColorScheme cs, bool showShadows) {
     final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     final cardPadding = [8.0, 10.0, 12.0][_displaySize];
     return Card(
       margin: EdgeInsets.only(left: (depth > 0 ? depth * 16.0 : 0) + 4, right: 4, bottom: 4),
-      elevation: 2,
-      shadowColor: cs.shadow.withValues(alpha: 0.15),
+      elevation: showShadows ? 2 : 0,
+      shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.15) : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openProductViewer(product),
@@ -318,7 +325,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           child: Row(
             children: [
               Icon(Icons.inventory_2, size: [20, 24, 28][_displaySize].toDouble(), color: cs.primary,
-                  shadows: [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))]),
+                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.2))] : null),
               SizedBox(width: cardPadding),
               Expanded(
                 child: Column(
@@ -346,15 +353,21 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   // --- リスト表示 ---
   Widget _buildListView(ColorScheme cs) {
     final products = _filteredProducts;
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: products.isEmpty
-          ? Center(child: Text(_searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: products.length,
-              itemBuilder: (ctx, i) => _buildProductCard(products[i], 0, cs),
-            ),
+    return ValueListenableBuilder<String>(
+      valueListenable: inputStyleNotifier,
+      builder: (context, inputStyle, _) {
+        final showShadows = inputStyle == 'raised';
+        return RefreshIndicator(
+          onRefresh: _load,
+          child: products.isEmpty
+              ? Center(child: Text(_searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: products.length,
+                  itemBuilder: (ctx, i) => _buildProductCard(products[i], 0, cs, showShadows: showShadows),
+                ),
+        );
+      },
     );
   }
 
