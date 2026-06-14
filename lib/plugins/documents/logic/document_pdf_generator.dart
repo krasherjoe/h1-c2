@@ -82,8 +82,9 @@ pw.Widget _buildItemTable(DocumentModel doc, int maxItems, NumberFormat fmt, pw.
         final i = entry.value;
         final isEven = entry.key.isEven;
         final rowChildren = <pw.Widget>[];
-        final label = i.variantLabel != null && i.variantLabel!.isNotEmpty
-            ? '   ${i.productName}  ${i.variantLabel}'
+        final makerCode = [if (i.maker.isNotEmpty) i.maker, if (i.productCode.isNotEmpty) i.productCode].join(' / ');
+        final label = makerCode.isNotEmpty
+            ? '   ${i.productName}  ($makerCode)'
             : '   ${i.productName}';
         rowChildren.add(_cell(label, font, isEven));
         rowChildren.add(_cell(i.quantity.toString(), font, isEven, alignRight: true));

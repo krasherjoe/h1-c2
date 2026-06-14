@@ -124,7 +124,7 @@ class HashUtils {
       includeTax ? '1' : '0',
       taxRate.toStringAsFixed(4),
       items?.map((e) =>
-        '${e['productId']}|${e['productName']}|${e['quantity']}|${e['unitPrice']}|${e['discountAmount']}|${e['discountRate']}')
+        '${e['productId']}|${e['productName']}|${e['maker']}|${e['productCode']}|${e['quantity']}|${e['unitPrice']}|${e['discountAmount']}|${e['discountRate']}|${e['notes']}')
         .join(';') ?? '',
       isLocked ? '1' : '0',
       version.toString(),

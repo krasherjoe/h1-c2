@@ -80,12 +80,14 @@ class _DocumentEditorState extends State<DocumentEditor> {
       id: item.id,
       productId: item.productId,
       productName: item.productName,
+      maker: item.maker,
+      productCode: item.productCode,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       taxRate: item.taxRate,
       discountAmount: item.discountAmount,
       discountRate: item.discountRate,
-      variantLabel: item.variantLabel,
+      notes: item.notes,
     )).toList();
     if (_projectId != null) _loadProjectName();
   }
@@ -120,9 +122,10 @@ class _DocumentEditorState extends State<DocumentEditor> {
       priceAdjustmentUnit: _priceAdjustmentUnit,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
+        maker: e.maker, productCode: e.productCode,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
         discountAmount: e.discountAmount, discountRate: e.discountRate,
-        variantLabel: e.variantLabel,
+        notes: e.notes,
       )).toList(),
     ));
     if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
@@ -146,9 +149,10 @@ class _DocumentEditorState extends State<DocumentEditor> {
       priceAdjustmentUnit: _priceAdjustmentUnit,
       items: _items.map((e) => _EditingItem(
         id: e.id, productId: e.productId, productName: e.productName,
+        maker: e.maker, productCode: e.productCode,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
         discountAmount: e.discountAmount, discountRate: e.discountRate,
-        variantLabel: e.variantLabel,
+        notes: e.notes,
       )).toList(),
     ));
     final s = _undoStack.removeLast();
@@ -195,12 +199,14 @@ class _DocumentEditorState extends State<DocumentEditor> {
       id: e.id,
       productId: e.productId,
       productName: e.productName,
+      maker: e.maker,
+      productCode: e.productCode,
       quantity: e.quantity,
       unitPrice: e.unitPrice,
       taxRate: e.taxRate,
       discountAmount: e.discountAmount,
       discountRate: e.discountRate,
-      variantLabel: e.variantLabel,
+      notes: e.notes,
     )).toList();
     final subj = _subjectCtl.text.trim();
     final tmp = DocumentModel(
@@ -235,6 +241,13 @@ class _DocumentEditorState extends State<DocumentEditor> {
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('明細を追加してください')),
+      );
+      return;
+    }
+    final emptyFields = _items.where((i) => i.productName.isEmpty || i.maker.isEmpty || i.productCode.isEmpty).toList();
+    if (emptyFields.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('メーカー・商品名・品番は必須です')),
       );
       return;
     }
@@ -366,11 +379,10 @@ class _DocumentEditorState extends State<DocumentEditor> {
     if (result != null && mounted) {
       _wrapWithSnapshot(() => _items.add(_EditingItem(
         id: _uuid.v4(),
-        productId: result.productId,
+        productId: '',
         productName: result.productName,
         quantity: 1,
         unitPrice: result.unitPrice,
-        variantLabel: result.variantLabel,
       )));
     }
   }
@@ -421,6 +433,102 @@ class _DocumentEditorState extends State<DocumentEditor> {
   int get _tax => _includeTax ? (_taxableAmount * 0.10).floor() : 0;
 
   int get _grandTotal => _taxableAmount + _tax;
+
+  Future<void> _editMaker(int index) async {
+    final item = _items[index];
+    final ctl = TextEditingController(text: item.maker);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('メーカー'),
+        content: H1TextField(
+          controller: ctl,
+          decoration: const InputDecoration(labelText: 'メーカー'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, ctl.text.trim()), child: const Text('OK')),
+        ],
+      ),
+    );
+    ctl.dispose();
+    if (result != null && mounted) {
+      _wrapWithSnapshot(() => _items[index].maker = result);
+    }
+  }
+
+  Future<void> _editCode(int index) async {
+    final item = _items[index];
+    final ctl = TextEditingController(text: item.productCode);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('品番'),
+        content: H1TextField(
+          controller: ctl,
+          decoration: const InputDecoration(labelText: '品番'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, ctl.text.trim()), child: const Text('OK')),
+        ],
+      ),
+    );
+    ctl.dispose();
+    if (result != null && mounted) {
+      _wrapWithSnapshot(() => _items[index].productCode = result);
+    }
+  }
+
+  Future<void> _editProductName(int index) async {
+    final item = _items[index];
+    final ctl = TextEditingController(text: item.productName);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('商品名'),
+        content: H1TextField(
+          controller: ctl,
+          decoration: const InputDecoration(labelText: '商品名'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, ctl.text.trim()), child: const Text('OK')),
+        ],
+      ),
+    );
+    ctl.dispose();
+    if (result != null && mounted) {
+      _wrapWithSnapshot(() => _items[index].productName = result);
+    }
+  }
+
+  Future<void> _editNotes(int index) async {
+    final item = _items[index];
+    final ctl = TextEditingController(text: item.notes ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('備考'),
+        content: H1TextField(
+          controller: ctl,
+          decoration: const InputDecoration(labelText: '備考'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, ctl.text.trim()), child: const Text('OK')),
+        ],
+      ),
+    );
+    ctl.dispose();
+    if (result != null && mounted) {
+      _wrapWithSnapshot(() => _items[index].notes = result.isNotEmpty ? result : null);
+    }
+  }
 
   Future<void> _editPrice(int index) async {
     final item = _items[index];
@@ -892,6 +1000,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
     final subtotal = item.subtotal;
     final baseSubtotal = (item.quantity * item.unitPrice).round();
     final hasDiscount = item.discountAmount != null || item.discountRate != null;
+    final makerCode = [if (item.maker.isNotEmpty) item.maker, if (item.productCode.isNotEmpty) item.productCode].join(' / ');
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       elevation: 0.5,
@@ -900,11 +1009,28 @@ class _DocumentEditorState extends State<DocumentEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
-            if (item.variantLabel != null && item.variantLabel!.isNotEmpty)
+            GestureDetector(
+              onTap: () => _editProductName(index),
+              child: Text(item.productName.isEmpty ? '(商品名未入力)' : item.productName,
+                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500,
+                  color: item.productName.isEmpty ? cs.error : cs.onSurface,
+                  decoration: item.productName.isNotEmpty ? TextDecoration.underline : null)),
+            ),
+            if (makerCode.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Text(item.variantLabel!, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant)),
+                child: GestureDetector(
+                  onTap: () => _editMaker(index),
+                  child: Text(makerCode, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant, decoration: TextDecoration.underline)),
+                ),
+              ),
+            if (item.notes != null && item.notes!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: GestureDetector(
+                  onTap: () => _editNotes(index),
+                  child: Text(item.notes!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                ),
               ),
             const SizedBox(height: 6),
             Row(
@@ -1111,23 +1237,27 @@ class _EditingItem {
   final String id;
   String productId;
   String productName;
+  String maker;
+  String productCode;
   double quantity;
   int unitPrice;
   double taxRate;
   int? discountAmount;
   double? discountRate;
-  String? variantLabel;
+  String? notes;
 
   _EditingItem({
     required this.id,
     this.productId = '',
     this.productName = '',
+    this.maker = '',
+    this.productCode = '',
     this.quantity = 1,
     this.unitPrice = 0,
     this.taxRate = 0.1,
     this.discountAmount,
     this.discountRate,
-    this.variantLabel,
+    this.notes,
   });
 
   int get subtotal {

@@ -26,12 +26,15 @@ DocumentModel copyAsDocument(DocumentModel source, DocumentType targetType) {
       id: const Uuid().v4(),
       productId: item.productId,
       productName: item.productName,
+      maker: item.maker,
+      productCode: item.productCode,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       taxRate: item.taxRate,
       discountAmount: item.discountAmount,
       discountRate: item.discountRate,
       variantLabel: item.variantLabel,
+      notes: item.notes,
     )).toList(),
   );
 }

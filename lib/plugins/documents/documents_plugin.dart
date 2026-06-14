@@ -72,6 +72,18 @@ class DocumentsPlugin extends H1Plugin {
         'ALTER TABLE document_edit_logs ADD COLUMN details TEXT NOT NULL DEFAULT \'\'');
     } catch (_) {}
     try {
+      await context.database.execute(
+        "ALTER TABLE document_items ADD COLUMN maker TEXT NOT NULL DEFAULT ''");
+    } catch (_) {}
+    try {
+      await context.database.execute(
+        "ALTER TABLE document_items ADD COLUMN product_code TEXT NOT NULL DEFAULT ''");
+    } catch (_) {}
+    try {
+      await context.database.execute(
+        'ALTER TABLE document_items ADD COLUMN notes TEXT DEFAULT NULL');
+    } catch (_) {}
+    try {
       final cutoff = DateTime.now().subtract(const Duration(days: 14)).toIso8601String();
       await context.database.delete('document_edit_logs',
         where: 'created_at < ?', whereArgs: [cutoff]);

@@ -277,23 +277,29 @@ class DocumentItem {
   final String id;
   final String productId;
   final String productName;
+  final String maker;
+  final String productCode;
   final double quantity;
   final int unitPrice;
   final double taxRate;
   final int? discountAmount;
   final double? discountRate;
   final String? variantLabel;
+  final String? notes;
 
   const DocumentItem({
     required this.id,
     required this.productId,
     required this.productName,
+    this.maker = '',
+    this.productCode = '',
     this.quantity = 1,
     this.unitPrice = 0,
     this.taxRate = 0.1,
     this.discountAmount,
     this.discountRate,
     this.variantLabel,
+    this.notes,
   });
 
   int get subtotal {
@@ -311,23 +317,29 @@ class DocumentItem {
     String? id,
     String? productId,
     String? productName,
+    String? maker,
+    String? productCode,
     double? quantity,
     int? unitPrice,
     double? taxRate,
     int? discountAmount,
     double? discountRate,
     String? variantLabel,
+    String? notes,
   }) {
     return DocumentItem(
       id: id ?? this.id,
       productId: productId ?? this.productId,
       productName: productName ?? this.productName,
+      maker: maker ?? this.maker,
+      productCode: productCode ?? this.productCode,
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
       taxRate: taxRate ?? this.taxRate,
       discountAmount: discountAmount ?? this.discountAmount,
       discountRate: discountRate ?? this.discountRate,
       variantLabel: variantLabel ?? this.variantLabel,
+      notes: notes ?? this.notes,
     );
   }
 
@@ -336,12 +348,15 @@ class DocumentItem {
     'document_id': documentId,
     'product_id': productId,
     'product_name': productName,
+    'maker': maker,
+    'product_code': productCode,
     'quantity': quantity,
     'unit_price': unitPrice,
     'tax_rate': taxRate,
     'discount_amount': discountAmount,
     'discount_rate': discountRate,
     'variant_label': variantLabel,
+    'notes': notes,
   };
 
   factory DocumentItem.fromMap(Map<String, dynamic> map) {
@@ -349,12 +364,15 @@ class DocumentItem {
       id: map['id'] as String,
       productId: map['product_id'] as String? ?? '',
       productName: map['product_name'] as String? ?? '',
+      maker: map['maker'] as String? ?? '',
+      productCode: map['product_code'] as String? ?? '',
       quantity: (map['quantity'] as num?)?.toDouble() ?? 1,
       unitPrice: map['unit_price'] as int? ?? 0,
       taxRate: (map['tax_rate'] as num?)?.toDouble() ?? 0.1,
       discountAmount: map['discount_amount'] as int?,
       discountRate: (map['discount_rate'] as num?)?.toDouble(),
       variantLabel: map['variant_label'] as String?,
+      notes: map['notes'] as String?,
     );
   }
 }

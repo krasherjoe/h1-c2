@@ -109,10 +109,13 @@ class DocumentRepository {
         items: document.items.map((i) => <String, dynamic>{
           'productId': i.productId,
           'productName': i.productName,
+          'maker': i.maker,
+          'productCode': i.productCode,
           'quantity': i.quantity,
           'unitPrice': i.unitPrice,
           'discountAmount': i.discountAmount,
           'discountRate': i.discountRate,
+          'notes': i.notes,
         }).toList(),
         isLocked: document.isLocked,
         version: newVersion,

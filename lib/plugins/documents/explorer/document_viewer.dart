@@ -176,6 +176,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
   Widget _buildItemCard(DocumentItem item, ColorScheme cs) {
     final hasDiscount = item.discountAmount != null || item.discountRate != null;
     final baseSubtotal = (item.quantity * item.unitPrice).round();
+    final makerCode = [if (item.maker.isNotEmpty) item.maker, if (item.productCode.isNotEmpty) item.productCode].join(' / ');
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       elevation: 0.5,
@@ -185,10 +186,15 @@ class _DocumentViewerState extends State<DocumentViewer> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
-            if (item.variantLabel != null && item.variantLabel!.isNotEmpty)
+            if (makerCode.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Text(item.variantLabel!, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant)),
+                child: Text(makerCode, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant)),
+              ),
+            if (item.notes != null && item.notes!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Text(item.notes!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
               ),
             const SizedBox(height: 6),
             Row(children: [
