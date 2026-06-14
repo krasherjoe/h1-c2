@@ -7,4 +7,5 @@ abstract class H1ExplorerItem {
   String? get badge;
   IconData? get icon;
   DateTime? get updatedAt;
+  bool get canEdit => true;
 }

@@ -1,38 +1,14 @@
 import 'package:uuid/uuid.dart';
 import '../models/document_model.dart';
 
-DocumentType? nextDocumentType(DocumentType current) {
-  return switch (current) {
-    DocumentType.estimation => DocumentType.order,
-    DocumentType.order => DocumentType.delivery,
-    DocumentType.delivery => DocumentType.invoice,
-    DocumentType.invoice => DocumentType.receipt,
-    DocumentType.receipt => null,
-  };
-}
-
-String _nextLabel(DocumentType current) {
-  return switch (current) {
-    DocumentType.estimation => '受注',
-    DocumentType.order => '納品',
-    DocumentType.delivery => '請求',
-    DocumentType.invoice => '領収',
-    DocumentType.receipt => '',
-  };
-}
-
-String copyButtonLabel(DocumentType current) {
-  final next = _nextLabel(current);
-  return next.isNotEmpty ? 'コピーして${next}を作成' : '';
-}
-
-DocumentModel copyAsNextDocument(DocumentModel source) {
-  final next = nextDocumentType(source.documentType);
-  if (next == null) throw ArgumentError('これ以上作成できません: ${source.documentType.label}');
+DocumentModel copyAsDocument(DocumentModel source, DocumentType targetType) {
+  if (targetType == source.documentType) {
+    throw ArgumentError('同じ伝票種別にはコピーできません');
+  }
 
   return DocumentModel(
     id: const Uuid().v4(),
-    documentType: next,
+    documentType: targetType,
     customerId: source.customerId,
     customerName: source.customerName,
     documentNumber: '',

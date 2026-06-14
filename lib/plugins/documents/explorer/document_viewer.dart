@@ -226,23 +226,37 @@ class DocumentViewer extends StatelessWidget {
   }
 
   Widget _buildConvertButton(BuildContext context) {
-    final next = nextDocumentType(document.documentType);
-    final label = copyButtonLabel(document.documentType);
-    if (next == null || label.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
         icon: const Icon(Icons.arrow_forward),
-        label: Text(label),
+        label: const Text('コピーして他の伝票を作成'),
         onPressed: () async {
+          final target = await showDialog<DocumentType>(
+            context: context,
+            builder: (ctx) => SimpleDialog(
+              title: const Text('作成する伝票種別を選択'),
+              children: DocumentType.values.where((t) => t != document.documentType).map((t) =>
+                SimpleDialogOption(
+                  onPressed: () => Navigator.pop(ctx, t),
+                  child: Row(children: [
+                    Icon(Icons.description, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Text('${t.label}伝票を作成'),
+                  ]),
+                ),
+              ).toList(),
+            ),
+          );
+          if (target == null || !context.mounted) return;
           try {
             final repo = DocumentRepository();
-            final newDoc = copyAsNextDocument(document);
-            final docNumber = await repo.generateDocumentNumber(next);
+            final newDoc = copyAsDocument(document, target);
+            final docNumber = await repo.generateDocumentNumber(target);
             await repo.save(newDoc.copyWith(documentNumber: docNumber));
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${next.label}伝票を作成しました（元の${document.documentType.label}はそのままです）')),
+              SnackBar(content: Text('${target.label}伝票を作成しました（元の${document.documentType.label}はそのままです）')),
             );
           } catch (e) {
             if (!context.mounted) return;

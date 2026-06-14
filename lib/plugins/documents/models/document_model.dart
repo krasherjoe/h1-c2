@@ -80,7 +80,7 @@ class DocumentModel extends H1ExplorerItem {
   });
 
   @override
-  String get title => 'DV:${id.split('-').first}';
+  String get title => 'DV:伝票閲覧';
 
   @override
   String? get subtitle {
@@ -104,6 +104,10 @@ class DocumentModel extends H1ExplorerItem {
 
   bool get isDraft => status == 'draft';
   bool get isConfirmed => status == 'confirmed';
+  bool get isLocked => status == 'confirmed';
+
+  @override
+  bool get canEdit => !isLocked;
 
   // --- 税・割引 計算 ---
 

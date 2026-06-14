@@ -29,6 +29,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   List<CompanyBankAccount> _bankAccounts = List.generate(
     3, (_) => const CompanyBankAccount(),
   );
+  final _regNumberCtrl = TextEditingController();
+  bool _isExempt = false;
 
   @override
   void initState() {
@@ -50,6 +52,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     _telController.dispose();
     _faxController.dispose();
     _emailController.dispose();
+    _regNumberCtrl.dispose();
     super.dispose();
   }
 
@@ -63,6 +66,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       _faxController.text = info.fax ?? '';
       _emailController.text = info.email ?? '';
       _bankAccounts = _parseBankAccounts(info.bankAccounts);
+      _regNumberCtrl.text = info.registrationNumber ?? '';
+      _isExempt = info.isExemptTaxpayer;
     }
     setState(() {
       _info = info;
@@ -89,6 +94,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final bankJson = jsonEncode(_bankAccounts.map((a) => a.toJson()).toList());
+    final regNum = _regNumberCtrl.text.trim();
     final info = (_info ?? CompanyInfo(name: '')).copyWith(
       name: _nameController.text.trim(),
       zipCode: _postalController.text.trim().isEmpty ? null : _postalController.text.trim(),
@@ -97,6 +103,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       fax: _faxController.text.trim().isEmpty ? null : _faxController.text.trim(),
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
       bankAccounts: bankJson,
+      registrationNumber: regNum.isEmpty ? null : regNum,
+      isExemptTaxpayer: _isExempt,
+      taxDisplayMode: _isExempt ? 'hidden' : 'normal',
     );
     await _companyRepo.saveCompanyInfo(info);
     setState(() => _info = info);
@@ -242,6 +251,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 24),
+                  _buildTaxSection(),
+                  const SizedBox(height: 24),
                   _buildBankSection(),
                   const SizedBox(height: 24),
 
@@ -256,6 +267,52 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildTaxSection() {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(12),
+        color: cs.primaryContainer.withValues(alpha: 0.15),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.calculate, color: cs.primary, size: 24),
+            const SizedBox(width: 12),
+            Text('消費税設定',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.primary)),
+          ]),
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            value: _isExempt,
+            onChanged: (v) => setState(() => _isExempt = v ?? false),
+            title: const Text('課税売上高が1,000万円以下', style: TextStyle(fontSize: 14)),
+            subtitle: const Text('免税事業者の場合、伝票に消費税を表示しません', style: TextStyle(fontSize: 11)),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          if (!_isExempt) ...[
+            const SizedBox(height: 8),
+            H1FormField(
+              controller: _regNumberCtrl,
+              decoration: const InputDecoration(
+                labelText: '適格請求書発行事業者登録番号（T番号）',
+                hintText: 'T1234567890123',
+              ),
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text('免税事業者の場合、適格請求書は発行できません',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        ],
+      ),
     );
   }
 
