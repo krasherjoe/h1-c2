@@ -104,7 +104,6 @@ class DocumentModel extends H1ExplorerItem {
 
   bool get isDraft => status == 'draft';
   bool get isConfirmed => status == 'confirmed';
-  bool get isLocked => status == 'confirmed';
 
   @override
   bool get canEdit => !isLocked;

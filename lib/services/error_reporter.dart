@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:googleapis/gmail/v1.dart' as gmail;
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'google_auth_service.dart';
@@ -38,9 +39,10 @@ class ErrorReporter {
         return;
       }
       debugPrint('[ErrorReporter] sending to $url');
+      final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
       final body = {
         'text': [
-          '### ⚠️ h-1-core エラー報告',
+          '### ⚠️ h-1-core エラー報告 ($now)',
           '',
           '**version:** $_kAppVersion',
           '**message:** $message',
@@ -84,10 +86,11 @@ class ErrorReporter {
 
     try {
       final api = gmail.GmailApi(client);
+      final now = DateFormat('yyyy/MM/dd HH:mm').format(DateTime.now());
       final shortMsg = message.length > 80 ? '${message.substring(0, 80)}...' : message;
       final subject = screenId != null
-          ? '[Error:h1-core] $screenId: $shortMsg'
-          : '[Error:h1-core] $shortMsg';
+          ? '$now [Error:h1-core] $screenId: $shortMsg'
+          : '$now [Error:h1-core] $shortMsg';
       final stackStr = stackTrace?.toString() ?? '';
       final bodyContent = '''
 version: $_kAppVersion
