@@ -493,63 +493,57 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       child: Column(
         children: [
           if (typeOptions.isNotEmpty) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: ToggleButtons(
-                    isSelected: typeOptions.map((o) => widget.config.typeFilter == o.value).toList(),
-                    onPressed: (i) {
-                      setState(() {
-                        widget.config.typeFilter = typeOptions[i].value;
-                      });
-                      _loadItems();
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    constraints: const BoxConstraints(minHeight: 32, minWidth: 52),
-                    textStyle: const TextStyle(fontSize: 11),
-                    children: typeOptions.map((o) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(o.icon, size: 14),
-                          const SizedBox(width: 3),
-                          Text(o.label),
-                        ],
-                      ),
-                    )).toList(),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ToggleButtons(
+                isSelected: typeOptions.map((o) => widget.config.typeFilter == o.value).toList(),
+                onPressed: (i) {
+                  setState(() {
+                    widget.config.typeFilter = typeOptions[i].value;
+                  });
+                  _loadItems();
+                },
+                borderRadius: BorderRadius.circular(8),
+                constraints: const BoxConstraints(minHeight: 32, minWidth: 52),
+                textStyle: const TextStyle(fontSize: 11),
+                children: typeOptions.map((o) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(o.icon, size: 14),
+                      const SizedBox(width: 3),
+                      Text(o.label),
+                    ],
                   ),
-                ),
-              ],
+                )).toList(),
+              ),
             ),
             const SizedBox(height: 8),
           ],
-          Row(
-            children: [
-              Expanded(
-                child: ToggleButtons(
-                  isSelected: [
-                    _statusFilter == '',
-                    _statusFilter == 'draft',
-                    _statusFilter == 'confirmed',
-                  ],
-                  onPressed: (i) {
-                    setState(() {
-                      _statusFilter = ['', 'draft', 'confirmed'][i];
-                    });
-                    _loadItems();
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  constraints: const BoxConstraints(minHeight: 32, minWidth: 60),
-                  textStyle: const TextStyle(fontSize: 12),
-                  children: const [
-                    Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('すべて')),
-                    Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('下書き')),
-                    Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('確定')),
-                  ],
-                ),
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ToggleButtons(
+              isSelected: [
+                _statusFilter == '',
+                _statusFilter == 'draft',
+                _statusFilter == 'confirmed',
+              ],
+              onPressed: (i) {
+                setState(() {
+                  _statusFilter = ['', 'draft', 'confirmed'][i];
+                });
+                _loadItems();
+              },
+              borderRadius: BorderRadius.circular(8),
+              constraints: const BoxConstraints(minHeight: 32, minWidth: 60),
+              textStyle: const TextStyle(fontSize: 12),
+              children: const [
+                Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('すべて')),
+                Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('下書き')),
+                Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('確定')),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           Row(
