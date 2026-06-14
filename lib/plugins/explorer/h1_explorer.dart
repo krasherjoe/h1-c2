@@ -335,17 +335,22 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           if (_showSearch)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: H1TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: widget.config.searchHint,
-                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
-                  prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                child: H1TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: widget.config.searchHint,
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                    prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                    suffixIcon: IconButton(
+                      icon: Icon(_showFilter ? Icons.filter_list_off : Icons.filter_list, size: 20),
+                      onPressed: () => setState(() => _showFilter = !_showFilter),
+                      tooltip: _showFilter ? 'フィルターを隠す' : 'フィルターを表示',
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
-                ),
                 onChanged: _onSearchChanged,
               ),
             ),
