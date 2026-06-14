@@ -35,12 +35,11 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     _load();
   }
 
-  void _autoExpandFirstLevel() {
-    final rootCategories = _categories.where((c) => c.parentId == null).toList();
-    for (final cat in rootCategories) {
+  void _autoExpandAll() {
+    for (final cat in _categories) {
       _expandedCategories.add(cat.id);
     }
-    debugPrint('[P1] auto-expanded: ${_expandedCategories.toList()}');
+    debugPrint('[P1] auto-expanded all: ${_expandedCategories.length} categories');
   }
 
   Future<void> _load() async {
@@ -57,7 +56,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     debugPrint(logMsg);
     ErrorReporter.sendLog(message: logMsg);
     debugPrint('[P1] sample products: ${_products.take(3).map((p) => '${p.name}(${p.categoryId})').join(', ')}');
-    _autoExpandFirstLevel();
+    _autoExpandAll();
   }
 
   List<Product> get _filteredProducts {
@@ -85,7 +84,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(_isTreeView ? Icons.view_list : Icons.view_module),
+            icon: Icon(_isTreeView ? Icons.view_list : Icons.account_tree),
             tooltip: _isTreeView ? 'リスト表示' : 'ツリー表示',
             onPressed: () => setState(() => _isTreeView = !_isTreeView),
           ),
@@ -134,15 +133,16 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildCategoryFilter(ColorScheme cs) {
     return SizedBox(
-      height: 40,
+      height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         children: [
           FilterChip(
             label: const Text('すべて'),
             selected: _selectedCategoryId == null,
             onSelected: (_) => setState(() => _selectedCategoryId = null),
+            visualDensity: VisualDensity.compact,
           ),
           const SizedBox(width: 8),
           ..._categories.map((cat) => Padding(
@@ -151,6 +151,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
               label: Text(cat.name),
               selected: _selectedCategoryId == cat.id,
               onSelected: (_) => setState(() => _selectedCategoryId = cat.id),
+              visualDensity: VisualDensity.compact,
             ),
           )),
         ],
@@ -230,7 +231,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                 Icon(
                   hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
                   size: [16, 20, 24][_displaySize].toDouble(),
-                  color: isHighlighted ? cs.primary : cs.onSurfaceVariant,
+                  color: isHighlighted ? cs.primary : const Color(0xFF8D6E63),
                   shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null,
                 ),
                 const SizedBox(width: 8),
@@ -248,7 +249,8 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                         )),
                     ),
                     Text('${products.length + children.length}',
-                      style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
+                      style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(),
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                           shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.25))] : null)),
                     const SizedBox(width: 8),
                     PopupMenuButton<String>(
