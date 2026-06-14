@@ -43,6 +43,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   DateTime? _dateTo;
   bool _treeMode = false;
   int _displaySize = 1; // 0=S, 1=M, 2=L
+  final Set<String> _expandedFolders = {};
   final _diagnosticKey = GlobalKey();
   List<TreeFolder> _folders = [];
   List<TreeFolder> _breadcrumbs = [];
@@ -653,56 +654,145 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   Widget _buildTreeView() {
-    if (_folders.isEmpty && _items.isEmpty) {
-      return Center(child: Text(widget.config.emptyMessage));
-    }
-    return RefreshIndicator(
-      onRefresh: _loadItems,
-      child: ListView(
-        children: [
-          ..._folders.map((folder) => DragTarget<T>(
-            onAcceptWithDetails: (details) async {
-              await widget.config.moveItemToFolder(details.data, folder.id);
-              _loadItems();
-            },
-            builder: (ctx, candidates, rejected) => Card(
-              margin: EdgeInsets.symmetric(horizontal: 12, vertical: [2.0, 4.0, 6.0][_displaySize]),
-              child: ListTile(
-                dense: _displaySize == 0,
-                contentPadding: _displaySize == 2
-                    ? const EdgeInsets.symmetric(horizontal: 16, vertical: 4)
-                    : null,
-                leading: Icon(folder.icon, color: candidates.isNotEmpty ? Colors.amber : null,
-                    size: [18.0, 20.0, 22.0][_displaySize]),
-                title: Text(folder.name,
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: [13.0, 14.0, 16.0][_displaySize])),
-                trailing: Text('${folder.itemCount}', style: const TextStyle(fontSize: 12)),
-                onTap: () => _navigateToFolder(folder.id),
-              ),
-            ),
-          )),
-          if (_folders.isNotEmpty && _items.isNotEmpty)
-            const Divider(height: 1),
-          ..._items.map((item) => LongPressDraggable<T>(
-            data: item,
-            feedback: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: 200,
-                child: ListTile(
-                  leading: Icon(item.icon ?? widget.config.itemIcon),
-                  title: Text(item.title, style: const TextStyle(fontSize: 13)),
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        // 左ペイン: フォルダツリー
+        Container(
+          width: 180,
+          color: cs.surfaceContainerLow,
+          child: _folders.isEmpty
+              ? Center(child: Text('フォルダなし',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)))
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: _folders.length,
+                  itemBuilder: (ctx, i) => _buildFolderTile(_folders[i], cs),
                 ),
+        ),
+        Container(width: 1, color: cs.outlineVariant),
+        // 右ペイン: 商品カード
+        Expanded(
+          child: _items.isEmpty
+              ? Center(child: Text(widget.config.emptyMessage,
+                  style: TextStyle(color: cs.onSurfaceVariant)))
+              : RefreshIndicator(
+                  onRefresh: _loadItems,
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(8),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: (MediaQuery.of(context).size.width - 200) > 400 ? 3 : 2,
+                      childAspectRatio: 1.4,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                    ),
+                    itemCount: _items.length,
+                    itemBuilder: (ctx, i) => _buildItemCard(_items[i], cs),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFolderTile(TreeFolder folder, ColorScheme cs) {
+    return DragTarget<T>(
+      onAcceptWithDetails: (details) async {
+        await widget.config.moveItemToFolder(details.data, folder.id);
+        _loadItems();
+      },
+      builder: (ctx, candidates, rejected) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: candidates.isNotEmpty
+              ? Colors.amber.withValues(alpha: 0.2)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ListTile(
+          dense: _displaySize == 0,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          leading: Icon(
+            _expandedFolders.contains(folder.id) ? Icons.folder_open : Icons.folder,
+            color: candidates.isNotEmpty ? Colors.amber : cs.tertiary,
+            size: [18.0, 20.0, 22.0][_displaySize],
+          ),
+          title: Text(folder.name,
+              style: TextStyle(fontSize: [13.0, 14.0, 15.0][_displaySize],
+                  fontWeight: FontWeight.w500)),
+          trailing: Text('${folder.itemCount}',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          onTap: () => _navigateToFolder(folder.id),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemCard(T item, ColorScheme cs) {
+    return LongPressDraggable<T>(
+      data: item,
+      feedback: Material(
+        elevation: 6,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 160,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(item.icon ?? widget.config.itemIcon, size: 24, color: cs.primary),
+                  const SizedBox(height: 6),
+                  Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                ],
               ),
             ),
-            childWhenDragging: Opacity(
-              opacity: 0.3,
-              child: _buildItemTile(item),
-            ),
-            child: _buildItemTile(item),
-          )),
-        ],
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.25,
+        child: _buildItemCardContent(item, cs),
+      ),
+      child: _buildItemCardContent(item, cs),
+    );
+  }
+
+  Widget _buildItemCardContent(T item, ColorScheme cs) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => _onItemTap(item),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(item.icon ?? widget.config.itemIcon, size: 24, color: cs.primary),
+              const SizedBox(height: 6),
+              Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: [12.0, 13.0, 14.0][_displaySize],
+                      fontWeight: FontWeight.w500)),
+              if (item.badge != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(item.badge!, style: TextStyle(fontSize: 9, color: cs.onPrimaryContainer)),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
