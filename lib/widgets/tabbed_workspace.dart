@@ -198,15 +198,14 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 140),
         margin: const EdgeInsets.symmetric(horizontal: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: active
               ? Color.lerp(cs.primaryContainer, cs.primary, 0.3)!
               : inactiveBg,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(6),
-            topRight: Radius.circular(6),
-          ),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
           tab.title,

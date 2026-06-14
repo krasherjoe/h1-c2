@@ -5,6 +5,7 @@ import '../logic/document_converter.dart';
 import '../services/document_repository.dart';
 import '../../../services/customer_repository.dart';
 import '../../../services/error_reporter.dart';
+import '../../../models/document_type_colors.dart';
 import 'document_preview_page.dart';
 
 class DocumentViewer extends StatefulWidget {
@@ -257,21 +258,75 @@ class _DocumentViewerState extends State<DocumentViewer> {
         icon: const Icon(Icons.arrow_forward),
         label: const Text('コピーして他の伝票を作成'),
         onPressed: () async {
-          final target = await showDialog<DocumentType>(
+          final cs = Theme.of(context).colorScheme;
+          final isDark = cs.brightness == Brightness.dark;
+          final types = DocumentType.values.where((t) => t != document.documentType).toList();
+          final target = await showModalBottomSheet<DocumentType>(
             context: context,
-            builder: (ctx) => SimpleDialog(
-              title: const Text('作成する伝票種別を選択'),
-              children: DocumentType.values.where((t) => t != document.documentType).map((t) =>
-                SimpleDialogOption(
-                  onPressed: () => Navigator.pop(ctx, t),
-                  child: Row(children: [
-                    Icon(Icons.description, size: 20, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 12),
-                    Text('${t.label}伝票を作成'),
-                  ]),
-                ),
-              ).toList(),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
+            builder: (ctx) {
+              final rows = (types.length + 1) ~/ 2;
+              final screenH = MediaQuery.of(ctx).size.height;
+              final cardH = ((screenH - 180) / rows).clamp(64.0, 100.0);
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('コピーして作成', style: Theme.of(ctx).textTheme.titleMedium),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: rows * cardH + (rows - 1) * 8,
+                        child: GridView.count(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          childAspectRatio: 180 / cardH,
+                          children: types.map((t) {
+                            final color = documentTypeColor(t, cs, isDark);
+                            return InkWell(
+                              onTap: () => Navigator.pop(ctx, t),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(_iconForType(t), size: 32, color: color),
+                                    const SizedBox(height: 6),
+                                    Text(t.label,
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: color)),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('キャンセル'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
           if (target == null || !context.mounted) return;
           try {
@@ -379,4 +434,12 @@ class _DocumentViewerState extends State<DocumentViewer> {
 
   String _formatQty(double qty) =>
     qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toStringAsFixed(1);
+
+  IconData _iconForType(DocumentType t) => switch (t) {
+    DocumentType.estimation => Icons.request_quote,
+    DocumentType.order => Icons.shopping_cart_checkout,
+    DocumentType.delivery => Icons.local_shipping,
+    DocumentType.invoice => Icons.receipt_long,
+    DocumentType.receipt => Icons.receipt,
+  };
 }
