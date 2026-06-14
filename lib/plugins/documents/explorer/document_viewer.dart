@@ -18,17 +18,21 @@ class DocumentViewer extends StatefulWidget {
 }
 
 class _DocumentViewerState extends State<DocumentViewer> {
-  DocumentModel get document => widget.document;
+  late DocumentModel _document;
   List<DocumentEditLog> _editLogs = [];
 
   @override
   void initState() {
     super.initState();
-    _loadEditLogs();
+    _document = widget.document;
+    _load();
   }
 
-  void _loadEditLogs() async {
-    final logs = await DocumentRepository().getEditLogs(widget.document.id);
+  Future<void> _load() async {
+    final repo = DocumentRepository();
+    final updated = await repo.fetchById(widget.document.id);
+    if (updated != null && mounted) setState(() => _document = updated);
+    final logs = await repo.getEditLogs(widget.document.id);
     if (mounted) setState(() => _editLogs = logs);
   }
 
@@ -65,7 +69,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
 
   Widget _buildHeader(BuildContext context, ColorScheme cs) {
     final docTypeColor = () {
-      switch (document.documentType) {
+      switch (_document.documentType) {
         case DocumentType.estimation: return cs.secondary;
         case DocumentType.order: return cs.tertiary;
         case DocumentType.delivery: return cs.primaryContainer;
@@ -81,24 +85,24 @@ class _DocumentViewerState extends State<DocumentViewer> {
             color: docTypeColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Text(document.documentType.label,
+          child: Text(_document.documentType.label,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: docTypeColor)),
         ),
         const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: document.isDraft ? cs.tertiaryContainer : cs.primaryContainer,
+            color: _document.isDraft ? cs.tertiaryContainer : cs.primaryContainer,
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
-            document.isDraft ? '下書き' : '確定',
+            _document.isDraft ? '下書き' : '確定',
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-              color: document.isDraft ? cs.onTertiaryContainer : cs.onPrimaryContainer),
+              color: _document.isDraft ? cs.onTertiaryContainer : cs.onPrimaryContainer),
           ),
         ),
         const Spacer(),
-        Text(document.documentNumber,
+        Text(_document.documentNumber,
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
       ],
     );
@@ -118,25 +122,25 @@ class _DocumentViewerState extends State<DocumentViewer> {
           Row(children: [
             Icon(Icons.business, size: 16, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Expanded(child: Text(document.customerName, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface))),
+            Expanded(child: Text(_document.customerName, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface))),
           ]),
           const SizedBox(height: 6),
           Row(children: [
             Icon(Icons.calendar_today, size: 14, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text('${document.date.year}/${document.date.month.toString().padLeft(2, '0')}/${document.date.day.toString().padLeft(2, '0')}',
+            Text('${_document.date.year}/${_document.date.month.toString().padLeft(2, '0')}/${_document.date.day.toString().padLeft(2, '0')}',
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             const Spacer(),
-            Text(document.documentNumber,
+            Text(_document.documentNumber,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
           ]),
           const SizedBox(height: 4),
           Row(children: [
             Icon(Icons.tag, size: 14, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text('ID: ${document.id.substring(0, 8)}...',
+            Text('ID: ${_document.id.substring(0, 8)}...',
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-            if (document.linkedDocumentId != null) ...[
+            if (_document.linkedDocumentId != null) ...[
               const Spacer(),
               Icon(Icons.link, size: 14, color: cs.onSurfaceVariant),
               const SizedBox(width: 4),
@@ -149,11 +153,11 @@ class _DocumentViewerState extends State<DocumentViewer> {
   }
 
   Widget _buildSubjectSection(ColorScheme cs) {
-    if (document.subject == null || document.subject!.isEmpty) return const SizedBox.shrink();
+    if (_document.subject == null || _document.subject!.isEmpty) return const SizedBox.shrink();
     return Row(children: [
       Icon(Icons.subject, size: 16, color: cs.onSurfaceVariant),
       const SizedBox(width: 6),
-      Expanded(child: Text(document.subject!, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
+      Expanded(child: Text(_document.subject!, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
     ]);
   }
 
@@ -165,7 +169,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
     return Row(children: [
       Text('明細', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
       const Spacer(),
-      Text('${document.items.length}点', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      Text('${_document.items.length}点', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
     ]);
   }
 
@@ -217,14 +221,14 @@ class _DocumentViewerState extends State<DocumentViewer> {
       ),
       child: Column(
         children: [
-          if (document.discountAmount > 0) ...[
-            _tr('小計', document.subtotal, cs, labelColor: cs.onSurfaceVariant),
-            _tr('値引き', -document.discountAmount, cs, labelColor: cs.error),
+          if (_document.discountAmount > 0) ...[
+            _tr('小計', _document.subtotal, cs, labelColor: cs.onSurfaceVariant),
+            _tr('値引き', -_document.discountAmount, cs, labelColor: cs.error),
           ],
-          _tr('税抜合計', document.taxableAmount, cs, labelColor: cs.onSurfaceVariant),
-          _tr('消費税 (${(document.taxRate * 100).round()}%)', document.tax, cs, labelColor: cs.onSurfaceVariant),
+          _tr('税抜合計', _document.taxableAmount, cs, labelColor: cs.onSurfaceVariant),
+          _tr('消費税 (${(_document.taxRate * 100).round()}%)', _document.tax, cs, labelColor: cs.onSurfaceVariant),
           const Divider(height: 16),
-          _tr('合計', document.total, cs, totalStyle: true),
+          _tr('合計', _document.total, cs, totalStyle: true),
         ],
       ),
     );
@@ -260,7 +264,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
         onPressed: () async {
           final cs = Theme.of(context).colorScheme;
           final isDark = cs.brightness == Brightness.dark;
-          final types = DocumentType.values.where((t) => t != document.documentType).toList();
+          final types = DocumentType.values.where((t) => t != _document.documentType).toList();
           final target = await showModalBottomSheet<DocumentType>(
             context: context,
             shape: const RoundedRectangleBorder(
@@ -331,12 +335,12 @@ class _DocumentViewerState extends State<DocumentViewer> {
           if (target == null || !context.mounted) return;
           try {
             final repo = DocumentRepository();
-            final newDoc = copyAsDocument(document, target);
+            final newDoc = copyAsDocument(_document, target);
             final docNumber = await repo.generateDocumentNumber(target);
             await repo.save(newDoc.copyWith(documentNumber: docNumber));
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${target.label}伝票を作成しました（元の${document.documentType.label}はそのままです）')),
+              SnackBar(content: Text('${target.label}伝票を作成しました（元の${_document.documentType.label}はそのままです）')),
             );
           } catch (e) {
             if (!context.mounted) return;
@@ -358,20 +362,20 @@ class _DocumentViewerState extends State<DocumentViewer> {
         onPressed: () async {
           final repo = DocumentRepository();
           String? customerEmail;
-          if (document.customerId.isNotEmpty) {
-            final customer = await CustomerRepository().getById(document.customerId);
+          if (_document.customerId.isNotEmpty) {
+            final customer = await CustomerRepository().getById(_document.customerId);
             customerEmail = customer?.email;
           }
           if (!context.mounted) return;
-          Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => DocumentPreviewPage(
-                document: document,
-                isUnlocked: document.isDraft,
+                document: _document,
+                isUnlocked: _document.isDraft,
                 onFormalIssue: () async {
                   try {
-                    final updated = document.copyWith(
+                    final updated = _document.copyWith(
                       status: 'confirmed',
                       isLocked: true,
                     );
@@ -392,6 +396,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
               ),
             ),
           );
+          _load();
         },
       ),
     );

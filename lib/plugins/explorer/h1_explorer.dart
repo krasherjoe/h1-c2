@@ -932,6 +932,7 @@ class _H1ExplorerViewerScreenState<T extends H1ExplorerItem> extends State<_H1Ex
         title: Text(widget.item.title),
         centerTitle: true,
         actions: [
+          if (widget.item.canEdit)
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _edit,
