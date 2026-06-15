@@ -142,11 +142,16 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
             ),
             maxLines: 2,
           ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            icon: const Icon(Icons.save),
-            label: const Text('保存'),
-            onPressed: _isSaving ? null : _save,
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _isSaving
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                : IconButton(
+                    icon: const Icon(Icons.save),
+                    tooltip: '保存',
+                    onPressed: _save,
+                  ),
           ),
         ],
       ),

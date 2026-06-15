@@ -474,22 +474,15 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _saving ? null : () => _save(andPop: false),
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.picture_as_pdf),
-                  label: const Text('保存してプレビュー'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _saving
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : IconButton(
+                        icon: const Icon(Icons.save),
+                        tooltip: '保存してプレビュー',
+                        onPressed: () => _save(andPop: false),
+                      ),
               ),
               const SizedBox(height: 32),
             ],

@@ -286,11 +286,15 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   // 角印管理セクション
                   _buildSealSection(),
                   const SizedBox(height: 24),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.save),
-                    label: const Text('保存'),
-                    onPressed: _save,
-            ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.save),
+                      tooltip: '保存',
+                      onPressed: _save,
+                    ),
+                  ),
             const SizedBox(height: 12),
             Row(
               children: [

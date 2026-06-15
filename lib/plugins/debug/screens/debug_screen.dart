@@ -357,7 +357,7 @@ class _DebugScreenState extends State<DebugScreen> {
                         icon: _downloading
                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.download, size: 18),
-                        label: Text(_downloading ? 'ダウンロード中...' : 'APK保存'),
+                        label: const Text('APK'),
                       ),
                       const SizedBox(width: 8),
                       OutlinedButton.icon(

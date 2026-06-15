@@ -123,10 +123,10 @@ class _SupplierEditorScreenState extends State<SupplierEditorScreen> {
       appBar: AppBar(
         title: Text('SE:${_isEdit ? '仕入先編集' : '新規仕入先'}'),
         actions: [
-          TextButton.icon(
-            onPressed: _save,
+          IconButton(
             icon: const Icon(Icons.check),
-            label: const Text('保存'),
+            tooltip: '保存',
+            onPressed: _save,
           ),
         ],
       ),

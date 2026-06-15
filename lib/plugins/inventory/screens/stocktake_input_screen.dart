@@ -301,11 +301,13 @@ class _StocktakeInputScreenState extends State<StocktakeInputScreen> {
                         ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: FilledButton.icon(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                  child: IconButton(
                     onPressed: _saving ? null : _saveStocktake,
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: Text(_saving ? '保存中...' : '棚卸結果を反映'),
+                    icon: _saving
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.save),
+                    tooltip: _saving ? '保存中...' : '棚卸結果を反映',
                   ),
                 ),
               ],

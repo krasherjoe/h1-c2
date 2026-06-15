@@ -173,16 +173,10 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
           title: _isEdit ? '顧客を編集' : '顧客を新規登録',
         ),
         actions: [
-          TextButton.icon(
-            onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
+          IconButton(
             icon: Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary),
-            label: Text(
-              '保存',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            tooltip: '保存',
+            onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
           ),
         ],
       ),

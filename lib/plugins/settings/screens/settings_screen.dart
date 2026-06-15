@@ -66,9 +66,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const ScreenAppBarTitle(screenId: 'AD', title: '設定'),
         actions: [
-          FilledButton.icon(
-            icon: const Icon(Icons.save, size: 18),
-            label: const Text('保存'),
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: '保存',
             onPressed: () {
               _repo.defaultTaxRate = _taxRate;
               _repo.documentNumberPrefix = _prefix;
@@ -77,10 +77,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SnackBar(content: Text('設定を保存しました'), duration: Duration(seconds: 1)),
               );
             },
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
           ),
         ],
       ),

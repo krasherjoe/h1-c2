@@ -1182,13 +1182,17 @@ class _DocumentEditorState extends State<DocumentEditor> {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            icon: _isSaving ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary)) : const Icon(Icons.save),
-            label: Text(_isSaving ? '保存中...' : '下書き保存'),
-            onPressed: _isSaving ? null : _save,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _isSaving
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : IconButton(
+                    icon: const Icon(Icons.save),
+                    tooltip: '下書き保存',
+                    onPressed: _save,
+                  ),
+          ],
         ),
       ),
     );

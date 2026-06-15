@@ -86,13 +86,10 @@ class _StocktakeScreenState extends State<StocktakeScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.save),
-                      label: const Text('棚卸を保存'),
-                      onPressed: _save,
-                    ),
+                  child: IconButton(
+                    icon: const Icon(Icons.save),
+                    tooltip: '棚卸を保存',
+                    onPressed: _save,
                   ),
                 ),
               ],
