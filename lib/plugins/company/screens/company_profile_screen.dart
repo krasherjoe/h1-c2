@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../models/company_info.dart';
 import '../../../services/company_repository.dart';
+import '../../../services/company_service.dart';
+import '../../../services/database_helper.dart';
 import '../../../widgets/h1_form_field.dart';
 import 'seal_contrast_dialog.dart';
 import 'seal_camera_screen.dart';
@@ -95,8 +97,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     if (!_formKey.currentState!.validate()) return;
     final bankJson = jsonEncode(_bankAccounts.map((a) => a.toJson()).toList());
     final regNum = _regNumberCtrl.text.trim();
+    final newName = _nameController.text.trim();
     final info = (_info ?? CompanyInfo(name: '')).copyWith(
-      name: _nameController.text.trim(),
+      name: newName,
       zipCode: _postalController.text.trim().isEmpty ? null : _postalController.text.trim(),
       address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
       tel: _telController.text.trim().isEmpty ? null : _telController.text.trim(),
@@ -108,6 +111,30 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       taxDisplayMode: _isExempt ? 'hidden' : 'normal',
     );
     await _companyRepo.saveCompanyInfo(info);
+
+    // 会社名が変わったらDBファイル名も変更
+    final currentName = await CompanyService.getCurrentCompany();
+    if (currentName != null && currentName != newName && currentName != 'default') {
+      final dir = await CompanyService.getCompanyDirectory();
+      final oldPath = '${dir.path}/$currentName.db';
+      final newPath = '${dir.path}/$newName.db';
+      if (await File(oldPath).exists() && !await File(newPath).exists()) {
+        await DatabaseHelper.closeAndReset();
+        await File(oldPath).rename(newPath);
+        await CompanyService.setCurrentCompany(newName);
+      }
+    } else if (currentName == 'default' && newName.isNotEmpty) {
+      // default.db を新しい会社名に改名
+      final dir = await CompanyService.getCompanyDirectory();
+      final defaultPath = '${dir.path}/default.db';
+      final newPath = '${dir.path}/$newName.db';
+      if (await File(defaultPath).exists() && !await File(newPath).exists()) {
+        await DatabaseHelper.closeAndReset();
+        await File(defaultPath).rename(newPath);
+        await CompanyService.setCurrentCompany(newName);
+      }
+    }
+
     setState(() => _info = info);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
