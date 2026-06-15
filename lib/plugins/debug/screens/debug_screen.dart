@@ -5,6 +5,7 @@ import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/mm_command_service.dart';
+import '../../../services/sheets_sync_service.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -104,6 +105,20 @@ class _DebugScreenState extends State<DebugScreen> {
     } catch (e) {
       debugPrint('[GoogleDiagnostic] error: $e');
     }
+  }
+
+  Future<void> _createSpreadsheet() async {
+    if (!mounted) return;
+    final url = await SheetsSyncService.instance.ensureSpreadsheet();
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('作成失敗（ログインしてください）')));
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('作成完了: $url'),
+      duration: const Duration(seconds: 5),
+    ));
+    await SheetsSyncService.instance.openUrl(url);
   }
 
   Future<void> _configurePat() async {
@@ -266,6 +281,12 @@ class _DebugScreenState extends State<DebugScreen> {
               onPressed: _googleDiagnostic,
               icon: const Icon(Icons.vpn_key, size: 18),
               label: const Text('Google診断'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _createSpreadsheet,
+              icon: const Icon(Icons.table_chart, size: 18),
+              label: const Text('📊 スプレッドシート'),
             ),
           ],
         ),

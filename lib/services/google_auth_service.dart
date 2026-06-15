@@ -26,6 +26,7 @@ class GoogleAuthService {
       'email',
       'https://www.googleapis.com/auth/gmail.modify',
       'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/spreadsheets',
     ];
     try {
       _googleSignIn = GoogleSignIn(
