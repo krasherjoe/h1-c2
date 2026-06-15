@@ -129,9 +129,9 @@ class _FinancialStatementsScreenState extends State<FinancialStatementsScreen> {
         ...expenses.map((a) => _line(a.name, _balance(a.id!).abs(), cs)),
         _totalLine('費用合計', totalExpense, cs),
         const SizedBox(height: 16),
-        _totalLine('当期純利益', netIncome >= 0 ? netIncome : 0, cs, bold: true, color: cs.primary),
+        _totalLine('課税対象利益', netIncome >= 0 ? netIncome : 0, cs, bold: true, color: cs.primary),
         if (netIncome < 0)
-          _totalLine('当期純損失', netIncome.abs(), cs, bold: true, color: cs.error),
+          _totalLine('課税なし（赤字）', netIncome.abs(), cs, bold: true, color: cs.error),
       ],
     );
   }
