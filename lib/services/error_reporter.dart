@@ -156,7 +156,6 @@ $stackStr
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'text': '🧪 **h-1-core ログ** ($_kAppVersion)\n$message'}),
         );
-        return;
       }
     } catch (_) {}
     await _sendViaPat('🧪 **h-1-core ログ** ($_kAppVersion)\n$message');
