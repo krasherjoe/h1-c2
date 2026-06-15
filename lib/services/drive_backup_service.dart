@@ -110,4 +110,14 @@ class DriveBackupService {
       return false;
     }
   }
+
+  Future<void> cleanOldBackups({int keep = 5}) async {
+    try {
+      final all = await listBackups();
+      if (all.length <= keep) return;
+      for (final f in all.skip(keep)) {
+        if (f.id != null) await deleteBackup(f.id!);
+      }
+    } catch (_) {}
+  }
 }

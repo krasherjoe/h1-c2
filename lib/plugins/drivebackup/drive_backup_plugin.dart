@@ -130,7 +130,10 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(ok ? 'アップロード完了' : 'アップロード失敗')),
         );
-        if (ok) await _loadFiles();
+        if (ok) {
+          await _driveService.cleanOldBackups(keep: 5);
+          await _loadFiles();
+        }
       }
     } catch (e, st) {
       debugPrint('[DriveBackup] upload error: $e\n$st');
