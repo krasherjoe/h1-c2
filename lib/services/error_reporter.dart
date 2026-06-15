@@ -66,10 +66,11 @@ class ErrorReporter {
     String? screenId,
     StackTrace? stackTrace,
   }) async {
+    String? sentBy;
     try {
       final url = await _getWebhookUrl();
       if (url.isNotEmpty) {
-        debugPrint('[ErrorReporter] sending to $url');
+        debugPrint('[ErrorReporter] sending via webhook to $url');
         final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
         final body = {
           'text': [
@@ -88,21 +89,37 @@ class ErrorReporter {
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(body),
         );
+        sentBy = 'webhook';
         debugPrint('[ErrorReporter] sent via webhook');
-      } else {
-        debugPrint('[ErrorReporter] webhook URL未設定、PAT試行へ');
       }
     } catch (e) {
       debugPrint('[ErrorReporter] webhook send failed: $e');
     }
 
-    try {
-      await sendErrorViaGmail(
-        message: message,
-        screenId: screenId,
-        stackTrace: stackTrace,
-      );
-    } catch (_) {}
+    if (sentBy == null) {
+      try {
+        await sendErrorViaGmail(
+          message: message,
+          screenId: screenId,
+          stackTrace: stackTrace,
+        );
+        sentBy = 'gmail';
+      } catch (_) {}
+    }
+
+    if (sentBy == null) {
+      final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
+      final text = '### ⚠️ h-1-core エラー報告 ($now)\n'
+          '**version:** $_kAppVersion\n'
+          '**message:** $message\n'
+          '**screen:** ${screenId ?? "N/A"}\n';
+      final ok = await _sendViaPat(text);
+      if (ok) sentBy = 'pat';
+    }
+
+    if (sentBy == null) {
+      debugPrint('[ErrorReporter] all delivery methods failed');
+    }
   }
 
   static Future<void> sendErrorViaGmail({
