@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../models/journal_entry.dart';
 import '../services/account_repository.dart';
+import '../services/export_service.dart';
 import '../../../services/database_helper.dart';
 
 class TrialBalanceScreen extends StatefulWidget {
@@ -50,7 +51,25 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
     if (_loading) return Scaffold(appBar: AppBar(title: const Text('試算表')), body: const Center(child: CircularProgressIndicator()));
     int totalDebit = 0, totalCredit = 0;
     return Scaffold(
-      appBar: AppBar(title: const Text('試算表')),
+      appBar: AppBar(
+        title: const Text('試算表'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () async {
+              final now = DateTime.now();
+              final dateLabel = '${now.year}/${now.month}/${now.day}';
+              await ExportService().exportTrialBalance(
+                accounts: _accounts,
+                entries: _entries,
+                totalDebit: totalDebit,
+                totalCredit: totalCredit,
+                dateLabel: dateLabel,
+              );
+            },
+          ),
+        ],
+      ),
       body: _entries.isEmpty
           ? Center(child: Text('仕訳データがありません', style: TextStyle(color: cs.onSurfaceVariant)))
           : ListView(

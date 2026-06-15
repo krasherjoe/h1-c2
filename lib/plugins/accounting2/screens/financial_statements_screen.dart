@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../models/journal_entry.dart';
 import '../services/account_repository.dart';
+import '../services/export_service.dart';
 import '../../../services/database_helper.dart';
 
 class FinancialStatementsScreen extends StatefulWidget {
@@ -49,7 +50,23 @@ class _FinancialStatementsScreenState extends State<FinancialStatementsScreen> {
     final cs = Theme.of(context).colorScheme;
     if (_loading) return Scaffold(appBar: AppBar(title: const Text('決算書')), body: const Center(child: CircularProgressIndicator()));
     return Scaffold(
-      appBar: AppBar(title: const Text('決算書')),
+      appBar: AppBar(
+        title: const Text('決算書'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () async {
+              final now = DateTime.now();
+              final dateLabel = '${now.year}/${now.month}/${now.day}';
+              await ExportService().exportFinancialStatements(
+                accounts: _accounts,
+                entries: _entries,
+                dateLabel: dateLabel,
+              );
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           TabBar(
