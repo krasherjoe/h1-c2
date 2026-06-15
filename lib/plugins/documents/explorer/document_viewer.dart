@@ -6,8 +6,6 @@ import '../services/document_repository.dart';
 import '../../../services/customer_repository.dart';
 import '../../../services/error_reporter.dart';
 import '../../../models/document_type_colors.dart';
-import '../../../plugins/printer/services/printer_connection_service.dart';
-import '../../../plugins/printer/services/receipt_generator.dart';
 import '../../../plugins/printer/screens/printer_settings_screen.dart';
 import 'document_preview_page.dart';
 
@@ -426,29 +424,12 @@ class _DocumentViewerState extends State<DocumentViewer> {
       width: double.infinity,
       child: OutlinedButton.icon(
         icon: const Icon(Icons.receipt, size: 18),
-        label: const Text('レシート印刷'),
-        onPressed: () async {
-          final service = PrinterConnectionService.instance;
-          if (!service.isConnected) {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PrinterSettingsScreen()),
-            );
-            if (result == null) return;
-          }
-          if (!service.isConnected) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('プリンタが接続されていません')),
-            );
-            return;
-          }
-          final lines = ReceiptGenerator.generate(_document);
-          final ok = await service.printLines(lines);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(ok ? '印刷しました' : '印刷失敗')),
-            );
-          }
+        label: const Text('レシート'),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => PrinterSettingsScreen(document: _document)),
+          );
         },
       ),
     );
