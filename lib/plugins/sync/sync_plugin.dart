@@ -69,6 +69,22 @@ class SyncPlugin extends H1Plugin {
         feature TEXT PRIMARY KEY,
         allowed INTEGER NOT NULL DEFAULT 1
       )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sync_children (
+        email TEXT PRIMARY KEY,
+        registered_at TEXT NOT NULL,
+        last_sync_at TEXT,
+        permissions TEXT
+      )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sync_notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL,
+        title TEXT NOT NULL,
+        detail TEXT,
+        created_at TEXT NOT NULL,
+        read_at TEXT
+      )''');
     for (final table in ['documents', 'journal_entries', 'cash_transactions']) {
       try { await db.execute("ALTER TABLE $table ADD COLUMN sync_source TEXT DEFAULT ''"); } catch (_) {}
       try { await db.execute("ALTER TABLE $table ADD COLUMN sync_version INTEGER DEFAULT 0"); } catch (_) {}

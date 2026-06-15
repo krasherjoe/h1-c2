@@ -33,13 +33,24 @@ class PermissionService {
 
   static Map<String, String> get allFeatures => Map.unmodifiable(_allFeatures);
 
+  static const Map<String, bool> defaultChildPermissions = {
+    'masterEdit': false, 'masterDelete': false, 'masterCreate': false,
+    'invoiceView': true, 'invoiceEdit': true, 'invoiceCreate': true,
+    'invoiceDelete': false, 'invoiceIssue': false,
+    'accountingView': false, 'settingEdit': false, 'backup': false,
+  };
+
   Future<void> loadFromDb() async {
     try {
       final db = await DatabaseHelper().database;
       final rows = await db.query('permissions');
-      _perms = {for (final r in rows) r['feature'] as String: (r['allowed'] as int) == 1};
+      if (rows.isEmpty) {
+        _perms = Map<String, bool>.from(defaultChildPermissions);
+      } else {
+        _perms = {for (final r in rows) r['feature'] as String: (r['allowed'] as int) == 1};
+      }
     } catch (_) {
-      _perms = {};
+      _perms = Map<String, bool>.from(defaultChildPermissions);
     }
   }
 

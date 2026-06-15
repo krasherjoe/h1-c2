@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/sync_queue.dart';
+import '../../../services/google_auth_service.dart';
 
 class SyncQrScannerScreen extends StatefulWidget {
   const SyncQrScannerScreen({super.key});
@@ -44,6 +46,13 @@ class _SyncQrScannerScreenState extends State<SyncQrScannerScreen> {
     await SyncQueue.instance.setParentEmail(parentEmail);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('sync_registered_via', 'qr:$token');
+    // 親分に登録通知を送信
+    final myEmail = await GoogleAuthService.instance.getEmail();
+    if (myEmail != null) {
+      SyncQueue.instance.push(jsonEncode({
+        'type': 'register', 'email': myEmail,
+      }));
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('親分「$parentEmail」と同期しました')),

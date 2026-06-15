@@ -93,10 +93,13 @@ class SyncQueue {
       if (client == null) return;
       final api = gmail.GmailApi(client);
       final boundary = 'b${DateTime.now().millisecondsSinceEpoch}';
+      final hasNotify = !isParent;
       final raw = 'Content-Type: multipart/mixed; boundary=$boundary\nMIME-Version: 1.0\n'
           'To: $_parentEmail\nSubject: [Sync:h1]${DateTime.now().millisecondsSinceEpoch}\n'
           'X-H1-Msg-Id: $msgId\n'
-          'X-H1-Source: ${await GoogleAuthService.instance.getEmail()}\n\n'
+          'X-H1-Source: ${await GoogleAuthService.instance.getEmail()}\n'
+          '${hasNotify ? "X-H1-Notify: true\n" : ""}'
+          '\n'
           '--$boundary\nContent-Type: text/plain; charset=UTF-8\n\n${batch.join("\n")}\n--$boundary--';
       final encoded = base64UrlEncode(utf8.encode(raw));
       await api.users.messages.send(gmail.Message(raw: encoded), 'me');
@@ -166,7 +169,32 @@ class SyncQueue {
   }
 
   void _processIncoming(String source, String body) {
-    // 行ごとにパースしてDBに反映
+    // 通知として処理（register/notify タイプ）
+    try {
+      final json = jsonDecode(body.trim()) as Map<String, dynamic>;
+      final type = json['type'] as String?;
+
+      if (type == 'register') {
+        final email = json['email'] as String? ?? source;
+        DatabaseHelper().database.then((db) async {
+          try {
+            await db.insert('sync_children', {
+              'email': email,
+              'registered_at': DateTime.now().toIso8601String(),
+            }, conflictAlgorithm: ConflictAlgorithm.replace);
+          } catch (_) {}
+        });
+        _saveNotification(source, '子分登録', 'メール: $email');
+        return;
+      }
+
+      if (type == 'notify') {
+        _saveNotification(source, json['title'] as String? ?? '', json['detail'] as String? ?? '');
+        return;
+      }
+    } catch (_) {}
+
+    // データ同期として処理
     final lines = body.split('\n');
     for (final line in lines) {
       final trimmed = line.trim();
@@ -195,6 +223,21 @@ class SyncQueue {
         });
       } catch (_) {}
     }
+  }
+
+  void _saveNotification(String source, String title, String detail) {
+    DatabaseHelper().database.then((db) async {
+      try {
+        await db.insert('sync_notifications', {
+          'source': source, 'title': title, 'detail': detail,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      } catch (_) {}
+    });
+  }
+
+  Future<void> sendNotification(String title, String detail) async {
+    push(jsonEncode({'type': 'notify', 'title': title, 'detail': detail}));
   }
 
   // --- ラベル/フィルタ設定（親分のみ） ---

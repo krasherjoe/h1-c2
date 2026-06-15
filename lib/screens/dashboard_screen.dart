@@ -4,6 +4,8 @@ import '../plugin_system/plugin_registry.dart';
 import '../plugin_system/dashboard_section.dart';
 import '../plugin_system/plugin_widgets.dart';
 import '../widgets/slide_to_unlock.dart';
+import 'package:sqflite/sqflite.dart';
+import '../services/database_helper.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,6 +19,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _statusEnabled = true;
   String _statusText = '販売アシスト1号 - 準備中';
   bool _historyUnlocked = false;
+  List<Map<String, dynamic>> _notifications = [];
+  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -26,11 +30,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    final db = await DatabaseHelper().database;
+    final notifs = await db.query('sync_notifications', orderBy: 'created_at DESC', limit: 5);
+    final unreadCount = (await db.rawQuery("SELECT COUNT(*) as c FROM sync_notifications WHERE read_at IS NULL")).first['c'] as int? ?? 0;
     if (!mounted) return;
     setState(() {
       _statusEnabled = prefs.getBool('dashboard_status_enabled') ?? true;
       _statusText = prefs.getString('dashboard_status_text') ?? '販売アシスト1号 - 準備中';
       _historyUnlocked = prefs.getBool('dashboard_history_unlocked') ?? false;
+      _notifications = notifs;
+      _unreadCount = unreadCount;
       _loading = false;
     });
   }
@@ -116,21 +125,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStatusBar() {
+    final cs = Theme.of(context).colorScheme;
+    final latestNotif = _notifications.isNotEmpty ? _notifications.first : null;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
+        color: latestNotif != null ? cs.tertiaryContainer.withValues(alpha: 0.3) : cs.secondaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.secondary),
+        border: Border.all(color: latestNotif != null ? cs.tertiary : cs.secondary),
       ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary),
-          const SizedBox(width: 12),
-          Expanded(child: Text(_statusText, style: const TextStyle(fontWeight: FontWeight.bold))),
-        ],
+      child: InkWell(
+        onTap: () {
+          // 通知一覧へ
+          Navigator.pushNamed(context, '/cases');
+        },
+        child: Row(
+          children: [
+            Icon(latestNotif != null ? Icons.notifications_active : Icons.info_outline,
+                color: latestNotif != null ? cs.tertiary : cs.secondary, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    latestNotif != null ? '📢 ${latestNotif['title']}' : _statusText,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: cs.onSurface),
+                  ),
+                  if (latestNotif != null && latestNotif['detail'] != null)
+                    Text('${latestNotif['detail']}',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            if (_unreadCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: cs.error, borderRadius: BorderRadius.circular(10)),
+                child: Text('$_unreadCount', style: TextStyle(fontSize: 10, color: cs.onError, fontWeight: FontWeight.bold)),
+              ),
+          ],
+        ),
       ),
     );
   }
