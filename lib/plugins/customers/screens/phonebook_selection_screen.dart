@@ -68,7 +68,10 @@ class _PhonebookSelectionScreenState extends State<PhonebookSelectionScreen> {
 
   Future<void> _import(Contact contact) async {
     final phone = contact.phones.isNotEmpty ? contact.phones.first.number : null;
-    final email = contact.emails.isNotEmpty ? contact.emails.first.address : null;
+    final emails = contact.emails;
+    final email = emails.isNotEmpty ? emails.first.address : null;
+    final email2 = emails.length > 1 ? emails[1].address : null;
+    final email3 = emails.length > 2 ? emails[2].address : null;
     final addr = contact.addresses.isNotEmpty ? contact.addresses.first.address : null;
     final displayName = contact.displayName ?? '名無し';
     try {
@@ -79,6 +82,8 @@ class _PhonebookSelectionScreenState extends State<PhonebookSelectionScreen> {
         title: 1,
         tel: phone,
         email: email,
+        email2: email2,
+        email3: email3,
         address: addr,
         isLocked: false,
         isHidden: false,

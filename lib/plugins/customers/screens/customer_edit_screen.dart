@@ -27,6 +27,8 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
   late final TextEditingController _addressCtl;
   late final TextEditingController _telCtl;
   late final TextEditingController _emailCtl;
+  late final TextEditingController _email2Ctl;
+  late final TextEditingController _email3Ctl;
   late final TextEditingController _head1Ctl;
   late final TextEditingController _head2Ctl;
 
@@ -51,6 +53,8 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
     _addressCtl = TextEditingController(text: c?.address ?? '');
     _telCtl = TextEditingController(text: c?.tel ?? '');
     _emailCtl = TextEditingController(text: c?.email ?? '');
+    _email2Ctl = TextEditingController(text: c?.email2 ?? '');
+    _email3Ctl = TextEditingController(text: c?.email3 ?? '');
     _selectedTitle = c?.title ?? HonorificCode.san;
     _isCompany =
         _selectedTitle == HonorificCode.onchu ||
@@ -76,6 +80,8 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
     _addressCtl.dispose();
     _telCtl.dispose();
     _emailCtl.dispose();
+    _email2Ctl.dispose();
+    _email3Ctl.dispose();
     _head1Ctl.dispose();
     _head2Ctl.dispose();
     _rankDiscountCtl.dispose();
@@ -135,6 +141,8 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
         address: _addressCtl.text.trim().isEmpty ? null : _addressCtl.text.trim(),
         tel: _telCtl.text.trim().isEmpty ? null : _telCtl.text.trim(),
         email: _emailCtl.text.trim().isEmpty ? null : _emailCtl.text.trim(),
+        email2: _email2Ctl.text.trim().isEmpty ? null : _email2Ctl.text.trim(),
+        email3: _email3Ctl.text.trim().isEmpty ? null : _email3Ctl.text.trim(),
         headChar1: _head1Ctl.text.trim().isEmpty ? null : _head1Ctl.text.trim(),
         headChar2: _head2Ctl.text.trim().isEmpty ? null : _head2Ctl.text.trim(),
         closingDay: _closingDay,
@@ -369,9 +377,27 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
                     H1FormField(
                       controller: _emailCtl,
                       decoration: const InputDecoration(
-                        labelText: 'メールアドレス',
+                        labelText: 'メールアドレス1（優先）',
                         hintText: '例: info@example.com',
                         prefixIcon: Icon(Icons.email),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 10),
+                    H1FormField(
+                      controller: _email2Ctl,
+                      decoration: const InputDecoration(
+                        labelText: 'メールアドレス2',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 10),
+                    H1FormField(
+                      controller: _email3Ctl,
+                      decoration: const InputDecoration(
+                        labelText: 'メールアドレス3',
+                        prefixIcon: Icon(Icons.email_outlined),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),

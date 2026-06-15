@@ -266,6 +266,8 @@ class CustomerRepository {
           address: customer.address,
           tel: customer.tel,
           email: customer.email,
+          email2: customer.email2,
+          email3: customer.email3,
           contactVersionId: customer.contactVersionId,
           odooId: customer.odooId,
           isLocked: customer.isLocked,

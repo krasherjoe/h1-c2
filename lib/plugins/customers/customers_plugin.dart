@@ -26,6 +26,10 @@ class CustomersPlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
+    try { await context.database.execute("ALTER TABLE customers ADD COLUMN email2 TEXT"); } catch (_) {}
+    try { await context.database.execute("ALTER TABLE customers ADD COLUMN email3 TEXT"); } catch (_) {}
+    try { await context.database.execute("ALTER TABLE customer_contacts ADD COLUMN email2 TEXT"); } catch (_) {}
+    try { await context.database.execute("ALTER TABLE customer_contacts ADD COLUMN email3 TEXT"); } catch (_) {}
     DebugConsole.register('customers.stats', (_) async {
       final cnt = await context.database.rawQuery('SELECT COUNT(*) as c FROM customers');
       return '顧客: ${cnt.first['c']}件';

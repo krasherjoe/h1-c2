@@ -132,9 +132,11 @@ class Customer {
   final String formalName; // 請求書用正式名称
   final int title; // 敬称コード（1:様, 2:御中, 3:殿, 4:貴社）
   final String? department; // 部署名
-  final String? address; // 住所（最新連絡先）
-  final String? tel; // 電話番号（最新連絡先）
-  final String? email; // メール（最新連絡先）
+  final String? address; // 住所
+  final String? tel; // 電話番号
+  final String? email; // メール（アクティブ）
+  final String? email2; // メール2
+  final String? email3; // メール3
   final int? contactVersionId; // 連絡先バージョン
   final String? odooId; // Odoo 側の ID
   final bool isSynced; // 同期フラグ
@@ -171,6 +173,8 @@ class Customer {
     this.address,
     this.tel,
     this.email,
+    this.email2,
+    this.email3,
     this.contactVersionId,
     this.odooId,
     this.isSynced = false,
@@ -218,6 +222,8 @@ class Customer {
       'address': address,
       'tel': tel,
       'email': email,
+      'email2': email2,
+      'email3': email3,
       'contact_version_id': contactVersionId,
       'odoo_id': odooId,
       'kana': kana,
@@ -266,6 +272,8 @@ class Customer {
       address: map['contact_address'] ?? map['address'],
       tel: map['contact_tel'] ?? map['tel'],
       email: map['contact_email'] ?? map['email'],
+      email2: map['email2'] as String?,
+      email3: map['email3'] as String?,
       contactVersionId: map['contact_version_id'],
       odooId: map['odoo_id'],
       isLocked: (map['is_locked'] ?? 0) == 1,
@@ -310,6 +318,8 @@ class Customer {
     bool? isLocked,
     bool? isHidden,
     String? email,
+    String? email2,
+    String? email3,
     int? contactVersionId,
     String? kana,
     String? headChar1,
@@ -339,6 +349,8 @@ class Customer {
       address: address ?? this.address,
       tel: tel ?? this.tel,
       email: email ?? this.email,
+      email2: email2 ?? this.email2,
+      email3: email3 ?? this.email3,
       contactVersionId: contactVersionId ?? this.contactVersionId,
       odooId: odooId ?? this.odooId,
       isSynced: isSynced ?? this.isSynced,
