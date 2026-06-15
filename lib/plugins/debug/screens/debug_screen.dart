@@ -53,14 +53,18 @@ class _DebugScreenState extends State<DebugScreen> {
   }
 
   Future<void> _sendTestReport() async {
-    await ErrorReporter.sendError(
-      message: '診断テスト',
-      detail: 'DB:デバッグ画面からのテスト送信です v=${_service.appVersion}',
-      screenId: '/debug',
-    );
+    var sentAny = false;
+    if (_service.isConfigured) {
+      final ok = await _service.sendText(
+        '### \u{1F9EA} h-1-core 診断テスト (PAT)\n\n'
+        '**時刻:** ${DateTime.now().toIso8601String()}',
+      );
+      if (ok) sentAny = true;
+    }
+    await ErrorReporter.sendError(message: '診断テスト', detail: 'DB画面からのテスト', screenId: '/debug');
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('テスト報告を送信しました')),
+      SnackBar(content: Text(sentAny ? 'テスト送信しました（PAT + ErrorReporter）' : 'テスト送信しました（ErrorReporterのみ）')),
     );
   }
 

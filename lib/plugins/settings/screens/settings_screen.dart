@@ -422,10 +422,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       IconButton(
                         icon: const Icon(Icons.send, size: 18),
                         tooltip: 'テスト送信',
-                        onPressed: () {
+                        onPressed: () async {
                           ErrorReporter.setWebhookUrl(_webhookUrl.trim());
-                          ErrorReporter.sendError(message: '設定テスト', detail: '設定画面からのテスト送信です', screenId: 'settings');
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('テスト送信しました')));
+                          await ErrorReporter.sendError(message: '設定テスト', detail: '設定画面からのテスト送信です', screenId: 'settings');
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('テスト送信しました（MMとGmail両方に送信されます）'),
+                            ));
+                          }
                         },
                       ),
                     ]),
