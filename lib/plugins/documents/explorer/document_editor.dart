@@ -244,10 +244,10 @@ class _DocumentEditorState extends State<DocumentEditor> {
       );
       return;
     }
-    final emptyFields = _items.where((i) => i.productName.isEmpty || i.maker.isEmpty || i.productCode.isEmpty).toList();
+    final emptyFields = _items.where((i) => i.productName.isEmpty).toList();
     if (emptyFields.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('メーカー・商品名・品番は必須です')),
+        const SnackBar(content: Text('商品名は必須です')),
       );
       return;
     }
