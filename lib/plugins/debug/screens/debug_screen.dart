@@ -115,10 +115,10 @@ class _DebugScreenState extends State<DebugScreen> {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('作成完了: $url'),
-      duration: const Duration(seconds: 5),
+      content: Text('📊 $url'),
+      duration: const Duration(seconds: 10),
+      action: SnackBarAction(label: '開く', onPressed: () => SheetsSyncService.instance.openUrl(url)),
     ));
-    await SheetsSyncService.instance.openUrl(url);
   }
 
   Future<void> _configurePat() async {
