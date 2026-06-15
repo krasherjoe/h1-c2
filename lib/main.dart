@@ -13,6 +13,7 @@ import 'services/database_helper.dart';
 import 'services/db_snapshot_service.dart';
 import 'services/company_service.dart';
 import 'plugin_system/plugin_registry.dart';
+import 'plugin_system/plugin_interface.dart';
 import 'plugin_system/plugin_context.dart';
 import 'plugin_system/core_plugin.dart';
 import 'plugin_system/plugin_state_service.dart';
@@ -259,6 +260,9 @@ void main() async {
     return true;
   };
 
+  debugPrint('[Startup] Starting h1-core');
+  try { await ErrorReporter.sendLog(message: '[Startup] Starting h1-core'); } catch (_) {}
+
   await MmCommandService.instance.loadConfig();
   await LogDispatcher.loadConfig();
 
@@ -290,38 +294,36 @@ void main() async {
 
   final db = await DatabaseHelper().database;
   final prefs = await SharedPreferences.getInstance();
+  debugPrint('[Startup] DB ready, prefs ready');
 
   final context = PluginContext(database: db, preferences: prefs);
 
   final registry = PluginRegistry.instance;
   registry.setContext(context);
 
-  // プラグイン登録
-  await registry.register(CorePlugin());
-  await registry.register(DocumentsPlugin());
-  await registry.register(CustomersPlugin());
-  await registry.register(ProductsPlugin());
-  await registry.register(CompanyPlugin());
-  await registry.register(SettingsPlugin());
-  await registry.register(InventoryPlugin());
-  await registry.register(PurchasePlugin());
-  await registry.register(AnalyticsPlugin());
-  await registry.register(AnalysisPlugin());
-  await registry.register(AccountingPlugin());
-  await registry.register(Accounting2Plugin());
-  await registry.register(QuickActionsPlugin());
-  await registry.register(ExplorerPlugin());
-  await registry.register(BackupPlugin());
-  await registry.register(ConversionPlugin());
-  await registry.register(AuditPlugin());
-  await registry.register(DebugPlugin());
-  await registry.register(DriveBackupPlugin());
-  await registry.register(ProjectPlugin());
-  await registry.register(MemorandumPlugin());
-  await registry.register(ArPlugin());
-  await registry.register(DailyPlugin());
-  await registry.register(PriceListPlugin());
-  await registry.register(SuppliersPlugin());
+  // プラグイン登録（各ステップでログ出力）
+  final plugins = <H1Plugin>[
+    CorePlugin(), DocumentsPlugin(), CustomersPlugin(),
+    ProductsPlugin(), CompanyPlugin(), SettingsPlugin(),
+    InventoryPlugin(), PurchasePlugin(), AnalyticsPlugin(),
+    AnalysisPlugin(), AccountingPlugin(), Accounting2Plugin(),
+    QuickActionsPlugin(), ExplorerPlugin(), BackupPlugin(),
+    ConversionPlugin(), AuditPlugin(), DebugPlugin(),
+    DriveBackupPlugin(), ProjectPlugin(), MemorandumPlugin(),
+    ArPlugin(), DailyPlugin(), PriceListPlugin(), SuppliersPlugin(),
+  ];
+  for (final plugin in plugins) {
+    try {
+      await registry.register(plugin);
+      debugPrint('[Startup] ✅ ${plugin.id}');
+    } catch (e, st) {
+      debugPrint('[Startup] ❌ ${plugin.id}: $e');
+      debugPrint('[Startup] Stack: $st');
+      try {
+        ErrorReporter.sendError(message: 'プラグイン初期化失敗: ${plugin.id}: $e', screenId: 'startup', stackTrace: st);
+      } catch (_) {}
+    }
+  }
 
   final stateService = PluginStateService();
   final states = await stateService.loadAll(
@@ -332,6 +334,9 @@ void main() async {
       registry.setEnabled(entry.key, false);
     }
   }
+
+  debugPrint('[Startup] ✅ All plugin registered, launching app');
+  try { await ErrorReporter.sendLog(message: '[Startup] All plugins loaded, app starting'); } catch (_) {}
 
   runApp(H1CoreApp(registry: registry, db: db, prefs: prefs));
 }

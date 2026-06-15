@@ -14,15 +14,17 @@ class _GoogleAuthBadgeState extends State<GoogleAuthBadge> {
   @override
   void initState() {
     super.initState();
-    _load();
+    try { _load(); } catch (_) {}
   }
 
   Future<void> _load() async {
-    final email = await GoogleAuthService.instance.getEmail();
-    if (mounted) setState(() {
-      _signedIn = email != null && email.isNotEmpty;
-      _email = email;
-    });
+    try {
+      final email = await GoogleAuthService.instance.getEmail();
+      if (mounted) setState(() {
+        _signedIn = email != null && email.isNotEmpty;
+        _email = email;
+      });
+    } catch (_) {}
   }
 
   @override

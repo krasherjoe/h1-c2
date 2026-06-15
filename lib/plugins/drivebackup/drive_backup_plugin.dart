@@ -43,17 +43,7 @@ class DriveBackupPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     GoogleAuthService.instance.init();
-    await _autoBackup();
-  }
-
-  Future<void> _autoBackup() async {
-    try {
-      final dbPath = await DatabaseHelper().getDatabasePath();
-      final service = LocalBackupService();
-      final localPath = await service.createAutoBackup(dbPath);
-      if (localPath == null) return;
-      await DriveBackupService().uploadBackup(localPath);
-    } catch (_) {}
+    debugPrint('[DriveBackup] initialized (auto backup skipped during startup)');
   }
 }
 
