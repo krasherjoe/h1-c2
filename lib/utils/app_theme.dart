@@ -55,6 +55,13 @@ class AppTheme {
         elevation: 3,
         shadowColor: isDark ? const Color(0x50000000) : const Color(0x22000000),
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+        indicatorColor: scheme.primary.withValues(alpha: 0.2),
+      ),
+      bottomAppBarTheme: BottomAppBarThemeData(
+        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+      ),
       inputDecorationTheme: _inputTheme(isDark, inputStyle),
     );
   }

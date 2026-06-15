@@ -363,6 +363,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
     super.initState();
     _themeMode = _loadThemeMode(widget.prefs);
     themeNotifier.value = _themeMode;
+    _applySystemNavBar(_themeMode);
     themeNotifier.addListener(_onThemeChanged);
     inputStyleNotifier.addListener(_onInputStyleChanged);
     CompanyService.activeCompanyNotifier.addListener(_onCompanyChanged);
@@ -423,7 +424,10 @@ class _H1CoreAppState extends State<H1CoreApp> {
 
   void _onThemeChanged() {
     if (!mounted) return;
-    setState(() => _themeMode = themeNotifier.value);
+    setState(() {
+      _themeMode = themeNotifier.value;
+      _applySystemNavBar(_themeMode);
+    });
   }
 
   void _onInputStyleChanged() {
@@ -502,5 +506,13 @@ class _H1CoreAppState extends State<H1CoreApp> {
       );
     }
     return TabbedWorkspace(dashboard: const DashboardScreen());
+  }
+
+  void _applySystemNavBar(ThemeMode mode) {
+    final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+      systemNavigationBarIconBrightness: Brightness.light,
+    ));
   }
 }
