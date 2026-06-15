@@ -46,9 +46,15 @@ class GoogleAuthService {
     init();
     try {
       final user = await _googleSignIn!.signIn();
-      if (user == null) return false;
+      if (user == null) {
+        debugPrint('[GoogleAuth] signIn returned null (user cancelled)');
+        return false;
+      }
       final auth = await user.authentication;
-      if (auth.accessToken == null) return false;
+      if (auth.accessToken == null) {
+        debugPrint('[GoogleAuth] no access token');
+        return false;
+      }
       
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyEmail, user.email);
@@ -57,8 +63,10 @@ class GoogleAuthService {
       final expiry = DateTime.now().add(const Duration(hours: 1));
       await prefs.setString(_keyTokenExpiry, expiry.toIso8601String());
       _cachedEmail = user.email;
+      debugPrint('[GoogleAuth] signIn success: ${user.email}');
       return true;
     } catch (e, st) {
+      debugPrint('[GoogleAuth] signIn error: $e');
       ErrorReporter.sendError(message: 'Google Sign-In失敗: $e', stackTrace: st);
       return false;
     }

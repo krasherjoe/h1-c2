@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../main.dart' show themeNotifier;
+import '../../../main.dart' show themeNotifier, applyNavBarColor;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
 import '../../../services/error_reporter.dart';
 import '../../../services/google_auth_service.dart';
@@ -199,10 +199,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: () async {
                     if (_googleSignedIn) {
                       await GoogleAuthService.instance.signOut();
+                      await _load();
                     } else {
-                      await GoogleAuthService.instance.signIn();
+                      final ok = await GoogleAuthService.instance.signIn();
+                      await _load();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(ok ? 'ログインしました' : 'ログインに失敗しました')),
+                        );
+                      }
                     }
-                    await _load();
                   },
                   child: Text(_googleSignedIn ? '解除' : 'ログイン'),
                 ),
@@ -298,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onSelectionChanged: (v) {
                       _repo.navigationBarStyle = v.first;
                       setState(() => _navbarStyle = v.first);
-                      themeNotifier.notifyListeners();
+                      applyNavBarColor();
                     },
                     style: SegmentedButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),

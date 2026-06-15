@@ -510,17 +510,30 @@ class _H1CoreAppState extends State<H1CoreApp> {
   }
 
   void _applySystemNavBar(ThemeMode mode) {
-    final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
-    final navbarStyle = widget.prefs.getString('navbar_style') ?? 'primary';
-    final cs = isDark ? AppTheme.dark() : AppTheme.light();
-    final navBarColor = switch (navbarStyle) {
-      'primary' => cs.colorScheme.primary,
-      'black' => Colors.black,
-      _ => isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
-    };
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: navBarColor,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ));
+    _applyNavBarColor(mode, widget.prefs);
   }
+}
+
+void applyNavBarColor() {
+  try {
+    SharedPreferences.getInstance().then((prefs) {
+      final mode = themeNotifier.value;
+      _applyNavBarColor(mode, prefs);
+    });
+  } catch (_) {}
+}
+
+void _applyNavBarColor(ThemeMode mode, SharedPreferences prefs) {
+  final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+  final navbarStyle = prefs.getString('navbar_style') ?? 'primary';
+  final cs = isDark ? AppTheme.dark() : AppTheme.light();
+  final navBarColor = switch (navbarStyle) {
+    'primary' => cs.colorScheme.primary,
+    'black' => Colors.black,
+    _ => isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+  };
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    systemNavigationBarColor: navBarColor,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
 }
