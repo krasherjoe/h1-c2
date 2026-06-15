@@ -9,6 +9,7 @@ import '../../../services/error_reporter.dart';
 import '../../../utils/theme_utils.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/gmail_sender.dart';
+import '../../accounting2/services/auto_journal_service.dart';
 import '../../communication/communication_plugin.dart';
 
 const _kPreviewDpi = 130.0;
@@ -223,6 +224,24 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                                     body: '正式発行された伝票の控えです。',
                                     pdfBytes: bytes,
                                     pdfFilename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+                                  );
+                                }
+                              } catch (_) {}
+                              try {
+                                final journal = AutoJournalService();
+                                if (widget.document.documentType.name == 'invoice') {
+                                  await journal.createFromInvoice(
+                                    documentId: widget.document.id,
+                                    total: widget.document.total,
+                                    date: widget.document.date,
+                                    customerName: widget.document.customerName,
+                                  );
+                                } else if (widget.document.documentType.name == 'receipt') {
+                                  await journal.createFromReceipt(
+                                    documentId: widget.document.id,
+                                    amount: widget.document.total,
+                                    date: widget.document.date,
+                                    customerName: widget.document.customerName,
                                   );
                                 }
                               } catch (_) {}

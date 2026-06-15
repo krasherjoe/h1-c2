@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../models/cash_transaction.dart';
 import '../services/account_repository.dart';
+import '../services/auto_journal_service.dart';
 import '../../../services/database_helper.dart';
 import '../../../widgets/h1_text_field.dart';
 
@@ -104,6 +105,15 @@ class _CashBookScreenState extends State<CashBookScreen> {
       'description': descCtl.text.trim(),
       'created_at': now,
     });
+    try {
+      await AutoJournalService().createFromCashTransaction(
+        amount: int.tryParse(amountCtl.text) ?? 0,
+        type: type,
+        accountId: selectedAccount,
+        date: DateTime.tryParse(dateCtl.text),
+        description: descCtl.text.trim(),
+      );
+    } catch (_) {}
     dateCtl.dispose(); amountCtl.dispose(); descCtl.dispose();
     await _load();
   }
