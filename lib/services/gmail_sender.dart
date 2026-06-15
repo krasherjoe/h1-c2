@@ -13,6 +13,7 @@ class GmailSender {
   static Future<bool> sendPdf({
     required String to,
     String? bcc,
+    String? replyTo,
     required String subject,
     required String body,
     required Uint8List pdfBytes,
@@ -33,6 +34,9 @@ class GmailSender {
           'To: $to\n';
       if (bcc != null && bcc.isNotEmpty) {
         header += 'Bcc: $bcc\n';
+      }
+      if (replyTo != null && replyTo.isNotEmpty) {
+        header += 'Reply-To: $replyTo\n';
       }
       header += 'Subject: $subject\n\n'
           '--$boundary\n'

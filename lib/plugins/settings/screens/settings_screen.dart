@@ -3,13 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../main.dart' show themeNotifier;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
 import '../../../services/error_reporter.dart';
+import '../../../services/google_auth_service.dart';
 import '../../../widgets/screen_id_title.dart';
 import '../services/settings_repository.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
-
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -21,6 +21,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ThemeMode _themeMode = ThemeMode.system;
   String _webhookUrl = '';
   String _inputStyle = 'raised';
+  String? _googleEmail;
+  bool _googleSignedIn = false;
+  bool _devExpanded = false;
 
   @override
   void initState() {
@@ -31,12 +34,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     _repo = SettingsRepository(prefs);
+    final email = await GoogleAuthService.instance.getEmail();
     setState(() {
       _taxRate = _repo.defaultTaxRate;
       _prefix = _repo.documentNumberPrefix;
       _themeMode = _repo.themeMode;
       _webhookUrl = prefs.getString('mattermost_webhook_url') ?? '';
       _inputStyle = _repo.inputFieldStyle;
+      _googleEmail = email;
+      _googleSignedIn = email != null && email.isNotEmpty;
     });
   }
 
@@ -54,171 +60,315 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: 'AD', title: 'システム設定'),
+        title: const ScreenAppBarTitle(screenId: 'AD', title: '設定'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('基本設定', style: theme.textTheme.titleMedium),
+          _sectionHeader(cs, Icons.business, '企業設定', '伝票に表示する会社情報や基本設定です'),
           const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.business),
-            title: const Text('自社情報'),
-            subtitle: const Text('会社名・住所・電話番号など'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/company'),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.percent),
-            title: const Text('デフォルト税率'),
-            trailing: DropdownButton<int>(
-              value: _taxRate,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: 10, child: Text('10%')),
-                DropdownMenuItem(value: 8, child: Text('8%')),
-              ],
-              onChanged: (v) {
-                if (v == null) return;
-                setState(() => _taxRate = v);
-                _repo.defaultTaxRate = v;
-              },
+          _settingsCard(cs, children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                child: Icon(Icons.business, color: cs.primary, size: 20),
+              ),
+              title: Text('自社情報', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              subtitle: Text('会社名・住所・電話番号・メール・銀行口座\n伝票やPDFに印刷されます。後で必ず必要になります',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/company'),
             ),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.tag),
-            title: const Text('伝票番号の接頭辞'),
-            trailing: SizedBox(
-              width: 120,
-              child: H1TextField(
-                controller: TextEditingController(text: _prefix),
-                decoration: const InputDecoration(
-                  hintText: '例: SK-',
-                  isDense: true,
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                  child: Icon(Icons.percent, color: cs.primary, size: 20),
                 ),
-                onSubmitted: (v) {
-                  _prefix = v;
-                  _repo.documentNumberPrefix = v;
-                },
-              ),
-            ),
-          ),
-          const Divider(),
-          _SectionHeader(icon: Icons.palette, title: 'テーマ'),
-          const SizedBox(height: 8),
-          SegmentedButton<ThemeMode>(
-            segments: const [
-              ButtonSegment(
-                value: ThemeMode.system,
-                label: Text('システム'),
-                icon: Icon(Icons.settings_brightness),
-              ),
-              ButtonSegment(
-                value: ThemeMode.light,
-                label: Text('ライト'),
-                icon: Icon(Icons.light_mode),
-              ),
-              ButtonSegment(
-                value: ThemeMode.dark,
-                label: Text('ダーク'),
-                icon: Icon(Icons.dark_mode),
-              ),
-            ],
-            selected: {_themeMode},
-            onSelectionChanged: (v) => _setTheme(v.first),
-          ),
-          const Divider(),
-          _SectionHeader(icon: Icons.text_fields, title: '入力フィールド'),
-          const SizedBox(height: 8),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'raised', label: Text('立体'), icon: Icon(Icons.layers)),
-              ButtonSegment(value: 'outlined', label: Text('縁取り'), icon: Icon(Icons.border_style)),
-            ],
-            selected: {_inputStyle},
-            onSelectionChanged: (v) => _setInputStyle(v.first),
-          ),
-          const SizedBox(height: 8),
-          H1TextField(
-            decoration: const InputDecoration(
-              hintText: 'テスト入力',
-              prefixIcon: Icon(Icons.text_fields),
-            ),
-          ),
-          const Divider(),
-          _SectionHeader(
-            icon: Icons.webhook,
-            title: 'Mattermost Webhook URL',
-            subtitle: 'エラー報告送信先',
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: H1TextField(
-                  controller: TextEditingController(text: _webhookUrl),
-                  decoration: const InputDecoration(
-                    hintText: 'https://mm.ka.sugeee.com/hooks/xxx',
-                    isDense: true,
-                  ),
-                  style: const TextStyle(fontSize: 12),
-                  onSubmitted: (v) {
-                    _webhookUrl = v.trim();
-                    ErrorReporter.setWebhookUrl(_webhookUrl);
+                const SizedBox(width: 12),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('デフォルト税率', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                    const SizedBox(height: 2),
+                    Text('新規伝票作成時の初期税率です', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  ],
+                )),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 10, label: Text('10%', style: TextStyle(fontSize: 13))),
+                    ButtonSegment(value: 8, label: Text('8%', style: TextStyle(fontSize: 13))),
+                  ],
+                  selected: {_taxRate},
+                  onSelectionChanged: (v) {
+                    setState(() => _taxRate = v.first);
+                    _repo.defaultTaxRate = v.first;
                   },
+                  style: SegmentedButton.styleFrom(visualDensity: VisualDensity.compact),
+                ),
+              ]),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                  child: Icon(Icons.tag, color: cs.primary, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('伝票番号の接頭辞', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                    const SizedBox(height: 2),
+                    Text('自動採番される伝票番号の頭に付ける文字です\n例: SK- と設定すると SK-0001 になります',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  ],
+                )),
+                SizedBox(
+                  width: 120,
+                  child: H1TextField(
+                    controller: TextEditingController(text: _prefix),
+                    decoration: const InputDecoration(hintText: '例: SK-', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
+                    onSubmitted: (v) { _prefix = v; _repo.documentNumberPrefix = v; },
+                  ),
+                ),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 16),
+
+          _sectionHeader(cs, Icons.cloud, 'Google連携', '控えメールの自動送信とクラウドバックアップに使います'),
+          const SizedBox(height: 8),
+          _settingsCard(cs, children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _googleSignedIn ? cs.tertiaryContainer : cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(_googleSignedIn ? Icons.cloud_done : Icons.cloud_off, color: _googleSignedIn ? cs.tertiary : cs.onSurfaceVariant, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Google アカウント', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                    const SizedBox(height: 2),
+                    Text(_googleSignedIn ? (_googleEmail ?? '') : '未設定',
+                        style: TextStyle(fontSize: 12, color: _googleSignedIn ? cs.tertiary : cs.error)),
+                    const SizedBox(height: 2),
+                    Text('正式発行した伝票の控えを自動メール送信します\nDriveへのバックアップにも使用します',
+                        style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                  ],
+                )),
+                TextButton(
+                  onPressed: () async {
+                    if (_googleSignedIn) {
+                      await GoogleAuthService.instance.signOut();
+                    } else {
+                      await GoogleAuthService.instance.signIn();
+                    }
+                    await _load();
+                  },
+                  child: Text(_googleSignedIn ? '解除' : 'ログイン'),
+                ),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 16),
+
+          _sectionHeader(cs, Icons.palette, '表示設定', 'アプリの見た目に関する設定です'),
+          const SizedBox(height: 8),
+          _settingsCard(cs, children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.palette, color: cs.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('テーマ', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  ]),
+                  const SizedBox(height: 8),
+                  SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment(value: ThemeMode.system, label: Text('自動'), icon: Icon(Icons.settings_brightness)),
+                      ButtonSegment(value: ThemeMode.light, label: Text('ライト'), icon: Icon(Icons.light_mode)),
+                      ButtonSegment(value: ThemeMode.dark, label: Text('ダーク'), icon: Icon(Icons.dark_mode)),
+                    ],
+                    selected: {_themeMode},
+                    onSelectionChanged: (v) => _setTheme(v.first),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.text_fields, color: cs.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('入力フィールド', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  ]),
+                  const SizedBox(height: 8),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'raised', label: Text('立体'), icon: Icon(Icons.layers)),
+                      ButtonSegment(value: 'outlined', label: Text('縁取り'), icon: Icon(Icons.border_style)),
+                    ],
+                    selected: {_inputStyle},
+                    onSelectionChanged: (v) => _setInputStyle(v.first),
+                  ),
+                  const SizedBox(height: 8),
+                  H1TextField(
+                    decoration: const InputDecoration(hintText: 'プレビュー: 実際の入力画面でこのスタイルが適用されます'),
+                  ),
+                ],
+              ),
+            ),
+          ]),
+          const SizedBox(height: 16),
+
+          _sectionHeader(cs, Icons.backup, 'データ保護', 'データ消失に備えて定期的なバックアップ推奨'),
+          const SizedBox(height: 8),
+          _settingsCard(cs, children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: cs.tertiaryContainer, borderRadius: BorderRadius.circular(8)),
+                child: Icon(Icons.cloud_upload, color: cs.tertiary, size: 20),
+              ),
+              title: Text('Driveバックアップ', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              subtitle: Text('Google Driveに自動バックアップ。端末故障や\nアプリ削除時のデータ復旧に使います',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/drivebackup'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                child: Icon(Icons.folder, color: cs.onSurfaceVariant, size: 20),
+              ),
+              title: Text('ローカルバックアップ', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              subtitle: Text('端末内にバックアップ。手動での復元が可能です',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/backup'),
+            ),
+          ]),
+          const SizedBox(height: 16),
+
+          InkWell(
+            onTap: () => setState(() => _devExpanded = !_devExpanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(children: [
+                Icon(Icons.developer_mode, size: 16, color: cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text('開発者向け設定', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                const Spacer(),
+                Icon(_devExpanded ? Icons.expand_less : Icons.expand_more, size: 16, color: cs.onSurfaceVariant),
+              ]),
+            ),
+          ),
+          if (_devExpanded) ...[
+            const SizedBox(height: 8),
+            _settingsCard(cs, children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                        child: Icon(Icons.webhook, color: cs.onSurfaceVariant, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('エラー報告 (Mattermost)', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                          Text('アプリのエラーを開発者に自動報告します', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                        ],
+                      )),
+                    ]),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Expanded(
+                        child: H1TextField(
+                          controller: TextEditingController(text: _webhookUrl),
+                          decoration: const InputDecoration(hintText: 'Webhook URL', isDense: true),
+                          style: const TextStyle(fontSize: 12),
+                          onSubmitted: (v) {
+                            _webhookUrl = v.trim();
+                            ErrorReporter.setWebhookUrl(_webhookUrl);
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.send, size: 18),
+                        tooltip: 'テスト送信',
+                        onPressed: () {
+                          ErrorReporter.setWebhookUrl(_webhookUrl.trim());
+                          ErrorReporter.sendError(message: '設定テスト', detail: '設定画面からのテスト送信です', screenId: 'settings');
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('テスト送信しました')));
+                        },
+                      ),
+                    ]),
+                  ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.send, size: 18),
-                tooltip: 'テスト送信',
-                onPressed: () {
-                  ErrorReporter.setWebhookUrl(_webhookUrl.trim());
-                  ErrorReporter.sendError(
-                    message: '設定テスト',
-                    detail: '設定画面からのテスト送信です',
-                    screenId: 'settings',
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('テスト送信しました')),
-                  );
-                },
-              ),
-            ],
-          ),
+            ]),
+          ],
         ],
       ),
     );
   }
-}
 
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  const _SectionHeader({required this.icon, required this.title, this.subtitle});
+  Widget _sectionHeader(ColorScheme cs, IconData icon, String title, String subtitle) {
+    return Row(children: [
+      Icon(icon, size: 18, color: cs.primary),
+      const SizedBox(width: 6),
+      Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: cs.onSurface)),
+      const Spacer(),
+      Text(subtitle, style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+    ]);
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Icon(icon),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleSmall),
-            if (subtitle != null)
-              Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      ],
+  Widget _settingsCard(ColorScheme cs, {required List<Widget> children}) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 }

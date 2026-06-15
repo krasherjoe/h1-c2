@@ -9,6 +9,7 @@ import '../../../services/error_reporter.dart';
 import '../../../utils/theme_utils.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/gmail_sender.dart';
+import '../../../services/company_repository.dart';
 import '../../accounting2/services/auto_journal_service.dart';
 import '../../communication/communication_plugin.dart';
 
@@ -321,8 +322,11 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
                       if (!mounted) return;
 
+                      final company = await CompanyRepository().getCompanyInfo();
+
                       final success = await GmailSender.sendPdf(
                         to: recipient,
+                        replyTo: company?.email,
                         subject: subject,
                         body: body,
                         pdfBytes: bytes,
@@ -368,6 +372,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
                         final ok = await GmailSender.sendPdf(
                           to: recipients.isNotEmpty ? recipients.first : '',
+                          replyTo: (await CompanyRepository().getCompanyInfo())?.email,
                           subject: subject,
                           body: body,
                           pdfBytes: bytes,
