@@ -28,7 +28,7 @@ class DriveBackupPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'DR',
+      id: 'DK',
       title: 'Driveバックアップ',
       route: '/drivebackup',
       category: 'システム',
@@ -164,9 +164,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       if (ok) {
         await DatabaseHelper.closeAndReset();
         await Future.delayed(const Duration(milliseconds: 500));
-        // 元のDBファイルを削除してから復元ファイルをリネーム（コピーより安全）
-        final dest = File(dbPath);
-        if (await dest.exists()) await dest.delete();
+        // 復元ファイルをDBファイルとしてリネーム（存在すれば上書き）
         await File(tmpPath).rename(dbPath);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('復元完了しました（アプリを再起動してください）')));
