@@ -134,6 +134,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       }
     } catch (e, st) {
       debugPrint('[DriveBackup] upload error: $e\n$st');
+      ErrorReporter.sendError(message: 'Driveアップロード失敗: $e', screenId: '/drivebackup', stackTrace: st);
       if (mounted) {
         setState(() => _uploading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('エラー: $e')));
@@ -179,6 +180,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       }
     } catch (e) {
       setState(() => _restoring = false);
+      ErrorReporter.sendError(message: 'Drive復元失敗: $e', screenId: '/drivebackup');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('復元エラー: $e')));
       }
