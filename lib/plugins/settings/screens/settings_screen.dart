@@ -4,6 +4,7 @@ import '../../../main.dart' show themeNotifier;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
 import '../../../services/error_reporter.dart';
 import '../../../services/google_auth_service.dart';
+import '../../../services/sync_queue.dart';
 import '../../../widgets/screen_id_title.dart';
 import '../services/settings_repository.dart';
 import '../../../widgets/h1_text_field.dart';
@@ -21,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ThemeMode _themeMode = ThemeMode.system;
   String _webhookUrl = '';
   String _inputStyle = 'raised';
+  String _navbarStyle = 'primary';
   String? _googleEmail;
   bool _googleSignedIn = false;
   bool _devExpanded = false;
@@ -41,6 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _themeMode = _repo.themeMode;
       _webhookUrl = prefs.getString('mattermost_webhook_url') ?? '';
       _inputStyle = _repo.inputFieldStyle;
+      _navbarStyle = _repo.navigationBarStyle;
       _googleEmail = email;
       _googleSignedIn = email != null && email.isNotEmpty;
     });
@@ -269,37 +272,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.view_agenda, color: cs.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('ナビバーカラー', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  ]),
+                  const SizedBox(height: 8),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'primary', label: Text('AppBar色'), icon: Icon(Icons.palette)),
+                      ButtonSegment(value: 'dark_grey', label: Text('濃いグレー'), icon: Icon(Icons.dark_mode)),
+                      ButtonSegment(value: 'black', label: Text('黒'), icon: Icon(Icons.format_paint)),
+                    ],
+                    selected: {_navbarStyle},
+                    onSelectionChanged: (v) {
+                      _repo.navigationBarStyle = v.first;
+                      setState(() => _navbarStyle = v.first);
+                      themeNotifier.notifyListeners();
+                    },
+                    style: SegmentedButton.styleFrom(visualDensity: VisualDensity.compact),
+                  ),
+                ],
+              ),
+            ),
           ]),
           const SizedBox(height: 16),
 
           _sectionHeader(cs, Icons.backup, 'データ保護', 'データ消失に備えて定期的なバックアップ推奨'),
           const SizedBox(height: 8),
           _settingsCard(cs, children: [
+            if (!SyncQueue.instance.isParent)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(children: [
+                  Icon(Icons.info_outline, size: 16, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('子分モードではデータ保護は親分端末で管理されています',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))),
+                ]),
+              ),
+            if (!SyncQueue.instance.isParent)
+              const Divider(height: 1),
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: cs.tertiaryContainer, borderRadius: BorderRadius.circular(8)),
-                child: Icon(Icons.cloud_upload, color: cs.tertiary, size: 20),
+                decoration: BoxDecoration(
+                  color: SyncQueue.instance.isParent ? cs.tertiaryContainer : cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.cloud_upload,
+                    color: SyncQueue.instance.isParent ? cs.tertiary : cs.onSurfaceVariant, size: 20),
               ),
-              title: Text('Driveバックアップ', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              title: Text('Driveバックアップ', style: TextStyle(fontWeight: FontWeight.w600,
+                  color: SyncQueue.instance.isParent ? cs.onSurface : cs.onSurfaceVariant)),
               subtitle: Text('Google Driveに自動バックアップ。端末故障や\nアプリ削除時のデータ復旧に使います',
                   style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, '/drivebackup'),
+              trailing: SyncQueue.instance.isParent
+                  ? const Icon(Icons.chevron_right)
+                  : Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('子分モード', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.lock, size: 14, color: cs.onSurfaceVariant),
+                    ]),
+              onTap: SyncQueue.instance.isParent ? () => Navigator.pushNamed(context, '/drivebackup') : null,
             ),
-            const Divider(height: 1),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
-                child: Icon(Icons.folder, color: cs.onSurfaceVariant, size: 20),
+            if (SyncQueue.instance.isParent)
+              const Divider(height: 1),
+            if (SyncQueue.instance.isParent)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                  child: Icon(Icons.folder, color: cs.onSurfaceVariant, size: 20),
+                ),
+                title: Text('ローカルバックアップ', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                subtitle: Text('端末内にバックアップ。手動での復元が可能です',
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.pushNamed(context, '/backup'),
               ),
-              title: Text('ローカルバックアップ', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
-              subtitle: Text('端末内にバックアップ。手動での復元が可能です',
-                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, '/backup'),
-            ),
           ]),
           const SizedBox(height: 16),
 

@@ -18,21 +18,31 @@ class AppTheme {
   static const accentDefault = Color(0xFF455A64);    // blueGrey 600
 
   // --- テーマ構築 ---
-  static ThemeData light({String inputStyle = 'raised'}) =>
-    _build(seedColor: Colors.indigo, brightness: Brightness.light, inputStyle: inputStyle);
+  static ThemeData light({String inputStyle = 'raised', String navbarStyle = 'primary'}) =>
+    _build(seedColor: Colors.indigo, brightness: Brightness.light, inputStyle: inputStyle, navbarStyle: navbarStyle);
 
-  static ThemeData dark({String inputStyle = 'raised'}) =>
-    _build(seedColor: Colors.indigo, brightness: Brightness.dark, inputStyle: inputStyle);
+  static ThemeData dark({String inputStyle = 'raised', String navbarStyle = 'primary'}) =>
+    _build(seedColor: Colors.indigo, brightness: Brightness.dark, inputStyle: inputStyle, navbarStyle: navbarStyle);
+
+  static Color _navBarColor(ColorScheme cs, bool isDark, String style) {
+    return switch (style) {
+      'primary' => cs.primary,
+      'black' => Colors.black,
+      _ => isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E), // dark_grey
+    };
+  }
 
   static ThemeData _build({
     required Color seedColor,
     required Brightness brightness,
     required String inputStyle,
+    required String navbarStyle,
   }) {
     final isDark = brightness == Brightness.dark;
     final scheme = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness).copyWith(
       surfaceContainerLowest: isDark ? wallpaperDark : wallpaperLight,
     );
+    final navBarColor = _navBarColor(scheme, isDark, navbarStyle);
 
     return ThemeData(
       colorScheme: scheme,
@@ -56,11 +66,11 @@ class AppTheme {
         shadowColor: isDark ? const Color(0x50000000) : const Color(0x22000000),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+        backgroundColor: navBarColor,
         indicatorColor: scheme.primary.withValues(alpha: 0.2),
       ),
       bottomAppBarTheme: BottomAppBarThemeData(
-        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+        color: navBarColor,
       ),
       inputDecorationTheme: _inputTheme(isDark, inputStyle),
     );

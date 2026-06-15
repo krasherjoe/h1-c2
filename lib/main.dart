@@ -465,6 +465,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
   @override
   Widget build(BuildContext context) {
     final inputStyle = widget.prefs.getString('input_field_style') ?? 'raised';
+    final navbarStyle = widget.prefs.getString('navbar_style') ?? 'primary';
 
     return MaterialApp(
       title: '販売アシスト1号 コア',
@@ -476,8 +477,8 @@ class _H1CoreAppState extends State<H1CoreApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: AppTheme.light(inputStyle: inputStyle),
-      darkTheme: AppTheme.dark(inputStyle: inputStyle),
+      theme: AppTheme.light(inputStyle: inputStyle, navbarStyle: navbarStyle),
+      darkTheme: AppTheme.dark(inputStyle: inputStyle, navbarStyle: navbarStyle),
       themeMode: _themeMode,
       builder: (context, child) => SafeArea(
         top: true,
@@ -510,8 +511,15 @@ class _H1CoreAppState extends State<H1CoreApp> {
 
   void _applySystemNavBar(ThemeMode mode) {
     final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+    final navbarStyle = widget.prefs.getString('navbar_style') ?? 'primary';
+    final cs = isDark ? AppTheme.dark() : AppTheme.light();
+    final navBarColor = switch (navbarStyle) {
+      'primary' => cs.colorScheme.primary,
+      'black' => Colors.black,
+      _ => isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+    };
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
+      systemNavigationBarColor: navBarColor,
       systemNavigationBarIconBrightness: Brightness.light,
     ));
   }

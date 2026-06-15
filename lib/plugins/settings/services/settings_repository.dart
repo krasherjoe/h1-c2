@@ -35,4 +35,9 @@ class SettingsRepository {
 
   String get inputFieldStyle => _prefs.getString(_inputStyleKey) ?? 'raised';
   set inputFieldStyle(String v) => _prefs.setString(_inputStyleKey, v);
+
+  static const _navBarStyleKey = 'navbar_style';
+
+  String get navigationBarStyle => _prefs.getString(_navBarStyleKey) ?? 'primary';
+  set navigationBarStyle(String v) => _prefs.setString(_navBarStyleKey, v);
 }
