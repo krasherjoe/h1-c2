@@ -54,10 +54,11 @@ class AppTheme {
         backgroundColor: scheme.primary,
         foregroundColor: scheme.onPrimary,
         surfaceTintColor: Colors.transparent,
+        iconTheme: IconThemeData(size: 20, color: scheme.onPrimary),
         titleTextStyle: TextStyle(
           color: scheme.onPrimary,
           fontWeight: FontWeight.w600,
-          fontSize: 18,
+          fontSize: 16,
         ),
       ),
       cardTheme: CardThemeData(
