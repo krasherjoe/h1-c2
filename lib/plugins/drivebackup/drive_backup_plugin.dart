@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
@@ -9,7 +11,6 @@ import '../../plugin_system/screen_definition.dart';
 import '../../services/database_helper.dart';
 import '../../services/drive_backup_service.dart';
 import '../../services/google_auth_service.dart';
-import '../backup/services/local_backup_service.dart';
 
 class DriveBackupPlugin extends H1Plugin {
   @override
@@ -98,36 +99,18 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
 
   Future<void> _uploadNow() async {
     try {
-      final dbPath = await DatabaseHelper().getDatabasePath();
+      final db = await DatabaseHelper().database;
+      final dbPath = db.path;
       debugPrint('[DriveBackup] dbPath=$dbPath');
-      final service = LocalBackupService();
-      final localPath = await service.createAutoBackup(dbPath);
-      if (localPath == null) {
-        // 本日分のバックアップが既存 → 最新ファイルを探してアップロード
-        final backupDir = Directory('/storage/emulated/0/Download');
-        if (await backupDir.exists()) {
-          final existing = backupDir.listSync().whereType<File>()
-              .where((f) => f.path.endsWith('.db') && !f.path.endsWith('.sha256'))
-              .toList()
-            ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-          if (existing.isNotEmpty) {
-            debugPrint('[DriveBackup] using existing backup: ${existing.first.path}');
-            final ok = await _driveService.uploadBackup(existing.first.path);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(ok ? 'アップロード完了' : 'アップロード失敗')),
-              );
-              if (ok) await _loadFiles();
-            }
-            return;
-          }
-        }
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('バックアップファイルが見つかりません')));
-        return;
-      }
-      debugPrint('[DriveBackup] local backup created: $localPath');
-      final ok = await _driveService.uploadBackup(localPath);
+      final dir = await getApplicationDocumentsDirectory();
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final baseName = p.basenameWithoutExtension(dbPath);
+      final backupPath = '${dir.path}/backup_${baseName}_$ts.db';
+      await File(dbPath).copy(backupPath);
+      debugPrint('[DriveBackup] local backup created: $backupPath');
+      final ok = await _driveService.uploadBackup(backupPath);
       debugPrint('[DriveBackup] upload result: $ok');
+      try { await File(backupPath).delete(); } catch (_) {}
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(ok ? 'アップロード完了' : 'アップロード失敗')),
