@@ -30,7 +30,7 @@ class DriveBackupService {
     return folder.id;
   }
 
-  Future<bool> uploadBackup(String filePath) async {
+  Future<bool> uploadBackup(String filePath, {String? companyName}) async {
     try {
       final api = await _getApi();
       if (api == null) return false;
@@ -43,8 +43,10 @@ class DriveBackupService {
       final sizeLabel = bytes.length >= 1024 * 1024
           ? '${(bytes.length / (1024 * 1024)).toStringAsFixed(1)}MB'
           : '${(bytes.length / 1024).toStringAsFixed(0)}KB';
-      final base = p.basenameWithoutExtension(filePath);
-      final name = '${base}_$sizeLabel.db';
+      final now = DateTime.now();
+      final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+      final company = companyName ?? 'default';
+      final name = '${dateStr}_${company}_${sizeLabel}.db';
 
       await api.files.create(
         drive.File(name: name, parents: [folderId]),

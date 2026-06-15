@@ -56,7 +56,7 @@ class DriveBackupPlugin extends H1Plugin {
         final base = dbPath.split('/').last.replaceAll('.db', '');
         final tmpPath = '${dir.path}/backup_${base}_$ts.db';
         await File(dbPath).copy(tmpPath);
-        await DriveBackupService().uploadBackup(tmpPath);
+        await DriveBackupService().uploadBackup(tmpPath, companyName: base);
         try { await File(tmpPath).delete(); } catch (_) {}
       } catch (_) {}
     });
@@ -115,7 +115,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       final backupPath = '${dir.path}/backup_${baseName}_$ts.db';
       await File(dbPath).copy(backupPath);
       debugPrint('[DriveBackup] local backup created: $backupPath');
-      final ok = await _driveService.uploadBackup(backupPath);
+      final ok = await _driveService.uploadBackup(backupPath, companyName: baseName);
       debugPrint('[DriveBackup] upload result: $ok');
       try { await File(backupPath).delete(); } catch (_) {}
       if (mounted) {
