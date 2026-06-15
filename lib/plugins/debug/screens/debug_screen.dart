@@ -4,6 +4,7 @@ import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/mm_command_service.dart';
+import '../../../services/error_reporter.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -52,9 +53,10 @@ class _DebugScreenState extends State<DebugScreen> {
   }
 
   Future<void> _sendTestReport() async {
-    await _service.sendText(
-      '### \u{1F9EA} h-1-core 診断テスト\n\n'
-      '**時刻:** ${DateTime.now().toIso8601String()}',
+    await ErrorReporter.sendError(
+      message: '診断テスト',
+      detail: 'DB:デバッグ画面からのテスト送信です v=${_service.appVersion}',
+      screenId: '/debug',
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

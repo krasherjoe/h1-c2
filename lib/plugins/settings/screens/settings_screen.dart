@@ -172,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           _settingsCard(cs, children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
               child: Row(children: [
                 Container(
                   padding: const EdgeInsets.all(8),
