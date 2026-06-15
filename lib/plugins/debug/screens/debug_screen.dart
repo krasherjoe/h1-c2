@@ -5,7 +5,6 @@ import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/mm_command_service.dart';
-import '../../../services/error_reporter.dart';
 import '../../../services/database_helper.dart';
 import '../../../widgets/h1_text_field.dart';
 
@@ -55,18 +54,17 @@ class _DebugScreenState extends State<DebugScreen> {
   }
 
   Future<void> _sendTestReport() async {
-    var sentAny = false;
-    if (_service.isConfigured) {
-      final ok = await _service.sendText(
-        '### \u{1F9EA} h-1-core 診断テスト (PAT)\n\n'
-        '**時刻:** ${DateTime.now().toIso8601String()}',
-      );
-      if (ok) sentAny = true;
+    if (!_service.isConfigured) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PAT未設定')));
+      return;
     }
-    await ErrorReporter.sendError(message: '診断テスト', detail: 'DB画面からのテスト', screenId: '/debug');
+    final ok = await _service.sendTextViaPat(
+      '### \u{1F9EA} h-1-core 診断テスト\n\n'
+      '**時刻:** ${DateTime.now().toIso8601String()}',
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(sentAny ? 'テスト送信しました（PAT + ErrorReporter）' : 'テスト送信しました（ErrorReporterのみ）')),
+      SnackBar(content: Text(ok ? 'PAT送信成功' : 'PAT送信失敗')),
     );
   }
 
@@ -91,9 +89,12 @@ class _DebugScreenState extends State<DebugScreen> {
       buf.writeln('**SHA-1:** 8A:BC:41:8B:51:7D:CF:39:29:1F:94:5D:2E:FF:A3:12:42:A3:CB:A5');
 
       if (_service.isConfigured) {
-        await _service.sendText(buf.toString());
-        if (mounted) {
+        final ok = await _service.sendTextViaPat(buf.toString());
+        if (ok && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('診断情報を送信しました')));
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('診断送信に失敗しました')));
+          debugPrint(buf.toString());
         }
       } else {
         if (mounted) {

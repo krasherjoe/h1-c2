@@ -34,32 +34,32 @@ class ErrorReporter {
   }) async {
     try {
       final url = await _getWebhookUrl();
-      if (url.isEmpty) {
-        debugPrint('[ErrorReporter] webhook URL未設定');
-        return;
+      if (url.isNotEmpty) {
+        debugPrint('[ErrorReporter] sending to $url');
+        final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
+        final body = {
+          'text': [
+            '### ⚠️ h-1-core エラー報告 ($now)',
+            '',
+            '**version:** $_kAppVersion',
+            '**message:** $message',
+            if (detail != null) '**detail:** $detail',
+            if (screenId != null) '**screen:** $screenId',
+            if (stackTrace != null)
+              '**stack:**\n```\n${stackTrace.toString().substring(0, stackTrace.toString().length.clamp(0, 500))}\n```',
+          ].join('\n'),
+        };
+        await http.post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
+        debugPrint('[ErrorReporter] sent via webhook');
+      } else {
+        debugPrint('[ErrorReporter] webhook URL未設定、PAT試行へ');
       }
-      debugPrint('[ErrorReporter] sending to $url');
-      final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
-      final body = {
-        'text': [
-          '### ⚠️ h-1-core エラー報告 ($now)',
-          '',
-          '**version:** $_kAppVersion',
-          '**message:** $message',
-          if (detail != null) '**detail:** $detail',
-          if (screenId != null) '**screen:** $screenId',
-          if (stackTrace != null)
-            '**stack:**\n```\n${stackTrace.toString().substring(0, stackTrace.toString().length.clamp(0, 500))}\n```',
-        ].join('\n'),
-      };
-      await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-      debugPrint('[ErrorReporter] sent successfully');
     } catch (e) {
-      debugPrint('[ErrorReporter] send failed: $e');
+      debugPrint('[ErrorReporter] webhook send failed: $e');
     }
 
     try {

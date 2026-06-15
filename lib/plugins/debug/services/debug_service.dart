@@ -113,6 +113,26 @@ class DebugService {
     }
   }
 
+  Future<bool> sendTextViaPat(String text) async {
+    if (!isConfigured) return false;
+    final channelId = await _ensureChannelId();
+    if (channelId == null) return false;
+    try {
+      final res = await http.post(
+        Uri.parse('$_baseUrl/api/v4/posts'),
+        headers: _headers,
+        body: jsonEncode({
+          'channel_id': channelId,
+          'message': text,
+        }),
+      );
+      return res.statusCode == 201;
+    } catch (e) {
+      debugPrint('[DebugService] sendTextViaPat error: $e');
+      return false;
+    }
+  }
+
   Future<String?> sendDbReport() async {
     if (!isConfigured) return 'PAT未設定';
     final channelId = await _ensureChannelId();
