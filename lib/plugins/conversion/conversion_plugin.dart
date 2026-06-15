@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import 'services/data_migration_service.dart';
-import 'screens/conversion_guard_screen.dart';
 
 class ConversionPlugin extends H1Plugin {
   @override

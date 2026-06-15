@@ -5,7 +5,6 @@ import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/mm_command_service.dart';
-import '../../../services/database_helper.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {

@@ -66,19 +66,6 @@ class AccountingPlugin extends H1Plugin {
 
   @override
   Future<void> createTables(Database db) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS payments (
-        id TEXT PRIMARY KEY,
-        type TEXT NOT NULL,
-        customer_id TEXT,
-        supplier_id TEXT,
-        document_id TEXT,
-        amount INTEGER NOT NULL,
-        date TEXT NOT NULL,
-        note TEXT,
-        created_at TEXT
-      )
-    ''');
-    debugPrint('[AccountingPlugin] Tables created');
+    // paymentsテーブルは ar_plugin.dart で定義済みのため不要
   }
 }

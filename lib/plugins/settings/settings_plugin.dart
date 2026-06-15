@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
-import 'services/settings_repository.dart';
 import 'screens/settings_screen.dart';
 
 class SettingsPlugin extends H1Plugin {

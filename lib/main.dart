@@ -23,8 +23,6 @@ import 'plugins/products/products_plugin.dart';
 import 'plugins/settings/settings_plugin.dart';
 import 'plugins/inventory/inventory_plugin.dart';
 import 'plugins/purchase/purchase_plugin.dart';
-import 'plugins/analytics/analytics_plugin.dart';
-import 'plugins/accounting/accounting_plugin.dart';
 import 'plugins/accounting2/accounting2_plugin.dart';
 import 'plugins/drivebackup/drive_backup_plugin.dart';
 import 'plugins/sync/sync_plugin.dart';
@@ -44,7 +42,6 @@ import 'plugins/ar/ar_plugin.dart';
 import 'plugins/daily/daily_plugin.dart';
 import 'plugins/pricelist/price_list_plugin.dart';
 import 'plugins/suppliers/suppliers_plugin.dart';
-import 'utils/theme_utils.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
 import 'services/mm_command_service.dart';
@@ -304,8 +301,8 @@ void main() async {
   final plugins = <H1Plugin>[
     CorePlugin(), DocumentsPlugin(), CustomersPlugin(),
     ProductsPlugin(), CompanyPlugin(), SettingsPlugin(),
-    InventoryPlugin(), PurchasePlugin(), AnalyticsPlugin(),
-    AnalysisPlugin(), AccountingPlugin(), Accounting2Plugin(),
+    InventoryPlugin(), PurchasePlugin(),
+    AnalysisPlugin(), Accounting2Plugin(),
     QuickActionsPlugin(), ExplorerPlugin(), BackupPlugin(),
     ConversionPlugin(), AuditPlugin(), DebugPlugin(),
     DriveBackupPlugin(), ProjectPlugin(), MemorandumPlugin(),

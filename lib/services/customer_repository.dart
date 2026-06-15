@@ -1,7 +1,6 @@
 import 'hash_chain_verify_result.dart';
 import 'package:flutter/material.dart' show debugPrint;
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 import '../models/customer_model.dart';
 import '../services/database_helper.dart';
 import '../services/activity_log_repository.dart';

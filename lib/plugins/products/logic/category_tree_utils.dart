@@ -1,4 +1,3 @@
-import '../../../models/product_category_model.dart';
 
 /// 循環参照を検出する関数。
 /// movingId を newParentId の下に移動したとき、循環が発生するかどうかを返す。

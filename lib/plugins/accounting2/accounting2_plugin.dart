@@ -1,11 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../plugin_system/dashboard_section.dart';
-import '../../services/database_helper.dart';
 import 'screens/accounting2_main_screen.dart';
 
 const _kAccountsTable = '''

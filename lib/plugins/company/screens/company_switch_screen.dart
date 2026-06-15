@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import '../../../services/company_service.dart';
-import '../../../services/database_helper.dart';
 
 class CompanySwitchScreen extends StatefulWidget {
   const CompanySwitchScreen({super.key});

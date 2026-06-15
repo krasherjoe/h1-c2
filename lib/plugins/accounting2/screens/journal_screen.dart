@@ -3,7 +3,6 @@ import '../models/journal_entry.dart';
 import '../models/account.dart';
 import '../services/account_repository.dart';
 import '../../../services/database_helper.dart';
-import '../../../widgets/h1_text_field.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});

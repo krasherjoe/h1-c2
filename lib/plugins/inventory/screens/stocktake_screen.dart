@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../services/product_repository.dart';
-import '../../../models/product_model.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class StocktakeScreen extends StatefulWidget {

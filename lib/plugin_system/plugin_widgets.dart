@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'menu_item.dart';
 import 'plugin_registry.dart';
 import '../widgets/google_auth_badge.dart';
 

@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/sync_queue.dart';
 import '../../../services/google_auth_service.dart';
-import '../../../widgets/google_auth_badge.dart';
 import 'sync_qr_display_screen.dart';
 import 'sync_qr_scanner_screen.dart';
 

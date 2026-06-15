@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
@@ -7,7 +6,6 @@ import '../../../models/product_category_model.dart';
 import '../../../services/input_style_service.dart';
 import '../../../services/error_reporter.dart';
 import '../screens/product_editor_screen.dart';
-import '../logic/category_tree_utils.dart';
 
 class CategoryExplorerScreen extends StatefulWidget {
   const CategoryExplorerScreen({super.key});

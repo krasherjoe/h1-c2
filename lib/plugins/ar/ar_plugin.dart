@@ -10,7 +10,6 @@ import 'screens/payment_schedule_screen.dart';
 import 'screens/payment_register_screen.dart';
 import 'screens/ledger_screen.dart';
 import 'screens/tax_report_screen.dart';
-import 'models/ar_models.dart';
 
 class ArPlugin extends H1Plugin {
   @override

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';

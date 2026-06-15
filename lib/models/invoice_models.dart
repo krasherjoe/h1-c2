@@ -248,10 +248,10 @@ class Invoice {
     final halfWidth = katakanaToRomaji
         .replaceAll('Ｔ', 'T')
         .replaceAll('Ｅ', 'E')
-        .replaceAll('Ｓ', 'T')
+        .replaceAll('Ｓ', 'S')
         .replaceAll('ｔ', 't')
         .replaceAll('ｅ', 'e')
-        .replaceAll('ｓ', 't');
+        .replaceAll('ｓ', 's');
     // 小文字に統一
     return halfWidth.toLowerCase();
   }

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:path_provider/path_provider.dart';

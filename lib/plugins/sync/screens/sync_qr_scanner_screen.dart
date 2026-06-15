@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/sync_queue.dart';
-import '../../../services/google_auth_service.dart';
 
 class SyncQrScannerScreen extends StatefulWidget {
   const SyncQrScannerScreen({super.key});

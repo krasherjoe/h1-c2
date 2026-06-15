@@ -16,7 +16,7 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     PluginRegistry.instance.setContext(PluginContext(database: db, preferences: prefs));
 
-    await tester.pumpWidget(H1CoreApp(registry: PluginRegistry.instance));
+    await tester.pumpWidget(H1CoreApp(registry: PluginRegistry.instance, db: db, prefs: prefs));
     await tester.pumpAndSettle();
     expect(find.text('販売アシスト1号 コア'), findsOneWidget);
 

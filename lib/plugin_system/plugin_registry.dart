@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:sqflite/sqflite.dart';
 import 'plugin_interface.dart';
 import 'plugin_context.dart';
 import 'menu_item.dart';
