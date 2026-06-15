@@ -36,7 +36,9 @@ class DriveBackupPlugin extends H1Plugin {
   ];
 
   @override
-  Map<String, WidgetBuilder> getRoutes() => {};
+  Map<String, WidgetBuilder> getRoutes() => {
+    '/drivebackup': (_) => const DriveBackupScreen(),
+  };
   @override
   Future<void> dispose() async {}
   @override
