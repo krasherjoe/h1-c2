@@ -3,6 +3,7 @@ import '../models/account.dart';
 import '../models/journal_entry.dart';
 import '../services/account_repository.dart';
 import '../../../services/database_helper.dart';
+import '../../../services/sheets_sync_service.dart';
 import 'account_list_screen.dart';
 import 'cash_book_screen.dart';
 import 'journal_screen.dart';
@@ -155,6 +156,20 @@ class _Accounting2MainScreenState extends State<Accounting2MainScreen> {
                   const SizedBox(height: 8),
                   _menuCard(cs, Icons.description, '決算書', '貸借対照表・損益計算書', () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancialStatementsScreen()));
+                  }),
+                  const SizedBox(height: 8),
+                  _menuCard(cs, Icons.analytics, '分析シート', 'Google Sheetsで売上分析', () async {
+                    final url = await SheetsSyncService.instance.ensureAnalysisSpreadsheet();
+                    if (url == null) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('作成失敗（ログインしてください）')));
+                      return;
+                    }
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('📊 $url'),
+                      duration: const Duration(seconds: 10),
+                      action: SnackBarAction(label: '開く', onPressed: () => SheetsSyncService.instance.openUrl(url)),
+                    ));
                   }),
                 ],
               ),
