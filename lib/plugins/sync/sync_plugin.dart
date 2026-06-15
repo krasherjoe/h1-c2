@@ -47,7 +47,10 @@ class SyncPlugin extends H1Plugin {
     await _migrateSpToDb();
     await SyncQueue.instance.init();
     await PermissionService().loadFromDb();
-    if (SyncQueue.instance.isParent) SyncQueue.instance.startPolling();
+    if (SyncQueue.instance.isParent) {
+      SyncQueue.instance.startPolling();
+      SyncQueue.instance.setupGmailFilter();
+    }
     CompanyService.activeCompanyNotifier.addListener(_onCompanyChanged);
   }
 
