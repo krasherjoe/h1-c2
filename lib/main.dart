@@ -260,9 +260,6 @@ void main() async {
     return true;
   };
 
-  debugPrint('[Startup] Starting h1-core');
-  try { await ErrorReporter.sendLog(message: '[Startup] Starting h1-core'); } catch (_) {}
-
   await MmCommandService.instance.loadConfig();
   await LogDispatcher.loadConfig();
 
@@ -334,9 +331,6 @@ void main() async {
       registry.setEnabled(entry.key, false);
     }
   }
-
-  debugPrint('[Startup] ✅ All plugin registered, launching app');
-  try { await ErrorReporter.sendLog(message: '[Startup] All plugins loaded, app starting'); } catch (_) {}
 
   runApp(H1CoreApp(registry: registry, db: db, prefs: prefs));
 }

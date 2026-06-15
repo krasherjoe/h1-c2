@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
@@ -43,7 +44,15 @@ class DriveBackupPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     GoogleAuthService.instance.init();
-    debugPrint('[DriveBackup] initialized (auto backup skipped during startup)');
+    Future.delayed(const Duration(seconds: 10), () async {
+      try {
+        final dbPath = await DatabaseHelper().getDatabasePath();
+        final name = dbPath.split('/').last.replaceAll('.db', '');
+        final local = LocalBackupService();
+        final localPath = await local.createAutoBackup(dbPath);
+        if (localPath != null) await DriveBackupService().uploadBackup(localPath);
+      } catch (_) {}
+    });
   }
 }
 
