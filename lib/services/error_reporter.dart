@@ -14,6 +14,10 @@ class ErrorReporter {
   static const _kDefaultWebhookUrl = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
   static const _kEnvUrl = String.fromEnvironment('MATTERMOST_WEBHOOK_URL');
   static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.26+1');
+  static const _kPatKey = 'mattermost_pat';
+  static const _kBaseUrlKey = 'mattermost_base_url';
+  static const _kTeamKey = 'mattermost_team_name';
+  static const _kChannelName = 'h1-debug';
 
   static Future<String> _getWebhookUrl() async {
     if (_kEnvUrl.isNotEmpty) return _kEnvUrl;
@@ -24,6 +28,36 @@ class ErrorReporter {
   static Future<void> setWebhookUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kWebhookUrlKey, url);
+  }
+
+  static Future<bool> _sendViaPat(String text) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pat = prefs.getString(_kPatKey);
+      final baseUrl = prefs.getString(_kBaseUrlKey) ?? 'https://mm.ka.sugeee.com';
+      final teamName = prefs.getString(_kTeamKey) ?? 'cyb';
+      if (pat == null) return false;
+
+      final headers = {'Authorization': 'Bearer $pat', 'Content-Type': 'application/json'};
+      final teamRes = await http.get(Uri.parse('$baseUrl/api/v4/teams/name/$teamName'), headers: headers);
+      if (teamRes.statusCode != 200) return false;
+      final teamId = (jsonDecode(teamRes.body)['id'] as String?) ?? '';
+      if (teamId.isEmpty) return false;
+
+      final chRes = await http.get(Uri.parse('$baseUrl/api/v4/teams/$teamId/channels/name/$_kChannelName'), headers: headers);
+      if (chRes.statusCode != 200) return false;
+      final chId = (jsonDecode(chRes.body)['id'] as String?) ?? '';
+      if (chId.isEmpty) return false;
+
+      final postRes = await http.post(
+        Uri.parse('$baseUrl/api/v4/posts'),
+        headers: headers,
+        body: jsonEncode({'channel_id': chId, 'message': text}),
+      );
+      return postRes.statusCode == 201;
+    } catch (_) {
+      return false;
+    }
   }
 
   static Future<void> sendError({
@@ -120,17 +154,16 @@ $stackStr
   static Future<void> sendLog({required String message}) async {
     try {
       final url = await _getWebhookUrl();
-      if (url.isEmpty) return;
-      await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'text': '🧪 **h-1-core ログ** ($_kAppVersion)\n$message',
-        }),
-      );
-    } catch (e) {
-      debugPrint('[ErrorReporter] sendLog failed: $e');
-    }
+      if (url.isNotEmpty) {
+        await http.post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'text': '🧪 **h-1-core ログ** ($_kAppVersion)\n$message'}),
+        );
+        return;
+      }
+    } catch (_) {}
+    await _sendViaPat('🧪 **h-1-core ログ** ($_kAppVersion)\n$message');
   }
 
   static void showError(
