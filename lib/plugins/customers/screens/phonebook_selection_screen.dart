@@ -76,6 +76,11 @@ class _PhonebookSelectionScreenState extends State<PhonebookSelectionScreen> {
     final email3 = emails.length > 2 ? emails[2].address : null;
     final addr = contact.addresses.isNotEmpty ? contact.addresses.first.address : null;
     final displayName = contact.displayName ?? '名無し';
+    // 読み仮名（Android 電話帳の phonetic name）
+    final name = contact.name;
+    final phonetic = [name?.firstPhonetic ?? '', name?.lastPhonetic ?? ''].where((s) => s.isNotEmpty).join(' ');
+    final kana = phonetic.isNotEmpty ? phonetic : null;
+    final headChar = kana ?? displayName[0];
     try {
       await _repo.saveCustomer(Customer(
         id: _uuid.v4(),
@@ -87,6 +92,8 @@ class _PhonebookSelectionScreenState extends State<PhonebookSelectionScreen> {
         email2: email2,
         email3: email3,
         address: addr,
+        kana: kana,
+        headChar1: headChar,
         isLocked: false,
         isHidden: false,
         isSynced: false,

@@ -28,6 +28,12 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   bool get showSearch => true;
 
   @override
+  bool get showStatusFilter => false;
+
+  @override
+  bool get supportsEdit => false;
+
+  @override
   IconData get itemIcon => Icons.person;
 
   @override

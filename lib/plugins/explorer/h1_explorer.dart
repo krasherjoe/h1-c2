@@ -521,31 +521,33 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
             ),
             const SizedBox(height: 8),
           ],
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ToggleButtons(
-              isSelected: [
-                _statusFilter == '',
-                _statusFilter == 'draft',
-                _statusFilter == 'confirmed',
-              ],
-              onPressed: (i) {
-                setState(() {
-                  _statusFilter = ['', 'draft', 'confirmed'][i];
-                });
-                _loadItems();
-              },
-              borderRadius: BorderRadius.circular(8),
-              constraints: const BoxConstraints(minHeight: 32, minWidth: 60),
-              textStyle: const TextStyle(fontSize: 12),
-              children: const [
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('すべて')),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('下書き')),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('確定')),
-              ],
+          if (widget.config.showStatusFilter) ...[
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ToggleButtons(
+                isSelected: [
+                  _statusFilter == '',
+                  _statusFilter == 'draft',
+                  _statusFilter == 'confirmed',
+                ],
+                onPressed: (i) {
+                  setState(() {
+                    _statusFilter = ['', 'draft', 'confirmed'][i];
+                  });
+                  _loadItems();
+                },
+                borderRadius: BorderRadius.circular(8),
+                constraints: const BoxConstraints(minHeight: 32, minWidth: 60),
+                textStyle: const TextStyle(fontSize: 12),
+                children: const [
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('すべて')),
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('下書き')),
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('確定')),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
+          ],
           Row(
             children: [
               _dateChip(context, cs, '開始日', _dateFrom, (d) => _dateFrom = d),
@@ -936,7 +938,7 @@ class _H1ExplorerViewerScreenState<T extends H1ExplorerItem> extends State<_H1Ex
         title: Text(widget.item.title),
         centerTitle: true,
         actions: [
-          if (widget.item.canEdit)
+          if (widget.item.canEdit && widget.config.supportsEdit)
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _edit,

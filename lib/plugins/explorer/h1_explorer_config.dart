@@ -33,6 +33,8 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
   bool get defaultTreeView => false;
   IconData get itemIcon;
   String get emptyMessage;
+  bool get showStatusFilter => true;
+  bool get supportsEdit => true;
 
   Future<List<T>> fetchItems(String query);
   Widget buildViewer(BuildContext context, T item);
