@@ -363,7 +363,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
     super.initState();
     _themeMode = _loadThemeMode(widget.prefs);
     themeNotifier.value = _themeMode;
-    _applySystemNavBar(_themeMode);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applySystemNavBar(_themeMode));
     themeNotifier.addListener(_onThemeChanged);
     inputStyleNotifier.addListener(_onInputStyleChanged);
     CompanyService.activeCompanyNotifier.addListener(_onCompanyChanged);
@@ -516,9 +516,11 @@ class _H1CoreAppState extends State<H1CoreApp> {
 
 void applyNavBarColor() {
   try {
-    SharedPreferences.getInstance().then((prefs) {
-      final mode = themeNotifier.value;
-      _applyNavBarColor(mode, prefs);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SharedPreferences.getInstance().then((prefs) {
+        final mode = themeNotifier.value;
+        _applyNavBarColor(mode, prefs);
+      });
     });
   } catch (_) {}
 }
