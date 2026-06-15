@@ -166,9 +166,10 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       final ok = await _driveService.downloadBackup(f.id!, tmpPath);
       if (ok) {
         await DatabaseHelper.closeAndReset();
-        await Future.delayed(const Duration(milliseconds: 500));
-        // 復元ファイルをDBファイルとしてリネーム（存在すれば上書き）
-        await File(tmpPath).rename(dbPath);
+        await Future.delayed(const Duration(seconds: 1));
+        // copy + delete（renameは一部AndroidでOperation not permitted）
+        await File(tmpPath).copy(dbPath);
+        try { await File(tmpPath).delete(); } catch (_) {}
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('復元完了しました（アプリを再起動してください）')));
         }
