@@ -99,17 +99,28 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
   Future<void> _uploadNow() async {
     try {
       final dbPath = await DatabaseHelper().getDatabasePath();
+      debugPrint('[DriveBackup] dbPath=$dbPath');
       final service = LocalBackupService();
       final localPath = await service.createAutoBackup(dbPath);
-      if (localPath == null) return;
+      if (localPath == null) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ローカルバックアップ作成失敗（本日分は既存）')));
+        return;
+      }
+      debugPrint('[DriveBackup] local backup created: $localPath');
       final ok = await _driveService.uploadBackup(localPath);
+      debugPrint('[DriveBackup] upload result: $ok');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(ok ? 'アップロード完了' : 'アップロード失敗')),
         );
         if (ok) await _loadFiles();
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[DriveBackup] upload error: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('エラー: $e')));
+      }
+    }
   }
 
   Future<void> _restore(drive.File f) async {
