@@ -1,9 +1,11 @@
 import 'package:sqflite/sqflite.dart';
 import '../../../services/database_helper.dart';
 import '../models/account.dart';
+import 'audit_log_service.dart';
 
 class AccountRepository {
   final DatabaseHelper _db = DatabaseHelper();
+  final _audit = AuditLogService();
 
   Future<Database> get _database => _db.database;
 
@@ -29,12 +31,15 @@ class AccountRepository {
     final db = await _database;
     final now = DateTime.now().toIso8601String();
     if (account.id != null) {
+      final old = await fetchById(account.id!);
       await db.update('accounts', {
         'code': account.code,
         'name': account.name,
         'category': account.category,
         'updated_at': now,
       }, where: 'id = ?', whereArgs: [account.id]);
+      await _audit.log(tableName: 'accounts', recordId: account.id.toString(), action: 'update',
+        oldValues: old?.toMap(), newValues: account.toMap());
       return account;
     }
     final id = await db.insert('accounts', {
@@ -45,6 +50,8 @@ class AccountRepository {
       'created_at': now,
       'updated_at': now,
     });
+    await _audit.log(tableName: 'accounts', recordId: id.toString(), action: 'insert',
+      newValues: account.toMap());
     return account.copyWith(id: id);
   }
 
@@ -63,7 +70,10 @@ class AccountRepository {
   }
 
   Future<void> delete(int id) async {
+    final old = await fetchById(id);
     final db = await _database;
     await db.delete('accounts', where: 'id = ?', whereArgs: [id]);
+    await _audit.log(tableName: 'accounts', recordId: id.toString(), action: 'delete',
+      oldValues: old?.toMap());
   }
 }
