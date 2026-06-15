@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../../services/geolocator_stub.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../models/customer_model.dart';
 import 'customer_utils.dart';
 
@@ -57,7 +57,7 @@ Future<void> sortCustomers({
   Future<({double latitude, double longitude})?> _getCurrentPosition() async {
     try {
       final pos = await Geolocator.getCurrentPosition();
-      return (latitude: pos['latitude']!, longitude: pos['longitude']!);
+      return (latitude: pos.latitude, longitude: pos.longitude);
     } catch (e) {
       debugPrint('[CustomerMaster] getCurrentPosition error: $e');
       return null;

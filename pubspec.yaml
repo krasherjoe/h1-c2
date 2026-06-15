@@ -30,6 +30,8 @@ dependencies:
   fl_chart: ^1.2.0
   qr_flutter: ^4.1.0
   mobile_scanner: ^6.0.0
+  geolocator: ^13.0.0
+  flutter_bluetooth_serial: ^0.4.0
 
 dev_dependencies:
   flutter_test:

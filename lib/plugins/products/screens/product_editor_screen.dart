@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:uuid/uuid.dart';
+import '../../../services/barcode_utils.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/product_category_repository.dart';
@@ -86,6 +88,32 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
     _supplierCtl.dispose();
     _stockCtl.dispose();
     super.dispose();
+  }
+
+  Future<void> _scanBarcode(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        contentPadding: EdgeInsets.zero,
+        content: SizedBox(
+          width: 300,
+          height: 300,
+          child: MobileScanner(
+            onDetect: (capture) {
+              final value = capture.barcodes.firstOrNull?.rawValue;
+              if (value == null) return;
+              Navigator.pop(ctx);
+              try {
+                final normalized = BarcodeUtils.normalize(value);
+                _barcodeCtl.text = normalized ?? value;
+              } catch (_) {
+                _barcodeCtl.text = value;
+              }
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -292,13 +320,25 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                   children: [
                     Text('詳細', style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
-                    H1FormField(
-                      controller: _barcodeCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'バーコード',
-                        prefixIcon: Icon(Icons.qr_code),
+                    Row(children: [
+                      Expanded(
+                        child: H1FormField(
+                          controller: _barcodeCtl,
+                          decoration: const InputDecoration(
+                            labelText: 'バーコード',
+                            prefixIcon: Icon(Icons.qr_code),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(
+                        width: 48,
+                        child: IconButton(
+                          icon: const Icon(Icons.qr_code_scanner),
+                          tooltip: 'バーコードをスキャン',
+                          onPressed: () => _scanBarcode(context),
+                        ),
+                      ),
+                    ]),
                     const SizedBox(height: 14),
                     H1FormField(
                       controller: _modelCtl,

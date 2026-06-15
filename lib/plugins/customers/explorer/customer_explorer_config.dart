@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/customer_model.dart';
 import '../../../services/customer_repository.dart';
+import '../../../services/database_helper.dart';
 import '../../../services/error_reporter.dart';
+import '../../../services/gps_service.dart';
 import '../screens/customer_edit_screen.dart';
 import '../logic/customer_search_filter.dart';
 import '../logic/customer_import_export.dart';
@@ -34,6 +37,7 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   List<SortOption> get sortOptions => [
         const SortOption(key: 'name_asc', label: '名前順'),
         const SortOption(key: 'name_desc', label: '名前順（降順）'),
+        const SortOption(key: 'nearby', label: '📍現在地付近'),
       ];
 
   @override
@@ -59,12 +63,39 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
       customers = await repo.getAllCustomers();
     }
     final list = List<Customer>.from(customers);
-    await sortCustomers(
-      list: list,
-      sortKey: _sortKey,
-      showHidden: false,
-      ignoreCorpPrefix: true,
-    );
+    if (_sortKey == 'nearby') {
+      final gps = await GpsService.instance.getCurrentLocation();
+      if (gps != null) {
+        final db = await DatabaseHelper().database;
+        final gpsRows = await db.rawQuery('''
+          SELECT customer_id, latitude, longitude FROM customer_gps_history
+          WHERE id IN (SELECT MAX(id) FROM customer_gps_history GROUP BY customer_id)
+        ''');
+        final gpsMap = <String, List<double>>{};
+        for (final r in gpsRows) {
+          final lat = (r['latitude'] as num?)?.toDouble();
+          final lng = (r['longitude'] as num?)?.toDouble();
+          if (lat != null && lng != null) gpsMap[r['customer_id'] as String? ?? ''] = [lat, lng];
+        }
+        list.sort((a, b) {
+          final posA = gpsMap[a.id];
+          final posB = gpsMap[b.id];
+          if (posA == null && posB == null) return 0;
+          if (posA == null) return 1;
+          if (posB == null) return -1;
+          final dA = GpsService.distanceKm(gps.latitude, gps.longitude, posA[0], posA[1]);
+          final dB = GpsService.distanceKm(gps.latitude, gps.longitude, posB[0], posB[1]);
+          return dA.compareTo(dB);
+        });
+      }
+    } else {
+      await sortCustomers(
+        list: list,
+        sortKey: _sortKey,
+        showHidden: false,
+        ignoreCorpPrefix: true,
+      );
+    }
     return list.map((c) => CustomerExplorerItem(c)).toList();
   }
 
