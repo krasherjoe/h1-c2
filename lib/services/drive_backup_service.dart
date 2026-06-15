@@ -45,8 +45,9 @@ class DriveBackupService {
           : '${(bytes.length / 1024).toStringAsFixed(0)}KB';
       final now = DateTime.now();
       final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+      final timeStr = '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
       final company = companyName ?? 'default';
-      final name = '${dateStr}_${company}_${sizeLabel}.db';
+      final name = '${dateStr}_${company}_${sizeLabel}_${timeStr}.db';
 
       await api.files.create(
         drive.File(name: name, parents: [folderId]),
