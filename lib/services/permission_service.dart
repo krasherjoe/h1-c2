@@ -1,29 +1,13 @@
 import 'package:flutter/material.dart';
+import 'database_helper.dart';
+import 'sync_queue.dart';
 
 enum AppFeature {
-  masterEdit,
-  masterDelete,
-  masterCreate,
-  invoice,
-  invoiceEdit,
-  invoiceDelete,
-  invoiceCreate,
+  masterEdit, masterDelete, masterCreate,
+  invoiceView, invoiceEdit, invoiceCreate, invoiceDelete, invoiceIssue,
+  accountingView,
   settingEdit,
-}
-
-Future<bool> guardWrite(BuildContext context, AppFeature feature) async {
-  final service = PermissionService();
-  switch (feature) {
-    case AppFeature.masterEdit:
-    case AppFeature.masterDelete:
-    case AppFeature.masterCreate:
-    case AppFeature.invoice:
-    case AppFeature.invoiceEdit:
-    case AppFeature.invoiceDelete:
-    case AppFeature.invoiceCreate:
-    case AppFeature.settingEdit:
-      return service.canEdit;
-  }
+  backup,
 }
 
 class PermissionService {
@@ -31,8 +15,58 @@ class PermissionService {
   factory PermissionService() => _instance;
   PermissionService._internal();
 
-  bool hasPermission(String feature) => true;
-  bool get canEdit => true;
-  bool get canDelete => true;
-  bool get canCreate => true;
+  Map<String, bool> _perms = {};
+
+  static const _allFeatures = {
+    'masterEdit': '顧客・商品マスター編集',
+    'masterDelete': '顧客・商品マスター削除',
+    'masterCreate': '顧客・商品マスター作成',
+    'invoiceView': '伝票閲覧',
+    'invoiceEdit': '伝票編集',
+    'invoiceCreate': '伝票作成',
+    'invoiceDelete': '伝票削除',
+    'invoiceIssue': '伝票正式発行',
+    'accountingView': '会計機能',
+    'settingEdit': '設定変更',
+    'backup': 'バックアップ',
+  };
+
+  static Map<String, String> get allFeatures => Map.unmodifiable(_allFeatures);
+
+  Future<void> loadFromDb() async {
+    try {
+      final db = await DatabaseHelper().database;
+      final rows = await db.query('permissions');
+      _perms = {for (final r in rows) r['feature'] as String: (r['allowed'] as int) == 1};
+    } catch (_) {
+      _perms = {};
+    }
+  }
+
+  Future<void> applySyncPermissions(Map<String, bool> perms) async {
+    _perms = Map.from(perms);
+    try {
+      final db = await DatabaseHelper().database;
+      await db.delete('permissions');
+      for (final e in perms.entries) {
+        await db.insert('permissions', {'feature': e.key, 'allowed': e.value ? 1 : 0});
+      }
+    } catch (_) {}
+  }
+
+  bool hasPermission(AppFeature feature) => _perms[feature.name] ?? true;
+  bool get canEdit => hasPermission(AppFeature.masterEdit);
+  bool get canDelete => hasPermission(AppFeature.masterDelete);
+  bool get canCreate => hasPermission(AppFeature.masterCreate);
+}
+
+Future<bool> guardWrite(BuildContext context, AppFeature feature) async {
+  if (SyncQueue.instance.isParent) return true;
+  if (PermissionService().hasPermission(feature)) return true;
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('この機能は親分によって制限されています')),
+    );
+  }
+  return false;
 }

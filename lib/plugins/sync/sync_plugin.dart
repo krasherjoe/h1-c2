@@ -5,6 +5,7 @@ import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../services/sync_queue.dart';
+import '../../services/permission_service.dart';
 import '../../services/company_service.dart';
 import '../../services/database_helper.dart';
 import 'screens/sync_home_screen.dart';
@@ -45,6 +46,7 @@ class SyncPlugin extends H1Plugin {
   Future<void> initialize(PluginContext context) async {
     await _migrateSpToDb();
     await SyncQueue.instance.init();
+    await PermissionService().loadFromDb();
     if (SyncQueue.instance.isParent) SyncQueue.instance.startPolling();
     CompanyService.activeCompanyNotifier.addListener(_onCompanyChanged);
   }
@@ -58,6 +60,11 @@ class SyncPlugin extends H1Plugin {
       CREATE TABLE IF NOT EXISTS sync_config (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
+      )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS permissions (
+        feature TEXT PRIMARY KEY,
+        allowed INTEGER NOT NULL DEFAULT 1
       )''');
     for (final table in ['documents', 'journal_entries', 'cash_transactions']) {
       try { await db.execute("ALTER TABLE $table ADD COLUMN sync_source TEXT DEFAULT ''"); } catch (_) {}

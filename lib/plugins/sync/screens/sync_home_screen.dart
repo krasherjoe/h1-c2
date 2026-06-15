@@ -4,6 +4,7 @@ import '../../../services/sync_queue.dart';
 import '../../../services/google_auth_service.dart';
 import 'sync_qr_display_screen.dart';
 import 'sync_qr_scanner_screen.dart';
+import 'permission_screen.dart';
 
 class SyncHomeScreen extends StatefulWidget {
   const SyncHomeScreen({super.key});
@@ -84,6 +85,15 @@ class _SyncHomeScreenState extends State<SyncHomeScreen> {
                 icon: const Icon(Icons.qr_code),
                 label: const Text('QRコードを表示（子分を追加）'),
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncQrDisplayScreen())),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.admin_panel_settings),
+                label: const Text('権限設定'),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PermissionScreen())),
               ),
             ),
           ] else ...[
