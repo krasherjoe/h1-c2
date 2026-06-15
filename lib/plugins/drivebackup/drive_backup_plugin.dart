@@ -162,12 +162,13 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
     setState(() => _restoring = true);
     try {
       final dbPath = await DatabaseHelper().getDatabasePath();
-      final tmpPath = '${dbPath}.restore';
+      final tmpDir = await getApplicationDocumentsDirectory();
+      final tmpPath = '${tmpDir.path}/restore_${DateTime.now().millisecondsSinceEpoch}.db';
       final ok = await _driveService.downloadBackup(f.id!, tmpPath);
       if (ok) {
         await DatabaseHelper.closeAndReset();
         await Future.delayed(const Duration(seconds: 1));
-        // copy + delete（renameは一部AndroidでOperation not permitted）
+        // テンポラリからDBディレクトリにコピー
         await File(tmpPath).copy(dbPath);
         try { await File(tmpPath).delete(); } catch (_) {}
         if (mounted) {
