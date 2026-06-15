@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'menu_item.dart';
 import 'plugin_registry.dart';
+import '../widgets/google_auth_badge.dart';
 
 class PluginAppBarTitle extends StatelessWidget {
   final String fallbackTitle;
@@ -14,8 +15,22 @@ class PluginAppBarTitle extends StatelessWidget {
     final idx = items.indexWhere((m) => m.route == route);
     if (idx >= 0) {
       final item = items[idx];
-      return Text('${item.id}: ${item.title}');
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('${item.id}: ${item.title}'),
+          const SizedBox(width: 6),
+          const GoogleAuthBadge(),
+        ],
+      );
     }
-    return Text(fallbackTitle);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(fallbackTitle),
+        const SizedBox(width: 6),
+        const GoogleAuthBadge(),
+      ],
+    );
   }
 }

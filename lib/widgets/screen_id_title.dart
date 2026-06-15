@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'google_auth_badge.dart';
 
 class ScreenAppBarTitle extends StatelessWidget {
   const ScreenAppBarTitle({
@@ -20,18 +21,25 @@ class ScreenAppBarTitle extends StatelessWidget {
           fontWeight: FontWeight.w600,
         );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$screenId: $title', style: primaryStyle),
-        if (caption != null)
-          Text(
-            caption!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
-            ),
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('$screenId: $title', style: primaryStyle),
+            if (caption != null)
+              Text(
+                caption!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: 6),
+        const GoogleAuthBadge(),
       ],
     );
   }
