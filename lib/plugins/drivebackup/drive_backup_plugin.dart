@@ -155,21 +155,27 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       final ok = await _driveService.downloadBackup(f.id!, tmpPath);
       if (ok) {
         await DatabaseHelper.closeAndReset();
-        await File(tmpPath).copy(dbPath);
+        await Future.delayed(const Duration(milliseconds: 500));
+        // 元のDBファイルを削除してから復元ファイルをリネーム（コピーより安全）
+        final dest = File(dbPath);
+        if (await dest.exists()) await dest.delete();
+        await File(tmpPath).rename(dbPath);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('復元完了しました（アプリを再起動してください）')));
         }
+        setState(() => _restoring = false);
       } else {
+        setState(() => _restoring = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('復元失敗: ダウンロードエラー')));
         }
       }
     } catch (e) {
+      setState(() => _restoring = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('復元エラー: $e')));
       }
     }
-    if (mounted) setState(() => _restoring = false);
   }
 
   @override
