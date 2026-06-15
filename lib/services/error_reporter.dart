@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -35,11 +36,17 @@ class ErrorReporter {
       final pat = prefs.getString(_kPatKey);
       final baseUrl = prefs.getString(_kBaseUrlKey) ?? 'https://mm.ka.sugeee.com';
       final teamName = prefs.getString(_kTeamKey) ?? 'cyb';
-      if (pat == null) return false;
+      if (pat == null) {
+        debugPrint('[ErrorReporter] PATキー未設定のため送信できません');
+        return false;
+      }
 
       final headers = {'Authorization': 'Bearer $pat', 'Content-Type': 'application/json'};
       final teamRes = await http.get(Uri.parse('$baseUrl/api/v4/teams/name/$teamName'), headers: headers);
-      if (teamRes.statusCode != 200) return false;
+      if (teamRes.statusCode != 200) {
+        debugPrint('[ErrorReporter] PATチーム取得失敗: ${teamRes.statusCode}');
+        return false;
+      }
       final teamId = (jsonDecode(teamRes.body)['id'] as String?) ?? '';
       if (teamId.isEmpty) return false;
 
@@ -53,51 +60,52 @@ class ErrorReporter {
         headers: headers,
         body: jsonEncode({'channel_id': chId, 'message': text}),
       );
+      debugPrint('[ErrorReporter] PAT送信${postRes.statusCode == 201 ? "成功" : "失敗(${postRes.statusCode})"}');
       return postRes.statusCode == 201;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ErrorReporter] PAT送信例外: $e');
       return false;
     }
   }
 
-  static Future<void> sendError({
+  static void sendError({
     required String message,
     String? detail,
     String? screenId,
     StackTrace? stackTrace,
-  }) async {
-    try {
-      final url = await _getWebhookUrl();
-      if (url.isNotEmpty) {
-        debugPrint('[ErrorReporter] sending via webhook to $url');
-        final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
-        final body = {
-          'text': [
-            '### ⚠️ h-1-core エラー報告 ($now)',
-            '',
-            '**version:** $_kAppVersion',
-            '**message:** $message',
-            if (detail != null) '**detail:** $detail',
-            if (screenId != null) '**screen:** $screenId',
-            if (stackTrace != null)
-              '**stack:**\n```\n${stackTrace.toString().substring(0, stackTrace.toString().length.clamp(0, 500))}\n```',
-          ].join('\n'),
-        };
-        await http.post(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
-        debugPrint('[ErrorReporter] sent via webhook');
-      }
-    } catch (e) {
-      debugPrint('[ErrorReporter] webhook send failed: $e');
-    }
-
-    try { await sendErrorViaGmail(message: message, screenId: screenId, stackTrace: stackTrace); } catch (_) {}
-
+  }) {
     final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
     final text = '### ⚠️ h-1-core エラー報告 ($now)\n'
         '**version:** $_kAppVersion\n'
         '**message:** $message\n'
         '**screen:** ${screenId ?? "N/A"}\n'
         '**detail:** ${detail ?? "N/A"}\n';
-    await _sendViaPat(text);
+    // PATを最優先で即時fire-and-forget
+    unawaited(_sendViaPat(text));
+    // Webhookも非同期で
+    unawaited(_sendViaWebhook(message, detail, screenId, stackTrace, now));
+    // Gmailも
+    unawaited(sendErrorViaGmail(message: message, screenId: screenId, stackTrace: stackTrace));
+  }
+
+  static Future<void> _sendViaWebhook(String message, String? detail, String? screenId, StackTrace? stackTrace, String now) async {
+    try {
+      final url = await _getWebhookUrl();
+      if (url.isEmpty) return;
+      final body = {
+        'text': [
+          '### ⚠️ h-1-core エラー報告 ($now)',
+          '',
+          '**version:** $_kAppVersion',
+          '**message:** $message',
+          if (detail != null) '**detail:** $detail',
+          if (screenId != null) '**screen:** $screenId',
+          if (stackTrace != null)
+            '**stack:**\n```\n${stackTrace.toString().substring(0, stackTrace.toString().length.clamp(0, 500))}\n```',
+        ].join('\n'),
+      };
+      await http.post(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
+    } catch (_) {}
   }
 
   static Future<void> sendErrorViaGmail({

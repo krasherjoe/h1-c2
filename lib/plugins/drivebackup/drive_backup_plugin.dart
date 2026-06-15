@@ -118,7 +118,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       _files = await _driveService.listBackups();
     } catch (e) {
       _listError = '$e';
-      await ErrorReporter.sendError(message: 'Drive一覧取得失敗: $e', screenId: '/drivebackup');
+      ErrorReporter.sendError(message: 'Drive一覧取得失敗: $e', screenId: '/drivebackup');
     }
     await cleanOldLocalBackups();
     if (mounted) setState(() => _loading = false);

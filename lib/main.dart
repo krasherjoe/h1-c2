@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
@@ -241,27 +242,29 @@ Future<String> _cmdDbSend(List<String> _) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await _migrateIfNeeded();
 
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    ErrorReporter.sendError(
-      message: '${details.exceptionAsString()} | ${details.library}',
-      detail: details.context?.toString(),
-      stackTrace: details.stack,
-    );
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    ErrorReporter.sendError(
-      message: error.toString(),
-      stackTrace: stack,
-    );
-    return true;
-  };
-  try { await ErrorReporter.sendLog(message: '[Startup] main() begin - app starting'); } catch (_) {}
+  runZonedGuarded(() async {
+    await _migrateIfNeeded();
 
-  await MmCommandService.instance.loadConfig();
-  await LogDispatcher.loadConfig();
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      ErrorReporter.sendError(
+        message: '${details.exceptionAsString()} | ${details.library}',
+        detail: details.context?.toString(),
+        stackTrace: details.stack,
+      );
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      ErrorReporter.sendError(
+        message: error.toString(),
+        stackTrace: stack,
+      );
+      return true;
+    };
+    try { await ErrorReporter.sendLog(message: '[Startup] main() begin - app starting'); } catch (_) {}
+
+    await MmCommandService.instance.loadConfig();
+    await LogDispatcher.loadConfig();
 
   DebugConsole.register('ping', (_) async => 'pong');
   DebugConsole.register('mmcheck', _cmdMmCheck);
@@ -334,6 +337,9 @@ void main() async {
   }
 
   runApp(H1CoreApp(registry: registry, db: db, prefs: prefs));
+  }, (error, stack) {
+    ErrorReporter.sendError(message: error.toString(), stackTrace: stack);
+  });
 }
 
 class H1CoreApp extends StatefulWidget {
