@@ -13,7 +13,7 @@ class DebugService {
   static const _kWebhookKey = 'mattermost_webhook_url';
   static const _kRootIdKey = 'mm_root_id';
   static const _kChannelName = 'h1-debug';
-  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.26+1');
+  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
 
   String get appVersion => _kAppVersion;
 

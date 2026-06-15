@@ -13,7 +13,7 @@ class ErrorReporter {
   static const _kWebhookUrlKey = 'mattermost_webhook_url';
   static const _kDefaultWebhookUrl = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
   static const _kEnvUrl = String.fromEnvironment('MATTERMOST_WEBHOOK_URL');
-  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.2.26+1');
+  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
   static const _kPatKey = 'mattermost_pat';
   static const _kBaseUrlKey = 'mattermost_base_url';
   static const _kTeamKey = 'mattermost_team_name';
@@ -66,7 +66,6 @@ class ErrorReporter {
     String? screenId,
     StackTrace? stackTrace,
   }) async {
-    String? sentBy;
     try {
       final url = await _getWebhookUrl();
       if (url.isNotEmpty) {
@@ -84,42 +83,22 @@ class ErrorReporter {
               '**stack:**\n```\n${stackTrace.toString().substring(0, stackTrace.toString().length.clamp(0, 500))}\n```',
           ].join('\n'),
         };
-        await http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(body),
-        );
-        sentBy = 'webhook';
+        await http.post(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
         debugPrint('[ErrorReporter] sent via webhook');
       }
     } catch (e) {
       debugPrint('[ErrorReporter] webhook send failed: $e');
     }
 
-    if (sentBy == null) {
-      try {
-        await sendErrorViaGmail(
-          message: message,
-          screenId: screenId,
-          stackTrace: stackTrace,
-        );
-        sentBy = 'gmail';
-      } catch (_) {}
-    }
+    try { await sendErrorViaGmail(message: message, screenId: screenId, stackTrace: stackTrace); } catch (_) {}
 
-    if (sentBy == null) {
-      final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
-      final text = '### ⚠️ h-1-core エラー報告 ($now)\n'
-          '**version:** $_kAppVersion\n'
-          '**message:** $message\n'
-          '**screen:** ${screenId ?? "N/A"}\n';
-      final ok = await _sendViaPat(text);
-      if (ok) sentBy = 'pat';
-    }
-
-    if (sentBy == null) {
-      debugPrint('[ErrorReporter] all delivery methods failed');
-    }
+    final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
+    final text = '### ⚠️ h-1-core エラー報告 ($now)\n'
+        '**version:** $_kAppVersion\n'
+        '**message:** $message\n'
+        '**screen:** ${screenId ?? "N/A"}\n'
+        '**detail:** ${detail ?? "N/A"}\n';
+    await _sendViaPat(text);
   }
 
   static Future<void> sendErrorViaGmail({
@@ -203,5 +182,19 @@ $stackStr
         backgroundColor: Theme.of(context).colorScheme.error,
       ),
     );
+  }
+
+  /// 任意のasync処理を実行し、エラー発生時にMattermostへ報告するラッパー
+  static Future<T?> tryWithReport<T>({
+    required String label,
+    required Future<T?> Function() fn,
+    String? screenId,
+  }) async {
+    try {
+      return await fn();
+    } catch (e, st) {
+      sendError(message: '$label: $e', detail: e.toString(), screenId: screenId, stackTrace: st);
+      return null;
+    }
   }
 }
