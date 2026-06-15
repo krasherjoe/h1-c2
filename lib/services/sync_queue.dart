@@ -22,8 +22,16 @@ class SyncQueue {
   Timer? _pollTimer;
   final Set<String> _processedMsgIds = {};
   String? _syncLabelId;
+  int _emptyPolls = 0;
+  int _backoffMultiplier = 1;
+  bool _isForeground = true;
 
   bool get isParent => _parentEmail == null || _parentEmail!.isEmpty;
+
+  void setForeground(bool fg) {
+    _isForeground = fg;
+    _restartPolling();
+  }
 
   // --- 法人切替 ---
   Future<void> onCompanySwitch() async {
@@ -65,8 +73,8 @@ class SyncQueue {
   void setActive(bool active) { _isActive = active; _restartPolling(); }
 
   int get _pollSeconds {
-    if (isParent) return 120;
-    if (_isActive) return 120;
+    if (isParent) return _isForeground ? 300 : 1800;
+    if (_isActive) return _isForeground ? 300 : 1800;
     return 43200;
   }
 
@@ -74,7 +82,7 @@ class SyncQueue {
   void push(String changeJson) {
     _queue.add(changeJson);
     if (_queue.length >= 50) _flush();
-    else { _flushTimer?.cancel(); _flushTimer = Timer(Duration(seconds: _isActive ? 120 : 30), _flush); }
+    else { _flushTimer?.cancel(); _flushTimer = Timer(Duration(seconds: _isActive ? 300 : 30), _flush); }
   }
 
   void _flush() {
@@ -120,12 +128,13 @@ class SyncQueue {
 
   Future<void> _pollLoop() async {
     while (_polling) {
-      final seconds = _pollSeconds;
+      final base = _pollSeconds;
+      final seconds = base * _backoffMultiplier;
       _pollTimer = Timer(Duration(seconds: seconds), () {});
       await Future.delayed(Duration(seconds: seconds));
       if (!_polling) break;
 
-      if (!isParent && !_isActive) { _flush(); continue; }
+      if (!isParent && !_isActive) { _flush(); _backoffMultiplier = 1; continue; }
 
       try {
         final me = await GoogleAuthService.instance.getEmail();
@@ -140,7 +149,9 @@ class SyncQueue {
             // フィルタラベルが設定済みならそのラベル＋afterで検索
           }
           final list = await api.users.messages.list('me', q: query, maxResults: 20);
-          if (list.messages != null) {
+          if (list.messages != null && list.messages!.isNotEmpty) {
+            _emptyPolls = 0;
+            _backoffMultiplier = 1;
             for (final msg in list.messages!) {
               final full = await api.users.messages.get('me', msg.id!, format: 'full');
               final msgId = full.payload?.headers?.where((h) => h.name == 'X-H1-Msg-Id').firstOrNull?.value;
@@ -155,6 +166,13 @@ class SyncQueue {
               }
               // 処理済みはtrash
               try { await api.users.messages.trash('me', msg.id!); } catch (_) {}
+            }
+          } else {
+            // 空振り: 3回連続でバックオフ
+            _emptyPolls++;
+            if (_emptyPolls >= 3) {
+              _backoffMultiplier = (_backoffMultiplier * 2).clamp(1, 6);
+              _emptyPolls = 0;
             }
           }
         }

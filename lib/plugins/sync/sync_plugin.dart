@@ -10,7 +10,7 @@ import '../../services/company_service.dart';
 import '../../services/database_helper.dart';
 import 'screens/sync_home_screen.dart';
 
-class SyncPlugin extends H1Plugin {
+class SyncPlugin extends H1Plugin with WidgetsBindingObserver {
   @override
   String get id => 'com.h1.plugin.sync';
   @override
@@ -37,13 +37,16 @@ class SyncPlugin extends H1Plugin {
   @override
   Map<String, WidgetBuilder> getRoutes() => {};
   @override
-  Future<void> dispose() async {}
+  Future<void> dispose() async {
+    WidgetsBinding.instance.removeObserver(this);
+  }
   @override
   Future<void> createTables(Database db) async {
     await _migrate(db);
   }
   @override
   Future<void> initialize(PluginContext context) async {
+    WidgetsBinding.instance.addObserver(this);
     await _migrateSpToDb();
     await SyncQueue.instance.init();
     await PermissionService().loadFromDb();
@@ -52,6 +55,11 @@ class SyncPlugin extends H1Plugin {
       SyncQueue.instance.setupGmailFilter();
     }
     CompanyService.activeCompanyNotifier.addListener(_onCompanyChanged);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    SyncQueue.instance.setForeground(state == AppLifecycleState.resumed);
   }
 
   void _onCompanyChanged() {
