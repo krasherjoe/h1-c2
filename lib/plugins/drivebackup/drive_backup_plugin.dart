@@ -10,6 +10,7 @@ import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../services/database_helper.dart';
 import '../../services/drive_backup_service.dart';
+import '../../services/error_reporter.dart';
 import '../../services/google_auth_service.dart';
 
 class DriveBackupPlugin extends H1Plugin {
@@ -77,6 +78,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
   bool _restoring = false;
   bool _signedIn = false;
   String? _email;
+  String? _listError;
 
   @override
   void initState() {
@@ -93,8 +95,13 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
   }
 
   Future<void> _loadFiles() async {
-    setState(() => _loading = true);
-    _files = await _driveService.listBackups();
+    setState(() { _loading = true; _listError = null; });
+    try {
+      _files = await _driveService.listBackups();
+    } catch (e) {
+      _listError = '$e';
+      await ErrorReporter.sendError(message: 'Drive一覧取得失敗: $e', screenId: '/drivebackup');
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -237,6 +244,21 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
                     const SizedBox(height: 16),
                     Text('バックアップ一覧', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
                     const SizedBox(height: 8),
+                    if (_listError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Card(
+                          color: cs.errorContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(children: [
+                              Icon(Icons.error, color: cs.onErrorContainer, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(_listError!, style: TextStyle(fontSize: 11, color: cs.onErrorContainer))),
+                            ]),
+                          ),
+                        ),
+                      ),
                     if (_files.isEmpty)
                       Center(child: Padding(
                         padding: const EdgeInsets.all(32),
