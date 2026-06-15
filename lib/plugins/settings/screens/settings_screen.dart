@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../main.dart' show themeNotifier, applyNavBarColor;
+import '../../../main.dart' show themeNotifier;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
 import '../../../services/error_reporter.dart';
 import '../../../services/google_auth_service.dart';
@@ -22,7 +22,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ThemeMode _themeMode = ThemeMode.system;
   String _webhookUrl = '';
   String _inputStyle = 'raised';
-  String _navbarStyle = 'primary';
   String? _googleEmail;
   bool _googleSignedIn = false;
   bool _devExpanded = false;
@@ -43,7 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _themeMode = _repo.themeMode;
       _webhookUrl = prefs.getString('mattermost_webhook_url') ?? '';
       _inputStyle = _repo.inputFieldStyle;
-      _navbarStyle = _repo.navigationBarStyle;
       _googleEmail = email;
       _googleSignedIn = email != null && email.isNotEmpty;
     });
@@ -279,38 +277,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
-                      child: Icon(Icons.view_agenda, color: cs.primary, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Text('ナビバーカラー', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
-                  ]),
-                  const SizedBox(height: 8),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'primary', label: Text('AppBar色'), icon: Icon(Icons.palette)),
-                      ButtonSegment(value: 'dark_grey', label: Text('濃いグレー'), icon: Icon(Icons.dark_mode)),
-                      ButtonSegment(value: 'black', label: Text('黒'), icon: Icon(Icons.format_paint)),
-                    ],
-                    selected: {_navbarStyle},
-                    onSelectionChanged: (v) {
-                      _repo.navigationBarStyle = v.first;
-                      setState(() => _navbarStyle = v.first);
-                      applyNavBarColor();
-                    },
-                    style: SegmentedButton.styleFrom(visualDensity: VisualDensity.compact),
-                  ),
-                ],
-              ),
-            ),
           ]),
           const SizedBox(height: 16),
 

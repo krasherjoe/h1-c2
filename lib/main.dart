@@ -510,33 +510,5 @@ class _H1CoreAppState extends State<H1CoreApp> {
     return TabbedWorkspace(dashboard: const DashboardScreen());
   }
 
-  void _applySystemNavBar(ThemeMode mode) {
-    _applyNavBarColor(mode, widget.prefs);
-  }
-}
-
-void applyNavBarColor() {
-  try {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      SharedPreferences.getInstance().then((prefs) {
-        final mode = themeNotifier.value;
-        _applyNavBarColor(mode, prefs);
-      });
-    });
-  } catch (_) {}
-}
-
-void _applyNavBarColor(ThemeMode mode, SharedPreferences prefs) {
-  final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
-  final navbarStyle = prefs.getString('navbar_style') ?? 'primary';
-  final cs = isDark ? AppTheme.dark() : AppTheme.light();
-  final navBarColor = switch (navbarStyle) {
-    'primary' => cs.colorScheme.primary,
-    'black' => Colors.black,
-    _ => isDark ? const Color(0xFF2C2C2E) : const Color(0xFF2E2E2E),
-  };
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    systemNavigationBarColor: navBarColor,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
+  void _applySystemNavBar(ThemeMode mode) {}
 }

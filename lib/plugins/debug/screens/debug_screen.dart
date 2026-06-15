@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/debug_service.dart';
 import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/mm_command_service.dart';
 import '../../../services/error_reporter.dart';
+import '../../../services/database_helper.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -66,6 +68,42 @@ class _DebugScreenState extends State<DebugScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(sentAny ? 'テスト送信しました（PAT + ErrorReporter）' : 'テスト送信しました（ErrorReporterのみ）')),
     );
+  }
+
+  Future<void> _googleDiagnostic() async {
+    final buf = StringBuffer();
+    buf.writeln('### \u{1F50D} Google診断');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      buf.writeln('**SharedPreferences:**');
+      buf.writeln('  google_email: ${prefs.getString("google_email") ?? "未設定"}');
+      buf.writeln('  google_access_token: ${prefs.getString("google_access_token")?.substring(0, 20) ?? "未設定"}...');
+      buf.writeln('  google_token_expiry: ${prefs.getString("google_token_expiry") ?? "未設定"}');
+
+      final email = await GoogleAuthService.instance.getEmail();
+      buf.writeln('**GoogleAuthService.getEmail():** $email');
+
+      final signedIn = await GoogleAuthService.instance.isSignedIn();
+      buf.writeln('**isSignedIn():** $signedIn');
+
+      buf.writeln('**ClientID:** 468424259506-09fl38dtcem537g01dqb45cjk3tjjhqp');
+      buf.writeln('**Package:** com.h1.core');
+      buf.writeln('**SHA-1:** 8A:BC:41:8B:51:7D:CF:39:29:1F:94:5D:2E:FF:A3:12:42:A3:CB:A5');
+
+      if (_service.isConfigured) {
+        await _service.sendText(buf.toString());
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('診断情報を送信しました')));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PAT未設定のため送信できません')));
+        }
+        debugPrint(buf.toString());
+      }
+    } catch (e) {
+      debugPrint('[GoogleDiagnostic] error: $e');
+    }
   }
 
   Future<void> _configurePat() async {
@@ -222,6 +260,12 @@ class _DebugScreenState extends State<DebugScreen> {
               onPressed: _sendTestReport,
               icon: const Icon(Icons.bug_report, size: 18),
               label: const Text('テストエラー報告'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _googleDiagnostic,
+              icon: const Icon(Icons.vpn_key, size: 18),
+              label: const Text('Google診断'),
             ),
           ],
         ),
