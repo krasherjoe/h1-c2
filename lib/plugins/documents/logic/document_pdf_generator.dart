@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:crypto/crypto.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -396,6 +397,7 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
             ),
           ],
           pw.SizedBox(height: 20),
+          ..._buildVerificationSection(document, ipaex),
         ];
 
         return [pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: content)];
@@ -450,4 +452,56 @@ List<pw.Widget> _buildBankAccountPdfLines(CompanyInfo company, pw.Font font) {
   } catch (_) {
     return [];
   }
+}
+
+List<pw.Widget> _buildVerificationSection(DocumentModel doc, pw.Font font) {
+  if (!doc.isConfirmed) return [];
+  final payload = {
+    'id': doc.id,
+    'type': doc.documentType.name,
+    'number': doc.documentNumber,
+    'date': '${doc.date.year}/${doc.date.month.toString().padLeft(2, '0')}/${doc.date.day.toString().padLeft(2, '0')}',
+    'customer': doc.customerName,
+    'total': doc.total,
+    'status': doc.status,
+    'items': doc.items.map((i) => {
+      'name': i.productName,
+      'maker': i.maker,
+      'code': i.productCode,
+      'qty': i.quantity,
+      'price': i.unitPrice,
+    }).toList(),
+  };
+  final jsonStr = jsonEncode(payload);
+  final hash = sha256.convert(utf8.encode(jsonStr)).toString();
+  final shortHash = hash.substring(0, 16);
+  return [
+    pw.SizedBox(height: 8),
+    pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Container(
+          width: 48, height: 48,
+          child: pw.BarcodeWidget(
+            barcode: pw.Barcode.qrCode(),
+            data: hash,
+            width: 48, height: 48,
+          ),
+        ),
+        pw.SizedBox(width: 8),
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('SHA-256: $shortHash...',
+                style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+              pw.SizedBox(height: 2),
+              pw.Text('この情報は発行時のデータを元に計算されています',
+                style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.grey500)),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ];
 }
