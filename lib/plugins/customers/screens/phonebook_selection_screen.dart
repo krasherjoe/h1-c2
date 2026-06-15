@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/customer_model.dart';
 import '../../../services/customer_repository.dart';
@@ -27,7 +28,8 @@ class _PhonebookSelectionScreenState extends State<PhonebookSelectionScreen> {
 
   Future<void> _load() async {
     try {
-      if (!await FlutterContacts.requestPermission()) {
+      final status = await Permission.contacts.request();
+      if (status != PermissionStatus.granted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('連絡帳へのアクセスを許可してください')),
