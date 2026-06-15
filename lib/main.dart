@@ -25,6 +25,7 @@ import 'plugins/purchase/purchase_plugin.dart';
 import 'plugins/analytics/analytics_plugin.dart';
 import 'plugins/accounting/accounting_plugin.dart';
 import 'plugins/accounting2/accounting2_plugin.dart';
+import 'plugins/drivebackup/drive_backup_plugin.dart';
 import 'plugins/quick_actions/quick_actions_plugin.dart';
 import 'plugins/company/company_plugin.dart';
 import 'plugins/explorer/explorer_plugin.dart';
@@ -314,6 +315,7 @@ void main() async {
   await registry.register(ConversionPlugin());
   await registry.register(AuditPlugin());
   await registry.register(DebugPlugin());
+  await registry.register(DriveBackupPlugin());
   await registry.register(ProjectPlugin());
   await registry.register(MemorandumPlugin());
   await registry.register(ArPlugin());

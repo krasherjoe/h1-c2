@@ -25,6 +25,7 @@ class GoogleAuthService {
       scopes: [
         'email',
         'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/drive.file',
       ],
     );
     _initialized = true;
