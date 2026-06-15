@@ -84,7 +84,7 @@ class _DebugScreenState extends State<DebugScreen> {
       final signedIn = await GoogleAuthService.instance.isSignedIn();
       buf.writeln('**isSignedIn():** $signedIn');
 
-      buf.writeln('**ClientID:** 468424259506-09fl38dtcem537g01dqb45cjk3tjjhqp');
+      buf.writeln('**ClientID:** 468424259506-vmdhvaf5npk65a0r6kic9097h2i06kqt');
       buf.writeln('**Package:** com.h1.core');
       buf.writeln('**SHA-1:** 8A:BC:41:8B:51:7D:CF:39:29:1F:94:5D:2E:FF:A3:12:42:A3:CB:A5');
 

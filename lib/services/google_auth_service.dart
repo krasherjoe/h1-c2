@@ -22,7 +22,7 @@ class GoogleAuthService {
 
   void init() {
     if (_initialized) return;
-    _lastClientId = '468424259506-09fl38dtcem537g01dqb45cjk3tjjhqp.apps.googleusercontent.com';
+    _lastClientId = '468424259506-vmdhvaf5npk65a0r6kic9097h2i06kqt.apps.googleusercontent.com';
     _lastScopes = [
       'email',
       'https://www.googleapis.com/auth/gmail.modify',
