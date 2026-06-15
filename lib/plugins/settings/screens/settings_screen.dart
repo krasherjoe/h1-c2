@@ -64,6 +64,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const ScreenAppBarTitle(screenId: 'AD', title: '設定'),
+        actions: [
+          FilledButton.icon(
+            icon: const Icon(Icons.save, size: 18),
+            label: const Text('保存'),
+            onPressed: () {
+              _repo.defaultTaxRate = _taxRate;
+              _repo.documentNumberPrefix = _prefix;
+              if (_webhookUrl.isNotEmpty) ErrorReporter.setWebhookUrl(_webhookUrl);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('設定を保存しました'), duration: Duration(seconds: 1)),
+              );
+            },
+            style: FilledButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -350,6 +368,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ]),
           ],
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _repo.defaultTaxRate = _taxRate;
+          _repo.documentNumberPrefix = _prefix;
+          if (_webhookUrl.isNotEmpty) ErrorReporter.setWebhookUrl(_webhookUrl);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('設定を保存しました'), duration: Duration(seconds: 1)),
+          );
+        },
+        child: const Icon(Icons.save),
       ),
     );
   }

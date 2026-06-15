@@ -68,6 +68,7 @@ class CompanyInfo {
   final double sealOffsetX;
   final double sealOffsetY;
   final double sealRotation;
+  final double sealOpacity;
   final String taxDisplayMode;
   final String? registrationNumber;
   final String? bankAccounts;
@@ -90,6 +91,7 @@ class CompanyInfo {
     this.sealOffsetX = 10.0,
     this.sealOffsetY = 50.0,
     this.sealRotation = 0.0,
+    this.sealOpacity = 1.0,
     this.taxDisplayMode = 'normal',
     this.registrationNumber,
     this.bankAccounts,
@@ -115,6 +117,7 @@ class CompanyInfo {
       'seal_offset_x': sealOffsetX,
       'seal_offset_y': sealOffsetY,
       'seal_rotation': sealRotation,
+      'seal_opacity': sealOpacity,
       'tax_display_mode': taxDisplayMode,
       'registration_number': registrationNumber,
       'bank_accounts': bankAccounts,
@@ -140,6 +143,7 @@ class CompanyInfo {
       sealOffsetX: (map['seal_offset_x'] as num?)?.toDouble() ?? 10.0,
       sealOffsetY: (map['seal_offset_y'] as num?)?.toDouble() ?? 50.0,
       sealRotation: (map['seal_rotation'] as num?)?.toDouble() ?? 0.0,
+      sealOpacity: (map['seal_opacity'] as num?)?.toDouble() ?? 1.0,
       taxDisplayMode: map['tax_display_mode'] ?? 'normal',
       registrationNumber: map['registration_number'],
       bankAccounts: map['bank_accounts'],
@@ -164,6 +168,7 @@ class CompanyInfo {
     double? sealOffsetX,
     double? sealOffsetY,
     double? sealRotation,
+    double? sealOpacity,
     String? taxDisplayMode,
     String? registrationNumber,
     String? bankAccounts,
@@ -186,6 +191,7 @@ class CompanyInfo {
       sealOffsetX: sealOffsetX ?? this.sealOffsetX,
       sealOffsetY: sealOffsetY ?? this.sealOffsetY,
       sealRotation: sealRotation ?? this.sealRotation,
+      sealOpacity: sealOpacity ?? this.sealOpacity,
       taxDisplayMode: taxDisplayMode ?? this.taxDisplayMode,
       registrationNumber: registrationNumber ?? this.registrationNumber,
       bankAccounts: bankAccounts ?? this.bankAccounts,

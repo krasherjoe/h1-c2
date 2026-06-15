@@ -263,8 +263,25 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     icon: const Icon(Icons.save),
                     label: const Text('保存'),
                     onPressed: _save,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Text('透明度', style: TextStyle(fontSize: 13)),
+                Expanded(
+                  child: Slider(
+                    value: _info?.sealOpacity ?? 1.0,
+                    min: 0.1, max: 1.0, divisions: 9,
+                    onChanged: (v) => setState(() {
+                      _info = _info!.copyWith(sealOpacity: v);
+                    }),
                   ),
-                ],
+                ),
+                Text('${((_info?.sealOpacity ?? 1.0) * 100).toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+          ],
               ),
             ),
     );
@@ -481,7 +498,10 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   borderRadius: BorderRadius.circular(8),
                   child: Transform.rotate(
                     angle: -(_info?.sealRotation ?? 0) * 3.14159265359 / 180,
-                    child: Image.file(File(_info!.sealPath!), fit: BoxFit.contain),
+                    child: Opacity(
+                      opacity: _info?.sealOpacity ?? 1.0,
+                      child: Image.file(File(_info!.sealPath!), fit: BoxFit.contain),
+                    ),
                   ),
                 ),
               ),

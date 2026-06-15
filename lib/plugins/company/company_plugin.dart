@@ -18,6 +18,10 @@ class CompanyPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     try {
+      await context.database.execute(
+        'ALTER TABLE company_info ADD COLUMN seal_opacity REAL DEFAULT 1.0');
+    } catch (_) {}
+    try {
       final repo = CompanyRepository(context.database);
       final profile = await repo.loadProfile() ?? const CompanyProfile();
       context.registerService<CompanyProfile>('companyProfile', profile);

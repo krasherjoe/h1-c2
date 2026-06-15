@@ -223,10 +223,13 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
               pw.Positioned(
                 right: sealX,
                 top: sealY,
-                child: pw.Transform.rotate(
-                  angle: (companyInfo?.sealRotation ?? 0.0) * math.pi / 180,
-                  child: pw.Image(sealImage!, width: 100, height: 100),
-                ),
+                  child: pw.Transform.rotate(
+                    angle: (companyInfo?.sealRotation ?? 0.0) * math.pi / 180,
+                    child: pw.Opacity(
+                      opacity: (companyInfo?.sealOpacity ?? 1.0),
+                      child: pw.Image(sealImage!, width: 120, height: 120),
+                    ),
+                  ),
               ),
             ],
           );
