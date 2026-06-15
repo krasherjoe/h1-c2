@@ -48,6 +48,7 @@ class DriveBackupPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     GoogleAuthService.instance.init();
+    cleanOldLocalBackups();
     Future.delayed(const Duration(seconds: 10), () async {
       try {
         final db = await DatabaseHelper().database;
@@ -57,11 +58,28 @@ class DriveBackupPlugin extends H1Plugin {
         final base = dbPath.split('/').last.replaceAll('.db', '');
         final tmpPath = '${dir.path}/backup_${base}_$ts.db';
         await File(dbPath).copy(tmpPath);
-        await DriveBackupService().uploadBackup(tmpPath, companyName: base);
+        final ok = await DriveBackupService().uploadBackup(tmpPath, companyName: base);
         try { await File(tmpPath).delete(); } catch (_) {}
+        if (ok) await DriveBackupService().cleanOldBackups();
       } catch (_) {}
     });
   }
+}
+
+Future<void> cleanOldLocalBackups() async {
+  final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+  try {
+    final downloadDir = Directory('/storage/emulated/0/Download');
+    if (await downloadDir.exists()) {
+      final files = downloadDir.listSync().whereType<File>()
+          .where((f) => f.path.contains('backup_') && (f.path.endsWith('.db') || f.path.endsWith('.sha256')));
+      for (final f in files) {
+        try {
+          if (f.lastModifiedSync().isBefore(sevenDaysAgo)) await f.delete();
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
 }
 
 class DriveBackupScreen extends StatefulWidget {
@@ -102,6 +120,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       _listError = '$e';
       await ErrorReporter.sendError(message: 'Drive一覧取得失敗: $e', screenId: '/drivebackup');
     }
+    await cleanOldLocalBackups();
     if (mounted) setState(() => _loading = false);
   }
 
@@ -122,18 +141,14 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       final backupPath = '${dir.path}/backup_${baseName}_$ts.db';
       await File(dbPath).copy(backupPath);
       debugPrint('[DriveBackup] local backup created: $backupPath');
-      final ok = await _driveService.uploadBackup(backupPath, companyName: baseName);
-      debugPrint('[DriveBackup] upload result: $ok');
+      await _driveService.uploadBackup(backupPath, companyName: baseName);
+      debugPrint('[DriveBackup] upload done');
       try { await File(backupPath).delete(); } catch (_) {}
+      await _driveService.cleanOldBackups(keep: 5);
       if (mounted) {
         setState(() => _uploading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ok ? 'アップロード完了' : 'アップロード失敗')),
-        );
-        if (ok) {
-          await _driveService.cleanOldBackups(keep: 5);
-          await _loadFiles();
-        }
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('完了')));
+        await _loadFiles();
       }
     } catch (e, st) {
       debugPrint('[DriveBackup] upload error: $e\n$st');
@@ -247,6 +262,12 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if (_files.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text('全${_files.length}件・最新5件を保持',
+                            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                      ),
                     Text('バックアップ一覧', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
                     const SizedBox(height: 8),
                     if (_listError != null)
