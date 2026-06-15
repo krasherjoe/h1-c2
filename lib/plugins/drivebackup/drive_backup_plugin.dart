@@ -49,11 +49,15 @@ class DriveBackupPlugin extends H1Plugin {
     GoogleAuthService.instance.init();
     Future.delayed(const Duration(seconds: 10), () async {
       try {
-        final dbPath = await DatabaseHelper().getDatabasePath();
-        final name = dbPath.split('/').last.replaceAll('.db', '');
-        final local = LocalBackupService();
-        final localPath = await local.createAutoBackup(dbPath);
-        if (localPath != null) await DriveBackupService().uploadBackup(localPath);
+        final db = await DatabaseHelper().database;
+        final dbPath = db.path;
+        final dir = await getApplicationDocumentsDirectory();
+        final ts = DateTime.now().millisecondsSinceEpoch;
+        final base = dbPath.split('/').last.replaceAll('.db', '');
+        final tmpPath = '${dir.path}/backup_${base}_$ts.db';
+        await File(dbPath).copy(tmpPath);
+        await DriveBackupService().uploadBackup(tmpPath);
+        try { await File(tmpPath).delete(); } catch (_) {}
       } catch (_) {}
     });
   }
