@@ -12,6 +12,7 @@ class GmailSender {
 
   static Future<bool> sendPdf({
     required String to,
+    String? bcc,
     required String subject,
     required String body,
     required Uint8List pdfBytes,
@@ -27,10 +28,13 @@ class GmailSender {
       final api = gmail.GmailApi(client);
       
       final boundary = 'boundary${DateTime.now().millisecondsSinceEpoch}';
-      final header = 'Content-Type: multipart/mixed; boundary=$boundary\n'
+      String header = 'Content-Type: multipart/mixed; boundary=$boundary\n'
           'MIME-Version: 1.0\n'
-          'To: $to\n'
-          'Subject: $subject\n\n'
+          'To: $to\n';
+      if (bcc != null && bcc.isNotEmpty) {
+        header += 'Bcc: $bcc\n';
+      }
+      header += 'Subject: $subject\n\n'
           '--$boundary\n'
           'Content-Type: text/plain; charset=UTF-8\n\n'
           '$body\n\n'

@@ -213,6 +213,19 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                                 _issued = true;
                                 _stablePdfBuilder = (format) => _buildPdfBytes(format);
                               });
+                              try {
+                                final email = await GoogleAuthService.instance.getEmail();
+                                if (email != null && email.isNotEmpty) {
+                                  final bytes = await _buildPdfBytes();
+                                  await GmailSender.sendPdf(
+                                    to: email,
+                                    subject: '${widget.document.documentType.label} ${widget.document.documentNumber}（控え）',
+                                    body: '正式発行された伝票の控えです。',
+                                    pdfBytes: bytes,
+                                    pdfFilename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+                                  );
+                                }
+                              } catch (_) {}
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('正式発行が完了しました')),
