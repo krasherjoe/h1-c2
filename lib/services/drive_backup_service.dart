@@ -40,7 +40,11 @@ class DriveBackupService {
       final file = File(filePath);
       if (!await file.exists()) return false;
       final bytes = await file.readAsBytes();
-      final name = p.basename(filePath);
+      final sizeLabel = bytes.length >= 1024 * 1024
+          ? '${(bytes.length / (1024 * 1024)).toStringAsFixed(1)}MB'
+          : '${(bytes.length / 1024).toStringAsFixed(0)}KB';
+      final base = p.basenameWithoutExtension(filePath);
+      final name = '${base}_$sizeLabel.db';
 
       await api.files.create(
         drive.File(name: name, parents: [folderId]),
