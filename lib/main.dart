@@ -27,6 +27,7 @@ import 'plugins/analytics/analytics_plugin.dart';
 import 'plugins/accounting/accounting_plugin.dart';
 import 'plugins/accounting2/accounting2_plugin.dart';
 import 'plugins/drivebackup/drive_backup_plugin.dart';
+import 'plugins/sync/sync_plugin.dart';
 import 'plugins/quick_actions/quick_actions_plugin.dart';
 import 'plugins/company/company_plugin.dart';
 import 'plugins/explorer/explorer_plugin.dart';
@@ -308,6 +309,7 @@ void main() async {
     ConversionPlugin(), AuditPlugin(), DebugPlugin(),
     DriveBackupPlugin(), ProjectPlugin(), MemorandumPlugin(),
     ArPlugin(), DailyPlugin(), PriceListPlugin(), SuppliersPlugin(),
+    SyncPlugin(),
   ];
   for (final plugin in plugins) {
     try {
