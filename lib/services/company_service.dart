@@ -15,22 +15,31 @@ class CompanyService {
   static const _defaultFileName = 'default_company.txt';
 
   static Future<String> _getBasePath() async {
-    if (Platform.isAndroid) {
-      final path = '/storage/emulated/0/Documents/$_dirName';
-      try {
-        final dir = Directory(path);
-        if (!await dir.exists()) await dir.create(recursive: true);
-        final probe = File('$path/.perm_probe');
-        await probe.writeAsString('');
-        await probe.delete();
-        await _migrateFromOldDir(path);
-        return path;
-      } catch (_) {
-        debugPrint('[CompanyService] 外部ストレージアクセス不可、app-privateにフォールバック');
-      }
-    }
+    // Scoped Storage対応: 常にapp-private領域を使用
     final appDir = await getApplicationDocumentsDirectory();
     final path = p.join(appDir.path, _dirName);
+    try {
+      await Directory(path).create(recursive: true);
+      // 旧Documentsパスから移行（Scoped Storage対策）
+      if (Platform.isAndroid) {
+        final oldDocsPath = '/storage/emulated/0/Documents/$_dirName';
+        final oldDir = Directory(oldDocsPath);
+        if (await oldDir.exists()) {
+          try {
+            final files = oldDir.listSync().whereType<File>().where((f) => f.path.endsWith('.db'));
+            for (final f in files) {
+              final dest = File(p.join(path, p.basename(f.path)));
+              if (!await dest.exists()) {
+                await f.copy(dest.path);
+                debugPrint('[CompanyService] Documents→app-private移行: ${f.path} → $dest');
+              }
+            }
+          } catch (e) {
+            debugPrint('[CompanyService] Documents移行失敗: $e');
+          }
+        }
+      }
+    } catch (_) {}
     await _migrateFromOldDir(path);
     return path;
   }
