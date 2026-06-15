@@ -103,7 +103,26 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       final service = LocalBackupService();
       final localPath = await service.createAutoBackup(dbPath);
       if (localPath == null) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ローカルバックアップ作成失敗（本日分は既存）')));
+        // 本日分のバックアップが既存 → 最新ファイルを探してアップロード
+        final backupDir = Directory('/storage/emulated/0/Download');
+        if (await backupDir.exists()) {
+          final existing = backupDir.listSync().whereType<File>()
+              .where((f) => f.path.endsWith('.db') && !f.path.endsWith('.sha256'))
+              .toList()
+            ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+          if (existing.isNotEmpty) {
+            debugPrint('[DriveBackup] using existing backup: ${existing.first.path}');
+            final ok = await _driveService.uploadBackup(existing.first.path);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(ok ? 'アップロード完了' : 'アップロード失敗')),
+              );
+              if (ok) await _loadFiles();
+            }
+            return;
+          }
+        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('バックアップファイルが見つかりません')));
         return;
       }
       debugPrint('[DriveBackup] local backup created: $localPath');
