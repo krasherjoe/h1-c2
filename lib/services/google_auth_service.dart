@@ -21,7 +21,7 @@ class GoogleAuthService {
   void init() {
     if (_initialized) return;
     _googleSignIn = GoogleSignIn(
-      clientId: '709040059901-ql43o7nmtgb9ngah9eo4a08b7ujfbvnv.apps.googleusercontent.com',
+      clientId: '468424259506-09fl38dtcem537g01dqb45cjk3tjjhqp.apps.googleusercontent.com',
       scopes: [
         'email',
         'https://www.googleapis.com/auth/gmail.modify',
