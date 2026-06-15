@@ -73,6 +73,8 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
   final _driveService = DriveBackupService();
   List<drive.File> _files = [];
   bool _loading = true;
+  bool _uploading = false;
+  bool _restoring = false;
   bool _signedIn = false;
   String? _email;
 
@@ -102,6 +104,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
   }
 
   Future<void> _uploadNow() async {
+    setState(() => _uploading = true);
     try {
       final db = await DatabaseHelper().database;
       final dbPath = db.path;
@@ -116,6 +119,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       debugPrint('[DriveBackup] upload result: $ok');
       try { await File(backupPath).delete(); } catch (_) {}
       if (mounted) {
+        setState(() => _uploading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(ok ? 'アップロード完了' : 'アップロード失敗')),
         );
@@ -124,6 +128,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
     } catch (e, st) {
       debugPrint('[DriveBackup] upload error: $e\n$st');
       if (mounted) {
+        setState(() => _uploading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('エラー: $e')));
       }
     }
@@ -135,7 +140,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('リストア確認'),
-        content: Text('「${f.name}」(${_size(f.size)}) から復元しますか？'),
+        content: Text('「${f.name}」(${_size(f.size)}) から復元しますか？\nアプリが再起動します。'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('復元')),
@@ -143,16 +148,28 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
       ),
     );
     if (confirmed != true) return;
-    final dbPath = await DatabaseHelper().getDatabasePath();
-    final tmpPath = '${dbPath}.restore';
-    final ok = await _driveService.downloadBackup(f.id!, tmpPath);
-    if (ok) {
-      await DatabaseHelper.closeAndReset();
-      await File(tmpPath).copy(dbPath);
+    setState(() => _restoring = true);
+    try {
+      final dbPath = await DatabaseHelper().getDatabasePath();
+      final tmpPath = '${dbPath}.restore';
+      final ok = await _driveService.downloadBackup(f.id!, tmpPath);
+      if (ok) {
+        await DatabaseHelper.closeAndReset();
+        await File(tmpPath).copy(dbPath);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('復元完了しました（アプリを再起動してください）')));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('復元失敗: ダウンロードエラー')));
+        }
+      }
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('復元完了しました')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('復元エラー: $e')));
       }
     }
+    if (mounted) setState(() => _restoring = false);
   }
 
   @override
@@ -204,9 +221,11 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        icon: const Icon(Icons.cloud_upload),
-                        label: const Text('今すぐバックアップ'),
-                        onPressed: _uploadNow,
+                        icon: _uploading
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.cloud_upload),
+                        label: Text(_uploading ? 'バックアップ中...' : '今すぐバックアップ'),
+                        onPressed: _uploading ? null : _uploadNow,
                       ),
                     ),
                     const SizedBox(height: 16),
