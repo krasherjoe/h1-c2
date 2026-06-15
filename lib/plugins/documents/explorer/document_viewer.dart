@@ -413,7 +413,10 @@ class _DocumentViewerState extends State<DocumentViewer> {
               ),
             ),
           );
-          _load();
+          await _load();
+          if (_document.isLocked && mounted) {
+            Navigator.pop(context, true);
+          }
         },
       ),
     );

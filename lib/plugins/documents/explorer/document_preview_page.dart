@@ -246,11 +246,6 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                                   );
                                 }
                               } catch (_) {}
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('正式発行が完了しました')),
-                                );
-                              }
                             }
                           }
                         : null,
@@ -280,7 +275,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                       final recipient = await showDialog<String>(
                         context: context,
                         builder: (ctx) {
-                          final ctrl = TextEditingController();
+                          final ctrl = TextEditingController(text: widget.customerEmail ?? '');
                           return AlertDialog(
                             title: const Text('送信先メールアドレス'),
                             content: TextField(
