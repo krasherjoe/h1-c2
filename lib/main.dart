@@ -260,6 +260,7 @@ void main() async {
     );
     return true;
   };
+  try { await ErrorReporter.sendLog(message: '[Startup] main() begin - app starting'); } catch (_) {}
 
   await MmCommandService.instance.loadConfig();
   await LogDispatcher.loadConfig();

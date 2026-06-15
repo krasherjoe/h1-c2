@@ -12,6 +12,8 @@ class GoogleAuthService {
   GoogleSignIn? _googleSignIn;
   String? _cachedEmail;
   bool _initialized = false;
+  String? _lastClientId;
+  List<String>? _lastScopes;
 
   static const _keyEmail = 'google_email';
   static const _keyAccessToken = 'google_access_token';
@@ -20,15 +22,22 @@ class GoogleAuthService {
 
   void init() {
     if (_initialized) return;
-    _googleSignIn = GoogleSignIn(
-      clientId: '468424259506-09fl38dtcem537g01dqb45cjk3tjjhqp.apps.googleusercontent.com',
-      scopes: [
-        'email',
-        'https://www.googleapis.com/auth/gmail.modify',
-        'https://www.googleapis.com/auth/drive.file',
-      ],
-    );
-    _initialized = true;
+    _lastClientId = '468424259506-09fl38dtcem537g01dqb45cjk3tjjhqp.apps.googleusercontent.com';
+    _lastScopes = [
+      'email',
+      'https://www.googleapis.com/auth/gmail.modify',
+      'https://www.googleapis.com/auth/drive.file',
+    ];
+    try {
+      _googleSignIn = GoogleSignIn(
+        clientId: _lastClientId,
+        scopes: _lastScopes!,
+      );
+      _initialized = true;
+      _log('✅ GoogleSignIn initialized: clientId=$_lastClientId scopes=${_lastScopes?.join(",")}');
+    } catch (e, st) {
+      _log('❌ GoogleSignIn init FAILED: $e\n$st');
+    }
   }
 
   Future<bool> isSignedIn() async {
@@ -43,19 +52,32 @@ class GoogleAuthService {
   }
 
   Future<bool> signIn() async {
+    _log('▶️ signIn() called');
     init();
+    if (_googleSignIn == null) {
+      _log('❌ _googleSignIn is null after init');
+      return false;
+    }
     try {
+      _log('⏳ Calling _googleSignIn.signIn()...');
       final user = await _googleSignIn!.signIn();
       if (user == null) {
-        debugPrint('[GoogleAuth] signIn returned null (user cancelled)');
+        _log('⚠️ signIn returned null (user cancelled or no account)');
         return false;
       }
+      _log('✅ signIn got user: email=${user.email} displayName=${user.displayName} id=${user.id}');
+
+      _log('⏳ Calling user.authentication...');
       final auth = await user.authentication;
       if (auth.accessToken == null) {
-        debugPrint('[GoogleAuth] no access token');
+        _log('❌ auth.accessToken is null');
+        _log('   idToken=${auth.idToken?.substring(0, 20)}...');
         return false;
       }
-      
+      _log('✅ Got accessToken: ${auth.accessToken!.substring(0, 20)}...');
+      _log('   idToken=${auth.idToken?.substring(0, 20)}...');
+      _log('   serverAuthCode=${auth.serverAuthCode}');
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyEmail, user.email);
       await prefs.setString(_keyAccessToken, auth.accessToken!);
@@ -63,10 +85,11 @@ class GoogleAuthService {
       final expiry = DateTime.now().add(const Duration(hours: 1));
       await prefs.setString(_keyTokenExpiry, expiry.toIso8601String());
       _cachedEmail = user.email;
-      debugPrint('[GoogleAuth] signIn success: ${user.email}');
+      _log('✅ signIn success, saved to SP: email=${user.email}');
       return true;
     } catch (e, st) {
-      debugPrint('[GoogleAuth] signIn error: $e');
+      _log('❌ signIn EXCEPTION: $e');
+      _log('STACK: $st');
       ErrorReporter.sendError(message: 'Google Sign-In失敗: $e', stackTrace: st);
       return false;
     }
@@ -82,11 +105,17 @@ class GoogleAuthService {
       await prefs.remove(_keyRefreshToken);
       await prefs.remove(_keyTokenExpiry);
       _cachedEmail = null;
+      _log('✅ signOut success');
       return true;
     } catch (e) {
-      debugPrint('[GoogleAuth] signOut error: $e');
+      _log('❌ signOut error: $e');
       return false;
     }
+  }
+
+  void _log(String msg) {
+    debugPrint('[GoogleAuth] $msg');
+    ErrorReporter.sendLog(message: '[GoogleAuth] $msg');
   }
 
   Future<String?> getAccessToken() async {
