@@ -263,17 +263,21 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Widget _buildTypeBadge(ColorScheme cs) {
     final color = documentTypeColor(_type, cs, cs.brightness == Brightness.dark);
+    final hsl = HSLColor.fromColor(color);
+    final bgColor = hsl.withLightness(0.88).withSaturation(0.3).toColor();
+    final isDraft = widget.document?.isDraft ?? true;
     return Row(children: [
       Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
         child: Text(_type.label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color))),
       const SizedBox(width: 8),
       Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: widget.document?.isDraft ?? true ? color.withValues(alpha: 0.15) : color,
+        decoration: BoxDecoration(
+          color: isDraft ? hsl.withLightness(0.78).withSaturation(0.25).toColor() : color,
           borderRadius: BorderRadius.circular(4)),
-        child: Text((widget.document?.isDraft ?? true) ? '下書き' : '確定',
+        child: Text(isDraft ? '下書き' : '確定',
           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-            color: (widget.document?.isDraft ?? true) ? color : (color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white)))),
+            color: isDraft ? color : (color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white)))),
       const Spacer(),
       if (widget.document?.documentNumber != null && widget.document!.documentNumber.isNotEmpty)
         Text(widget.document!.documentNumber,

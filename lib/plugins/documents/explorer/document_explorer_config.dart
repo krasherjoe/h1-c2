@@ -161,15 +161,19 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
 );
   }
 
-  Widget _statusBadge(String text, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(4),
-    ),
-    child: Text(text,
-        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
-  );
+  Widget _statusBadge(String text, Color color) {
+    final hsl = HSLColor.fromColor(color);
+    final bg = hsl.withLightness(0.85).withSaturation(0.3).toColor();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(text,
+          style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
+    );
+  }
 
   @override
   Future<bool> canDelete(DocumentModel item) async => item.isDraft;
