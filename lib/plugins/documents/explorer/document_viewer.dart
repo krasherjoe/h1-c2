@@ -65,10 +65,36 @@ class _DocumentViewerState extends State<DocumentViewer> {
             _buildPdfButton(context),
             const SizedBox(height: 8),
             _buildReceiptButton(context),
+            const SizedBox(height: 16),
+            if (_document.subject != null && _document.subject!.isNotEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📝 メモ',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                          color: cs.onSurfaceVariant)),
+                      const SizedBox(height: 4),
+                      Text(_document.subject!,
+                        style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            if (_editLogs.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: _buildEditLogSection(cs),
+                ),
+              ),
+            ],
           ],
         ),
       ),
-      _buildEditLogSection(cs),
     ]);
   }
 
