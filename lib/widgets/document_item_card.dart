@@ -90,26 +90,50 @@ class DocumentItemCard extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                _buildField(
-                  child: Text(formatMoney(unitPrice),
-                    style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600,
-                      decoration: onTapPrice != null ? TextDecoration.underline : null)),
-                  onTap: onTapPrice,
+                Expanded(
+                  flex: 2,
+                  child: _buildField(
+                    child: Text(formatMoney(unitPrice),
+                      textAlign: TextAlign.left,
+                      style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600,
+                        decoration: onTapPrice != null ? TextDecoration.underline : null)),
+                    onTap: onTapPrice,
+                  ),
                 ),
-                const SizedBox(width: 4),
                 Text('× ',
                   style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 _buildField(
-                  child: Text(formatQty(quantity),
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant,
-                      decoration: onTapQuantity != null ? TextDecoration.underline : null,
-                      fontWeight: onTapQuantity != null ? FontWeight.w600 : null)),
+                  child: SizedBox(
+                    width: 48,
+                    child: Text(formatQty(quantity),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant,
+                        decoration: onTapQuantity != null ? TextDecoration.underline : null,
+                        fontWeight: onTapQuantity != null ? FontWeight.w600 : null)),
+                  ),
                   onTap: onTapQuantity,
                 ),
-                Text(' = ${formatMoney(subtotal)}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                Expanded(
+                  flex: 2,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: hasDiscount
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('${formatMoney(baseSubtotal)}',
+                                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant,
+                                  decoration: TextDecoration.lineThrough)),
+                              Text(onDelete != null ? '値引後: ${formatMoney(subtotal)}' : formatMoney(subtotal),
+                                style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                            ],
+                          )
+                        : Text('= ${formatMoney(subtotal)}',
+                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ),
+                ),
                 if (onDelete != null) ...[
-                  const Spacer(),
+                  const SizedBox(width: 4),
                   if (onTapDiscount != null)
                     IconButton(
                       icon: Icon(Icons.discount, size: 18,
