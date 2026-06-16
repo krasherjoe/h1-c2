@@ -162,13 +162,12 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   }
 
   Widget _statusBadge(String text, Color color) {
-    final hsl = HSLColor.fromColor(color);
-    final bg = hsl.withLightness(0.85).withSaturation(0.3).toColor();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        color: bg,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color, width: 1),
       ),
       child: Text(text,
           style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),

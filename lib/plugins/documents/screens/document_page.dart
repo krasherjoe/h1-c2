@@ -263,21 +263,30 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Widget _buildTypeBadge(ColorScheme cs) {
     final color = documentTypeColor(_type, cs, cs.brightness == Brightness.dark);
-    final hsl = HSLColor.fromColor(color);
-    final bgColor = hsl.withLightness(0.88).withSaturation(0.3).toColor();
     final isDraft = widget.document?.isDraft ?? true;
+    final surface = cs.surface;
     return Row(children: [
       Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color, width: 1.2)),
         child: Text(_type.label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color))),
       const SizedBox(width: 8),
-      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: isDraft ? hsl.withLightness(0.78).withSaturation(0.25).toColor() : color,
-          borderRadius: BorderRadius.circular(4)),
-        child: Text(isDraft ? '下書き' : '確定',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-            color: isDraft ? color : (color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white)))),
+      if (isDraft)
+        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: color, width: 1)),
+          child: Text('下書き', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color)))
+      else
+        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4)),
+          child: Text('確定', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+            color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white))),
       const Spacer(),
       if (widget.document?.documentNumber != null && widget.document!.documentNumber.isNotEmpty)
         Text(widget.document!.documentNumber,
