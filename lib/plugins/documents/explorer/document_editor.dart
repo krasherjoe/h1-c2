@@ -762,10 +762,38 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildSubjectField(ColorScheme cs) {
-    return H1TextField(
-      controller: _subjectCtl,
-      decoration: const InputDecoration(
-        labelText: '件名',
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+            ),
+            child: Text('件名（1行目をタイトル、2行目以降をメモとして使用）',
+              style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant.withValues(alpha: 0.45))),
+          ),
+          TextField(
+            controller: _subjectCtl,
+            maxLines: null,
+            minLines: 3,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              hintText: '1行目: タイトル（必須）\n2行目以降: メモ・備考（任意）',
+              hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.25)),
+            ),
+            style: TextStyle(fontSize: 14, color: cs.onSurface),
+          ),
+        ],
       ),
     );
   }
