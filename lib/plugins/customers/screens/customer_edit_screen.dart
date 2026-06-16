@@ -11,8 +11,9 @@ import '../../../services/sync_service.dart';
 
 class CustomerEditScreen extends StatefulWidget {
   final Customer? customer;
+  final bool showAppBar;
 
-  const CustomerEditScreen({super.key, this.customer});
+  const CustomerEditScreen({super.key, this.customer, this.showAppBar = true});
 
   @override
   State<CustomerEditScreen> createState() => _CustomerEditScreenState();
@@ -173,22 +174,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(),
-        title: ScreenAppBarTitle(
-          screenId: _isEdit ? 'C2' : 'C3',
-          title: _isEdit ? '顧客を編集' : '顧客を新規登録',
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary),
-            tooltip: '保存',
-            onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
-          ),
-        ],
-      ),
-      body: Form(
+    final form = Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -604,7 +590,24 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             const SizedBox(height: 40),
           ],
         ),
+    );
+    if (!widget.showAppBar) return form;
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: ScreenAppBarTitle(
+          screenId: _isEdit ? 'C2' : 'C3',
+          title: _isEdit ? '顧客を編集' : '顧客を新規登録',
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary),
+            tooltip: '保存',
+            onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
+          ),
+        ],
       ),
+      body: form,
     );
   }
 }
