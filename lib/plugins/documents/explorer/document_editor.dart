@@ -13,6 +13,8 @@ import '../../../services/error_reporter.dart';
 import '../../customers/screens/customer_edit_screen.dart';
 import '../../products/widgets/variant_picker_sheet.dart';
 import '../../project/screens/project_list_screen.dart';
+import '../../../widgets/document_edit_log_section.dart';
+import '../../../widgets/document_summary_section.dart';
 import 'document_preview_page.dart';
 
 class DocumentEditor extends StatefulWidget {
@@ -1139,92 +1141,21 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildSummarySection(ColorScheme cs) {
-    final subtotal = _subtotal;
-    final discount = _totalDiscount;
-    final taxable = _taxableAmount;
-    final tax = _tax;
-    final total = _grandTotal;
-    final hasDiscount = discount > 0;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.primaryContainer.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _summaryRow('小計', subtotal, cs, labelColor: cs.onSurfaceVariant),
-          if (hasDiscount) ...[
-            const Divider(height: 20),
-            _summaryRow('値引き', -discount, cs, labelColor: cs.error),
-          ],
-          if (taxable != subtotal && hasDiscount) ...[
-            const Divider(height: 20),
-            _summaryRow('税抜合計', taxable, cs, labelColor: cs.onSurfaceVariant),
-          ],
-          const Divider(height: 20),
-          _summaryRow('消費税 (10%)', tax, cs, labelColor: cs.onSurfaceVariant),
-          const Divider(height: 20),
-          _summaryRow('合計 (税込)', total, cs, totalStyle: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryRow(String label, int amount, ColorScheme cs, {Color? labelColor, bool totalStyle = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(
-          fontSize: totalStyle ? 15 : 13,
-          fontWeight: totalStyle ? FontWeight.bold : FontWeight.normal,
-          color: labelColor ?? cs.onSurface,
-        )),
-        Text('￥${_formatMoney(amount)}', style: TextStyle(
-          fontSize: totalStyle ? 18 : 14,
-          fontWeight: totalStyle ? FontWeight.bold : FontWeight.normal,
-          color: totalStyle ? cs.primary : cs.onSurface,
-        )),
-      ],
+    return DocumentSummarySection(
+      subtotal: _subtotal,
+      discountAmount: _totalDiscount,
+      taxableAmount: _taxableAmount,
+      tax: _tax,
+      total: _grandTotal,
+      taxRate: 0.10,
+      formatMoney: (v) => '¥${_formatMoney(v)}',
+      totalLabelIsTaxIncluded: true,
+      showTaxExcludedIfDifferent: true,
     );
   }
 
   Widget _buildEditLogSection(ColorScheme cs) {
-    if (_editLogs.isEmpty) return const SizedBox.shrink();
-    return Container(
-      color: cs.surface,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('📝 編集履歴(2週間保持しています)',
-            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 4),
-          ...(_editLogs.take(5)).map((log) => Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Text('${log.createdAt.month}/${log.createdAt.day} ${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
-                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                const SizedBox(width: 8),
-                Text(log.action,
-                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-              ]),
-              if (log.details.isNotEmpty)
-                Text(log.details,
-                  style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
-            ]),
-          )),
-        ],
-      ),
-    );
+    return DocumentEditLogSection(editLogs: _editLogs, colorScheme: cs);
   }
 
   Widget _buildBottomBar() {

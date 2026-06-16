@@ -7,6 +7,8 @@ import '../../../services/customer_repository.dart';
 import '../../../services/error_reporter.dart';
 import '../../../models/document_type_colors.dart';
 import '../../../plugins/printer/screens/printer_settings_screen.dart';
+import '../../../widgets/document_edit_log_section.dart';
+import '../../../widgets/document_summary_section.dart';
 import 'document_preview_page.dart';
 
 class DocumentViewer extends StatefulWidget {
@@ -239,24 +241,15 @@ class _DocumentViewerState extends State<DocumentViewer> {
   }
 
   Widget _buildTotalSection(ColorScheme cs) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cs.primaryContainer.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          if (_document.discountAmount > 0) ...[
-            _tr('小計', _document.subtotal, cs, labelColor: cs.onSurfaceVariant),
-            _tr('値引き', -_document.discountAmount, cs, labelColor: cs.error),
-          ],
-          _tr('税抜合計', _document.taxableAmount, cs, labelColor: cs.onSurfaceVariant),
-          _tr('消費税 (${(_document.taxRate * 100).round()}%)', _document.tax, cs, labelColor: cs.onSurfaceVariant),
-          const Divider(height: 16),
-          _tr('合計', _document.total, cs, totalStyle: true),
-        ],
-      ),
+    return DocumentSummarySection(
+      subtotal: _document.subtotal,
+      discountAmount: _document.discountAmount,
+      taxableAmount: _document.taxableAmount,
+      tax: _document.tax,
+      total: _document.total,
+      taxRate: _document.taxRate,
+      formatMoney: _formatMoney,
+      showDiscountOnly: true,
     );
   }
 
@@ -474,41 +467,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
   }
 
   Widget _buildEditLogSection(ColorScheme cs) {
-    if (_editLogs.isEmpty) return const SizedBox.shrink();
-    return Container(
-      color: cs.surface,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('📝 編集履歴(2週間保持しています)',
-            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 4),
-          ...(_editLogs.take(5)).map((log) => Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Text('${log.createdAt.month}/${log.createdAt.day} ${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
-                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                const SizedBox(width: 8),
-                Text(log.action,
-                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-              ]),
-              if (log.details.isNotEmpty)
-                Text(log.details,
-                  style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
-            ]),
-          )),
-        ],
-      ),
-    );
+    return DocumentEditLogSection(editLogs: _editLogs, colorScheme: cs);
   }
 
   String _formatMoney(int amount) =>
