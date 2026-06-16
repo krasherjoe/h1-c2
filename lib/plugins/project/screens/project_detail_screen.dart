@@ -3,7 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../../../services/project_repository.dart';
 import '../../../models/project_model.dart';
 import '../../documents/models/document_model.dart';
-import '../../documents/explorer/document_editor.dart';
+import '../../documents/screens/document_page.dart';
 import '../../documents/services/document_repository.dart';
 import '../../memorandum/models/memorandum_model.dart';
 import '../../memorandum/services/memorandum_repository.dart';
@@ -94,7 +94,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => DocumentEditor(document: doc),
+        builder: (_) => DocumentPage(document: doc, isEditing: true),
       ),
     );
     if (result == true) {
@@ -403,7 +403,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => DocumentEditor(document: docModel),
+                    builder: (_) => DocumentPage(document: docModel, isEditing: true),
                   ),
                 );
               },

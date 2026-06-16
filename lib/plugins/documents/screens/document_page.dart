@@ -156,7 +156,9 @@ class _DocumentPageState extends State<DocumentPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context, true),
         ),
-        title: Text(_type.label),
+        title: Text(widget.isEditing
+          ? (widget.document != null ? 'DE:書類編集' : 'DE:新規書類')
+          : 'DV:伝票閲覧'),
         actions: widget.isEditing ? [
           if (_undoStack.isNotEmpty)
             IconButton(icon: const Icon(Icons.undo), onPressed: () {
@@ -198,7 +200,7 @@ class _DocumentPageState extends State<DocumentPage> {
           const SizedBox(height: 12),
           _buildDateRow(cs),
           const SizedBox(height: 12),
-          if (widget.isEditing) _buildSubjectEditor(cs) else _buildSubjectDisplay(cs),
+          if (widget.isEditing) _buildSubjectField(cs) else _buildSubjectDisplay(cs),
           const SizedBox(height: 12),
           _buildCustomerRow(cs),
           if (widget.isEditing) ...[
@@ -235,16 +237,20 @@ class _DocumentPageState extends State<DocumentPage> {
                 builder: (_) => PrinterSettingsScreen(document: _buildDoc()),
               )),
             )),
-            if (_memoCtl.text.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('📝 メモ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
-                  const SizedBox(height: 4),
-                  Text(_memoCtl.text, style: const TextStyle(fontSize: 12)),
-                ],
-              ))),
-            ],
+          ],
+          if (_memoCtl.text.isNotEmpty || widget.isEditing) ...[
+            const SizedBox(height: 16),
+            Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('📝 メモ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
+                const SizedBox(height: 4),
+                widget.isEditing
+                  ? TextField(controller: _memoCtl, maxLines: null, minLines: 2,
+                      decoration: const InputDecoration(border: InputBorder.none, isDense: true, hintText: '任意のメモ（自由記述）'),
+                      style: TextStyle(fontSize: 12, color: cs.onSurface))
+                  : Text(_memoCtl.text, style: const TextStyle(fontSize: 12)),
+              ],
+            ))),
           ],
           const SizedBox(height: 12),
           DocumentEditLogSection(editLogs: _editLogs, colorScheme: cs),
@@ -310,26 +316,15 @@ class _DocumentPageState extends State<DocumentPage> {
     ]);
   }
 
-  Widget _buildSubjectEditor(ColorScheme cs) {
-    return Column(children: [
-      Container(
-        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-        child: TextField(controller: _titleCtl, maxLines: 1,
-          decoration: const InputDecoration(border: InputBorder.none, isDense: true, labelText: '件名', hintText: 'タイトル'),
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
-      ),
-      const SizedBox(height: 8),
-      Container(
-        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-        child: TextField(controller: _memoCtl, maxLines: null, minLines: 2,
-          decoration: const InputDecoration(border: InputBorder.none, isDense: true, labelText: 'メモ', hintText: '自由記述'),
-          style: TextStyle(fontSize: 14, color: cs.onSurface)),
-      ),
-    ]);
+  Widget _buildSubjectField(ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: TextField(controller: _titleCtl, maxLines: 1,
+        decoration: const InputDecoration(border: InputBorder.none, isDense: true, labelText: '件名', hintText: 'タイトル'),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
+    );
   }
 
   Widget _buildCustomerRow(ColorScheme cs) {
