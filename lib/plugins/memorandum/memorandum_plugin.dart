@@ -7,6 +7,7 @@ import 'models/memorandum_model.dart';
 import 'screens/memorandum_list_screen.dart';
 import 'screens/memorandum_input_screen.dart';
 import 'screens/memorandum_preview_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class MemorandumPlugin extends H1Plugin {
   @override
@@ -33,7 +34,7 @@ class MemorandumPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'MEMO',
+      id: S.memo,
       title: '覚書管理',
       route: '/memorandum',
       builder: (_) => const MemorandumListScreen(),

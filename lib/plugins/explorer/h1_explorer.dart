@@ -10,6 +10,7 @@ import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
 import '../../services/mm_command_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../constants/screen_ids.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
   final H1ExplorerConfig<T> config;
@@ -437,7 +438,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           ),
           const SizedBox(width: 8),
           Text(
-            'DB: $sizeStr',
+            '\${S.db}: $sizeStr',
             style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
           ),
         ],

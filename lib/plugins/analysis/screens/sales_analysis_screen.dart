@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../services/database_helper.dart';
 import '../models/analysis_models.dart';
 import '../services/analysis_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class SalesAnalysisScreen extends StatefulWidget {
   const SalesAnalysisScreen({super.key});
@@ -71,7 +72,7 @@ class _SalesAnalysisScreenState extends State<SalesAnalysisScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SA:売上分析'),
+        title: const Text('\${S.sa}:売上分析'),
         actions: [
           IconButton(
             icon: const Icon(Icons.chevron_left),

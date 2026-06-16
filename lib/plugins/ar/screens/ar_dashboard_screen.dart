@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../services/database_helper.dart';
 import '../../../services/error_reporter.dart';
 import 'payment_processing_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 class _ArRow {
   final String id;
@@ -81,7 +82,7 @@ class _ArDashboardScreenState extends State<ArDashboardScreen> {
         _loading = false;
       });
     } catch (e, s) {
-      ErrorReporter.showError(context, message: 'AR: _load failed: $e', screenId: 'AR', stackTrace: s);
+      ErrorReporter.showError(context, message: 'AR: _load failed: $e', screenId: S.ar, stackTrace: s);
       if (!mounted) return;
       setState(() => _loading = false);
     }
@@ -92,7 +93,7 @@ class _ArDashboardScreenState extends State<ArDashboardScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AR:売掛金管理'),
+        title: const Text('\${S.ar}:売掛金管理'),
         actions: [
           TextButton.icon(
             onPressed: () async {

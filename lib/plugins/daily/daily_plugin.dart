@@ -5,6 +5,7 @@ import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/daily_report_screen.dart';
 import 'screens/time_tracking_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class DailyPlugin extends H1Plugin {
   @override
@@ -28,7 +29,7 @@ class DailyPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'DR',
+      id: S.dr,
       title: '日報',
       route: '/daily/reports',
       builder: (_) => const DailyReportScreen(),
@@ -37,7 +38,7 @@ class DailyPlugin extends H1Plugin {
       description: '3行日報の作成・管理',
     ),
     ScreenDefinition(
-      id: 'TI',
+      id: S.ti,
       title: '工数管理',
       route: '/daily/time',
       builder: (_) => const TimeTrackingScreen(),

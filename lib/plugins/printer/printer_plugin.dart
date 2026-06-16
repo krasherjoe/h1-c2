@@ -4,6 +4,7 @@ import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/printer_settings_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class PrinterPlugin extends H1Plugin {
   @override
@@ -20,7 +21,7 @@ class PrinterPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'PT',
+      id: S.pt,
       title: 'レシート印刷',
       route: '/printer',
       category: 'システム',

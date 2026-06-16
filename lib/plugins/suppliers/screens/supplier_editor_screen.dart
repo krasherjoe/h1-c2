@@ -3,6 +3,7 @@ import '../../../services/error_reporter.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../models/supplier.dart';
 import '../services/supplier_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class SupplierEditorScreen extends StatefulWidget {
   final Supplier? supplier;
@@ -106,7 +107,7 @@ class _SupplierEditorScreenState extends State<SupplierEditorScreen> {
     } catch (e, st) {
       ErrorReporter.sendError(
         message: '仕入先保存失敗: $e',
-        screenId: 'SE',
+        screenId: S.se,
         stackTrace: st,
       );
       if (!mounted) return;
@@ -121,7 +122,7 @@ class _SupplierEditorScreenState extends State<SupplierEditorScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('SE:${_isEdit ? '仕入先編集' : '新規仕入先'}'),
+        title: Text('\${S.se}:${_isEdit ? '仕入先編集' : '新規仕入先'}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),

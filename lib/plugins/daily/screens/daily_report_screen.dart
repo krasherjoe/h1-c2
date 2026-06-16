@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/daily_models.dart';
 import '../services/daily_report_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class DailyReportScreen extends StatefulWidget {
   const DailyReportScreen({super.key});
@@ -127,7 +128,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
         : _reports.where((r) => r.tagList.any((t) => t.contains(_tagFilter))).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('DR:日報')),
+      appBar: AppBar(title: const Text('\${S.dr}:日報')),
       body: Column(children: [
         _periodFilter(cs),
         if (_allTags.isNotEmpty) _tagBar(cs),

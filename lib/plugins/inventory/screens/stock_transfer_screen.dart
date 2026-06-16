@@ -7,6 +7,7 @@ import '../models/stock_transfer_models.dart';
 import '../services/warehouse_repository.dart';
 import '../services/warehouse_stock_repository.dart';
 import '../services/stock_transfer_service.dart';
+import '../../../constants/screen_ids.dart';
 
 class _TransferLine {
   _TransferLine({required this.product, required this.quantity, this.available});
@@ -200,7 +201,7 @@ class _StockTransferScreenState extends State<StockTransferScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('IM:在庫移動'),
+        title: const Text('\${S.im}:在庫移動'),
         actions: [
           IconButton(
             onPressed: _saving ? null : _saveTransfer,

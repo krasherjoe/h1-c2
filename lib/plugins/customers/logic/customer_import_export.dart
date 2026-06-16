@@ -8,13 +8,14 @@ import '../../../services/screen_id_logger.dart';
 import '../../../widgets/generic_csv_import_screen.dart';
 
 import '../screens/phonebook_selection_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 Future<void> importCsv(BuildContext context, VoidCallback onComplete) async {
   await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => GenericCsvImportScreen<Customer>(
-        screenId: 'C1',
+        screenId: S.c1,
         entityName: '顧客',
         columns: const [
           ImportColumn(label: '表示名', required: true, matchKeywords: ['表示名', '名前', 'name', '顧客名']),

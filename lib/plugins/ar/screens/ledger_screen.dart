@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../services/database_helper.dart';
+import '../../../constants/screen_ids.dart';
 
 class LedgerScreen extends StatefulWidget {
   const LedgerScreen({super.key});
@@ -187,7 +188,7 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LR:台帳'),
+        title: const Text('\${S.lr}:台帳'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

@@ -8,6 +8,7 @@ import '../../../services/sync_queue.dart';
 import '../../../widgets/screen_id_title.dart';
 import '../services/settings_repository.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,7 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: 'SET', title: '設定'),
+        title: const ScreenAppBarTitle(screenId: S.set, title: '設定'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),

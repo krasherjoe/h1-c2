@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/daily_models.dart';
 import '../services/time_log_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class TimeTrackingScreen extends StatefulWidget {
   const TimeTrackingScreen({super.key});
@@ -168,7 +169,7 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('TI:工数管理'),
+        title: const Text('\${S.ti}:工数管理'),
         actions: [
           TextButton.icon(
             onPressed: _timerRunning ? _toggleTimer : null,

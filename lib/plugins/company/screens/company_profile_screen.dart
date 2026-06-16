@@ -10,6 +10,7 @@ import '../../../widgets/h1_form_field.dart';
 import 'seal_contrast_dialog.dart';
 import 'seal_camera_screen.dart';
 import 'seal_offset_adjust_page.dart';
+import '../../../constants/screen_ids.dart';
 
 class CompanyProfileScreen extends StatefulWidget {
   const CompanyProfileScreen({super.key});
@@ -222,7 +223,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('CI:自社情報')),
+      appBar: AppBar(title: const Text('\${S.ci}:自社情報')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(

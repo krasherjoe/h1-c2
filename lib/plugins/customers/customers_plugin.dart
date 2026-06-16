@@ -6,6 +6,7 @@ import '../../../plugin_system/screen_definition.dart';
 import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/customer_explorer_config.dart';
 import '../../../services/debug_console.dart';
+import '../../constants/screen_ids.dart';
 
 class CustomersPlugin extends H1Plugin {
   @override
@@ -40,7 +41,7 @@ class CustomersPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'C1',
+      id: S.c1,
       title: '顧客マスター',
       route: '/customers',
       builder: (_) => H1Explorer(config: CustomerExplorerConfig()),

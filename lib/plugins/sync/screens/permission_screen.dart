@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../services/permission_service.dart';
 import '../../../services/database_helper.dart';
+import '../../../constants/screen_ids.dart';
 
 class PermissionScreen extends StatefulWidget {
   const PermissionScreen({super.key});
@@ -65,7 +66,7 @@ class _PermissionScreenState extends State<PermissionScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('PM:権限設定')),
+      appBar: AppBar(title: const Text('\${S.pm}:権限設定')),
       body: _loaded
           ? ListView(
               padding: const EdgeInsets.all(16),

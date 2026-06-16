@@ -13,6 +13,7 @@ import 'screens/stock_transfer_screen.dart';
 import 'screens/inventory_valuation_screen.dart';
 import 'screens/warehouse_list_screen.dart';
 import 'screens/stock_inquiry_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class InventoryPlugin extends H1Plugin {
   @override
@@ -31,61 +32,61 @@ class InventoryPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'INV', title: '在庫一覧', route: '/inventory',
+      id: S.inv, title: '在庫一覧', route: '/inventory',
       builder: (_) => const InventoryListScreen(),
       category: '在庫', icon: Icons.inventory,
       description: '商品別在庫一覧',
     ),
     ScreenDefinition(
-      id: 'WH', title: '倉庫一覧', route: '/inventory/warehouses',
+      id: S.wh, title: '倉庫一覧', route: '/inventory/warehouses',
       builder: (_) => const WarehouseListScreen(),
       category: '在庫', icon: Icons.warehouse,
       description: '倉庫マスターの管理',
     ),
     ScreenDefinition(
-      id: 'WHI', title: '入庫処理', route: '/inventory/inbound',
+      id: S.whi, title: '入庫処理', route: '/inventory/inbound',
       builder: (_) => const StockInboundScreen(),
       category: '在庫', icon: Icons.arrow_downward,
       description: '入庫登録',
     ),
     ScreenDefinition(
-      id: 'WHO', title: '出庫処理', route: '/inventory/outbound',
+      id: S.who, title: '出庫処理', route: '/inventory/outbound',
       builder: (_) => const StockOutboundScreen(),
       category: '在庫', icon: Icons.arrow_upward,
       description: '出庫登録',
     ),
     ScreenDefinition(
-      id: 'IQ', title: '在庫照会', route: '/inventory/inquiry',
+      id: S.iq, title: '在庫照会', route: '/inventory/inquiry',
       builder: (_) => const StockInquiryScreen(),
       category: '在庫', icon: Icons.search,
       description: '商品在庫の照会',
     ),
     ScreenDefinition(
-      id: 'STK', title: '棚卸', route: '/inventory/stocktake',
+      id: S.stk, title: '棚卸', route: '/inventory/stocktake',
       builder: (_) => const StocktakeScreen(),
       category: '在庫', icon: Icons.fact_check,
       description: '棚卸入力',
     ),
     ScreenDefinition(
-      id: 'IC', title: '棚卸入力(一括)', route: '/inventory/stocktake_input',
+      id: S.ic, title: '棚卸入力(一括)', route: '/inventory/stocktake_input',
       builder: (_) => const StocktakeInputScreen(),
       category: '在庫', icon: Icons.edit_note,
       description: '一括棚卸入力',
     ),
     ScreenDefinition(
-      id: 'IA', title: '在庫調整', route: '/inventory/adjustment',
+      id: S.ia, title: '在庫調整', route: '/inventory/adjustment',
       builder: (_) => const StockAdjustmentScreen(),
       category: '在庫', icon: Icons.tune,
       description: '在庫調整',
     ),
     ScreenDefinition(
-      id: 'IM', title: '在庫移動', route: '/inventory/transfer',
+      id: S.im, title: '在庫移動', route: '/inventory/transfer',
       builder: (_) => const StockTransferScreen(),
       category: '在庫', icon: Icons.swap_horiz,
       description: '倉庫間在庫移動',
     ),
     ScreenDefinition(
-      id: 'R4', title: '在庫評価額', route: '/inventory/valuation',
+      id: S.r4, title: '在庫評価額', route: '/inventory/valuation',
       builder: (_) => const InventoryValuationScreen(),
       category: '在庫', icon: Icons.account_balance,
       description: '在庫評価額一覧',

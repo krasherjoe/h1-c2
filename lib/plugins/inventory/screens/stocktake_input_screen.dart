@@ -3,6 +3,7 @@ import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../services/warehouse_stock_repository.dart';
 import '../services/stock_transaction_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class StocktakeInputScreen extends StatefulWidget {
   const StocktakeInputScreen({super.key});
@@ -158,7 +159,7 @@ class _StocktakeInputScreenState extends State<StocktakeInputScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('IC:棚卸入力'),
+        title: const Text('\${S.ic}:棚卸入力'),
         actions: [
           IconButton(
             onPressed: _loading ? null : _saveStocktake,

@@ -3,6 +3,7 @@ import '../plugin_system/plugin_registry.dart';
 import '../plugin_system/plugin_interface.dart';
 import '../plugin_system/plugin_state_service.dart';
 import '../widgets/screen_id_title.dart';
+import '../constants/screen_ids.dart';
 
 class PluginManagementScreen extends StatefulWidget {
   const PluginManagementScreen({super.key});
@@ -20,7 +21,7 @@ class _PluginManagementScreenState extends State<PluginManagementScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: 'PM', title: 'プラグイン管理'),
+        title: const ScreenAppBarTitle(screenId: S.pm, title: 'プラグイン管理'),
       ),
       body: plugins.isEmpty
           ? const Center(

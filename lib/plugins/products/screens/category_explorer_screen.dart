@@ -6,6 +6,7 @@ import '../../../models/product_category_model.dart';
 import '../../../services/input_style_service.dart';
 import '../../../services/error_reporter.dart';
 import '../screens/product_editor_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 class CategoryExplorerScreen extends StatefulWidget {
   const CategoryExplorerScreen({super.key});
@@ -82,7 +83,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('P1:商品マスター'),
+        title: const Text('\${S.p1}:商品マスター'),
         centerTitle: true,
         actions: [
           IconButton(

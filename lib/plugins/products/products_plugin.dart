@@ -5,6 +5,7 @@ import '../../../plugin_system/plugin_context.dart';
 import '../../../plugin_system/screen_definition.dart';
 import 'screens/category_explorer_screen.dart';
 import '../../../services/debug_console.dart';
+import '../../constants/screen_ids.dart';
 
 class ProductsPlugin extends H1Plugin {
   @override
@@ -55,7 +56,7 @@ class ProductsPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'P1',
+      id: S.p1,
       title: '商品カテゴリ',
       route: '/products',
       builder: (_) => const CategoryExplorerScreen(),

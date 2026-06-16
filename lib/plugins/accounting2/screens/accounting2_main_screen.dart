@@ -10,6 +10,7 @@ import 'journal_screen.dart';
 import 'ledger_screen.dart';
 import 'trial_balance_screen.dart';
 import 'financial_statements_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 class Accounting2MainScreen extends StatefulWidget {
   const Accounting2MainScreen({super.key});
@@ -60,7 +61,7 @@ class _Accounting2MainScreenState extends State<Accounting2MainScreen> {
     final profit = revenue - expense;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('KJ:会計')),
+      appBar: AppBar(title: const Text('\${S.kj}:会計')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

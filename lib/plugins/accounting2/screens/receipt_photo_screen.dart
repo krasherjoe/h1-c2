@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../services/gemini_ocr_service.dart';
 import '../../../services/database_helper.dart';
 import '../services/auto_journal_service.dart';
+import '../../../constants/screen_ids.dart';
 
 class ReceiptPhotoScreen extends StatefulWidget {
   const ReceiptPhotoScreen({super.key});
@@ -65,7 +66,7 @@ class _ReceiptPhotoScreenState extends State<ReceiptPhotoScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('RC:レシート撮影')),
+      appBar: AppBar(title: const Text('\${S.rc}:レシート撮影')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

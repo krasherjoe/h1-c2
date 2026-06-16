@@ -6,6 +6,7 @@ import '../../../utils/theme_utils.dart';
 import '../models/ar_models.dart';
 import '../services/payment_repository.dart';
 import '../services/payment_schedule_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class CashFlowScreen extends StatefulWidget {
   const CashFlowScreen({super.key});
@@ -96,7 +97,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CF:資金繰り'),
+        title: const Text('\${S.cf}:資金繰り'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],

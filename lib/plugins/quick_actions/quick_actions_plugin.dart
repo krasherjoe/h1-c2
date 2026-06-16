@@ -6,6 +6,7 @@ import '../../plugin_system/screen_definition.dart';
 import '../../plugin_system/dashboard_section.dart';
 import 'screens/quick_actions_screen.dart';
 import 'screens/quick_action_settings_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class QuickActionsPlugin extends H1Plugin {
   @override
@@ -25,7 +26,7 @@ class QuickActionsPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'QA',
+      id: S.qa,
       title: 'クイックアクション',
       route: '/quick_actions/settings',
       builder: (_) => const QuickActionSettingsScreen(),

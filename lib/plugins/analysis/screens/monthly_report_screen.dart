@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../services/database_helper.dart';
+import '../../../constants/screen_ids.dart';
 
 class MonthlyReportScreen extends StatefulWidget {
   const MonthlyReportScreen({super.key});
@@ -110,7 +111,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FP1:月次収支'),
+        title: const Text('\${S.fp1}:月次収支'),
         actions: [
           IconButton(
             icon: const Icon(Icons.chevron_left),

@@ -5,6 +5,7 @@ import '../services/stock_transaction_repository.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class StockInboundScreen extends StatefulWidget {
   const StockInboundScreen({super.key});
@@ -79,7 +80,7 @@ class _StockInboundScreenState extends State<StockInboundScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('WHI:入庫処理')),
+      appBar: AppBar(title: const Text('\${S.whi}:入庫処理')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _inbound, icon: const Icon(Icons.add), label: const Text('入庫登録'),
       ),

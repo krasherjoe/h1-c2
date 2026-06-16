@@ -8,6 +8,7 @@ import '../../../services/mm_command_service.dart';
 import '../../../services/sheets_sync_service.dart';
 import '../../../services/gemini_ocr_service.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class DebugScreen extends StatefulWidget {
   const DebugScreen({super.key});
@@ -206,7 +207,7 @@ class _DebugScreenState extends State<DebugScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('DB:デバッグ')),
+      appBar: AppBar(title: const Text('\${S.db}:デバッグ')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

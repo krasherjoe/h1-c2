@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/memorandum_model.dart';
 import '../services/memorandum_repository.dart';
 import 'memorandum_input_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 class MemorandumListScreen extends StatefulWidget {
   const MemorandumListScreen({super.key});
@@ -51,7 +52,7 @@ class _MemorandumListScreenState extends State<MemorandumListScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MN1:覚書一覧'),
+        title: const Text('\${S.mn1}:覚書一覧'),
         actions: [
           IconButton(
             icon: Icon(_filterStatus == null ? Icons.filter_list : Icons.filter_list_off),

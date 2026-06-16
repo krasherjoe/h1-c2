@@ -3,6 +3,7 @@ import '../../../services/error_reporter.dart';
 import '../models/supplier.dart';
 import '../services/supplier_repository.dart';
 import 'supplier_editor_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 class SupplierPickerDialog extends StatefulWidget {
   const SupplierPickerDialog({super.key});
@@ -42,7 +43,7 @@ class _SupplierPickerDialogState extends State<SupplierPickerDialog> {
     } catch (e, st) {
       ErrorReporter.sendError(
         message: '仕入先一覧取得失敗: $e',
-        screenId: 'SL',
+        screenId: S.sl,
         stackTrace: st,
       );
       if (!mounted) return;

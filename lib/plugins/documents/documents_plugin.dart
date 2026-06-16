@@ -6,6 +6,7 @@ import '../../plugin_system/screen_definition.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/document_explorer_config.dart';
 import '../../services/debug_console.dart';
+import '../../constants/screen_ids.dart';
 
 const _kDocTable = '''
   CREATE TABLE IF NOT EXISTS documents (
@@ -254,7 +255,7 @@ class DocumentsPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'D1',
+      id: S.d1,
       title: '伝票管理',
       route: '/documents',
       builder: (_) => H1Explorer(config: DocumentExplorerConfig()),

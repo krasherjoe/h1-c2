@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/payment_schedule_repository.dart';
 import '../models/ar_models.dart';
+import '../../../constants/screen_ids.dart';
 
 class PaymentScheduleScreen extends StatefulWidget {
   const PaymentScheduleScreen({super.key});
@@ -64,7 +65,7 @@ class _PaymentScheduleScreenState extends State<PaymentScheduleScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PY:支払予定'),
+        title: const Text('\${S.py}:支払予定'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),

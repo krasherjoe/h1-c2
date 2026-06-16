@@ -9,6 +9,7 @@ import '../../services/permission_service.dart';
 import '../../services/company_service.dart';
 import '../../services/database_helper.dart';
 import 'screens/sync_home_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class SyncPlugin extends H1Plugin with WidgetsBindingObserver {
   @override
@@ -25,7 +26,7 @@ class SyncPlugin extends H1Plugin with WidgetsBindingObserver {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'SY',
+      id: S.sy,
       title: 'グループ同期',
       route: '/sync',
       category: 'システム',

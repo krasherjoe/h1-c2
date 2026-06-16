@@ -8,6 +8,7 @@ import '../../../widgets/screen_id_title.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../widgets/h1_form_field.dart';
 import '../../../services/sync_service.dart';
+import '../../../constants/screen_ids.dart';
 
 class CustomerEditScreen extends StatefulWidget {
   final Customer? customer;
@@ -596,7 +597,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
       appBar: AppBar(
         leading: const BackButton(),
         title: ScreenAppBarTitle(
-          screenId: _isEdit ? 'C2' : 'C3',
+          screenId: _isEdit ? S.c2 : S.c3,
           title: _isEdit ? '顧客を編集' : '顧客を新規登録',
         ),
         actions: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../services/database_helper.dart';
 import '../../../services/hash_chain_verify_result.dart';
 import '../services/audit_service.dart';
+import '../../../constants/screen_ids.dart';
 
 class AuditScreen extends StatefulWidget {
   const AuditScreen({super.key});
@@ -48,7 +49,7 @@ class _AuditScreenState extends State<AuditScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AD:ハッシュチェーン監査'),
+        title: const Text('\${S.ad}:ハッシュチェーン監査'),
         actions: [
           IconButton(
             icon: _isVerifying

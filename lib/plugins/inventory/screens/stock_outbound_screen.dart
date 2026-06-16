@@ -5,6 +5,7 @@ import '../services/stock_transaction_repository.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class StockOutboundScreen extends StatefulWidget {
   const StockOutboundScreen({super.key});
@@ -91,7 +92,7 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('WHO:出庫処理')),
+      appBar: AppBar(title: const Text('\${S.who}:出庫処理')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _outbound, icon: const Icon(Icons.remove), label: const Text('出庫登録'),
       ),

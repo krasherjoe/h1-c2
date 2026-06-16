@@ -12,6 +12,7 @@ import '../../services/database_helper.dart';
 import '../../services/drive_backup_service.dart';
 import '../../services/error_reporter.dart';
 import '../../services/google_auth_service.dart';
+import '../../constants/screen_ids.dart';
 
 class DriveBackupPlugin extends H1Plugin {
   @override
@@ -28,7 +29,7 @@ class DriveBackupPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'DK',
+      id: S.dk,
       title: 'Driveバックアップ',
       route: '/drivebackup',
       category: 'システム',

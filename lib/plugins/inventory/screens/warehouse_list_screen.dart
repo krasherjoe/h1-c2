@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../models/warehouse_model.dart';
 import '../services/warehouse_repository.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class WarehouseListScreen extends StatefulWidget {
   final bool selectionMode;
@@ -132,7 +133,7 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('WH:倉庫一覧'),
+        title: const Text('\${S.wh}:倉庫一覧'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(

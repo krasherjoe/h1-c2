@@ -7,6 +7,7 @@ import '../models/warehouse_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/activity_log_repository.dart';
 import '../../../models/product_model.dart';
+import '../../../constants/screen_ids.dart';
 
 class StockAdjustmentScreen extends StatefulWidget {
   const StockAdjustmentScreen({super.key});
@@ -245,7 +246,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
     final filteredProducts = _filteredProducts;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('IA:在庫調整'),
+        title: const Text('\${S.ia}:在庫調整'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import '../logic/memorandum_pdf_generator.dart';
 import '../models/memorandum_model.dart';
+import '../../../constants/screen_ids.dart';
 
 class MemorandumPreviewScreen extends StatefulWidget {
   final Memorandum memorandum;
@@ -65,7 +66,7 @@ class _MemorandumPreviewScreenState extends State<MemorandumPreviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MP:覚書プレビュー'),
+        title: const Text('\${S.mp}:覚書プレビュー'),
         actions: [
           IconButton(
             icon: const Icon(Icons.download),

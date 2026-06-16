@@ -11,6 +11,7 @@ import '../services/price_list_repository.dart';
 import '../services/undo_stack.dart';
 import '../../../services/sync_service.dart';
 import '../../products/widgets/variant_picker_sheet.dart';
+import '../../../constants/screen_ids.dart';
 
 class PriceExplorerScreen extends StatefulWidget {
   final String? initialYear;
@@ -632,7 +633,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('PE:価格表', style: TextStyle(color: cs.onPrimary)),
+            Text('\${S.pe}:価格表', style: TextStyle(color: cs.onPrimary)),
             const SizedBox(width: 8),
             DropdownButtonHideUnderline(
               child: DropdownButton<String>(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../services/product_repository.dart';
 import '../../../models/product_model.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class StockInquiryScreen extends StatefulWidget {
   const StockInquiryScreen({super.key});
@@ -78,7 +79,7 @@ class _StockInquiryScreenState extends State<StockInquiryScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('IQ:在庫照会'),
+        title: const Text('\${S.iq}:在庫照会'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),

@@ -6,6 +6,7 @@ import '../../../services/input_style_service.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import '../screens/document_page.dart';
+import '../../../constants/screen_ids.dart';
 
 class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   DocumentExplorerConfig();
@@ -35,7 +36,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   ];
 
   @override
-  String get explorerTitle => 'D1:伝票管理';
+  String get explorerTitle => '\${S.d1}:伝票管理';
 
   @override
   List<({String value, String label, IconData icon})> get typeFilterOptions => _typeOptions;

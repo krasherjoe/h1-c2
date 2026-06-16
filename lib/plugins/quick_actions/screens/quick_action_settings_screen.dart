@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/quick_action_page.dart';
 import '../services/quick_action_service.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class QuickActionSettingsScreen extends StatefulWidget {
   const QuickActionSettingsScreen({super.key});
@@ -197,7 +198,7 @@ class _QuickActionSettingsScreenState extends State<QuickActionSettingsScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QA1: クイックアクション設定'),
+        title: const Text('\${S.qa1}: クイックアクション設定'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

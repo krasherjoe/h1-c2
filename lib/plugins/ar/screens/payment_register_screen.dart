@@ -4,6 +4,7 @@ import '../../../services/error_reporter.dart';
 import '../services/payment_repository.dart';
 import '../services/payment_schedule_repository.dart';
 import '../models/ar_models.dart';
+import '../../../constants/screen_ids.dart';
 
 class PaymentRegisterScreen extends StatefulWidget {
   const PaymentRegisterScreen({super.key});
@@ -44,7 +45,7 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ErrorReporter.showError(context, message: 'PG: 支払予定の読込失敗: $e', screenId: 'PG');
+      ErrorReporter.showError(context, message: 'PG: 支払予定の読込失敗: $e', screenId: S.pg);
     }
   }
 
@@ -65,7 +66,7 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PG:支払登録')),
+      appBar: AppBar(title: const Text('\${S.pg}:支払登録')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(
@@ -239,7 +240,7 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ErrorReporter.showError(context, message: 'PG: 登録失敗: $e', screenId: 'PG');
+      ErrorReporter.showError(context, message: 'PG: 登録失敗: $e', screenId: S.pg);
     }
   }
 

@@ -5,6 +5,7 @@ import '../../../models/product_model.dart';
 import '../models/stock_transaction_model.dart';
 import '../services/inventory_repository.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class InventoryListScreen extends StatefulWidget {
   const InventoryListScreen({super.key});
@@ -55,7 +56,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('INV:在庫一覧')),
+      appBar: AppBar(title: const Text('\${S.inv}:在庫一覧')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(

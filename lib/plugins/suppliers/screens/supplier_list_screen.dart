@@ -3,6 +3,7 @@ import '../../../services/error_reporter.dart';
 import '../models/supplier.dart';
 import '../services/supplier_repository.dart';
 import 'supplier_editor_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 class SupplierListScreen extends StatefulWidget {
   const SupplierListScreen({super.key});
@@ -42,7 +43,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
     } catch (e, st) {
       ErrorReporter.sendError(
         message: '仕入先一覧取得失敗: $e',
-        screenId: 'SL',
+        screenId: S.sl,
         stackTrace: st,
       );
       if (!mounted) return;
@@ -97,7 +98,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
     } catch (e, st) {
       ErrorReporter.sendError(
         message: '仕入先削除失敗: $e',
-        screenId: 'SL',
+        screenId: S.sl,
         stackTrace: st,
       );
     }
@@ -106,7 +107,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SL:仕入先一覧')),
+      appBar: AppBar(title: const Text('\${S.sl}:仕入先一覧')),
       body: Column(
         children: [
           Padding(

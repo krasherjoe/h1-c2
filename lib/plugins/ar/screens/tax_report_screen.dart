@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../services/database_helper.dart';
+import '../../../constants/screen_ids.dart';
 
 class TaxReportScreen extends StatefulWidget {
   const TaxReportScreen({super.key});
@@ -84,7 +85,7 @@ class _TaxReportScreenState extends State<TaxReportScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('TX:税務レポート'),
+        title: const Text('\${S.tx}:税務レポート'),
       ),
       body: Column(
         children: [

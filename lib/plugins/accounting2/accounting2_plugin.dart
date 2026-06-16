@@ -6,6 +6,7 @@ import '../../plugin_system/screen_definition.dart';
 import '../../plugin_system/dashboard_section.dart';
 import 'screens/accounting2_main_screen.dart';
 import 'screens/receipt_photo_screen.dart';
+import '../../constants/screen_ids.dart';
 
 const _kAccountsTable = '''
 CREATE TABLE IF NOT EXISTS accounts (
@@ -101,7 +102,7 @@ class Accounting2Plugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'KJ',
+      id: S.kj,
       title: '会計',
       route: '/accounting2',
       category: '業務',
@@ -109,7 +110,7 @@ class Accounting2Plugin extends H1Plugin {
       builder: (_) => const Accounting2MainScreen(),
     ),
     ScreenDefinition(
-      id: 'RC',
+      id: S.rc,
       title: 'レシート読取',
       route: '/receipt_photo',
       category: '会計',

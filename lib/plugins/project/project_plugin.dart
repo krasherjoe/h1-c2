@@ -5,6 +5,7 @@ import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/project_list_screen.dart';
 import 'screens/project_detail_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class ProjectPlugin extends H1Plugin {
   @override
@@ -31,7 +32,7 @@ class ProjectPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'PRJ',
+      id: S.prj,
       title: '案件管理',
       route: '/projects',
       builder: (_) => const ProjectListScreen(),

@@ -8,6 +8,7 @@ import 'services/company_repository.dart';
 import 'screens/company_profile_screen.dart';
 import 'screens/company_switch_screen.dart';
 import '../../services/debug_console.dart';
+import '../../constants/screen_ids.dart';
 
 class CompanyPlugin extends H1Plugin {
   @override String get id => 'com.h1.plugin.company';
@@ -42,7 +43,7 @@ class CompanyPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'CI',
+      id: S.ci,
       title: '自社情報',
       route: '/company',
       builder: (_) => const CompanyProfileScreen(),
@@ -51,7 +52,7 @@ class CompanyPlugin extends H1Plugin {
       description: '会社名・住所・印鑑・口座',
     ),
     ScreenDefinition(
-      id: 'TM',
+      id: S.tm,
       title: '法人切替',
       route: '/company/switch',
       builder: (_) => const CompanySwitchScreen(),

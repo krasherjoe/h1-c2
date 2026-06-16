@@ -12,6 +12,7 @@ import '../logic/customer_import_export.dart';
 import '../logic/customer_dialogs.dart';
 import '../logic/customer_utils.dart';
 import '../models/customer_explorer_item.dart';
+import '../../../constants/screen_ids.dart';
 
 class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   String _sortKey = 'name_asc';
@@ -19,7 +20,7 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   CustomerExplorerConfig();
 
   @override
-  String get explorerTitle => 'C1:得意先マスター';
+  String get explorerTitle => '\${S.c1}:得意先マスター';
 
   @override
   String get searchHint => '顧客名で検索';
@@ -195,7 +196,7 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
         context,
         message: '顧客登録エラー',
         detail: e.toString(),
-        screenId: 'C3',
+        screenId: S.c3,
         stackTrace: e is Error ? e.stackTrace : null,
       );
     }

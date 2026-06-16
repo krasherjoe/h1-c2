@@ -10,6 +10,7 @@ import 'screens/payment_schedule_screen.dart';
 import 'screens/payment_register_screen.dart';
 import 'screens/ledger_screen.dart';
 import 'screens/tax_report_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class ArPlugin extends H1Plugin {
   @override
@@ -38,43 +39,43 @@ class ArPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'AR', title: '売掛金管理', route: '/ar',
+      id: S.ar, title: '売掛金管理', route: '/ar',
       builder: (_) => const ArDashboardScreen(),
       category: '売掛・支払', icon: Icons.account_balance,
       description: '顧客別未回収額',
     ),
     ScreenDefinition(
-      id: 'RP', title: '入金処理', route: '/ar/receipt',
+      id: S.rp, title: '入金処理', route: '/ar/receipt',
       builder: (_) => const PaymentProcessingScreen(),
       category: '売掛・支払', icon: Icons.payments,
       description: '入金登録',
     ),
     ScreenDefinition(
-      id: 'PY', title: '支払予定', route: '/ar/schedules',
+      id: S.py, title: '支払予定', route: '/ar/schedules',
       builder: (_) => const PaymentScheduleScreen(),
       category: '売掛・支払', icon: Icons.calendar_month,
       description: '支払予定一覧',
     ),
     ScreenDefinition(
-      id: 'PG', title: '支払登録', route: '/ar/payment',
+      id: S.pg, title: '支払登録', route: '/ar/payment',
       builder: (_) => const PaymentRegisterScreen(),
       category: '売掛・支払', icon: Icons.check_circle,
       description: '支払実績登録',
     ),
     ScreenDefinition(
-      id: 'CF', title: '資金繰り', route: '/ar/cashflow',
+      id: S.cf, title: '資金繰り', route: '/ar/cashflow',
       builder: (_) => const CashFlowScreen(),
       category: '売掛・支払', icon: Icons.account_balance,
       description: '資金繰り表',
     ),
     ScreenDefinition(
-      id: 'LR', title: '台帳', route: '/ar/ledger',
+      id: S.lr, title: '台帳', route: '/ar/ledger',
       builder: (_) => const LedgerScreen(),
       category: '売掛・支払', icon: Icons.book,
       description: '売掛台帳・買掛台帳',
     ),
     ScreenDefinition(
-      id: 'TX', title: '税務レポート', route: '/ar/tax',
+      id: S.tx, title: '税務レポート', route: '/ar/tax',
       builder: (_) => const TaxReportScreen(),
       category: '売掛・支払', icon: Icons.calculate,
       description: '消費税納付額計算',

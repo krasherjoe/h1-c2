@@ -4,6 +4,7 @@ import '../../../services/product_repository.dart';
 import '../services/warehouse_stock_repository.dart';
 import '../services/warehouse_repository.dart';
 import '../models/warehouse_model.dart';
+import '../../../constants/screen_ids.dart';
 
 class _ValuationItem {
   final String productId;
@@ -111,7 +112,7 @@ class _InventoryValuationScreenState extends State<InventoryValuationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('R4:在庫評価額一覧'),
+        title: const Text('\${S.r4}:在庫評価額一覧'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

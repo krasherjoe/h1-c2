@@ -4,6 +4,7 @@ import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/audit_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class AuditPlugin extends H1Plugin {
   @override
@@ -38,7 +39,7 @@ class AuditPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'AD',
+      id: S.ad,
       title: 'ハッシュチェーン監査',
       route: '/audit',
       builder: (_) => const AuditScreen(),

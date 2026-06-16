@@ -6,6 +6,7 @@ import '../../plugin_system/screen_definition.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/purchase_explorer_config.dart';
 import '../../services/debug_console.dart';
+import '../../constants/screen_ids.dart';
 
 class PurchasePlugin extends H1Plugin {
   @override
@@ -35,7 +36,7 @@ class PurchasePlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'PUR',
+      id: S.pur,
       title: '仕入管理',
       route: '/purchase',
       builder: (_) => H1Explorer(config: PurchaseExplorerConfig()),

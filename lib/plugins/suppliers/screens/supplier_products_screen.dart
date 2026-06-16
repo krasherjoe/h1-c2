@@ -6,6 +6,7 @@ import '../models/supplier.dart';
 import '../models/supplier_product.dart';
 import '../services/supplier_repository.dart';
 import '../services/supplier_product_service.dart';
+import '../../../constants/screen_ids.dart';
 
 class SupplierProductsScreen extends StatefulWidget {
   const SupplierProductsScreen({super.key});
@@ -47,7 +48,7 @@ class _SupplierProductsScreenState extends State<SupplierProductsScreen> {
         setState(() => _loading = false);
       }
     } catch (e) {
-      ErrorReporter.showError(context, message: '仕入先一覧の読み込みに失敗しました', detail: e.toString(), screenId: 'SP');
+      ErrorReporter.showError(context, message: '仕入先一覧の読み込みに失敗しました', detail: e.toString(), screenId: S.sp);
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -69,7 +70,7 @@ class _SupplierProductsScreenState extends State<SupplierProductsScreen> {
         _loading = false;
       });
     } catch (e) {
-      ErrorReporter.showError(context, message: '商品一覧の読み込みに失敗しました', detail: e.toString(), screenId: 'SP');
+      ErrorReporter.showError(context, message: '商品一覧の読み込みに失敗しました', detail: e.toString(), screenId: S.sp);
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -138,7 +139,7 @@ class _SupplierProductsScreenState extends State<SupplierProductsScreen> {
         content: Text(isNew ? '${updated.name} を追加しました' : '${updated.name} を更新しました'),
       ));
     } catch (e) {
-      ErrorReporter.showError(context, message: '保存に失敗しました', detail: e.toString(), screenId: 'SP');
+      ErrorReporter.showError(context, message: '保存に失敗しました', detail: e.toString(), screenId: S.sp);
     }
   }
 
@@ -147,7 +148,7 @@ class _SupplierProductsScreenState extends State<SupplierProductsScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: 'SP', title: '仕入商品'),
+        title: const ScreenAppBarTitle(screenId: S.sp, title: '仕入商品'),
       ),
       body: _suppliers.isEmpty
           ? _emptyView(cs)

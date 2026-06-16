@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/analysis_models.dart';
 import '../services/analysis_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class ReportDashboardScreen extends StatefulWidget {
   const ReportDashboardScreen({super.key});
@@ -41,7 +42,7 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('RD:レポートダッシュボード')),
+      appBar: AppBar(title: const Text('\${S.rd}:レポートダッシュボード')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

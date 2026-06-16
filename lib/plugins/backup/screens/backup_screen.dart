@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../services/database_helper.dart';
 import '../../../widgets/screen_id_title.dart';
 import '../services/local_backup_service.dart';
+import '../../../constants/screen_ids.dart';
 
 class BackupScreen extends StatefulWidget {
   const BackupScreen({super.key});
@@ -89,7 +90,7 @@ class _BackupScreenState extends State<BackupScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: 'BK', title: 'バックアップ管理'),
+        title: const ScreenAppBarTitle(screenId: S.bk, title: 'バックアップ管理'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _refresh),
         ],

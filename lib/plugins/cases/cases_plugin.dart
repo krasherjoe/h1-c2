@@ -8,6 +8,7 @@ import '../../plugin_system/dashboard_section.dart';
 import '../../services/database_helper.dart';
 import 'services/case_repository.dart';
 import 'screens/case_list_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class CasesPlugin extends H1Plugin {
   Timer? _overdueTimer;
@@ -26,7 +27,7 @@ class CasesPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'IS',
+      id: S.is_,
       title: '案件管理',
       route: '/cases',
       category: '業務',

@@ -6,6 +6,7 @@ import '../../plugin_system/screen_definition.dart';
 import '../../services/database_helper.dart';
 import 'screens/backup_screen.dart';
 import 'services/local_backup_service.dart';
+import '../../constants/screen_ids.dart';
 
 class BackupPlugin extends H1Plugin {
   @override String get id => 'com.h1.plugin.backup';
@@ -21,7 +22,7 @@ class BackupPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'BK',
+      id: S.bk,
       title: 'バックアップ管理',
       route: '/backup',
       builder: (_) => const BackupScreen(),

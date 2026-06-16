@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../services/database_helper.dart';
 import '../../../services/error_reporter.dart';
 import '../models/ar_models.dart';
+import '../../../constants/screen_ids.dart';
 
 class PaymentProcessingScreen extends StatefulWidget {
   const PaymentProcessingScreen({super.key});
@@ -62,7 +63,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ErrorReporter.showError(context, message: 'RP: 読込失敗: $e', screenId: 'RP');
+      ErrorReporter.showError(context, message: 'RP: 読込失敗: $e', screenId: S.rp);
     }
   }
 
@@ -116,7 +117,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ErrorReporter.showError(context, message: 'RP: 登録失敗: $e', screenId: 'RP');
+      ErrorReporter.showError(context, message: 'RP: 登録失敗: $e', screenId: S.rp);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -126,7 +127,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('RP:入金処理')),
+      appBar: AppBar(title: const Text('\${S.rp}:入金処理')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _invoices.isEmpty

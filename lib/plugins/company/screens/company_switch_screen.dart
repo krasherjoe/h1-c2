@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import '../../../services/company_service.dart';
+import '../../../constants/screen_ids.dart';
 
 class CompanySwitchScreen extends StatefulWidget {
   const CompanySwitchScreen({super.key});
@@ -60,7 +61,7 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('TM:法人切替')),
+      appBar: AppBar(title: const Text('\${S.tm}:法人切替')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _companies.isEmpty

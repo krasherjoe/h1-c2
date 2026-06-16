@@ -5,6 +5,7 @@ import '../../../services/google_auth_service.dart';
 import 'sync_qr_display_screen.dart';
 import 'sync_qr_scanner_screen.dart';
 import 'permission_screen.dart';
+import '../../../constants/screen_ids.dart';
 
 class SyncHomeScreen extends StatefulWidget {
   const SyncHomeScreen({super.key});
@@ -48,11 +49,11 @@ class _SyncHomeScreenState extends State<SyncHomeScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     if (_mode == 'loading') return Scaffold(
-      appBar: AppBar(title: const Text('SY:グループ同期')),
+      appBar: AppBar(title: const Text('\${S.sy}:グループ同期')),
       body: const Center(child: CircularProgressIndicator()),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('SY:グループ同期')),
+      appBar: AppBar(title: const Text('\${S.sy}:グループ同期')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

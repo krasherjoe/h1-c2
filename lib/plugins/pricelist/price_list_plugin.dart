@@ -6,6 +6,7 @@ import '../../plugin_system/screen_definition.dart';
 import '../../services/debug_console.dart';
 import 'screens/price_explorer_screen.dart';
 import 'commands/pricing_commands.dart';
+import '../../constants/screen_ids.dart';
 
 class PriceListPlugin extends H1Plugin {
   @override
@@ -33,7 +34,7 @@ class PriceListPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'PE',
+      id: S.pe,
       title: '価格表',
       route: '/pricelist',
       builder: (_) => const PriceExplorerScreen(),

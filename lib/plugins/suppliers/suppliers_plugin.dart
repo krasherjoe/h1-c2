@@ -8,6 +8,7 @@ import 'screens/supplier_editor_screen.dart';
 import 'screens/supplier_products_screen.dart';
 import 'services/supplier_product_service.dart';
 import '../pricelist/screens/price_explorer_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class SuppliersPlugin extends H1Plugin {
   @override
@@ -31,7 +32,7 @@ class SuppliersPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'SL',
+      id: S.sl,
       title: '仕入先一覧',
       route: '/suppliers',
       builder: (_) => const SupplierListScreen(),

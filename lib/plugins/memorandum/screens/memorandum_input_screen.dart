@@ -8,6 +8,7 @@ import '../services/memorandum_repository.dart';
 import 'memorandum_preview_screen.dart';
 import '../../../services/sync_service.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../../../constants/screen_ids.dart';
 
 class MemorandumInputScreen extends StatefulWidget {
   final Memorandum? memorandum;
@@ -230,7 +231,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MN2:覚書入力'),
+        title: const Text('\${S.mn2}:覚書入力'),
         actions: [
           _saving
               ? const Padding(

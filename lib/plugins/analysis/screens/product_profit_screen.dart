@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/analysis_models.dart';
 import '../services/analysis_repository.dart';
+import '../../../constants/screen_ids.dart';
 
 class ProductProfitScreen extends StatefulWidget {
   const ProductProfitScreen({super.key});
@@ -86,7 +87,7 @@ class _ProductProfitScreenState extends State<ProductProfitScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PA:商品別粗利分析'),
+        title: const Text('\${S.pa}:商品別粗利分析'),
         actions: [
           PopupMenuButton<int>(
             icon: const Icon(Icons.date_range),

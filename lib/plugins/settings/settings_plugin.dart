@@ -4,6 +4,7 @@ import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import 'screens/settings_screen.dart';
+import '../../constants/screen_ids.dart';
 
 class SettingsPlugin extends H1Plugin {
   @override
@@ -30,7 +31,7 @@ class SettingsPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'SET',
+      id: S.set,
       title: '設定',
       route: '/settings',
       builder: (_) => const SettingsScreen(),
