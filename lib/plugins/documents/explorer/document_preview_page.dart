@@ -48,6 +48,24 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   String? _error;
   late Future<Uint8List> Function(PdfPageFormat) _stablePdfBuilder;
 
+  String get _pdfFilename {
+    final d = widget.document;
+    final date = '${d.date.year}${d.date.month.toString().padLeft(2, '0')}${d.date.day.toString().padLeft(2, '0')}';
+    final type = d.documentType.label;
+    final subject = (d.subject != null && d.subject!.isNotEmpty)
+        ? d.subject!.replaceAll(RegExp(r'[/:*?"<>|]'), '')
+        : (d.items.isNotEmpty ? d.items.first.productName : '');
+    final subjTrunc = subject.length > 20 ? '${subject.substring(0, 20)}..' : subject;
+    final cust = d.customerName.replaceAll(RegExp(r'[/:*?"<>|]'), '');
+    final custTrunc = cust.length > 10 ? '${cust.substring(0, 10)}..' : cust;
+    final money = '${d.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}円';
+    final hash = (d.contentHash?.length ?? 0) >= 4 ? d.contentHash!.substring(d.contentHash!.length - 4) : (d.contentHash ?? '');
+    final base = '$date($type)$subjTrunc@$custTrunc${money}_${hash}';
+    return '${_safeFileName(base)}.pdf';
+  }
+
+  String _safeFileName(String s) => s.replaceAll(RegExp(r'[/:*?"<>|]'), '');
+
   @override
   void initState() {
     super.initState();
@@ -127,7 +145,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
       body: '${widget.document.documentType.label}を添付してお送りします。',
       pdfBytes: bytes,
-      pdfFilename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+      pdfFilename: _pdfFilename,
     );
     if (!mounted) return;
     if (ok) {
@@ -136,7 +154,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
     }
     final osOk = await CommunicationPlugin().sendEmailWithPdf(
       pdfBytes: bytes,
-      filename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+      filename: _pdfFilename,
       subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
       body: '${widget.document.documentType.label}を添付してお送りします。',
       recipients: [recipient],
@@ -259,7 +277,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                                     subject: '${widget.document.documentType.label} ${widget.document.documentNumber}（控え）',
                                     body: '正式発行された伝票の控えです。',
                                     pdfBytes: bytes,
-                                    pdfFilename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+                                    pdfFilename: _pdfFilename,
                                   );
                                 }
                               } catch (_) {}
@@ -295,7 +313,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                             final bytes = await _buildPdfBytes();
                             await Printing.sharePdf(
                               bytes: bytes,
-                              filename: '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf',
+                              filename: _pdfFilename,
                             );
                             widget.onShare?.call();
                           }
@@ -349,7 +367,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                       );
                       try {
                         final bytes = await _buildPdfBytes();
-                        final filename = '${widget.document.documentType.name}_${widget.document.documentNumber}.pdf';
+                        final filename = _pdfFilename;
                         final subject = '${widget.document.documentType.label} ${widget.document.documentNumber}';
                         final body = '${widget.document.documentType.label}を添付してお送りします。';
                         final recipients = widget.customerEmail != null && widget.customerEmail!.isNotEmpty

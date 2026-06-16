@@ -37,7 +37,8 @@ class GmailSender {
       if (replyTo != null && replyTo.isNotEmpty) {
         header += 'Reply-To: $replyTo\n';
       }
-      header += 'Subject: $subject\n\n'
+      final encodedSubject = '=?UTF-8?B?${base64Encode(utf8.encode(subject))}?=';
+      header += 'Subject: $encodedSubject\n\n'
           '--$boundary\n'
           'Content-Type: text/plain; charset=UTF-8\n\n'
           '$body\n\n'
