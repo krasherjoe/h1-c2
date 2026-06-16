@@ -66,23 +66,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
             const SizedBox(height: 8),
             _buildReceiptButton(context),
             const SizedBox(height: 16),
-            if (_document.subject != null && _document.subject!.isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('📝 メモ',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-                          color: cs.onSurfaceVariant)),
-                      const SizedBox(height: 4),
-                      Text(_document.subject!,
-                        style: const TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ),
+            _buildMemoCard(cs),
             if (_editLogs.isNotEmpty) ...[
               const SizedBox(height: 8),
               Card(
@@ -189,10 +173,11 @@ class _DocumentViewerState extends State<DocumentViewer> {
 
   Widget _buildSubjectSection(ColorScheme cs) {
     if (_document.subject == null || _document.subject!.isEmpty) return const SizedBox.shrink();
+    final firstLine = _document.subject!.split('\n').first;
     return Row(children: [
       Icon(Icons.subject, size: 16, color: cs.onSurfaceVariant),
       const SizedBox(width: 6),
-      Expanded(child: Text(_document.subject!, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
+      Expanded(child: Text(firstLine, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
     ]);
   }
 
@@ -444,6 +429,30 @@ class _DocumentViewerState extends State<DocumentViewer> {
             Navigator.pop(context, true);
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildMemoCard(ColorScheme cs) {
+    final subject = _document.subject;
+    if (subject == null || subject.isEmpty) return const SizedBox.shrink();
+    final lines = subject.split('\n');
+    if (lines.length <= 1) return const SizedBox.shrink();
+    final memoText = lines.sublist(1).join('\n');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('📝 メモ',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            Text(memoText,
+              style: const TextStyle(fontSize: 12)),
+          ],
+        ),
       ),
     );
   }
