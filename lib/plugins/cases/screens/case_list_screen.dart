@@ -15,14 +15,6 @@ class _CaseListScreenState extends State<CaseListScreen> {
   bool _loading = true;
   int _statusTab = 0;
   int _prevStatusTab = 0;
-  bool _zoomMode = false;
-  final _transformController = TransformationController();
-  final Set<int> _activePointers = {};
-  final Map<int, Offset> _pointerPositions = {};
-  double _swipeStartX = 0;
-  double _pinchStartDist = 0;
-  bool _isTwoFingerDragging = false;
-  static const _kSwipeThreshold = 100.0;
   String _typeFilter = 'all';
 
   static const _statusTabs = ['すべて', '発見', '注意', '警告', '重大'];
@@ -92,12 +84,6 @@ class _CaseListScreenState extends State<CaseListScreen> {
     if (i < 0 || i >= _statusTabs.length) return;
     _prevStatusTab = _statusTab;
     setState(() => _statusTab = i);
-  }
-
-  void _exitZoom() {
-    _zoomMode = false;
-    _transformController.value = Matrix4.identity();
-    if (mounted) setState(() {});
   }
 
   @override
@@ -187,7 +173,6 @@ class _CaseListScreenState extends State<CaseListScreen> {
             child: filtered.isEmpty
               ? Center(key: const ValueKey('empty'), child: Text('案件がありません', style: TextStyle(color: cs.onSurfaceVariant)))
               : RefreshIndicator(key: ValueKey('list_$_statusTab'), onRefresh: _load, child: ListView(
-                  physics: _isTwoFingerDragging ? const NeverScrollableScrollPhysics() : null,
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
                 children: filtered.map((c) => Card(
                   margin: const EdgeInsets.only(bottom: 6),
@@ -250,76 +235,10 @@ class _CaseListScreenState extends State<CaseListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('IS:案件管理'),
-        actions: [
-          if (_zoomMode)
-            IconButton(
-              icon: const Icon(Icons.zoom_out_map),
-              onPressed: _exitZoom,
-            ),
-        ],
       ),
       body: _loading
         ? const Center(child: CircularProgressIndicator())
-        : _zoomMode
-          ? InteractiveViewer(
-              transformationController: _transformController,
-              minScale: 0.5,
-              maxScale: 3.0,
-              boundaryMargin: const EdgeInsets.all(double.infinity),
-              onInteractionEnd: (_) {
-                if (_transformController.value.getMaxScaleOnAxis() <= 1.0 + 0.01) {
-                  _exitZoom();
-                }
-              },
-              child: body,
-            )
-          : Listener(
-              onPointerDown: (e) {
-                _activePointers.add(e.pointer);
-                _pointerPositions[e.pointer] = e.position;
-                if (_activePointers.length == 2) {
-                  final pos = _pointerPositions.values.toList();
-                  _swipeStartX = (pos[0].dx + pos[1].dx) / 2;
-                  _pinchStartDist = (pos[0] - pos[1]).distance;
-                  setState(() => _isTwoFingerDragging = true);
-                }
-              },
-              onPointerMove: (e) {
-                if (!_isTwoFingerDragging || _activePointers.length < 2) return;
-                _pointerPositions[e.pointer] = e.position;
-                final pos = _pointerPositions.values.toList();
-                if (pos.length < 2) return;
-                // 1. スワイプ判定を先に（優先度高）
-                final centerX = (pos[0].dx + pos[1].dx) / 2;
-                final dx = centerX - _swipeStartX;
-                if (dx.abs() > _kSwipeThreshold) {
-                  if (dx > 0) _setStatusTab(_statusTab - 1);
-                  else _setStatusTab(_statusTab + 1);
-                  setState(() => _isTwoFingerDragging = false);
-                  return;
-                }
-                // 2. ピンチ判定は中心がほぼ動いていない時のみ（誤検出防止）
-                if (dx.abs() < 20 && _pinchStartDist > 0) {
-                  final dist = (pos[0] - pos[1]).distance;
-                  final scale = dist / _pinchStartDist;
-                  if (scale > 1.3 || scale < 0.7) {
-                    setState(() => _zoomMode = true);
-                    _isTwoFingerDragging = false;
-                  }
-                }
-              },
-              onPointerUp: (e) {
-                _activePointers.remove(e.pointer);
-                _pointerPositions.remove(e.pointer);
-                if (_activePointers.length < 2) setState(() => _isTwoFingerDragging = false);
-              },
-              onPointerCancel: (e) {
-                _activePointers.remove(e.pointer);
-                _pointerPositions.remove(e.pointer);
-                if (_activePointers.length < 2) setState(() => _isTwoFingerDragging = false);
-              },
-              child: body,
-            ),
+        : body,
       floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
     );
   }
