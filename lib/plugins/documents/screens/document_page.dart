@@ -418,6 +418,7 @@ class _DocumentPageState extends State<DocumentPage> {
             onTapNotes: widget.isEditing && item.notes != null && item.notes!.isNotEmpty
                 ? () => _textEdit('備考', item.notes!, (v) => _set(i, () => item.notes = v)) : null,
             onTapPrice: widget.isEditing ? () => _numEdit('単価', item.unitPrice, (v) => _set(i, () => item.unitPrice = v)) : null,
+            onTapQuantity: widget.isEditing ? () => _qtyEdit(i, item.quantity) : null,
             onTapDiscount: widget.isEditing ? () => _discountEdit(i) : null,
             onDelete: widget.isEditing ? () => _set(i, () => _items.removeAt(i)) : null,
           );
@@ -492,6 +493,21 @@ class _DocumentPageState extends State<DocumentPage> {
     ));
     ctl.dispose();
     if (r != null && mounted) onSave(r);
+  }
+
+  Future<void> _qtyEdit(int index, double current) async {
+    final ctl = TextEditingController(text: current == current.roundToDouble() ? current.toInt().toString() : current.toStringAsFixed(1));
+    final r = await showDialog<double>(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('数量'), content: TextField(controller: ctl,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true), autofocus: true),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctl.text.trim()) ?? 0), child: const Text('OK'))],
+    ));
+    ctl.dispose();
+    if (r != null && r > 0 && mounted) {
+      _snapshot();
+      setState(() => _items[index].quantity = r);
+    }
   }
 
   Future<void> _selectCustomer() async {

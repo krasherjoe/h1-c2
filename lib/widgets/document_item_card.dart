@@ -17,6 +17,7 @@ class DocumentItemCard extends StatelessWidget {
   final VoidCallback? onTapMaker;
   final VoidCallback? onTapNotes;
   final VoidCallback? onTapPrice;
+  final VoidCallback? onTapQuantity;
   final VoidCallback? onTapDiscount;
   final VoidCallback? onDelete;
 
@@ -37,6 +38,7 @@ class DocumentItemCard extends StatelessWidget {
     this.onTapMaker,
     this.onTapNotes,
     this.onTapPrice,
+    this.onTapQuantity,
     this.onTapDiscount,
     this.onDelete,
   });
@@ -95,26 +97,17 @@ class DocumentItemCard extends StatelessWidget {
                   onTap: onTapPrice,
                 ),
                 const SizedBox(width: 4),
-                if (!hasDiscount)
-                  Text('× ${formatQty(quantity)} = ${formatMoney(subtotal)}',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
-                else
-                  onDelete != null
-                      ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('× ${formatQty(quantity)} = ${formatMoney(baseSubtotal)}',
-                            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant,
-                              decoration: TextDecoration.lineThrough)),
-                          Text('値引後: ${formatMoney(subtotal)}',
-                            style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
-                        ])
-                      : Row(children: [
-                          Text('× ${formatQty(quantity)} = ${formatMoney(baseSubtotal)}',
-                            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant,
-                              decoration: TextDecoration.lineThrough)),
-                          const SizedBox(width: 4),
-                          Text(formatMoney(subtotal),
-                            style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
-                        ]),
+                Text('× ',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                _buildField(
+                  child: Text(formatQty(quantity),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant,
+                      decoration: onTapQuantity != null ? TextDecoration.underline : null,
+                      fontWeight: onTapQuantity != null ? FontWeight.w600 : null)),
+                  onTap: onTapQuantity,
+                ),
+                Text(' = ${formatMoney(subtotal)}',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 if (onDelete != null) ...[
                   const Spacer(),
                   if (onTapDiscount != null)
@@ -127,15 +120,6 @@ class DocumentItemCard extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(formatQty(quantity),
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
-                  ),
                   IconButton(
                     icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
                     onPressed: onDelete,
