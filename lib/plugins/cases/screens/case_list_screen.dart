@@ -17,8 +17,12 @@ class _CaseListScreenState extends State<CaseListScreen> {
   int _prevStatusTab = 0;
   bool _zoomMode = false;
   final _transformController = TransformationController();
-  double _scaleSwipeDx = 0;
-  static const _kSwipeThreshold = 50.0;
+  final Set<int> _activePointers = {};
+  final Map<int, Offset> _pointerPositions = {};
+  double _swipeStartX = 0;
+  double _pinchStartDist = 0;
+  bool _isTwoFingerDragging = false;
+  static const _kSwipeThreshold = 100.0;
   String _typeFilter = 'all';
 
   static const _statusTabs = ['すべて', '発見', '注意', '警告', '重大'];
@@ -268,23 +272,47 @@ class _CaseListScreenState extends State<CaseListScreen> {
               },
               child: body,
             )
-          : GestureDetector(
-              onScaleUpdate: (details) {
-                if (details.pointerCount >= 2) {
-                  if ((details.scale - 1.0).abs() > 0.01 && !_zoomMode) {
-                    setState(() => _zoomMode = true);
-                    return;
+          : Listener(
+              onPointerDown: (e) {
+                _activePointers.add(e.pointer);
+                _pointerPositions[e.pointer] = e.position;
+                if (_activePointers.length == 2) {
+                  _swipeStartX = e.position.dx;
+                  final pos = _pointerPositions.values.toList();
+                  _pinchStartDist = (pos[0] - pos[1]).distance;
+                  _isTwoFingerDragging = true;
+                }
+              },
+              onPointerMove: (e) {
+                if (_isTwoFingerDragging && _activePointers.length >= 2) {
+                  _pointerPositions[e.pointer] = e.position;
+                  final pos = _pointerPositions.values.toList();
+                  if (pos.length >= 2) {
+                    final dist = (pos[0] - pos[1]).distance;
+                    if ((dist - _pinchStartDist).abs() > 20) {
+                      setState(() => _zoomMode = true);
+                      _isTwoFingerDragging = false;
+                      return;
+                    }
                   }
-                  _scaleSwipeDx += details.focalPointDelta.dx;
-                  if (_scaleSwipeDx.abs() >= _kSwipeThreshold) {
-                    if (_scaleSwipeDx > 0) _setStatusTab(_statusTab - 1);
+                  final dx = e.position.dx - _swipeStartX;
+                  if (dx.abs() > _kSwipeThreshold) {
+                    if (dx > 0) _setStatusTab(_statusTab - 1);
                     else _setStatusTab(_statusTab + 1);
-                    _scaleSwipeDx = 0;
+                    _isTwoFingerDragging = false;
                   }
                 }
               },
-              onScaleEnd: (_) => _scaleSwipeDx = 0,
-              behavior: HitTestBehavior.translucent,
+              onPointerUp: (e) {
+                _activePointers.remove(e.pointer);
+                _pointerPositions.remove(e.pointer);
+                if (_activePointers.length < 2) _isTwoFingerDragging = false;
+              },
+              onPointerCancel: (e) {
+                _activePointers.remove(e.pointer);
+                _pointerPositions.remove(e.pointer);
+                if (_activePointers.length < 2) _isTwoFingerDragging = false;
+              },
               child: body,
             ),
       floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
