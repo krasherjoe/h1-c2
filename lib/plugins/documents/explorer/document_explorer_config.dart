@@ -5,11 +5,25 @@ import '../../../utils/theme_utils.dart' hide documentTypeColor;
 import '../../../services/input_style_service.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
-import 'document_viewer.dart';
-import 'document_editor.dart';
+import '../screens/document_page.dart';
 
 class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   DocumentExplorerConfig();
+
+  @override
+  bool get viewerHasOwnScaffold => true;
+
+  // ...
+
+  @override
+  Widget buildViewer(BuildContext context, DocumentModel item) {
+    return DocumentPage(document: item, isEditing: false);
+  }
+
+  @override
+  Widget buildEditor(BuildContext context, DocumentModel? item) {
+    return DocumentPage(document: item, isEditing: true);
+  }
 
   static const _typeOptions = [
     (value: '', label: 'すべて', icon: Icons.all_inbox),
@@ -52,16 +66,6 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
       dateFrom: dateFrom,
       dateTo: dateTo,
     );
-  }
-
-  @override
-  Widget buildViewer(BuildContext context, DocumentModel item) {
-    return DocumentViewer(document: item);
-  }
-
-  @override
-  Widget buildEditor(BuildContext context, DocumentModel? item) {
-    return DocumentEditor(document: item);
   }
 
   @override
