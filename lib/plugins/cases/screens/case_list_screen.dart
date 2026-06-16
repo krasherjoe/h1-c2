@@ -187,6 +187,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
             child: filtered.isEmpty
               ? Center(key: const ValueKey('empty'), child: Text('案件がありません', style: TextStyle(color: cs.onSurfaceVariant)))
               : RefreshIndicator(key: ValueKey('list_$_statusTab'), onRefresh: _load, child: ListView(
+                  physics: _isTwoFingerDragging ? const NeverScrollableScrollPhysics() : null,
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
                 children: filtered.map((c) => Card(
                   margin: const EdgeInsets.only(bottom: 6),
@@ -277,10 +278,10 @@ class _CaseListScreenState extends State<CaseListScreen> {
                 _activePointers.add(e.pointer);
                 _pointerPositions[e.pointer] = e.position;
                 if (_activePointers.length == 2) {
-                  _swipeStartX = e.position.dx;
                   final pos = _pointerPositions.values.toList();
+                  _swipeStartX = (pos[0].dx + pos[1].dx) / 2;
                   _pinchStartDist = (pos[0] - pos[1]).distance;
-                  _isTwoFingerDragging = true;
+                  setState(() => _isTwoFingerDragging = true);
                 }
               },
               onPointerMove: (e) {
@@ -294,24 +295,25 @@ class _CaseListScreenState extends State<CaseListScreen> {
                       _isTwoFingerDragging = false;
                       return;
                     }
-                  }
-                  final dx = e.position.dx - _swipeStartX;
-                  if (dx.abs() > _kSwipeThreshold) {
-                    if (dx > 0) _setStatusTab(_statusTab - 1);
-                    else _setStatusTab(_statusTab + 1);
-                    _isTwoFingerDragging = false;
+                    final centerX = (pos[0].dx + pos[1].dx) / 2;
+                    final dx = centerX - _swipeStartX;
+                    if (dx.abs() > _kSwipeThreshold) {
+                      if (dx > 0) _setStatusTab(_statusTab - 1);
+                      else _setStatusTab(_statusTab + 1);
+                      _isTwoFingerDragging = false;
+                    }
                   }
                 }
               },
               onPointerUp: (e) {
                 _activePointers.remove(e.pointer);
                 _pointerPositions.remove(e.pointer);
-                if (_activePointers.length < 2) _isTwoFingerDragging = false;
+                if (_activePointers.length < 2) setState(() => _isTwoFingerDragging = false);
               },
               onPointerCancel: (e) {
                 _activePointers.remove(e.pointer);
                 _pointerPositions.remove(e.pointer);
-                if (_activePointers.length < 2) _isTwoFingerDragging = false;
+                if (_activePointers.length < 2) setState(() => _isTwoFingerDragging = false);
               },
               child: body,
             ),
