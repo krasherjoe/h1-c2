@@ -126,7 +126,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface),
                             maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
-                      if (hasDraft) _statusBadge('下書き', Colors.orange),
+                      if (hasDraft) _statusBadge('下書き', Colors.orange, cs),
                     ]),
                     if (subject != null)
                       Text(subject!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
@@ -161,11 +161,11 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
 );
   }
 
-  Widget _statusBadge(String text, Color color) {
+  Widget _statusBadge(String text, Color color, ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color, width: 1),
       ),
