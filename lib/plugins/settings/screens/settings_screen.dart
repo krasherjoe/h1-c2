@@ -64,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: 'AD', title: '設定'),
+        title: const ScreenAppBarTitle(screenId: 'SET', title: '設定'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
