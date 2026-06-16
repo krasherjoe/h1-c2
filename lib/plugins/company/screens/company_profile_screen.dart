@@ -287,11 +287,11 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   _buildSealSection(),
                   const SizedBox(height: 24),
                   const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
                       icon: const Icon(Icons.save),
-                      tooltip: '保存',
+                      label: const Text('保存'),
                       onPressed: _save,
                     ),
                   ),

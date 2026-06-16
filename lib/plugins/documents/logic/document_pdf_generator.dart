@@ -433,12 +433,18 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
 
 List<pw.Widget> _buildBankAccountPdfLines(CompanyInfo company, pw.Font font) {
   final json = company.bankAccounts;
-  if (json == null || json.isEmpty) return [];
+  if (json == null || json.isEmpty) {
+    return [pw.SizedBox(height: 4), pw.Text('振込先: 未設定（自社情報で設定してください）',
+        style: pw.TextStyle(fontSize: 8, font: font, color: PdfColors.grey))];
+  }
   try {
     final list = (jsonDecode(json) as List).cast<Map<String, dynamic>>();
     final accounts = list.map((e) => CompanyBankAccount.fromJson(e)).toList();
     final active = accounts.where((a) => a.isActive).toList();
-    if (active.isEmpty) return [];
+    if (active.isEmpty) {
+      return [pw.SizedBox(height: 4), pw.Text('振込先: 未設定（自社情報で有効な口座を追加してください）',
+          style: pw.TextStyle(fontSize: 8, font: font, color: PdfColors.grey))];
+    }
     final lines = <pw.Widget>[
       pw.SizedBox(height: 4),
       pw.Text('振込先:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, font: font)),
