@@ -21,6 +21,7 @@ class DocumentViewer extends StatefulWidget {
 class _DocumentViewerState extends State<DocumentViewer> {
   late DocumentModel _document;
   List<DocumentEditLog> _editLogs = [];
+  bool _copied = false;
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    if (_copied) return _buildCopiedView(context, cs);
     return Column(children: [
       Expanded(
         child: ListView(
@@ -352,9 +354,7 @@ class _DocumentViewerState extends State<DocumentViewer> {
             final docNumber = await repo.generateDocumentNumber(target);
             await repo.save(newDoc.copyWith(documentNumber: docNumber));
             if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${target.label}伝票を作成しました（元の${_document.documentType.label}はそのままです）')),
-            );
+            setState(() => _copied = true);
           } catch (e) {
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
@@ -478,6 +478,32 @@ class _DocumentViewerState extends State<DocumentViewer> {
 
   String _formatMoney(int amount) =>
     '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+
+  Widget _buildCopiedView(BuildContext context, ColorScheme cs) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context, true),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: cs.surface,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check_circle, size: 64, color: Colors.green),
+              const SizedBox(height: 16),
+              Text('コピーが完了しました',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: cs.onSurface)),
+              const SizedBox(height: 8),
+              Text('タップして一覧に戻る',
+                style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   String _formatQty(double qty) =>
     qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toStringAsFixed(1);

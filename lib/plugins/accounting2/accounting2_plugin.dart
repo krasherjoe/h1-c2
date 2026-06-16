@@ -5,6 +5,7 @@ import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../plugin_system/dashboard_section.dart';
 import 'screens/accounting2_main_screen.dart';
+import 'screens/receipt_photo_screen.dart';
 
 const _kAccountsTable = '''
 CREATE TABLE IF NOT EXISTS accounts (
@@ -107,13 +108,23 @@ class Accounting2Plugin extends H1Plugin {
       icon: Icons.account_balance,
       builder: (_) => const Accounting2MainScreen(),
     ),
+    ScreenDefinition(
+      id: 'RC',
+      title: 'レシート読取',
+      route: '/receipt_photo',
+      category: '会計',
+      icon: Icons.receipt_long,
+      builder: (_) => const ReceiptPhotoScreen(),
+    ),
   ];
 
   @override
   DashboardSection? get dashboardSection => null;
 
   @override
-  Map<String, WidgetBuilder> getRoutes() => {};
+  Map<String, WidgetBuilder> getRoutes() => {
+    '/receipt_photo': (_) => const ReceiptPhotoScreen(),
+  };
 
   @override
   Future<void> dispose() async {}

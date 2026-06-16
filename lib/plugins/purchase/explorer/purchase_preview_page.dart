@@ -61,6 +61,19 @@ class _PurchasePreviewPageState extends State<PurchasePreviewPage> {
       ? widget.purchase.copyWith(status: 'confirmed')
       : widget.purchase;
 
+  String get _purchasePdfFilename {
+    final yyyymmdd = widget.purchase.date.toIso8601String().substring(0, 10).replaceAll('-', '');
+    final type = widget.purchase.purchaseType.label;
+    final subject = widget.purchase.items.isNotEmpty
+        ? widget.purchase.items.first.productName.replaceAll(RegExp(r'[/:*?"<>|]'), '')
+        : '';
+    final subjectTrim = subject.length > 20 ? '${subject.substring(0, 20)}..' : subject;
+    final supplier = widget.purchase.supplierName.replaceAll(RegExp(r'[/:*?"<>|]'), '');
+    final supplierTrim = supplier.length > 10 ? '${supplier.substring(0, 10)}..' : supplier;
+    final amount = '${widget.purchase.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}円';
+    return '${yyyymmdd}($type)${subjectTrim}@${supplierTrim}_$amount.pdf';
+  }
+
   Future<Uint8List> _buildPdfBytes([PdfPageFormat? format]) async {
     try {
       final doc = await generatePurchasePdf(_effectivePurchase);
@@ -229,7 +242,7 @@ class _PurchasePreviewPageState extends State<PurchasePreviewPage> {
                             final bytes = await _buildPdfBytes();
                             await Printing.sharePdf(
                               bytes: bytes,
-                              filename: '${widget.purchase.purchaseType.name}_${widget.purchase.documentNumber}.pdf',
+                              filename: _purchasePdfFilename,
                             );
                             widget.onShare?.call();
                           }
@@ -280,7 +293,7 @@ class _PurchasePreviewPageState extends State<PurchasePreviewPage> {
                       }
 
                       final bytes = await _buildPdfBytes();
-                      final filename = '${widget.purchase.purchaseType.name}_${widget.purchase.documentNumber}.pdf';
+                      final filename = _purchasePdfFilename;
                       final subject = '${widget.purchase.purchaseType.label} ${widget.purchase.documentNumber}';
                       final body = '${widget.purchase.purchaseType.label}を添付してお送りします。';
 

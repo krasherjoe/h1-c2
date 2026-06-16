@@ -6,6 +6,7 @@ import '../../../services/preview_settings_service.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/mm_command_service.dart';
 import '../../../services/sheets_sync_service.dart';
+import '../../../services/gemini_ocr_service.dart';
 import '../../../widgets/h1_text_field.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -151,6 +152,36 @@ class _DebugScreenState extends State<DebugScreen> {
     }
   }
 
+  Future<void> _configureGeminiKey() async {
+    final existing = await GeminiOcrService.getApiKey();
+    final ctl = TextEditingController(text: existing ?? '');
+    final key = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Gemini APIキー設定'),
+        content: H1TextField(
+          controller: ctl,
+          decoration: const InputDecoration(
+            labelText: 'API Key',
+            hintText: 'Google AI Studio の API Key を入力',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, ctl.text.trim()),
+            child: const Text('保存')),
+        ],
+      ),
+    );
+    if (key != null && key.isNotEmpty) {
+      await GeminiOcrService.setApiKey(key);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gemini APIキーを保存しました')),
+      );
+    }
+  }
+
   Future<void> _checkUpdate() async {
     setState(() { _checkingUpdate = true; _updateError = null; });
     final err = await _updater.checkForUpdate();
@@ -287,6 +318,12 @@ class _DebugScreenState extends State<DebugScreen> {
               onPressed: _createSpreadsheet,
               icon: const Icon(Icons.table_chart, size: 18),
               label: const Text('📊 スプレッドシート'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _configureGeminiKey,
+              icon: const Icon(Icons.auto_awesome, size: 18),
+              label: const Text('Gemini APIキー設定'),
             ),
           ],
         ),
