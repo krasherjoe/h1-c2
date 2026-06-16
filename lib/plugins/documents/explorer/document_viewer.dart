@@ -9,6 +9,7 @@ import '../../../models/document_type_colors.dart';
 import '../../../plugins/printer/screens/printer_settings_screen.dart';
 import '../../../widgets/document_edit_log_section.dart';
 import '../../../widgets/document_summary_section.dart';
+import '../../../widgets/document_item_card.dart';
 import 'document_preview_page.dart';
 
 class DocumentViewer extends StatefulWidget {
@@ -196,47 +197,18 @@ class _DocumentViewerState extends State<DocumentViewer> {
   }
 
   Widget _buildItemCard(DocumentItem item, ColorScheme cs) {
-    final hasDiscount = item.discountAmount != null || item.discountRate != null;
-    final baseSubtotal = (item.quantity * item.unitPrice).round();
-    final makerCode = [if (item.maker.isNotEmpty) item.maker, if (item.productCode.isNotEmpty) item.productCode].join(' / ');
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      elevation: 0.5,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.productName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
-            if (makerCode.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(makerCode, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant)),
-              ),
-            if (item.notes != null && item.notes!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: Text(item.notes!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              ),
-            const SizedBox(height: 6),
-            Row(children: [
-              Text(_formatMoney(item.unitPrice),
-                style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 4),
-              if (!hasDiscount)
-                Text('× ${_formatQty(item.quantity)} = ${_formatMoney(item.subtotal)}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
-              else ...[
-                Text('× ${_formatQty(item.quantity)} = ${_formatMoney(baseSubtotal)}',
-                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, decoration: TextDecoration.lineThrough)),
-                const SizedBox(width: 4),
-                Text(_formatMoney(item.subtotal),
-                  style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
-              ],
-            ]),
-          ],
-        ),
-      ),
+    return DocumentItemCard(
+      productName: item.productName,
+      maker: item.maker,
+      productCode: item.productCode,
+      notes: item.notes,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      discountAmount: item.discountAmount,
+      discountRate: item.discountRate,
+      subtotal: item.subtotal,
+      formatMoney: _formatMoney,
+      formatQty: _formatQty,
     );
   }
 

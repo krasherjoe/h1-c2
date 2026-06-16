@@ -15,6 +15,7 @@ import '../../products/widgets/variant_picker_sheet.dart';
 import '../../project/screens/project_list_screen.dart';
 import '../../../widgets/document_edit_log_section.dart';
 import '../../../widgets/document_summary_section.dart';
+import '../../../widgets/document_item_card.dart';
 import 'document_preview_page.dart';
 
 class DocumentEditor extends StatefulWidget {
@@ -1050,93 +1051,24 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildItemCard(int index, _EditingItem item, ColorScheme cs) {
-    final subtotal = item.subtotal;
-    final baseSubtotal = (item.quantity * item.unitPrice).round();
-    final hasDiscount = item.discountAmount != null || item.discountRate != null;
-    final makerCode = [if (item.maker.isNotEmpty) item.maker, if (item.productCode.isNotEmpty) item.productCode].join(' / ');
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      elevation: 0.5,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () => _editProductName(index),
-              child: Text(item.productName.isEmpty ? '(商品名未入力)' : item.productName,
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500,
-                  color: item.productName.isEmpty ? cs.error : cs.onSurface,
-                  decoration: item.productName.isNotEmpty ? TextDecoration.underline : null)),
-            ),
-            if (makerCode.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: GestureDetector(
-                  onTap: () => _editMaker(index),
-                  child: Text(makerCode, style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant, decoration: TextDecoration.underline)),
-                ),
-              ),
-            if (item.notes != null && item.notes!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: GestureDetector(
-                  onTap: () => _editNotes(index),
-                  child: Text(item.notes!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                ),
-              ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _editPrice(index),
-                  child: Text('￥${_formatMoney(item.unitPrice)}',
-                    style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
-                ),
-                const SizedBox(width: 4),
-                if (!hasDiscount)
-                  Text('× ${_formatQty(item.quantity)} = ￥${_formatMoney(subtotal)}',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('× ${_formatQty(item.quantity)} = ￥${_formatMoney(baseSubtotal)}',
-                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, decoration: TextDecoration.lineThrough)),
-                      Text('値引後: ￥${_formatMoney(subtotal)}',
-                        style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.discount, size: 18, color: hasDiscount ? cs.error : cs.onSurfaceVariant),
-                  tooltip: '値引設定',
-                  onPressed: () => _editItemDiscount(index),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(_formatQty(item.quantity),
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
-                  onPressed: () => _removeItem(index),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return DocumentItemCard(
+      productName: item.productName,
+      maker: item.maker,
+      productCode: item.productCode,
+      notes: item.notes,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      discountAmount: item.discountAmount,
+      discountRate: item.discountRate,
+      subtotal: item.subtotal,
+      formatMoney: (v) => '¥${_formatMoney(v)}',
+      formatQty: _formatQty,
+      onTapProductName: () => _editProductName(index),
+      onTapMaker: () => _editMaker(index),
+      onTapNotes: item.notes != null && item.notes!.isNotEmpty ? () => _editNotes(index) : null,
+      onTapPrice: () => _editPrice(index),
+      onTapDiscount: () => _editItemDiscount(index),
+      onDelete: () => _removeItem(index),
     );
   }
 
