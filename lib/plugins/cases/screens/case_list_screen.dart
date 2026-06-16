@@ -14,6 +14,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
   List<CaseModel> _cases = [];
   bool _loading = true;
   int _statusTab = 0;
+  int _prevStatusTab = 0;
+  final Set<int> _pointers = {};
   String _typeFilter = 'all';
 
   static const _statusTabs = ['すべて', '発見', '注意', '警告', '重大'];
@@ -79,6 +81,12 @@ class _CaseListScreenState extends State<CaseListScreen> {
     await _load();
   }
 
+  void _setStatusTab(int i) {
+    if (i < 0 || i >= _statusTabs.length) return;
+    _prevStatusTab = _statusTab;
+    setState(() => _statusTab = i);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -89,7 +97,19 @@ class _CaseListScreenState extends State<CaseListScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('IS:案件管理')),
       body: _loading ? const Center(child: CircularProgressIndicator())
-      : Column(children: [
+      : Listener(
+          onPointerDown: (e) => _pointers.add(e.pointer),
+          onPointerUp: (e) => _pointers.remove(e.pointer),
+          onPointerCancel: (e) => _pointers.remove(e.pointer),
+          child: GestureDetector(
+            onHorizontalDragEnd: (d) {
+              if (_pointers.length >= 2) {
+                if (d.primaryVelocity! > 0) _setStatusTab(_statusTab - 1);
+                else _setStatusTab(_statusTab + 1);
+              }
+            },
+            behavior: HitTestBehavior.translucent,
+            child: Column(children: [
         Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: Row(children: [
@@ -135,7 +155,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
             final i = e.key;
             final selected = _statusTab == i;
             return Expanded(child: GestureDetector(
-              onTap: () => setState(() => _statusTab = i),
+              onTap: () => _setStatusTab(i),
               child: Container(
                 alignment: Alignment.center,
                 margin: EdgeInsets.all(2),
@@ -154,10 +174,22 @@ class _CaseListScreenState extends State<CaseListScreen> {
           }).toList()),
         ),
         Expanded(
-          child: filtered.isEmpty
-            ? Center(child: Text('案件がありません', style: TextStyle(color: cs.onSurfaceVariant)))
-            : RefreshIndicator(onRefresh: _load, child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) {
+              final dir = _statusTab > _prevStatusTab ? 1.0 : -1.0;
+              return SlideTransition(
+                position: Tween(
+                  begin: Offset(dir, 0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              );
+            },
+            child: filtered.isEmpty
+              ? Center(key: const ValueKey('empty'), child: Text('案件がありません', style: TextStyle(color: cs.onSurfaceVariant)))
+              : RefreshIndicator(key: ValueKey('list_$_statusTab'), onRefresh: _load, child: ListView(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
                 children: filtered.map((c) => Card(
                   margin: const EdgeInsets.only(bottom: 6),
                   child: InkWell(
@@ -211,11 +243,14 @@ class _CaseListScreenState extends State<CaseListScreen> {
                   ),
                 )).toList(),
               )),
-        ),
-      ]),
-      floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
-    );
-  }
+            ),
+          ),
+        ]),
+      ),
+    ),
+    floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
+  );
+}
 
   Widget _typeChip(String value, String label, ColorScheme cs) {
     final active = _typeFilter == value;
