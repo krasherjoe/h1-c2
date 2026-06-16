@@ -13,8 +13,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
   final _repo = CaseRepository();
   List<CaseModel> _cases = [];
   bool _loading = true;
-  int _statusTab = 0;
-  int _prevStatusTab = 0;
+  late final PageController _pageController;
+  int _currentPage = 0;
   String _typeFilter = 'all';
 
   static const _statusTabs = ['すべて', '発見', '注意', '警告', '重大'];
@@ -23,7 +23,14 @@ class _CaseListScreenState extends State<CaseListScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -32,13 +39,21 @@ class _CaseListScreenState extends State<CaseListScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
-  List<CaseModel> get _filtered {
+  List<CaseModel> _filteredForTab(int tabIndex) {
     var list = _cases.where((c) => !c.isResolved).toList();
     if (_typeFilter != 'all') list = list.where((c) => c.type == _typeFilter).toList();
-    final sv = _statusValues[_statusTab];
+    final sv = _statusValues[tabIndex];
     if (sv >= 0) list = list.where((c) => c.status == sv).toList();
     list.sort((a, b) => b.status.compareTo(a.status));
     return list;
+  }
+
+  void _goToPage(int i) {
+    _pageController.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
   }
 
   Color _statusColor(int s, ColorScheme cs) => switch (s) { 0 => cs.tertiaryContainer, 1 => Colors.orange.shade100, 2 => Colors.deepOrange.shade100, 3 => cs.errorContainer, _ => cs.surface };
@@ -65,6 +80,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
     ));
     if (type == null) return;
     final ctl = TextEditingController();
+    if (!mounted) return;
     final title = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(
       title: const Text('件名'), content: TextField(controller: ctl, autofocus: true),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
@@ -80,166 +96,185 @@ class _CaseListScreenState extends State<CaseListScreen> {
     await _load();
   }
 
-  void _setStatusTab(int i) {
-    if (i < 0 || i >= _statusTabs.length) return;
-    _prevStatusTab = _statusTab;
-    setState(() => _statusTab = i);
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final filtered = _filtered;
     final counts = [0, 0, 0, 0];
-    for (final c in _cases.where((c) => !c.isResolved)) { if (c.status >= 0 && c.status <= 3) counts[c.status]++; }
-
-    final body = Column(children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: Row(children: [
-            ...[0, 1, 2, 3].map((i) => Expanded(child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(color: _statusColor(i, cs).withValues(alpha: 0.5), borderRadius: BorderRadius.circular(6)),
-              child: Column(children: [
-                Icon(_statusIcon(i), size: 16, color: _statusTextColor(i, cs)),
-                Text('${counts[i]}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _statusTextColor(i, cs))),
-                Text(_statusTabs[i + 1], style: TextStyle(fontSize: 9, color: _statusTextColor(i, cs))),
-              ]),
-            ))),
-          ]),
-        ),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(children: [
-            _typeChip('all', '全部', cs),
-            _typeChip('overdue', '滞留', cs),
-            _typeChip('damage', '破損', cs),
-            _typeChip('theft', '盗難', cs),
-            _typeChip('loss', '紛失', cs),
-            _typeChip('bug', 'バグ', cs),
-            _typeChip('feature', '機能', cs),
-            _typeChip('task', 'タスク', cs),
-            _typeChip('web', 'Web', cs),
-            _typeChip('illust', 'イラスト', cs),
-            _typeChip('other', '他', cs),
-          ]),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          height: 36,
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(children: _statusTabs.asMap().entries.map((e) {
-            final i = e.key;
-            final selected = _statusTab == i;
-            return Expanded(child: GestureDetector(
-              onTap: () => _setStatusTab(i),
-              child: Container(
-                alignment: Alignment.center,
-                margin: EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: selected ? cs.surface : null,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(_statusTabs[i],
-                  style: TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w500,
-                    color: selected ? cs.primary : cs.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ));
-          }).toList()),
-        ),
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) {
-              final dir = _statusTab > _prevStatusTab ? 1.0 : -1.0;
-              return SlideTransition(
-                position: Tween(
-                  begin: Offset(dir, 0),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-                child: child,
-              );
-            },
-            child: filtered.isEmpty
-              ? Center(key: const ValueKey('empty'), child: Text('案件がありません', style: TextStyle(color: cs.onSurfaceVariant)))
-              : RefreshIndicator(key: ValueKey('list_$_statusTab'), onRefresh: _load, child: ListView(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
-                children: filtered.map((c) => Card(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  child: InkWell(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CaseDetailScreen(caseId: c.id))).then((_) => _load()),
-                    onLongPress: () => _showStatusMenu(c),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(children: [
-                        Container(
-                          width: 4, height: 48,
-                          decoration: BoxDecoration(color: _statusTextColor(c.status, cs), borderRadius: BorderRadius.circular(2)),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Row(children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                              decoration: BoxDecoration(color: _statusColor(c.status, cs).withValues(alpha: 0.6), borderRadius: BorderRadius.circular(3)),
-                              child: Text(c.typeLabel, style: TextStyle(fontSize: 9, color: _statusTextColor(c.status, cs))),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(child: Text(c.title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.onSurface), overflow: TextOverflow.ellipsis)),
-                          ]),
-                          const SizedBox(height: 4),
-                          Row(children: [
-                            Icon(Icons.schedule, size: 12, color: cs.onSurfaceVariant),
-                            const SizedBox(width: 2),
-                            Text(_daysText(c.elapsedDays), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                            if (c.amount != null) ...[
-                              const SizedBox(width: 8),
-                              Text('¥${c.amount!}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.primary)),
-                            ],
-                            if (c.assignee != null) ...[
-                              const SizedBox(width: 8),
-                              Icon(Icons.person, size: 12, color: cs.onSurfaceVariant),
-                              const SizedBox(width: 2),
-                              Text(c.assignee!, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                            ],
-                          ]),
-                        ])),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: _statusColor(c.status, cs),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(c.statusLabel, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _statusTextColor(c.status, cs))),
-                        ),
-                      ]),
-                    ),
-                  ),
-                )).toList(),
-              )),
-            ),
-          ),
-      ]);
-
+    for (final c in _cases.where((c) => !c.isResolved)) {
+      if (c.status >= 0 && c.status <= 3) counts[c.status]++;
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('IS:案件管理'),
-      ),
+      appBar: AppBar(title: const Text('IS:案件管理')),
       body: _loading
         ? const Center(child: CircularProgressIndicator())
-        : body,
-      floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
+        : Column(children: [
+            // ステータスサマリー
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Row(children: [
+                ...[0, 1, 2, 3].map((i) => Expanded(child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _statusColor(i, cs).withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Column(children: [
+                    Icon(_statusIcon(i), size: 16, color: _statusTextColor(i, cs)),
+                    Text('${counts[i]}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _statusTextColor(i, cs))),
+                    Text(_statusTabs[i + 1], style: TextStyle(fontSize: 9, color: _statusTextColor(i, cs))),
+                  ]),
+                ))),
+              ]),
+            ),
+            const SizedBox(height: 8),
+            // 種別フィルター
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(children: [
+                _typeChip('all', '全部', cs),
+                _typeChip('overdue', '滞留', cs),
+                _typeChip('damage', '破損', cs),
+                _typeChip('theft', '盗難', cs),
+                _typeChip('loss', '紛失', cs),
+                _typeChip('bug', 'バグ', cs),
+                _typeChip('feature', '機能', cs),
+                _typeChip('task', 'タスク', cs),
+                _typeChip('web', 'Web', cs),
+                _typeChip('illust', 'イラスト', cs),
+                _typeChip('other', '他', cs),
+              ]),
+            ),
+            const SizedBox(height: 4),
+            // タブバー（タップでも切替可能）
+            Container(
+              height: 36,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(children: _statusTabs.asMap().entries.map((e) {
+                final i = e.key;
+                final selected = _currentPage == i;
+                return Expanded(child: GestureDetector(
+                  onTap: () => _goToPage(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    alignment: Alignment.center,
+                    margin: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: selected ? cs.surface : null,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(_statusTabs[i],
+                      style: TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w500,
+                        color: selected ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ));
+              }).toList()),
+            ),
+            const SizedBox(height: 4),
+            // PageView（1本指横スワイプでタブ切替）
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _currentPage = i),
+                itemCount: _statusTabs.length,
+                itemBuilder: (context, index) {
+                  final filtered = _filteredForTab(index);
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Text('案件がありません',
+                        style: TextStyle(color: cs.onSurfaceVariant)),
+                    );
+                  }
+                  return RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
+                      children: filtered.map((c) => _buildCaseCard(c, cs)).toList(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ]),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _createManually,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildCaseCard(CaseModel c, ColorScheme cs) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: InkWell(
+        onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => CaseDetailScreen(caseId: c.id))
+        ).then((_) => _load()),
+        onLongPress: () => _showStatusMenu(c),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(children: [
+            Container(
+              width: 4, height: 48,
+              decoration: BoxDecoration(
+                color: _statusTextColor(c.status, cs),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: _statusColor(c.status, cs).withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(c.typeLabel, style: TextStyle(fontSize: 9, color: _statusTextColor(c.status, cs))),
+                ),
+                const SizedBox(width: 4),
+                Expanded(child: Text(c.title,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.onSurface),
+                  overflow: TextOverflow.ellipsis)),
+              ]),
+              const SizedBox(height: 4),
+              Row(children: [
+                Icon(Icons.schedule, size: 12, color: cs.onSurfaceVariant),
+                const SizedBox(width: 2),
+                Text(_daysText(c.elapsedDays), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                if (c.amount != null) ...[
+                  const SizedBox(width: 8),
+                  Text('¥${c.amount!}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.primary)),
+                ],
+                if (c.assignee != null) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.person, size: 12, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 2),
+                  Text(c.assignee!, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                ],
+              ]),
+            ])),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: _statusColor(c.status, cs),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(c.statusLabel,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _statusTextColor(c.status, cs))),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 
@@ -259,10 +294,24 @@ class _CaseListScreenState extends State<CaseListScreen> {
   }
 
   void _showStatusMenu(CaseModel c) {
-    showModalBottomSheet(context: context, builder: (ctx) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      if (c.status < 3) ListTile(leading: Icon(Icons.arrow_upward), title: Text('${c.statusLabel}→${['発見', '注意', '警告', '重大'][c.status + 1]}に昇格'), onTap: () { Navigator.pop(ctx); _quickStatus(c, c.status + 1); }),
-      if (c.status > 0) ListTile(leading: Icon(Icons.arrow_downward), title: Text('${c.statusLabel}→${['発見', '注意', '警告', '重大'][c.status - 1]}に降格'), onTap: () { Navigator.pop(ctx); _quickStatus(c, c.status - 1); }),
-      if (!c.isResolved) ListTile(leading: Icon(Icons.check_circle, color: Colors.green), title: const Text('解決'), onTap: () { Navigator.pop(ctx); _quickStatus(c, 99); }),
-    ])));
+    showModalBottomSheet(context: context, builder: (ctx) => SafeArea(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (c.status < 3) ListTile(
+          leading: const Icon(Icons.arrow_upward),
+          title: Text('${c.statusLabel}→${['発見', '注意', '警告', '重大'][c.status + 1]}に昇格'),
+          onTap: () { Navigator.pop(ctx); _quickStatus(c, c.status + 1); },
+        ),
+        if (c.status > 0) ListTile(
+          leading: const Icon(Icons.arrow_downward),
+          title: Text('${c.statusLabel}→${['発見', '注意', '警告', '重大'][c.status - 1]}に降格'),
+          onTap: () { Navigator.pop(ctx); _quickStatus(c, c.status - 1); },
+        ),
+        if (!c.isResolved) ListTile(
+          leading: const Icon(Icons.check_circle, color: Colors.green),
+          title: const Text('解決'),
+          onTap: () { Navigator.pop(ctx); _quickStatus(c, 99); },
+        ),
+      ]),
+    ));
   }
 }
