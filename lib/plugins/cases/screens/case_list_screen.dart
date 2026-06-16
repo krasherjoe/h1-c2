@@ -16,6 +16,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
   int _statusTab = 0;
   int _prevStatusTab = 0;
   final Set<int> _pointers = {};
+  double _totalDx = 0;
+  static const _kSwipeThreshold = 50.0;
   String _typeFilter = 'all';
 
   static const _statusTabs = ['すべて', '発見', '注意', '警告', '重大'];
@@ -99,17 +101,20 @@ class _CaseListScreenState extends State<CaseListScreen> {
       body: _loading ? const Center(child: CircularProgressIndicator())
       : Listener(
           onPointerDown: (e) => _pointers.add(e.pointer),
-          onPointerUp: (e) => _pointers.remove(e.pointer),
-          onPointerCancel: (e) => _pointers.remove(e.pointer),
-          child: GestureDetector(
-            onHorizontalDragEnd: (d) {
-              if (_pointers.length >= 2) {
-                if (d.primaryVelocity! > 0) _setStatusTab(_statusTab - 1);
+          onPointerMove: (e) {
+            if (_pointers.length >= 2) {
+              _totalDx += e.delta.dx;
+              if (_totalDx.abs() >= _kSwipeThreshold) {
+                if (_totalDx > 0) _setStatusTab(_statusTab - 1);
                 else _setStatusTab(_statusTab + 1);
+                _totalDx = 0;
               }
-            },
-            behavior: HitTestBehavior.translucent,
-            child: Column(children: [
+            }
+          },
+          onPointerUp: (e) { _pointers.remove(e.pointer); _totalDx = 0; },
+          onPointerCancel: (e) { _pointers.remove(e.pointer); _totalDx = 0; },
+          behavior: HitTestBehavior.translucent,
+          child: Column(children: [
         Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: Row(children: [
@@ -247,10 +252,9 @@ class _CaseListScreenState extends State<CaseListScreen> {
           ),
         ]),
       ),
-    ),
-    floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
-  );
-}
+      floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
+    );
+  }
 
   Widget _typeChip(String value, String label, ColorScheme cs) {
     final active = _typeFilter == value;
