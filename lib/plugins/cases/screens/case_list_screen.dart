@@ -15,8 +15,9 @@ class _CaseListScreenState extends State<CaseListScreen> {
   bool _loading = true;
   int _statusTab = 0;
   int _prevStatusTab = 0;
-  final Set<int> _pointers = {};
-  double _totalDx = 0;
+  bool _zoomMode = false;
+  final _transformController = TransformationController();
+  double _scaleSwipeDx = 0;
   static const _kSwipeThreshold = 50.0;
   String _typeFilter = 'all';
 
@@ -89,6 +90,12 @@ class _CaseListScreenState extends State<CaseListScreen> {
     setState(() => _statusTab = i);
   }
 
+  void _exitZoom() {
+    _zoomMode = false;
+    _transformController.value = Matrix4.identity();
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -96,25 +103,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
     final counts = [0, 0, 0, 0];
     for (final c in _cases.where((c) => !c.isResolved)) { if (c.status >= 0 && c.status <= 3) counts[c.status]++; }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('IS:案件管理')),
-      body: _loading ? const Center(child: CircularProgressIndicator())
-      : Listener(
-          onPointerDown: (e) => _pointers.add(e.pointer),
-          onPointerMove: (e) {
-            if (_pointers.length >= 2) {
-              _totalDx += e.delta.dx;
-              if (_totalDx.abs() >= _kSwipeThreshold) {
-                if (_totalDx > 0) _setStatusTab(_statusTab - 1);
-                else _setStatusTab(_statusTab + 1);
-                _totalDx = 0;
-              }
-            }
-          },
-          onPointerUp: (e) { _pointers.remove(e.pointer); _totalDx = 0; },
-          onPointerCancel: (e) { _pointers.remove(e.pointer); _totalDx = 0; },
-          behavior: HitTestBehavior.translucent,
-          child: Column(children: [
+    final body = Column(children: [
         Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: Row(children: [
@@ -250,8 +239,54 @@ class _CaseListScreenState extends State<CaseListScreen> {
               )),
             ),
           ),
-        ]),
+      ]);
+
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('IS:案件管理'),
+        actions: [
+          if (_zoomMode)
+            IconButton(
+              icon: const Icon(Icons.zoom_out_map),
+              onPressed: _exitZoom,
+            ),
+        ],
       ),
+      body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _zoomMode
+          ? InteractiveViewer(
+              transformationController: _transformController,
+              minScale: 0.5,
+              maxScale: 3.0,
+              boundaryMargin: const EdgeInsets.all(double.infinity),
+              onInteractionEnd: (_) {
+                if (_transformController.value.getMaxScaleOnAxis() <= 1.0 + 0.01) {
+                  _exitZoom();
+                }
+              },
+              child: body,
+            )
+          : GestureDetector(
+              onScaleUpdate: (details) {
+                if (details.pointerCount >= 2) {
+                  if ((details.scale - 1.0).abs() > 0.01 && !_zoomMode) {
+                    setState(() => _zoomMode = true);
+                    return;
+                  }
+                  _scaleSwipeDx += details.focalPointDelta.dx;
+                  if (_scaleSwipeDx.abs() >= _kSwipeThreshold) {
+                    if (_scaleSwipeDx > 0) _setStatusTab(_statusTab - 1);
+                    else _setStatusTab(_statusTab + 1);
+                    _scaleSwipeDx = 0;
+                  }
+                }
+              },
+              onScaleEnd: (_) => _scaleSwipeDx = 0,
+              behavior: HitTestBehavior.translucent,
+              child: body,
+            ),
       floatingActionButton: FloatingActionButton(onPressed: _createManually, child: const Icon(Icons.add)),
     );
   }
