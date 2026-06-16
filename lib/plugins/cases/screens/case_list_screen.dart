@@ -124,12 +124,34 @@ class _CaseListScreenState extends State<CaseListScreen> {
           ]),
         ),
         const SizedBox(height: 4),
-        TabBar(
-          tabs: _statusTabs.map((t) => Tab(text: t)).toList(),
-          isScrollable: false,
-          labelColor: cs.primary, unselectedLabelColor: cs.onSurfaceVariant,
-          indicatorColor: cs.primary,
-          onTap: (i) => setState(() => _statusTab = i),
+        Container(
+          height: 36,
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(children: _statusTabs.asMap().entries.map((e) {
+            final i = e.key;
+            final selected = _statusTab == i;
+            return Expanded(child: GestureDetector(
+              onTap: () => setState(() => _statusTab = i),
+              child: Container(
+                alignment: Alignment.center,
+                margin: EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: selected ? cs.surface : null,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(_statusTabs[i],
+                  style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w500,
+                    color: selected ? cs.primary : cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ));
+          }).toList()),
         ),
         Expanded(
           child: filtered.isEmpty
