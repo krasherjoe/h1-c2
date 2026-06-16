@@ -65,7 +65,7 @@ class _ReceiptPhotoScreenState extends State<ReceiptPhotoScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('レシート撮影')),
+      appBar: AppBar(title: const Text('RC:レシート撮影')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

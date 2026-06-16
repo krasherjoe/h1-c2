@@ -254,7 +254,7 @@ class DocumentsPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'DOC',
+      id: 'D1',
       title: '伝票管理',
       route: '/documents',
       builder: (_) => H1Explorer(config: DocumentExplorerConfig()),

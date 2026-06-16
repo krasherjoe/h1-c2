@@ -31,7 +31,7 @@ class SuppliersPlugin extends H1Plugin {
   @override
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
-      id: 'SU',
+      id: 'SL',
       title: '仕入先一覧',
       route: '/suppliers',
       builder: (_) => const SupplierListScreen(),

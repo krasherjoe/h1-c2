@@ -41,7 +41,7 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('レシート印刷')),
+      appBar: AppBar(title: const Text('PT:レシート印刷')),
       body: _preview.isEmpty
           ? Center(child: Text('プレビューがありません', style: TextStyle(color: cs.onSurfaceVariant)))
           : Padding(
