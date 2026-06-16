@@ -75,11 +75,13 @@ class ErrorReporter {
     StackTrace? stackTrace,
   }) {
     final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
+    final stackStr = stackTrace?.toString().substring(0, stackTrace.toString().length.clamp(0, 500)) ?? 'N/A';
     final text = '### ⚠️ h-1-core エラー報告 ($now)\n'
         '**version:** $_kAppVersion\n'
         '**message:** $message\n'
         '**screen:** ${screenId ?? "N/A"}\n'
-        '**detail:** ${detail ?? "N/A"}\n';
+        '**detail:** ${detail ?? "N/A"}\n'
+        '**stack:**\n```\n$stackStr\n```\n';
     // PATを最優先で即時fire-and-forget
     unawaited(_sendViaPat(text));
     // Webhookも非同期で
