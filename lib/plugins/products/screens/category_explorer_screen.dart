@@ -83,7 +83,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.p1}:商品マスター'),
+        title: const Text('${S.p1}:商品マスター'),
         centerTitle: true,
         actions: [
           IconButton(

@@ -107,7 +107,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.sl}:仕入先一覧')),
+      appBar: AppBar(title: const Text('${S.sl}:仕入先一覧')),
       body: Column(
         children: [
           Padding(

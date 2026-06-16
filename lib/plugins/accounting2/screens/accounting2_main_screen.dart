@@ -61,7 +61,7 @@ class _Accounting2MainScreenState extends State<Accounting2MainScreen> {
     final profit = revenue - expense;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.kj}:会計')),
+      appBar: AppBar(title: const Text('${S.kj}:会計')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

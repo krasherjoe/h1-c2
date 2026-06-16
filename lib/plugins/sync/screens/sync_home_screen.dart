@@ -49,11 +49,11 @@ class _SyncHomeScreenState extends State<SyncHomeScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     if (_mode == 'loading') return Scaffold(
-      appBar: AppBar(title: const Text('\${S.sy}:グループ同期')),
+      appBar: AppBar(title: const Text('${S.sy}:グループ同期')),
       body: const Center(child: CircularProgressIndicator()),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.sy}:グループ同期')),
+      appBar: AppBar(title: const Text('${S.sy}:グループ同期')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -159,7 +159,7 @@ class _StocktakeInputScreenState extends State<StocktakeInputScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.ic}:棚卸入力'),
+        title: const Text('${S.ic}:棚卸入力'),
         actions: [
           IconButton(
             onPressed: _loading ? null : _saveStocktake,

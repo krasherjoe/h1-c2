@@ -133,7 +133,7 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('\${S.wh}:倉庫一覧'),
+        title: const Text('${S.wh}:倉庫一覧'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(

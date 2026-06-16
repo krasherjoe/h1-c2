@@ -49,7 +49,7 @@ class _AuditScreenState extends State<AuditScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.ad}:ハッシュチェーン監査'),
+        title: const Text('${S.ad}:ハッシュチェーン監査'),
         actions: [
           IconButton(
             icon: _isVerifying

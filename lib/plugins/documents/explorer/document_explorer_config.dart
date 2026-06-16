@@ -36,7 +36,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   ];
 
   @override
-  String get explorerTitle => '\${S.d1}:伝票管理';
+  String get explorerTitle => '${S.d1}:伝票管理';
 
   @override
   List<({String value, String label, IconData icon})> get typeFilterOptions => _typeOptions;

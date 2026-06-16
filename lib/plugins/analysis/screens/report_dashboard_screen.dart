@@ -42,7 +42,7 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.rd}:レポートダッシュボード')),
+      appBar: AppBar(title: const Text('${S.rd}:レポートダッシュボード')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

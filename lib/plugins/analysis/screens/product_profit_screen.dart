@@ -87,7 +87,7 @@ class _ProductProfitScreenState extends State<ProductProfitScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.pa}:商品別粗利分析'),
+        title: const Text('${S.pa}:商品別粗利分析'),
         actions: [
           PopupMenuButton<int>(
             icon: const Icon(Icons.date_range),

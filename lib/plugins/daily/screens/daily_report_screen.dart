@@ -128,7 +128,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
         : _reports.where((r) => r.tagList.any((t) => t.contains(_tagFilter))).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.dr}:日報')),
+      appBar: AppBar(title: const Text('${S.dr}:日報')),
       body: Column(children: [
         _periodFilter(cs),
         if (_allTags.isNotEmpty) _tagBar(cs),

@@ -633,7 +633,7 @@ class _PriceExplorerScreenState extends State<PriceExplorerScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('\${S.pe}:価格表', style: TextStyle(color: cs.onPrimary)),
+            Text('${S.pe}:価格表', style: TextStyle(color: cs.onPrimary)),
             const SizedBox(width: 8),
             DropdownButtonHideUnderline(
               child: DropdownButton<String>(

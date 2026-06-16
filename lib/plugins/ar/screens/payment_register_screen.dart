@@ -66,7 +66,7 @@ class _PaymentRegisterScreenState extends State<PaymentRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.pg}:支払登録')),
+      appBar: AppBar(title: const Text('${S.pg}:支払登録')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(

@@ -93,7 +93,7 @@ class _ArDashboardScreenState extends State<ArDashboardScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.ar}:売掛金管理'),
+        title: const Text('${S.ar}:売掛金管理'),
         actions: [
           TextButton.icon(
             onPressed: () async {

@@ -438,7 +438,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
           ),
           const SizedBox(width: 8),
           Text(
-            '\${S.db}: $sizeStr',
+            '${S.db}: $sizeStr',
             style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
           ),
         ],

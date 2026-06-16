@@ -80,7 +80,7 @@ class _StockInboundScreenState extends State<StockInboundScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.whi}:入庫処理')),
+      appBar: AppBar(title: const Text('${S.whi}:入庫処理')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _inbound, icon: const Icon(Icons.add), label: const Text('入庫登録'),
       ),

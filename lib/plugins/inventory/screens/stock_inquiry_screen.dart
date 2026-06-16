@@ -79,7 +79,7 @@ class _StockInquiryScreenState extends State<StockInquiryScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('\${S.iq}:在庫照会'),
+        title: const Text('${S.iq}:在庫照会'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),

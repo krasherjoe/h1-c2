@@ -246,7 +246,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
     final filteredProducts = _filteredProducts;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.ia}:在庫調整'),
+        title: const Text('${S.ia}:在庫調整'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

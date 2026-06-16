@@ -97,7 +97,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.cf}:資金繰り'),
+        title: const Text('${S.cf}:資金繰り'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],

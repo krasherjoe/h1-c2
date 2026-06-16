@@ -188,7 +188,7 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.lr}:台帳'),
+        title: const Text('${S.lr}:台帳'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

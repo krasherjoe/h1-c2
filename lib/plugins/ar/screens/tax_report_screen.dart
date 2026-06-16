@@ -85,7 +85,7 @@ class _TaxReportScreenState extends State<TaxReportScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.tx}:税務レポート'),
+        title: const Text('${S.tx}:税務レポート'),
       ),
       body: Column(
         children: [

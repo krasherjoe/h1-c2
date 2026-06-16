@@ -111,7 +111,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.fp1}:月次収支'),
+        title: const Text('${S.fp1}:月次収支'),
         actions: [
           IconButton(
             icon: const Icon(Icons.chevron_left),

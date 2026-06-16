@@ -106,7 +106,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.is_}:案件管理')),
+      appBar: AppBar(title: const Text('${S.is_}:案件管理')),
       body: _loading
         ? const Center(child: CircularProgressIndicator())
         : Column(children: [

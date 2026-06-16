@@ -231,7 +231,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.mn2}:覚書入力'),
+        title: const Text('${S.mn2}:覚書入力'),
         actions: [
           _saving
               ? const Padding(

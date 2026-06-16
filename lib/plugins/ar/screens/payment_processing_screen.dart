@@ -127,7 +127,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.rp}:入金処理')),
+      appBar: AppBar(title: const Text('${S.rp}:入金処理')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _invoices.isEmpty

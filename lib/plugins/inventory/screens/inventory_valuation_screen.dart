@@ -112,7 +112,7 @@ class _InventoryValuationScreenState extends State<InventoryValuationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.r4}:在庫評価額一覧'),
+        title: const Text('${S.r4}:在庫評価額一覧'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

@@ -72,7 +72,7 @@ class _SalesAnalysisScreenState extends State<SalesAnalysisScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.sa}:売上分析'),
+        title: const Text('${S.sa}:売上分析'),
         actions: [
           IconButton(
             icon: const Icon(Icons.chevron_left),

@@ -122,7 +122,7 @@ class _SupplierEditorScreenState extends State<SupplierEditorScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('\${S.se}:${_isEdit ? '仕入先編集' : '新規仕入先'}'),
+        title: Text('${S.se}:${_isEdit ? '仕入先編集' : '新規仕入先'}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),

@@ -65,7 +65,7 @@ class _PaymentScheduleScreenState extends State<PaymentScheduleScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.py}:支払予定'),
+        title: const Text('${S.py}:支払予定'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),

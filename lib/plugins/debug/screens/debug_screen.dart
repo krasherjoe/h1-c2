@@ -207,7 +207,7 @@ class _DebugScreenState extends State<DebugScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.db}:デバッグ')),
+      appBar: AppBar(title: const Text('${S.db}:デバッグ')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

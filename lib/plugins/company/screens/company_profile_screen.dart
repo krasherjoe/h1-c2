@@ -223,7 +223,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.ci}:自社情報')),
+      appBar: AppBar(title: const Text('${S.ci}:自社情報')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(

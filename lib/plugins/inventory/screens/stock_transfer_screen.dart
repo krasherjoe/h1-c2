@@ -201,7 +201,7 @@ class _StockTransferScreenState extends State<StockTransferScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.im}:在庫移動'),
+        title: const Text('${S.im}:在庫移動'),
         actions: [
           IconButton(
             onPressed: _saving ? null : _saveTransfer,

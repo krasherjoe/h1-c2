@@ -92,7 +92,7 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('\${S.who}:出庫処理')),
+      appBar: AppBar(title: const Text('${S.who}:出庫処理')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _outbound, icon: const Icon(Icons.remove), label: const Text('出庫登録'),
       ),

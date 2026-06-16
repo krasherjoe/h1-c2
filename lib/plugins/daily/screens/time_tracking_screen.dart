@@ -169,7 +169,7 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.ti}:工数管理'),
+        title: const Text('${S.ti}:工数管理'),
         actions: [
           TextButton.icon(
             onPressed: _timerRunning ? _toggleTimer : null,

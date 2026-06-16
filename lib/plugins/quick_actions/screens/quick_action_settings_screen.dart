@@ -198,7 +198,7 @@ class _QuickActionSettingsScreenState extends State<QuickActionSettingsScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('\${S.qa1}: クイックアクション設定'),
+        title: const Text('${S.qa1}: クイックアクション設定'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
