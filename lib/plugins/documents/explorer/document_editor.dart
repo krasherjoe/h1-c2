@@ -46,6 +46,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
   int? _priceAdjustmentUnit;
 
   final _subjectCtl = TextEditingController();
+  final _titleCtl = TextEditingController();
 
   final _undoStack = <_EditorSnapshot>[];
   final _redoStack = <_EditorSnapshot>[];
@@ -66,6 +67,9 @@ class _DocumentEditorState extends State<DocumentEditor> {
     _selectedDate = doc?.date ?? DateTime.now();
     _projectId = doc?.projectId;
     _subjectCtl.text = doc?.subject ?? '';
+    final subjLines = (doc?.subject ?? '').split('\n');
+    _titleCtl.text = subjLines.first;
+    if (subjLines.length > 1) _subjectCtl.text = subjLines.sublist(1).join('\n');
     _includeTax = doc?.includeTax ?? false;
     _totalDiscountAmount = doc?.totalDiscountAmount;
     _totalDiscountRate = doc?.totalDiscountRate;
@@ -102,6 +106,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
 
   @override
   void dispose() {
+    _titleCtl.dispose();
     _subjectCtl.dispose();
     super.dispose();
   }
@@ -114,6 +119,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       selectedDate: _selectedDate,
       projectId: _projectId,
       projectName: _projectName,
+      title: _titleCtl.text,
       subject: _subjectCtl.text,
       includeTax: _includeTax,
       totalDiscountAmount: _totalDiscountAmount,
@@ -141,6 +147,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       selectedDate: _selectedDate,
       projectId: _projectId,
       projectName: _projectName,
+      title: _titleCtl.text,
       subject: _subjectCtl.text,
       includeTax: _includeTax,
       totalDiscountAmount: _totalDiscountAmount,
@@ -163,6 +170,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _selectedDate = s.selectedDate;
       _projectId = s.projectId;
       _projectName = s.projectName;
+      _titleCtl.text = s.title;
       _subjectCtl.text = s.subject;
       _includeTax = s.includeTax;
       _totalDiscountAmount = s.totalDiscountAmount;
@@ -184,6 +192,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       _selectedDate = s.selectedDate;
       _projectId = s.projectId;
       _projectName = s.projectName;
+      _titleCtl.text = s.title;
       _subjectCtl.text = s.subject;
       _includeTax = s.includeTax;
       _totalDiscountAmount = s.totalDiscountAmount;
@@ -208,7 +217,13 @@ class _DocumentEditorState extends State<DocumentEditor> {
       discountRate: e.discountRate,
       notes: e.notes,
     )).toList();
-    final subj = _subjectCtl.text.trim();
+    final title = _titleCtl.text.trim();
+    final memo = _subjectCtl.text.trim();
+    final merged = title.isNotEmpty && memo.isNotEmpty
+        ? '$title\n$memo'
+        : title.isNotEmpty
+            ? title
+            : memo;
     final tmp = DocumentModel(
       id: widget.document?.id ?? _repo.generateId(),
       documentType: _selectedType,
@@ -219,7 +234,7 @@ class _DocumentEditorState extends State<DocumentEditor> {
       total: 0,
       status: 'draft',
       projectId: _projectId,
-      subject: subj.isEmpty ? null : subj,
+      subject: merged.isNotEmpty ? merged : null,
       includeTax: _includeTax,
       taxRate: 0.10,
       totalDiscountAmount: _totalDiscountAmount,
@@ -762,39 +777,47 @@ class _DocumentEditorState extends State<DocumentEditor> {
   }
 
   Widget _buildSubjectField(ColorScheme cs) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-            ),
-            child: Text('件名（1行目をタイトル、2行目以降をメモとして使用）',
-              style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant.withValues(alpha: 0.45))),
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
           ),
-          TextField(
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+          child: TextField(
+            controller: _titleCtl,
+            maxLines: 1,
+            decoration: const InputDecoration(
+              border: InputBorder.none, isDense: true,
+              labelText: '件名',
+              hintText: 'タイトル',
+            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+          child: TextField(
             controller: _subjectCtl,
             maxLines: null,
-            minLines: 3,
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-              hintText: '1行目: タイトル（必須）\n2行目以降: メモ・備考（任意）',
-              hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.25)),
+            minLines: 2,
+            decoration: const InputDecoration(
+              border: InputBorder.none, isDense: true,
+              labelText: 'メモ',
+              hintText: '自由記述',
             ),
             style: TextStyle(fontSize: 14, color: cs.onSurface),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1240,6 +1263,7 @@ class _EditorSnapshot {
   final DateTime selectedDate;
   final String? projectId;
   final String? projectName;
+  final String title;
   final String subject;
   final bool includeTax;
   final int? totalDiscountAmount;
@@ -1255,6 +1279,7 @@ class _EditorSnapshot {
     required this.selectedDate,
     this.projectId,
     this.projectName,
+    this.title = '',
     this.subject = '',
     this.includeTax = false,
     this.totalDiscountAmount,
