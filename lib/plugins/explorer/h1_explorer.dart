@@ -929,6 +929,10 @@ class _H1ExplorerViewerScreenState<T extends H1ExplorerItem> extends State<_H1Ex
 
   @override
   Widget build(BuildContext context) {
+    // viewerが自前のScaffold+AppBarを持つ場合は外側をスキップ
+    if (widget.config.viewerHasOwnScaffold) {
+      return widget.config.buildViewer(context, widget.item);
+    }
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(

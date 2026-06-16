@@ -35,6 +35,9 @@ abstract class H1ExplorerConfig<T extends H1ExplorerItem> {
   String get emptyMessage;
   bool get showStatusFilter => true;
   bool get supportsEdit => true;
+  /// trueの場合、buildViewer()が自前のScaffold+AppBarを持つため
+  /// h1_explorerの外側Scaffoldをスキップする
+  bool get viewerHasOwnScaffold => false;
 
   Future<List<T>> fetchItems(String query);
   Widget buildViewer(BuildContext context, T item);

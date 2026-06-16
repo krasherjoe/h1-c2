@@ -106,8 +106,11 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   }
 
   @override
+  bool get viewerHasOwnScaffold => true;
+
+  @override
   Widget buildViewer(BuildContext context, CustomerExplorerItem item) {
-    return CustomerEditScreen(customer: item.customer, showAppBar: false);
+    return CustomerEditScreen(customer: item.customer);
   }
 
   @override
