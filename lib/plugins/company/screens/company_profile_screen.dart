@@ -11,6 +11,7 @@ import 'seal_contrast_dialog.dart';
 import 'seal_camera_screen.dart';
 import 'seal_offset_adjust_page.dart';
 import '../../../constants/screen_ids.dart';
+import '../../../utils/theme_utils.dart' show cardDecoration;
 
 class CompanyProfileScreen extends StatefulWidget {
   const CompanyProfileScreen({super.key});
@@ -322,11 +323,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   Widget _buildTaxSection() {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(12),
-        color: cs.primaryContainer.withValues(alpha: 0.15),
-      ),
+      decoration: cardDecoration(cs, color: cs.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
+        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5))),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,11 +366,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   Widget _buildBankSection() {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(12),
-        color: cs.primaryContainer.withValues(alpha: 0.15),
-      ),
+      decoration: cardDecoration(cs, color: cs.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
+        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5))),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,7 +421,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
             const SizedBox(height: 8),
             TextField(
               decoration: const InputDecoration(
-                labelText: '銀行名', isDense: true, border: OutlineInputBorder(),
+                labelText: '銀行名', isDense: true,
               ),
               controller: TextEditingController(text: account.bankName)
                 ..selection = TextSelection.collapsed(offset: account.bankName.length),
@@ -435,7 +430,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
             const SizedBox(height: 8),
             TextField(
               decoration: const InputDecoration(
-                labelText: '支店名', isDense: true, border: OutlineInputBorder(),
+                labelText: '支店名', isDense: true,
               ),
               controller: TextEditingController(text: account.branchName)
                 ..selection = TextSelection.collapsed(offset: account.branchName.length),
@@ -448,7 +443,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   child: DropdownButtonFormField<String>(
                     value: account.accountType,
                     decoration: const InputDecoration(
-                      labelText: '口座種別', isDense: true, border: OutlineInputBorder(),
+                      labelText: '口座種別', isDense: true,
                     ),
                     items: ['普通', '当座', 'その他']
                       .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 14))))
@@ -465,7 +460,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   flex: 2,
                   child: TextField(
                     decoration: const InputDecoration(
-                      labelText: '口座番号', isDense: true, border: OutlineInputBorder(),
+                      labelText: '口座番号', isDense: true,
                     ),
                     controller: TextEditingController(text: account.accountNumber)
                       ..selection = TextSelection.collapsed(offset: account.accountNumber.length),
@@ -477,9 +472,9 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
             ),
             const SizedBox(height: 8),
             TextField(
-              decoration: const InputDecoration(
-                labelText: '口座名義', isDense: true, border: OutlineInputBorder(),
-              ),
+            decoration: const InputDecoration(
+              labelText: '口座名義', isDense: true,
+            ),
               controller: TextEditingController(text: account.holderName)
                 ..selection = TextSelection.collapsed(offset: account.holderName.length),
               onChanged: (v) => _bankAccounts[index] = account.copyWith(holderName: v),
@@ -492,12 +487,10 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
 
   Widget _buildSealSection() {
     final hasSeal = _info?.sealPath != null;
+    final cs3 = Theme.of(context).colorScheme;
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
-      ),
+      decoration: cardDecoration(cs3, color: cs3.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
+        border: Border.all(color: cs3.primaryContainer.withValues(alpha: 0.5))),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
