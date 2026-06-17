@@ -190,7 +190,10 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(top: BorderSide(color: cs.outlineVariant)),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, -2))],
+        boxShadow: [
+          BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, -2)),
+          BoxShadow(color: cs.shadow.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, -4)),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -205,7 +208,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                 child: TextField(
                   controller: _amountCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: '入金額', isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)))),
+                  decoration: const InputDecoration(labelText: '入金額', isDense: true),
                 ),
               ),
               const SizedBox(width: 8),

@@ -135,6 +135,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: latestNotif != null ? cs.tertiaryContainer.withValues(alpha: 0.3) : cs.secondaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: latestNotif != null ? cs.tertiary : cs.secondary),
+        boxShadow: [
+          BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: cs.shadow.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4)),
+        ],
       ),
       child: InkWell(
         onTap: () {

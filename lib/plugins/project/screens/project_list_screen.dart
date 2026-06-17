@@ -336,6 +336,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             color: isHovering ? color.withValues(alpha: 0.08) : cs.surfaceContainerLow,
             borderRadius: BorderRadius.circular(12),
             border: isHovering ? Border.all(color: color, width: 2) : null,
+            boxShadow: [
+              BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 2)),
+              BoxShadow(color: cs.shadow.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4)),
+            ],
           ),
           child: Column(
             children: [

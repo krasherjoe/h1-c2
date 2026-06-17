@@ -56,6 +56,10 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
                       decoration: BoxDecoration(
                         color: cs.surface,
                         borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 2)),
+                          BoxShadow(color: cs.shadow.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4)),
+                        ],
                       ),
                       child: SingleChildScrollView(
                         child: Text(_preview, style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: cs.onSurface)),
