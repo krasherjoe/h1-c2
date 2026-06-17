@@ -418,7 +418,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: widget.selectionMode
-              ? () => Navigator.pop(context, project)
+              ? () => Navigator.pop(context, project.id)
               : () {
                 Navigator.push(
                   context,
@@ -511,7 +511,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: widget.selectionMode
-          ? () => Navigator.pop(context, project)
+          ? () => Navigator.pop(context, project.id)
           : () {
             Navigator.push(
               context,

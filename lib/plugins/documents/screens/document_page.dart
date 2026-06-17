@@ -322,11 +322,16 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Widget _buildSubjectDisplay(ColorScheme cs) {
     if (_titleCtl.text.isEmpty) return const SizedBox.shrink();
-    return Row(children: [
-      Icon(Icons.subject, size: 16, color: cs.onSurfaceVariant),
-      const SizedBox(width: 6),
-      Expanded(child: Text(_titleCtl.text, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
-    ]);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(children: [
+          Icon(Icons.subject, size: 16, color: cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Expanded(child: Text(_titleCtl.text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface))),
+        ]),
+      ),
+    );
   }
 
   Widget _buildSubjectField(ColorScheme cs) {
