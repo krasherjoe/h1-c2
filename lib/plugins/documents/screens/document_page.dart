@@ -728,6 +728,8 @@ class _DocumentPageState extends State<DocumentPage> {
         total: doc.totalAmount,
       );
       await _repo.save(saved);
+      await _repo.addEditLog(saved.id, '保存',
+        details: '${_type.label} #${saved.documentNumber} ${_customerName} ${_items.length}明細');
       if (!mounted) return;
       Navigator.pop(context, saved);
     } catch (e, st) {
