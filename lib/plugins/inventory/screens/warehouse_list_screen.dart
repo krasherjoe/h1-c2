@@ -145,10 +145,6 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: theme.cardColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
                 contentPadding: EdgeInsets.zero,
               ),
               onChanged: (_) => _applyFilter(),

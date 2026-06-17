@@ -117,7 +117,6 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
               decoration: InputDecoration(
                 hintText: '検索...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 isDense: true,
               ),
               onChanged: _filter,

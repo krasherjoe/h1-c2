@@ -85,7 +85,6 @@ class _SupplierPickerDialogState extends State<SupplierPickerDialog> {
               decoration: InputDecoration(
                 hintText: '仕入先を検索...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 isDense: true,
               ),
               onChanged: _filter,

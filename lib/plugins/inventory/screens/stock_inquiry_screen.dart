@@ -108,10 +108,6 @@ class _StockInquiryScreenState extends State<StockInquiryScreen> {
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
                 contentPadding: EdgeInsets.zero,
               ),
               onChanged: (_) => _applyFilter(),

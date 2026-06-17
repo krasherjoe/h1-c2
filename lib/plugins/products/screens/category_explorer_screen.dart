@@ -125,7 +125,6 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         decoration: InputDecoration(
           hintText: '商品名で検索...',
           prefixIcon: const Icon(Icons.search),
-          border: const OutlineInputBorder(),
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),

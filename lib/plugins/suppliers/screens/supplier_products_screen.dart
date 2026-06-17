@@ -213,7 +213,6 @@ class _SupplierProductsScreenState extends State<SupplierProductsScreen> {
         hintText: '商品名・JANコードで検索',
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         suffixIcon: _searchCtrl.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear, size: 18),
