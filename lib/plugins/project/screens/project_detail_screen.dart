@@ -11,6 +11,7 @@ import '../../memorandum/screens/memorandum_input_screen.dart';
 import '../../memorandum/screens/memorandum_preview_screen.dart';
 import '../../../services/sync_service.dart';
 import '../../../constants/screen_ids.dart';
+import '../../../utils/theme_utils.dart' show cardBoxShadow;
 
 class ProjectDetailScreen extends StatefulWidget {
   final String? projectId;
@@ -155,7 +156,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: cardBoxShadow(cs),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -273,7 +274,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: cardBoxShadow(cs),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -359,6 +360,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         decoration: BoxDecoration(
           color: cs.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: cardBoxShadow(cs),
         ),
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -371,7 +373,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: cardBoxShadow(cs),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -421,6 +423,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         decoration: BoxDecoration(
           color: cs.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: cardBoxShadow(cs),
         ),
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -455,7 +458,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: cardBoxShadow(cs),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -525,7 +528,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: cardBoxShadow(cs),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
