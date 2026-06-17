@@ -21,7 +21,8 @@ const _kDocTable = '''
     status TEXT DEFAULT 'draft',
     linked_document_id TEXT,
     project_id TEXT,
-    subject TEXT
+    subject TEXT,
+    deleted_at TEXT DEFAULT NULL
   )
 ''';
 
