@@ -341,7 +341,8 @@ class _DocumentPageState extends State<DocumentPage> {
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: TextField(controller: _titleCtl, maxLines: 1,
-        decoration: const InputDecoration(border: InputBorder.none, isDense: true, labelText: '件名', hintText: 'タイトル'),
+        decoration: InputDecoration(border: InputBorder.none, isDense: true, hintText: '件名',
+          hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5), fontWeight: FontWeight.normal)),
         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
     );
   }
@@ -690,6 +691,7 @@ class _DocumentPageState extends State<DocumentPage> {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => DocumentPreviewPage(
       document: doc,
       allowFormalIssue: !widget.isEditing && doc.isDraft && !doc.isLocked,
+      isUnlocked: !doc.isLocked,
       onFormalIssue: () async {
         final repo = DocumentRepository();
         await repo.save(docCopy.copyWith(status: 'confirmed', isLocked: true));
@@ -719,12 +721,13 @@ class _DocumentPageState extends State<DocumentPage> {
     setState(() => _isSaving = true);
     try {
       final doc = _buildDoc();
-      await _repo.save(doc.copyWith(
+      final saved = doc.copyWith(
         id: widget.document?.id ?? _repo.generateId(),
         documentNumber: widget.document?.documentNumber ?? await _repo.generateDocumentNumber(_type),
-      ));
+      );
+      await _repo.save(saved);
       if (!mounted) return;
-      Navigator.pop(context, true);
+      Navigator.pop(context, saved);
     } catch (e, st) {
       ErrorReporter.sendError(message: '保存失敗: $e', screenId: '/documents/editor', stackTrace: st);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('保存エラー: $e')));
