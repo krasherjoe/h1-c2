@@ -39,6 +39,24 @@ class PurchaseExplorerConfig extends H1ExplorerConfig<PurchaseModel> {
   }
 
   @override
+  List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
+          BuildContext context) =>
+      [
+        (icon: Icons.edit_note, label: '手入力で新規作成', onTap: () => _openNewPurchase(context)),
+      ];
+
+  void _openNewPurchase(BuildContext context) {
+    Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PurchaseEditor(purchase: null),
+      ),
+    ).then((result) {
+      if (result != null) onListChanged?.call();
+    });
+  }
+
+  @override
   Future<bool> canDelete(PurchaseModel item) async => item.isDraft;
 
   @override
