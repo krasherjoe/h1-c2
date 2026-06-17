@@ -674,6 +674,8 @@ class _DocumentPageState extends State<DocumentPage> {
       final doc = copyAsDocument(_buildDoc(), target);
       final docNumber = await _repo.generateDocumentNumber(target);
       await _repo.save(doc.copyWith(documentNumber: docNumber));
+      await _repo.addEditLog(doc.id, '変換',
+        details: '${target.label}として作成（原本: ${widget.document?.documentNumber ?? ""}）');
       if (mounted) setState(() => _copied = true);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('作成エラー: $e')));
@@ -696,6 +698,8 @@ class _DocumentPageState extends State<DocumentPage> {
       onFormalIssue: () async {
         final repo = DocumentRepository();
         await repo.save(docCopy.copyWith(status: 'confirmed', isLocked: true));
+        await repo.addEditLog(docCopy.id, '正式発行',
+          details: '${docCopy.documentType.label} #${docCopy.documentNumber} ${docCopy.customerName}');
         return true;
       },
       showShare: true, showPrint: true, customerEmail: email,

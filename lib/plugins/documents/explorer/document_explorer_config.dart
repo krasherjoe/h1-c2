@@ -213,5 +213,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   Future<void> deleteItem(DocumentModel item) async {
     final repo = DocumentRepository();
     await repo.delete(item.id);
+    await repo.addEditLog(item.id, '削除',
+      details: '${item.documentType.label} #${item.documentNumber} ${item.customerName}');
   }
 }
