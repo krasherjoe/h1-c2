@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../utils/theme_utils.dart';
+import '../../../utils/theme_utils.dart' show textColorOn, cardDecoration;
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import '../models/document_model.dart';
@@ -298,7 +298,7 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Widget _buildDateRow(ColorScheme cs) {
     return Container(
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
+      decoration: cardDecoration(cs, color: cs.surfaceContainerLow, radius: 12).copyWith(
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -338,7 +338,7 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Widget _buildSubjectField(ColorScheme cs) {
     return Container(
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
+      decoration: cardDecoration(cs, color: cs.surfaceContainerLow, radius: 12).copyWith(
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: TextField(controller: _titleCtl, maxLines: 1,
@@ -351,7 +351,7 @@ class _DocumentPageState extends State<DocumentPage> {
   Widget _buildCustomerRow(ColorScheme cs) {
     if (!widget.isEditing) {
       return Container(padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(8),
+        decoration: cardDecoration(cs, color: cs.surfaceContainerLow, radius: 8).copyWith(
           border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -361,7 +361,7 @@ class _DocumentPageState extends State<DocumentPage> {
         ]));
     }
     return Container(
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
+      decoration: cardDecoration(cs, color: cs.surfaceContainerLow, radius: 12).copyWith(
         border: Border.all(color: cs.outlineVariant)),
       child: ListTile(
         leading: Icon(Icons.business, color: cs.primary),
@@ -378,7 +378,7 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Widget _buildProjectRow(ColorScheme cs) {
     return Container(
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
+      decoration: cardDecoration(cs, color: cs.surfaceContainerLow, radius: 12).copyWith(
         border: Border.all(color: cs.outlineVariant)),
       child: ListTile(
         leading: Icon(Icons.folder, color: cs.primary),
@@ -401,7 +401,7 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Widget _buildTaxToggle(ColorScheme cs) {
     return Container(
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12),
+      decoration: cardDecoration(cs, color: cs.surfaceContainerLow, radius: 12).copyWith(
         border: Border.all(color: cs.outlineVariant)),
       child: SwitchListTile(
         title: const Text('消費税を計算する', style: TextStyle(fontSize: 14)),
