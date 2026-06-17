@@ -53,6 +53,37 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   @override
   String get emptyMessage => '伝票がありません';
 
+  static IconData _typeIcon(DocumentType type) => switch (type) {
+    DocumentType.estimation => Icons.request_quote,
+    DocumentType.order => Icons.shopping_cart_checkout,
+    DocumentType.delivery => Icons.local_shipping,
+    DocumentType.invoice => Icons.receipt_long,
+    DocumentType.receipt => Icons.receipt,
+  };
+
+  @override
+  List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
+          BuildContext context) =>
+      DocumentType.values.map((t) => (
+        icon: _typeIcon(t),
+        label: '${t.label}を新規作成',
+        onTap: () => _openNewDocument(context, t),
+      )).toList();
+
+  void _openNewDocument(BuildContext context, DocumentType type) {
+    Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DocumentPage(
+          isEditing: true,
+          initialType: type,
+        ),
+      ),
+    ).then((result) {
+      if (result != null) onListChanged?.call();
+    });
+  }
+
   @override
   Future<List<DocumentModel>> fetchItems(String query) async {
     final repo = DocumentRepository();

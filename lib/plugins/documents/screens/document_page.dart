@@ -22,8 +22,9 @@ import '../explorer/document_preview_page.dart';
 class DocumentPage extends StatefulWidget {
   final DocumentModel? document;
   final bool isEditing;
+  final DocumentType? initialType;
 
-  const DocumentPage({super.key, this.document, this.isEditing = false});
+  const DocumentPage({super.key, this.document, this.isEditing = false, this.initialType});
 
   @override
   State<DocumentPage> createState() => _DocumentPageState();
@@ -69,7 +70,7 @@ class _DocumentPageState extends State<DocumentPage> {
 
   Future<void> _load() async {
     final doc = widget.document;
-    _type = doc?.documentType ?? DocumentType.invoice;
+    _type = doc?.documentType ?? widget.initialType ?? DocumentType.invoice;
     _customerId = doc?.customerId ?? '';
     _customerName = doc?.customerName ?? '';
     _date = doc?.date ?? DateTime.now();
