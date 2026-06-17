@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import 'company_service.dart';
 import 'database/database_schema_core.dart';
+import 'history_db_service.dart';
 
 export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
@@ -54,6 +55,7 @@ class DatabaseHelper {
         debugPrint('[DBHelper] close error: $e');
       }
     }
+    await HistoryDbService.closeAndReset();
   }
 
   Future<String> getDatabasePath() async {
@@ -93,8 +95,9 @@ class DatabaseHelper {
     await _migrateToExternalStorage(dbPath);
     final dir = Directory(p.dirname(dbPath));
     if (!await dir.exists()) await dir.create(recursive: true);
+    Database db;
     try {
-      return await openDatabase(
+      db = await openDatabase(
         dbPath,
         version: _databaseVersion,
         onCreate: createAllTables,
@@ -105,13 +108,15 @@ class DatabaseHelper {
       final appDir = await getApplicationDocumentsDirectory();
       final fallbackPath = p.join(appDir.path, '販売アシスト1号core', p.basename(dbPath));
       await Directory(p.dirname(fallbackPath)).create(recursive: true);
-      return openDatabase(
+      db = await openDatabase(
         fallbackPath,
         version: _databaseVersion,
         onCreate: createAllTables,
         onUpgrade: upgradeDatabase,
       );
     }
+    await HistoryDbService.initialize(db);
+    return db;
   }
 }
 

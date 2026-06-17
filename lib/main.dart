@@ -47,6 +47,7 @@ import 'plugins/pricelist/price_list_plugin.dart';
 import 'plugins/suppliers/suppliers_plugin.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
+import 'services/history_db_service.dart';
 import 'services/mm_command_service.dart';
 import 'services/debug_console.dart';
 import 'services/log_dispatcher.dart';
@@ -316,6 +317,35 @@ void main() async {
   if (db == null) {
     _showFatalError('データベースの初期化に失敗しました');
     return;
+  }
+
+  // 履歴DBから伝票テーブルの整合性チェック＋自動リペア
+  try {
+    final restored = await HistoryDbService().repairDocumentsTable(db);
+    if (restored > 0) {
+      debugPrint('[Startup] 🔧 自動リペア完了: $restored件の伝票を復元');
+    }
+    await HistoryDbService().purgeOldEntries();
+    // ソフトデリートから30日経過したレコードを完全削除
+    final cutoff = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+    final purgeTargets = await db.query('documents',
+      columns: ['id'],
+      where: 'deleted_at IS NOT NULL AND deleted_at < ?',
+      whereArgs: [cutoff],
+    );
+    if (purgeTargets.isNotEmpty) {
+      await db.transaction((txn) async {
+        for (final t in purgeTargets) {
+          final id = t['id'] as String;
+          await txn.delete('document_items', where: 'document_id = ?', whereArgs: [id]);
+          await txn.delete('documents', where: 'id = ?', whereArgs: [id]);
+        }
+      });
+      debugPrint('[Startup] 🧹 古いソフトデリートデータをパージ: ${purgeTargets.length}件');
+    }
+  } catch (e, st) {
+    debugPrint('[Startup] HistoryDBリペア/パージエラー: $e');
+    ErrorReporter.sendError(message: '[Startup] HistoryDBリペア/パージエラー: $e', stackTrace: st);
   }
 
   final context = PluginContext(database: db, preferences: prefs);

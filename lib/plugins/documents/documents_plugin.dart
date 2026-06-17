@@ -6,6 +6,7 @@ import '../../plugin_system/screen_definition.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/document_explorer_config.dart';
 import '../../services/debug_console.dart';
+import '../../services/history_db_service.dart';
 import '../../constants/screen_ids.dart';
 
 const _kDocTable = '''
@@ -85,6 +86,10 @@ class DocumentsPlugin extends H1Plugin {
         'ALTER TABLE document_items ADD COLUMN notes TEXT DEFAULT NULL');
     } catch (_) {}
     try {
+      await context.database.execute(
+        "ALTER TABLE documents ADD COLUMN deleted_at TEXT DEFAULT NULL");
+    } catch (_) {}
+    try {
       final cutoff = DateTime.now().subtract(const Duration(days: 14)).toIso8601String();
       await context.database.delete('document_edit_logs',
         where: 'created_at < ?', whereArgs: [cutoff]);
@@ -95,6 +100,30 @@ class DocumentsPlugin extends H1Plugin {
       final lines = cnt.map((r) => '  ${r['document_type']}: ${r['c']}件').join('\n');
       final total = cnt.fold(0, (s, r) => s + (r['c'] as int? ?? 0));
       return '伝票統計:\n$lines\n  合計: $total件';
+    });
+    DebugConsole.register('db.repair', (_) async {
+      final restored = await HistoryDbService().repairDocumentsTable(context.database);
+      return restored > 0 ? 'リペア完了: $restored件復元' : 'リペア不要';
+    });
+    DebugConsole.register('db.purge', (_) async {
+      final cutoff = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+      final targets = await context.database.query('documents',
+        columns: ['id'],
+        where: 'deleted_at IS NOT NULL AND deleted_at < ?',
+        whereArgs: [cutoff],
+      );
+      if (targets.isEmpty) return 'パージ対象なし';
+      int count = 0;
+      await context.database.transaction((txn) async {
+        for (final t in targets) {
+          final id = t['id'] as String;
+          await txn.delete('document_items', where: 'document_id = ?', whereArgs: [id]);
+          await txn.delete('documents', where: 'id = ?', whereArgs: [id]);
+          count++;
+        }
+      });
+      await HistoryDbService().purgeOldEntries();
+      return 'パージ完了: $count件の伝票と古い履歴を削除';
     });
     debugPrint('[DocumentsPlugin] Initialized');
   }
@@ -126,7 +155,7 @@ class DocumentsPlugin extends H1Plugin {
           ['$prefix${DateTime.now().year % 100}%'],
         )).first['c'] as int? ?? 0;
 
-        await db.insert('documents', {
+        final docMap = {
           'id': id,
           'document_type': type,
           'customer_id': row['customer_id'],
@@ -137,13 +166,15 @@ class DocumentsPlugin extends H1Plugin {
           'status': row['order_status'] as String? ?? 'draft',
           'linked_document_id': row['source_document_id'] as String?,
           'subject': row['subject'] as String?,
-        });
+        };
+        await db.insert('documents', docMap);
 
-        final items = await db.rawQuery(
+        final itemRows = await db.rawQuery(
           'SELECT * FROM invoice_items WHERE invoice_id = ?', [id],
         );
-        for (final item in items) {
-          await db.insert('document_items', {
+        final itemList = <Map<String, dynamic>>[];
+        for (final item in itemRows) {
+          final itemMap = {
             'id': item['id'],
             'document_id': id,
             'product_id': item['product_id'],
@@ -151,8 +182,21 @@ class DocumentsPlugin extends H1Plugin {
             'quantity': item['quantity'] ?? 1,
             'unit_price': item['unit_price'] ?? 0,
             'tax_rate': item['tax_rate'] ?? 0.1,
-          });
+          };
+          itemList.add(itemMap);
+          await db.insert('document_items', itemMap);
         }
+
+        final snapshot = Map<String, dynamic>.from(docMap);
+        snapshot['_items'] = itemList;
+        try {
+          await HistoryDbService().recordChange(
+            tableName: 'documents',
+            rowId: id,
+            action: 'INSERT',
+            row: snapshot,
+          );
+        } catch (_) {}
       }
       debugPrint('[DocumentsPlugin] invoices→documents 復元完了: ${rows.length}件');
     } catch (e) {

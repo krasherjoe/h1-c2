@@ -9,6 +9,7 @@ import '../models/payment_schedule_model.dart' show PaymentStatus;
 import 'database_helper.dart';
 import 'activity_log_repository.dart';
 import 'hash_chain_verify_result.dart';
+import 'history_db_service.dart';
 
 class InvoiceRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -315,7 +316,18 @@ class InvoiceRepository {
         );
       }
 
+      Map<String, dynamic>? snapshot;
       await db.transaction((txn) async {
+        final invoiceRows = await txn.query('invoices',
+          where: 'id = ?', whereArgs: [id], limit: 1);
+        if (invoiceRows.isNotEmpty) {
+          final itemRows = await txn.query('invoice_items',
+            where: 'invoice_id = ?', whereArgs: [id]);
+          final snap = Map<String, dynamic>.from(invoiceRows.first);
+          snap['_items'] = itemRows;
+          snapshot = snap;
+        }
+
         final List<Map<String, dynamic>> items = await txn.query(
           'invoice_items',
           where: 'invoice_id = ?',
@@ -352,6 +364,15 @@ class InvoiceRepository {
         );
         await txn.delete('invoices', where: 'id = ?', whereArgs: [id]);
       });
+
+      if (snapshot != null) {
+        await HistoryDbService().recordChange(
+          tableName: 'invoices',
+          rowId: id,
+          action: 'DELETE',
+          row: snapshot!,
+        );
+      }
     } catch (e) {
       debugPrint('[InvoiceRepo] deleteInvoice error: $e');
       rethrow;

@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import '../../../services/database_helper.dart';
 import '../../../services/hash_utils.dart';
 import '../../../services/hash_chain_verify_result.dart';
+import '../../../services/history_db_service.dart';
 import '../models/document_model.dart';
 import '../models/document_edit_log.dart';
 
@@ -37,6 +39,7 @@ class DocumentRepository {
       conditions.add('d.date <= ?');
       args.add(dateTo.toIso8601String().substring(0, 10));
     }
+    conditions.add('d.deleted_at IS NULL');
     conditions.add('d.status IS NOT NULL');
     conditions.add('d.is_current IS NOT NULL');
     conditions.add('d.is_current = 1');
@@ -58,7 +61,8 @@ class DocumentRepository {
 
   Future<DocumentModel?> fetchById(String id) async {
     final db = await _db;
-    final maps = await db.query('documents', where: 'id = ?', whereArgs: [id], limit: 1);
+    final maps = await db.query('documents',
+      where: 'id = ? AND deleted_at IS NULL', whereArgs: [id], limit: 1);
     if (maps.isEmpty) return null;
     final items = await _fetchItems(db, id);
     return DocumentModel.fromMap(maps.first, items: items);
@@ -75,6 +79,8 @@ class DocumentRepository {
 
   Future<void> save(DocumentModel document) async {
     final db = await _db;
+    bool isUpdate = false;
+    Map<String, dynamic>? savedSnapshot;
     await db.transaction((txn) async {
       final existing = await txn.query(
         'documents',
@@ -88,6 +94,7 @@ class DocumentRepository {
         throw Exception('ロック済み伝票は変更できません');
       }
 
+      isUpdate = existing.isNotEmpty;
       int newVersion = 1;
       String? previousHash;
       if (existing.isNotEmpty) {
@@ -143,18 +150,34 @@ class DocumentRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
+      final itemMaps = <Map<String, dynamic>>[];
       for (final item in document.items) {
+        final im = item.toMap(document.id);
+        itemMaps.add(im);
         await txn.insert(
           'document_items',
-          item.toMap(document.id),
+          im,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
+
+      savedSnapshot = Map<String, dynamic>.from(docMap);
+      savedSnapshot!['_items'] = itemMaps;
     });
+
+    if (savedSnapshot != null) {
+      await HistoryDbService().recordChange(
+        tableName: 'documents',
+        rowId: document.id,
+        action: isUpdate ? 'UPDATE' : 'INSERT',
+        row: savedSnapshot!,
+      );
+    }
   }
 
   Future<void> delete(String id) async {
     final db = await _db;
+    Map<String, dynamic>? snapshot;
     await db.transaction((txn) async {
       final existing = await txn.query(
         'documents',
@@ -166,9 +189,52 @@ class DocumentRepository {
       if (existing.isNotEmpty && (existing.first['is_locked'] as int?) == 1) {
         throw Exception('ロック済み伝票は削除できません');
       }
-      await txn.delete('document_items', where: 'document_id = ?', whereArgs: [id]);
-      await txn.delete('documents', where: 'id = ?', whereArgs: [id]);
+      if (existing.isEmpty) return;
+
+      final docRows = await txn.query('documents', where: 'id = ?', whereArgs: [id], limit: 1);
+      if (docRows.isEmpty) return;
+      final itemRows = await txn.query('document_items', where: 'document_id = ?', whereArgs: [id]);
+      final snap = Map<String, dynamic>.from(docRows.first);
+      snap['_items'] = itemRows;
+      snapshot = snap;
+
+      await txn.update(
+        'documents',
+        {'deleted_at': DateTime.now().toIso8601String()},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
     });
+
+    if (snapshot != null) {
+      await HistoryDbService().recordChange(
+        tableName: 'documents',
+        rowId: id,
+        action: 'DELETE',
+        row: snapshot!,
+      );
+    }
+  }
+
+  /// ソフトデリートから30日以上経過したレコードを完全削除
+  Future<int> purgeSoftDeleted() async {
+    final db = await _db;
+    final cutoff = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+    final targets = await db.query('documents',
+      columns: ['id'],
+      where: 'deleted_at IS NOT NULL AND deleted_at < ?',
+      whereArgs: [cutoff],
+    );
+    if (targets.isEmpty) return 0;
+    final ids = targets.map((r) => r['id'] as String).toList();
+    await db.transaction((txn) async {
+      for (final id in ids) {
+        await txn.delete('document_items', where: 'document_id = ?', whereArgs: [id]);
+        await txn.delete('documents', where: 'id = ?', whereArgs: [id]);
+      }
+    });
+    debugPrint('[DocRepo] パージ完了: ${ids.length}件');
+    return ids.length;
   }
 
   Future<String> generateDocumentNumber(DocumentType type) async {
@@ -183,7 +249,7 @@ class DocumentRepository {
     final today = DateTime.now();
     final yymm = '${today.year % 100}${today.month.toString().padLeft(2, '0')}';
     final results = await db.rawQuery(
-      "SELECT COUNT(*) as cnt FROM documents WHERE document_number LIKE ?",
+      "SELECT COUNT(*) as cnt FROM documents WHERE document_number LIKE ? AND deleted_at IS NULL",
       ['$prefix$yymm%'],
     );
     final count = (results.first['cnt'] as int? ?? 0) + 1;
