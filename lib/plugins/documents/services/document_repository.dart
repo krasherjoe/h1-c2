@@ -48,7 +48,7 @@ class DocumentRepository {
     final maps = await db.rawQuery('''
       SELECT d.* FROM documents d
       $where
-      ORDER BY d.date DESC
+      ORDER BY d.date DESC, d.rowid DESC
     ''', args);
 
     final documents = <DocumentModel>[];
