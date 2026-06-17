@@ -153,6 +153,52 @@ final textColor = textColorOn(someBackgroundColor);
 
 **基本思想**: 「知ってる人は直感的に使え、知らない人も迷わない」UIを目指す。複数ステップ必要な操作は「選択するだけ」で完結させる。
 
+## FAB (FloatingActionButton) アクションルール
+
+H1Explorer の FAB は「種別選択 → 作成」の2ステップで操作する。
+
+### ルール
+1. **fabActions を実装する**: `H1ExplorerConfig.fabActions()` をオーバーライドし、種別選択ボトムシートを返す
+2. **デフォルトで直接作成しない**: `fabActions` が `null` の場合、`h1_explorer.dart` は直接 `_openEditor(null)` を呼ぶ。これは種別が固定されるため禁止
+3. **種別ごとにアイコンと色を割り当てる**: 既存の `documentTypeColor()` と整合させる
+
+### 選択肢が1つの場合
+- BottomSheetを表示せず、直接実行する
+- 例: メモ作成（種類1つ）、案件作成（種類1つ）
+
+### 選択肢が複数の場合
+- BottomSheetで選択肢を表示する
+- 例: ドキュメント作成（5種類）、顧客作成（2方法）
+
+### 実装パターン (CustomerExplorerConfig)
+
+```dart
+@override
+List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
+        BuildContext context) =>
+    [
+      (icon: Icons.edit_note, label: '手入力で新規作成', onTap: () => _openNewEditor(context)),
+      (icon: Icons.contact_phone, label: '電話帳から取り込む', onTap: () => _importFromPhonebook(context)),
+    ];
+```
+
+### 実装パターン (DocumentExplorerConfig)
+
+```dart
+@override
+List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
+        BuildContext context) =>
+    DocumentType.values.map((t) => (
+      icon: _typeIcon(t),
+      label: '${t.label}を新規作成',
+      onTap: () => _openNewDocument(context, t),
+    )).toList();
+```
+
+### 禁止事項
+- FAB タップでいきなり特定種別の新規作成を開くこと
+- `fabActions` をオーバーライドせずにフォールバックに頼ること
+
 ## GitHub リリース管理
 
 - GitHub 上のリリースは**最新5件のみ保持**する
@@ -182,3 +228,4 @@ AppBar actions: [Undo] [Redo] [PDF] [Save]
 - [ ] 入力フィールドはテーマの `InputDecorationTheme` に従っているか
 - [ ] 伝票カード左端にdoctype色の縦バーを適用しているか
 - [ ] ダークモードでの見た目を確認したか
+- [ ] FABは `fabActions` で種別選択を表示しているか（直接作成ではない）
