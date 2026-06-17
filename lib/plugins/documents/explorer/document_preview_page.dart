@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
@@ -7,6 +9,7 @@ import '../models/document_model.dart';
 import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
 import '../services/document_repository.dart';
 import '../../../services/error_reporter.dart';
+import '../../../services/history_repository.dart';
 import '../../../utils/theme_utils.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/gmail_sender.dart';
@@ -101,6 +104,25 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
         // 電帳法保存エラーはPDF生成を妨げない
         debugPrint('[DocumentPreview] 電帳法保存エラー: $e');
       }
+
+      // PDF出力履歴を記録
+      try {
+        final historyRepo = HistoryRepository();
+        final pdfJson = _effectiveDocument.toPdfJson();
+        final pdfJsonString = jsonEncode(pdfJson);
+        final contentHash = sha256.convert(utf8.encode(pdfJsonString)).toString();
+        
+        await historyRepo.recordPdfOutput(
+          documentType: _effectiveDocument.documentType.name,
+          documentId: _effectiveDocument.id,
+          documentNumber: _effectiveDocument.documentNumber,
+          customerName: _effectiveDocument.customerName,
+          contentHash: contentHash,
+        );
+      } catch (e) {
+        // 履歴記録エラーはPDF生成を妨げない
+        debugPrint('[DocumentPreview] PDF出力履歴記録エラー: $e');
+      }
       
       return pdfBytes;
     } catch (e, st) {
@@ -165,6 +187,19 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
     );
     if (!mounted) return;
     if (ok) {
+      // メール送信履歴を記録
+      try {
+        final historyRepo = HistoryRepository();
+        await historyRepo.recordEmailSend(
+          documentType: widget.document.documentType.name,
+          documentId: widget.document.id,
+          documentNumber: widget.document.documentNumber,
+          recipientEmail: recipient,
+          subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
+        );
+      } catch (e) {
+        debugPrint('[DocumentPreview] メール送信履歴記録エラー: $e');
+      }
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('メールを送信しました')));
       return;
     }

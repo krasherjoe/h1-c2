@@ -12,7 +12,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 6;
+  static const _databaseVersion = 7;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -176,6 +176,47 @@ Future<void> _migrateToVersion(Database db, int version) async {
       ''');
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_eb_document ON electronic_bookkeeping(document_type, document_id)',
+      );
+      break;
+    case 7:
+      // PDF出力履歴テーブル
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS pdf_output_history (
+          id TEXT PRIMARY KEY,
+          document_type TEXT NOT NULL,
+          document_id TEXT NOT NULL,
+          document_number TEXT NOT NULL,
+          customer_name TEXT,
+          file_path TEXT,
+          content_hash TEXT NOT NULL,
+          output_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_pdf_history_document ON pdf_output_history(document_type, document_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_pdf_history_output_at ON pdf_output_history(output_at)',
+      );
+      // メール送信履歴テーブル
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS email_send_history (
+          id TEXT PRIMARY KEY,
+          document_type TEXT,
+          document_id TEXT,
+          document_number TEXT,
+          recipient_email TEXT NOT NULL,
+          recipient_name TEXT,
+          subject TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'sent',
+          sent_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_email_history_document ON email_send_history(document_type, document_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_email_history_sent_at ON email_send_history(sent_at)',
       );
       break;
     default:
