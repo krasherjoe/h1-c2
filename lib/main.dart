@@ -274,7 +274,6 @@ void main() async {
         message: '[Startup] DB初期化エラー: $e',
         stackTrace: st,
       );
-      rethrow;
     }
 
     await LogDispatcher.loadConfig();
@@ -305,9 +304,19 @@ void main() async {
     MmCommandService.instance.start();
   }
 
-  final db = await DatabaseHelper().database;
+  Database? db;
+  try {
+    db = await DatabaseHelper().database;
+  } catch (e, st) {
+    ErrorReporter.sendError(message: '[Startup] DB接続エラー: $e', stackTrace: st);
+  }
   final prefs = await SharedPreferences.getInstance();
   debugPrint('[Startup] DB ready, prefs ready');
+
+  if (db == null) {
+    _showFatalError('データベースの初期化に失敗しました');
+    return;
+  }
 
   final context = PluginContext(database: db, preferences: prefs);
 
@@ -528,4 +537,28 @@ class _H1CoreAppState extends State<H1CoreApp> {
   }
 
   void _applySystemNavBar(ThemeMode mode) {}
+}
+
+Never _showFatalError(String message) {
+  runApp(MaterialApp(
+    home: Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text('アプリを起動できませんでした',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(message, textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      ),
+    ),
+  ));
+  throw UnsupportedError('Fatal: $message');
 }
