@@ -724,6 +724,7 @@ class _DocumentPageState extends State<DocumentPage> {
       final saved = doc.copyWith(
         id: widget.document?.id ?? _repo.generateId(),
         documentNumber: widget.document?.documentNumber ?? await _repo.generateDocumentNumber(_type),
+        total: doc.totalAmount,
       );
       await _repo.save(saved);
       if (!mounted) return;
