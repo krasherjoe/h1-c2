@@ -245,7 +245,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   runZonedGuarded(() async {
-    await _migrateIfNeeded();
+    // 起動時エラーでMattermostにログを送信できるよう、先にErrorReporterを初期化
+    try {
+      await MmCommandService.instance.loadConfig();
+      await ErrorReporter.sendLog(message: '[Startup] main() begin - app starting');
+    } catch (_) {}
 
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
@@ -262,9 +266,17 @@ void main() async {
       );
       return true;
     };
-    try { await ErrorReporter.sendLog(message: '[Startup] main() begin - app starting'); } catch (_) {}
 
-    await MmCommandService.instance.loadConfig();
+    try {
+      await _migrateIfNeeded();
+    } catch (e, st) {
+      ErrorReporter.sendError(
+        message: '[Startup] DB初期化エラー: $e',
+        stackTrace: st,
+      );
+      rethrow;
+    }
+
     await LogDispatcher.loadConfig();
 
   DebugConsole.register('ping', (_) async => 'pong');
