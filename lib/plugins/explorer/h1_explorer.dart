@@ -147,16 +147,6 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     });
   }
 
-  Future<void> _openEditor(T? item) async {
-    final result = await Navigator.push<dynamic>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => widget.config.buildEditor(context, item),
-      ),
-    );
-    if (result != null && mounted) _loadItems();
-  }
-
   Future<void> _confirmDelete(T item) async {
     final allowed = await widget.config.canDelete(item);
     if (!allowed) {
@@ -449,16 +439,16 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   Widget? _buildFab() {
     if (widget.selectionMode) return null;
     final actions = widget.config.fabActions(context);
-    if (actions != null) {
-      return FloatingActionButton(
-        heroTag: 'explorer_fab_${widget.config.hashCode}',
-        onPressed: () => _showFabMenu(actions),
-        child: const Icon(Icons.add),
-      );
-    }
+    if (actions == null) return null; // fabActions未実装時はFAB非表示
     return FloatingActionButton(
       heroTag: 'explorer_fab_${widget.config.hashCode}',
-      onPressed: () => _openEditor(null),
+      onPressed: () {
+        if (actions.length == 1) {
+          actions.first.onTap(); // 選択肢1つなら直接実行
+        } else {
+          _showFabMenu(actions); // 複数ならBottomSheet
+        }
+      },
       child: const Icon(Icons.add),
     );
   }
