@@ -342,9 +342,8 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final subS = [10.0, 11.0, 12.0][_displaySize];
     final priceS = [12.0, 13.0, 14.0][_displaySize];
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: _kSpacing / 2, vertical: 2.0),
-      elevation: showShadows ? 2 : 0,
-      shadowColor: showShadows ? cs.shadow.withValues(alpha: 0.3) : null,
+      margin: EdgeInsets.symmetric(horizontal: _kSpacing / 2, vertical: 4.0),
+      elevation: showShadows ? null : 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () => _openProductViewer(product),

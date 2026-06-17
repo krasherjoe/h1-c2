@@ -55,7 +55,6 @@ class DocumentItemCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
-      elevation: 0.5,
       child: Padding(
         padding: EdgeInsets.fromLTRB(12, 10, onDelete != null ? 4 : 12, 10),
         child: Column(

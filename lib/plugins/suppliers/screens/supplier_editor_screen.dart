@@ -304,7 +304,6 @@ class _SupplierEditorScreenState extends State<SupplierEditorScreen> {
 
   Widget _buildCard(List<Widget> children) {
     return Card(
-      elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),

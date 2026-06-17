@@ -184,7 +184,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           children: [
             Card(
-              elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -226,7 +225,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             _SectionHeader(icon: Icons.badge, title: '基本情報'),
             const SizedBox(height: 8),
             Card(
-              elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -336,7 +334,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             _SectionHeader(icon: Icons.contact_mail, title: '連絡先'),
             const SizedBox(height: 8),
             Card(
-              elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -400,7 +397,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             _SectionHeader(icon: Icons.account_balance, title: '決済情報'),
             const SizedBox(height: 8),
             Card(
-              elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -454,7 +450,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             _SectionHeader(icon: Icons.workspace_premium, title: '顧客ランク'),
             const SizedBox(height: 8),
             Card(
-              elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -534,7 +529,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             _SectionHeader(icon: Icons.sort_by_alpha, title: 'インデックス（50音順）'),
             const SizedBox(height: 8),
             Card(
-              elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
