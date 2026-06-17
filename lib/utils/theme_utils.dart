@@ -72,3 +72,16 @@ Color documentTypeColor(DocumentType type, ColorScheme cs, bool isDark) {
   }
   return base;
 }
+
+/// テーマの二重影リスト
+List<BoxShadow> cardBoxShadow(ColorScheme cs) => [
+  BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: Offset(0, 2)),
+  BoxShadow(color: cs.shadow.withValues(alpha: 0.06), blurRadius: 16, offset: Offset(0, 4)),
+];
+
+/// カード風コンテナの BoxDecoration（二重影 + surface + radius）
+BoxDecoration cardDecoration(ColorScheme cs, {Color? color, double radius = 12}) => BoxDecoration(
+  color: color ?? cs.surface,
+  borderRadius: BorderRadius.circular(radius),
+  boxShadow: cardBoxShadow(cs),
+);
