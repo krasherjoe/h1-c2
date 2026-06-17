@@ -489,11 +489,27 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         );
         return;
       }
-      final count = await svc.importProducts(id);
+      final result = await svc.importProducts(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ $count件の商品を取り込みました')),
-      );
+      if (result.createdIds.isNotEmpty) {
+        final ids = List<String>.from(result.createdIds);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ ${result.count}件の商品を取り込みました（新規${ids.length}件）'),
+            duration: const Duration(seconds: 10),
+            action: SnackBarAction(
+              label: '元に戻す',
+              onPressed: () {
+                _undoImport(ids);
+              },
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ ${result.count}件の商品を更新しました')),
+        );
+      }
       await _load();
     } catch (e) {
       debugPrint('[Products] importSheets error: $e');
@@ -502,6 +518,19 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         SnackBar(content: Text('❌ インポート失敗: $e')),
       );
     }
+  }
+
+  void _undoImport(List<String> productIds) async {
+    for (final id in productIds) {
+      try {
+        await _productRepo.deleteProduct(id);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('✅ ${productIds.length}件の商品を元に戻しました')),
+    );
+    _load();
   }
 
   void _openProductViewer(Product product) {

@@ -202,13 +202,15 @@ class SheetsSyncService {
     }
   }
 
-  Future<int> importProducts(String spreadsheetId) async {
+  Future<({int count, List<String> createdIds})> importProducts(String spreadsheetId) async {
     final api = await _getApi();
-    if (api == null) return 0;
+    if (api == null) return (count: 0, createdIds: <String>[]);
     try {
       final result = await api.spreadsheets.values.get(spreadsheetId, '商品取込!A:D');
-      if (result.values == null || result.values!.length <= 1) return 0;
+      if (result.values == null || result.values!.length <= 1) return (count: 0, createdIds: <String>[]);
       final repo = ProductRepository();
+      final allProducts = await repo.getAllProducts();
+      final createdIds = <String>[];
       int count = 0;
       for (int i = 1; i < result.values!.length; i++) {
         final row = result.values![i];
@@ -218,20 +220,43 @@ class SheetsSyncService {
         final price = int.tryParse((row.length > 3 ? row[3]?.toString() ?? '' : '').trim()) ?? 0;
         if (name.isEmpty) continue;
         try {
-          await repo.saveProduct(Product(
-            id: const Uuid().v4(),
-            name: name,
-            manufacturer: manufacturer.isNotEmpty ? manufacturer : null,
-            barcode: barcode.isNotEmpty ? barcode : null,
-            defaultUnitPrice: price,
-          ));
+          // 既存検索: バーコード一致 → 更新
+          Product? existing;
+          if (barcode.isNotEmpty) {
+            existing = allProducts.where((p) => p.barcode == barcode).firstOrNull;
+          }
+          // 既存検索: 名前+メーカー一致 → 更新
+          if (existing == null) {
+            existing = allProducts.where((p) =>
+              p.name == name &&
+              (manufacturer.isEmpty || (p.manufacturer ?? '') == manufacturer)
+            ).firstOrNull;
+          }
+          if (existing != null) {
+            await repo.saveProduct(existing.copyWith(
+              name: name,
+              manufacturer: manufacturer.isNotEmpty ? manufacturer : existing.manufacturer,
+              barcode: barcode.isNotEmpty ? barcode : existing.barcode,
+              defaultUnitPrice: price,
+            ));
+          } else {
+            final product = Product(
+              id: const Uuid().v4(),
+              name: name,
+              manufacturer: manufacturer.isNotEmpty ? manufacturer : null,
+              barcode: barcode.isNotEmpty ? barcode : null,
+              defaultUnitPrice: price,
+            );
+            await repo.saveProduct(product);
+            createdIds.add(product.id);
+          }
           count++;
         } catch (_) {}
       }
-      return count;
+      return (count: count, createdIds: createdIds);
     } catch (e) {
       debugPrint('[Sheets] importProducts error: $e');
-      return 0;
+      return (count: 0, createdIds: <String>[]);
     }
   }
 
