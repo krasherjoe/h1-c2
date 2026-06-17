@@ -1,0 +1,939 @@
+# docs/manifest.yaml
+# h-1-core プラグイン・テーブル・サービス マニフェスト
+# AI 第一主義。機械可読かつ人間編集可能。
+# 変更時は test/docs/manifest_yaml_test.dart がバリデーションする
+
+version: 1.0.0
+last_updated: 2026-06-18
+
+# ============================================================
+# コアテーブル
+
+core_tables:
+  activity_logs:
+    description: 操作ログ
+    columns:
+      - name: id
+        type: TEXT PK
+      - name: action
+        type: TEXT NOT NULL
+      - name: target_type
+        type: TEXT NOT NULL
+      - name: target_id
+        type: TEXT
+      - name: details
+        type: TEXT
+      - name: screen_id
+        type: TEXT
+      - name: timestamp
+        type: TEXT NOT NULL
+    indexes:
+      - idx_activity_logs_target ON activity_logs(target_type, target_id)
+      - idx_activity_logs_timestamp ON activity_logs(timestamp)
+    used_by: [com.h1.core]
+
+  hash_chain:
+    description: ハッシュチェーン（PDF改ざん検証用）
+    columns:
+      - name: id
+        type: TEXT PK
+      - name: document_type
+        type: TEXT NOT NULL
+      - name: document_id
+        type: TEXT NOT NULL
+      - name: content_hash
+        type: TEXT NOT NULL
+      - name: previous_hash
+        type: TEXT
+      - name: created_at
+        type: TEXT NOT NULL
+      - name: version
+        type: INTEGER NOT NULL DEFAULT 1
+    indexes:
+      - idx_hash_chain_document ON hash_chain(document_type, document_id)
+    used_by: [com.h1.plugin.audit, com.h1.plugin.documents]
+
+  electronic_bookkeeping:
+    description: 電帳法対応（PDF生成JSON + Hash Chain）
+    columns:
+      - name: id
+        type: TEXT PK
+      - name: document_type
+        type: TEXT NOT NULL
+      - name: document_id
+        type: TEXT NOT NULL
+      - name: pdf_json
+        type: TEXT NOT NULL
+      - name: content_hash
+        type: TEXT NOT NULL
+      - name: previous_hash
+        type: TEXT
+      - name: version
+        type: INTEGER NOT NULL DEFAULT 1
+      - name: created_at
+        type: TEXT NOT NULL
+    indexes:
+      - idx_eb_document ON electronic_bookkeeping(document_type, document_id)
+    used_by: [com.h1.plugin.audit, com.h1.plugin.documents]
+
+  sync_log:
+    description: 同期ログ
+    columns:
+      - name: id
+        type: INTEGER PK AUTOINCREMENT
+      - name: entity_type
+        type: TEXT NOT NULL
+      - name: entity_id
+        type: TEXT NOT NULL
+      - name: action
+        type: TEXT NOT NULL
+      - name: data
+        type: TEXT NOT NULL
+      - name: device_id
+        type: TEXT NOT NULL
+      - name: parent_id
+        type: TEXT
+      - name: synced_at
+        type: TEXT
+      - name: created_at
+        type: TEXT NOT NULL
+    indexes:
+      - idx_sync_log_entity ON sync_log(entity_type, entity_id)
+      - idx_sync_log_unsent ON sync_log(synced_at) WHERE synced_at IS NULL
+    used_by: [com.h1.plugin.sync]
+
+  pdf_output_history:
+    description: PDF出力履歴
+    columns:
+      - name: id
+        type: TEXT PK
+      - name: document_type
+        type: TEXT NOT NULL
+      - name: document_id
+        type: TEXT NOT NULL
+      - name: document_number
+        type: TEXT NOT NULL
+      - name: customer_name
+        type: TEXT
+      - name: file_path
+        type: TEXT
+      - name: content_hash
+        type: TEXT NOT NULL
+      - name: output_at
+        type: TEXT NOT NULL
+    indexes:
+      - idx_pdf_history_document ON pdf_output_history(document_type, document_id)
+      - idx_pdf_history_output_at ON pdf_output_history(output_at)
+    used_by: [com.h1.plugin.documents]
+
+  email_send_history:
+    description: メール送信履歴
+    columns:
+      - name: id
+        type: TEXT PK
+      - name: document_type
+        type: TEXT
+      - name: document_id
+        type: TEXT
+      - name: document_number
+        type: TEXT
+      - name: recipient_email
+        type: TEXT NOT NULL
+      - name: recipient_name
+        type: TEXT
+      - name: subject
+        type: TEXT NOT NULL
+      - name: status
+        type: TEXT NOT NULL DEFAULT 'sent'
+      - name: sent_at
+        type: TEXT NOT NULL
+    indexes:
+      - idx_email_history_document ON email_send_history(document_type, document_id)
+      - idx_email_history_sent_at ON email_send_history(sent_at)
+    used_by: [com.h1.plugin.documents]
+
+# ============================================================
+# プラグイン一覧
+
+plugins:
+  - id: com.h1.core
+    name: コアシステム
+    class: CorePlugin
+    file: lib/plugin_system/core_plugin.dart
+    description: h-1-core 基盤システム（全プラグインの登録・管理）
+    screens: []
+    services: []
+    tables: [activity_logs, hash_chain, electronic_bookkeeping]
+
+  - id: com.h1.plugin.documents
+    name: 伝票管理
+    class: DocumentsPlugin
+    file: lib/plugins/documents/documents_plugin.dart
+    description: 見積・受注・納品・請求・領収の一元管理
+    screens:
+      - id: D1
+        route: /documents
+    services: [HistoryDbService]
+    tables: [documents, document_items, document_edit_logs, invoices, invoice_items, receipts, hash_chain, electronic_bookkeeping, pdf_output_history, email_send_history]
+
+  - id: com.h1.plugin.customers
+    name: 顧客管理
+    class: CustomersPlugin
+    file: lib/plugins/customers/customers_plugin.dart
+    description: 顧客マスターの管理
+    screens:
+      - id: C1
+        route: /customers
+    services: []
+    tables: [customers, customer_contacts, customer_gps_history]
+
+  - id: com.h1.plugin.products
+    name: 商品管理
+    class: ProductsPlugin
+    file: lib/plugins/products/products_plugin.dart
+    description: 商品マスターの管理
+    screens:
+      - id: P1
+        route: /products
+    services: []
+    tables: [products, product_categories, master_hidden, customer_product_prices, product_option_groups, product_option_values, product_variant_options]
+
+  - id: com.h1.plugin.company
+    name: 自社情報
+    class: CompanyPlugin
+    file: lib/plugins/company/company_plugin.dart
+    description: 会社情報・印鑑・銀行口座の管理
+    screens:
+      - id: CI
+        route: /company
+      - id: TM
+        route: /company/switch
+    services: []
+    tables: [company_info]
+
+  - id: com.h1.plugin.settings
+    name: 設定
+    class: SettingsPlugin
+    file: lib/plugins/settings/settings_plugin.dart
+    description: 印刷設定・伝票番号・税率
+    screens:
+      - id: SET
+        route: /settings
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.inventory
+    name: 在庫管理
+    class: InventoryPlugin
+    file: lib/plugins/inventory/inventory_plugin.dart
+    description: 在庫入出庫・棚卸・調整・倉庫管理
+    screens:
+      - id: INV
+        route: /inventory
+      - id: WH
+        route: /inventory/warehouses
+      - id: WHI
+        route: /inventory/inbound
+      - id: WHO
+        route: /inventory/outbound
+      - id: IQ
+        route: /inventory/inquiry
+      - id: STK
+        route: /inventory/stocktake
+      - id: IC
+        route: /inventory/stocktake_input
+      - id: IA
+        route: /inventory/adjustment
+      - id: IM
+        route: /inventory/transfer
+      - id: R4
+        route: /inventory/valuation
+    services: []
+    tables: [warehouses, inventory, stocktake, inventory_adjustments]
+
+  - id: com.h1.plugin.purchase
+    name: 仕入管理
+    class: PurchasePlugin
+    file: lib/plugins/purchase/purchase_plugin.dart
+    description: 仕入発注・入荷・返品・支払
+    screens:
+      - id: PUR
+        route: /purchase
+    services: []
+    tables: [purchase_orders, purchase_order_items]
+
+  - id: com.h1.plugin.suppliers
+    name: 仕入先管理
+    class: SuppliersPlugin
+    file: lib/plugins/suppliers/suppliers_plugin.dart
+    description: 仕入先マスターの管理
+    screens:
+      - id: SL
+        route: /suppliers
+    services: []
+    tables: [suppliers]
+
+  - id: com.h1.plugin.accounting
+    name: 会計（旧）
+    class: AccountingPlugin
+    file: lib/plugins/accounting/accounting_plugin.dart
+    description: 売掛管理・支払・資金繰り
+    screens:
+      - id: RCV
+        route: /accounting/receivable
+      - id: PS
+        route: /accounting/schedule
+      - id: PR
+        route: /accounting/payment
+      - id: CAS
+        route: /accounting/cashflow
+    services: []
+    tables: [journal_entries]
+
+  - id: com.h1.plugin.accounting2
+    name: 会計
+    class: Accounting2Plugin
+    file: lib/plugins/accounting2/accounting2_plugin.dart
+    description: 複式簿記・決算書作成
+    screens:
+      - id: KJ
+        route: /accounting2
+      - id: RC
+        route: /receipt_photo
+    services: []
+    tables: [journal_entries, accounts]
+
+  - id: com.h1.plugin.analysis
+    name: 分析レポート
+    class: AnalysisPlugin
+    file: lib/plugins/analysis/analysis_plugin.dart
+    description: 売上分析・商品別粗利分析・レポートダッシュボード
+    screens:
+      - id: SA
+        route: /analysis/sales
+      - id: PA
+        route: /analysis/profits
+      - id: RD
+        route: /analysis/dashboard
+      - id: FP1
+        route: /analysis/monthly
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.analytics
+    name: 分析（旧）
+    class: AnalyticsPlugin
+    file: lib/plugins/analytics/analytics_plugin.dart
+    description: 売上分析・利益分析・レポート
+    screens:
+      - id: ANL
+        route: /analytics
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.ar
+    name: 売掛・支払管理
+    class: ArPlugin
+    file: lib/plugins/ar/ar_plugin.dart
+    description: 売掛金管理・入金処理・支払予定・支払登録
+    screens:
+      - id: AR
+        route: /ar
+      - id: RP
+        route: /ar/receipt
+      - id: PY
+        route: /ar/schedules
+      - id: PG
+        route: /ar/payment
+      - id: CF
+        route: /ar/cashflow
+      - id: LR
+        route: /ar/ledger
+      - id: TX
+        route: /ar/tax
+    services: []
+    tables: [ar_receivables, ar_receipts, ar_payments]
+
+  - id: com.h1.plugin.audit
+    name: ハッシュチェーン監査
+    class: AuditPlugin
+    file: lib/plugins/audit/audit_plugin.dart
+    description: 改ざん検出・ハッシュチェーン検証
+    screens:
+      - id: AD
+        route: /audit
+    services: []
+    tables: [hash_chain]
+
+  - id: com.h1.plugin.backup
+    name: バックアップ
+    class: BackupPlugin
+    file: lib/plugins/backup/backup_plugin.dart
+    description: ローカル自動バックアップ・リストア（7年保存対応）
+    screens:
+      - id: BK
+        route: /backup
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.cases
+    name: 案件管理
+    class: CasesPlugin
+    file: lib/plugins/cases/cases_plugin.dart
+    description: 滞留/破損/盗難/紛失の案件管理
+    screens:
+      - id: IS
+        route: /cases
+    services: []
+    tables: [cases]
+
+  - id: com.h1.plugin.conversion
+    name: データ変換
+    class: ConversionPlugin
+    file: lib/plugins/conversion/conversion_plugin.dart
+    description: V1→V2 データベース変換
+    screens: []
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.daily
+    name: 日報・工数管理
+    class: DailyPlugin
+    file: lib/plugins/daily/daily_plugin.dart
+    description: 日報、工数管理、Todo
+    screens:
+      - id: DR
+        route: /daily/reports
+      - id: TI
+        route: /daily/time
+    services: []
+    tables: [daily_reports, time_entries]
+
+  - id: com.h1.plugin.debug
+    name: デバッグ
+    class: DebugPlugin
+    file: lib/plugins/debug/debug_plugin.dart
+    description: Mattermost連携デバッグ・診断
+    screens:
+      - id: DB
+        route: /debug
+    services: [MmCommandService, DebugConsole]
+    tables: []
+
+  - id: com.h1.plugin.drivebackup
+    name: Driveバックアップ
+    class: DriveBackupPlugin
+    file: lib/plugins/drivebackup/drive_backup_plugin.dart
+    description: Google DriveにDBを自動バックアップ
+    screens:
+      - id: DK
+        route: /drivebackup
+    services: [DriveBackupService, GoogleAuthService]
+    tables: []
+
+  - id: com.h1.plugin.explorer
+    name: マスターエクスプローラー
+    class: ExplorerPlugin
+    file: lib/plugins/explorer/explorer_plugin.dart
+    description: マスターデータの汎用一覧・閲覧・編集フレームワーク
+    screens: []
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.memorandum
+    name: 覚書管理
+    class: MemorandumPlugin
+    file: lib/plugins/memorandum/memorandum_plugin.dart
+    description: 保守サービス覚書（契約書）の作成・管理
+    screens:
+      - id: MEMO
+        route: /memorandum
+    services: []
+    tables: [memoranda]
+
+  - id: com.h1.plugin.pricelist
+    name: 価格表
+    class: PriceListPlugin
+    file: lib/plugins/pricelist/price_list_plugin.dart
+    description: 価格表の管理
+    screens:
+      - id: PE
+        route: /pricelist
+    services: []
+    tables: [price_lists]
+
+  - id: com.h1.plugin.printer
+    name: レシート印刷
+    class: PrinterPlugin
+    file: lib/plugins/printer/printer_plugin.dart
+    description: Bluetoothレシートプリンタ印刷
+    screens:
+      - id: PT
+        route: /printer
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.project
+    name: 案件管理（旧）
+    class: ProjectPlugin
+    file: lib/plugins/project/project_plugin.dart
+    description: 案件の作成・進捗管理と伝票紐付け
+    screens:
+      - id: PRJ
+        route: /projects
+    services: []
+    tables: [projects]
+
+  - id: com.h1.plugin.quick_actions
+    name: クイックアクション
+    class: QuickActionsPlugin
+    file: lib/plugins/quick_actions/quick_actions_plugin.dart
+    description: ホーム画面風のショートカット
+    screens:
+      - id: QA
+        route: /quick_actions/settings
+    services: []
+    tables: []
+
+  - id: com.h1.plugin.sync
+    name: グループ同期
+    class: SyncPlugin
+    file: lib/plugins/sync/sync_plugin.dart
+    description: Gmail経由で端末間データ同期
+    screens:
+      - id: SY
+        route: /sync
+    services: [SyncQueue, SyncService, PermissionService]
+    tables: [sync_log, sync_config, sync_children, sync_notifications]
+
+# ============================================================
+# サービス一覧
+
+services:
+  - name: DatabaseHelper
+    file: lib/services/database_helper.dart
+    description: データベース接続管理・初期化・マイグレーション
+    methods:
+      - get database
+      - createFreshDatabase(String dbPath)
+      - closeAndReset()
+      - getDatabasePath()
+    tables: [activity_logs, hash_chain, electronic_bookkeeping, sync_log, pdf_output_history, email_send_history]
+
+  - name: HistoryRepository
+    file: lib/services/history_repository.dart
+    description: PDF出力・メール送信履歴の記録と取得
+    methods:
+      - recordPdfOutput(String documentType, String documentId, String documentNumber, String? customerName, String? filePath, String contentHash)
+      - recordEmailSend(String? documentType, String? documentId, String? documentNumber, String recipientEmail, String? recipientName, String subject, String status)
+      - getPdfOutputHistory(String? documentType, String? documentId, int limit)
+      - getEmailSendHistory(String? documentType, String? documentId, int limit)
+    tables: [pdf_output_history, email_send_history]
+    used_by: [com.h1.plugin.documents]
+
+  - name: InvoiceRepository
+    file: lib/services/invoice_repository.dart
+    description: 伝票のCRUD・入金管理・月次売上集計
+    methods:
+      - saveInvoice(Invoice invoice)
+      - updateInvoice(Invoice invoice)
+      - getAllInvoices(List<Customer> customers, DocumentType? documentTypeFilter, bool excludeCanceled)
+      - getInvoiceById(String id, List<Customer> customers)
+      - deleteInvoice(String id)
+      - searchInvoices(List<Customer> customers, String? query, DocumentType? documentTypeFilter)
+      - getInvoiceCountByCustomer(String customerId)
+      - addReceipt(Receipt receipt)
+      - updatePaymentStatus(String invoiceId)
+      - getMonthlySales(int year)
+      - getYearlyTotal(int year)
+      - getTotalUnpaidAmount()
+      - getUnpaidAmountByCustomer()
+      - hasRedInvoice(String sourceDocumentId)
+      - verifyAllLocked()
+      - isYoungestIssuedInvoice(String invoiceId)
+      - revertFormalIssue(String invoiceId)
+      - getReceiptBySourceDocumentId(String sourceId)
+      - cleanupOrphanedPdfs()
+    tables: [invoices, invoice_items, receipts, customers, products, sync_log]
+
+  - name: CustomerRepository
+    file: lib/services/customer_repository.dart
+    description: 顧客マスターのCRUD・重複チェック・GPS履歴管理
+    methods:
+      - getAllCustomers(bool includeHidden)
+      - ensureCustomerColumns()
+      - getCustomerHistory(String customerId)
+      - checkDuplicate(String? tel, String? email, String? name, String? excludeId)
+      - checkDuplicateTxn(DatabaseExecutor txn, String? tel, String? email, String? name, String? excludeId)
+      - saveCustomer(Customer customer, bool force)
+      - deleteCustomer(String id)
+      - addGpsHistory(String customerId, double latitude, double longitude)
+      - getGpsHistory(String customerId)
+      - searchCustomers(String query, bool includeHidden)
+      - updateContact(String customerId, String? email, String? tel, String? address)
+      - getActiveContact(String customerId)
+      - getById(String id)
+      - cleanupDuplicateVersions()
+      - setHidden(String id, bool hidden)
+      - updateKanaOnly(String customerId, String kana)
+    tables: [customers, customer_contacts, customer_gps_history, master_hidden]
+
+  - name: ProductRepository
+    file: lib/services/product_repository.dart
+    description: 商品マスターのCRUD・バリエーション・顧客別価格・オプション管理
+    methods:
+      - getProduct(String id)
+      - getAllProducts(bool includeHidden)
+      - fetchByCategory(String categoryId, String query)
+      - searchProducts(String query, bool includeHidden)
+      - getProductByBarcode(String barcode)
+      - saveProduct(Product product)
+      - deleteProduct(String id)
+      - setHiddenProduct(String id, bool hidden)
+      - setHidden(String id, bool hidden)
+      - updateStockQuantities(Map<String, int> adjustments)
+      - cleanupDuplicateVersions()
+      - getVariants(String parentId)
+      - getCustomerPrices(String productId)
+      - setCustomerPrice(CustomerProductPrice price)
+      - deleteCustomerPrice(String customerId, String productId)
+      - resolveUnitPrice(String productId, String? customerId)
+      - getOptionGroups(String productId)
+      - getOptionValues(String groupId)
+      - setVariantOptions(String variantId, List<String> optionValueIds)
+      - saveOptionGroup(ProductOptionGroup group)
+      - saveOptionValue(ProductOptionValue value)
+      - deleteOptionGroup(String id)
+      - deleteOptionValue(String id)
+      - generateVariants(String productId)
+      - deleteVariants(String productId)
+      - getVariantOptionValues(String variantId)
+    tables: [products, master_hidden, customer_product_prices, product_option_groups, product_option_values, product_variant_options]
+
+  - name: ProductCategoryRepository
+    file: lib/services/product_category_repository.dart
+    description: 商品カテゴリのツリー構造CRUD
+    methods:
+      - getAll()
+      - getRoots()
+      - getChildren(String parentId)
+      - getPath(String id)
+      - getTree()
+      - save(ProductCategory category)
+      - delete(String id)
+      - moveNode(String id, String? newParentId)
+      - getProductCount(String categoryId)
+      - getAllCategories(bool includeInactive)
+      - getOrCreateCategoryId(String name)
+      - getAllProductCounts()
+    tables: [product_categories, products]
+
+  - name: ActivityLogRepository
+    file: lib/services/activity_log_repository.dart
+    description: 操作ログの記録と取得
+    methods:
+      - log(ActivityLog log)
+      - logAction(String action, String targetType, String? targetId, String? details, String? screenId)
+      - getAllLogs(int limit)
+    tables: [activity_logs]
+
+  - name: CompanyRepository
+    file: lib/services/company_repository.dart
+    description: 自社情報のDB保存・取得
+    methods:
+      - getCompanyInfo()
+      - saveCompanyInfo(CompanyInfo info)
+    tables: [company_info]
+
+  - name: CompanyService
+    file: lib/services/company_service.dart
+    description: 法人（会社）の作成・切替・DBパス管理
+    methods:
+      - getCompanyDirectory()
+      - getCompanyList()
+      - getCurrentCompany()
+      - setCurrentCompany(String name)
+      - getCurrentDbPath()
+      - companyExists(String name)
+      - createCompany(String name)
+      - deleteCompany(String name)
+      - switchCompany(String name)
+      - getDefaultCompany()
+    tables: []
+
+  - name: CompanyProfileService
+    file: lib/services/company_profile_service.dart
+    description: 自社情報プロファイルの取得・保存
+    methods:
+      - getProfile()
+      - saveProfile(Map<String, dynamic> profile)
+    tables: [company_info]
+
+  - name: EditLogRepository
+    file: lib/services/edit_log_repository.dart
+    description: 伝票編集履歴の記録と取得（14日保持）
+    methods:
+      - addLog(String invoiceId, String message)
+      - getLogs(String invoiceId)
+    tables: [edit_logs]
+
+  - name: ProjectRepository
+    file: lib/services/project_repository.dart
+    description: 案件（プロジェクト）のCRUD・文書紐付け・ステージ管理
+    methods:
+      - getAll()
+      - updateOrder(String id, int order)
+      - getById(String id)
+      - getByCustomer(String customerId)
+      - save(Project project)
+      - createProject(String name, String customerId, String customerName, String? type, int? contractMonths)
+      - delete(String id)
+      - linkDocument(String projectId, String documentType, String documentId)
+      - unlinkDocument(String documentId)
+      - updateStage(String projectId, String stage)
+      - getLinkedDocuments(String projectId)
+    tables: [projects, documents]
+
+  - name: AppSettingsRepository
+    file: lib/services/app_settings_repository.dart
+    description: アプリ設定のSharedPreferences管理
+    methods:
+      - init()
+      - get(String key)
+      - set(String key, String value)
+      - getInt(String key)
+      - setInt(String key, int value)
+      - getBool(String key)
+      - setBool(String key, bool value)
+      - getSummaryTheme()
+      - setSummaryTheme(String value)
+      - getHomeMode()
+      - watchHomeMode()
+      - getShowHistoryInvoiceNumber()
+      - setShowHistoryInvoiceNumber(bool value)
+    tables: []
+
+  - name: HistoryDbService
+    file: lib/services/history_db_service.dart
+    description: 履歴DB管理・変更ログ記録・ドキュメント復元
+    methods:
+      - get database
+      - initialize(Database mainDb)
+      - verifyManagementId(Database mainDb)
+      - recordChange(String tableName, String rowId, String action, Map<String, dynamic> row)
+      - getLatestState(String tableName)
+      - repairDocumentsTable(Database mainDb)
+      - purgeOldEntries(int days)
+      - closeAndReset()
+    tables: [change_log, meta, db_meta, documents, document_items]
+
+  - name: DbSnapshotService
+    file: lib/services/db_snapshot_service.dart
+    description: DBスナップショットの作成・一覧・復元
+    methods:
+      - snapshot()
+      - list()
+      - restore(int index)
+      - restoreLatest()
+    tables: []
+
+  - name: SyncService
+    file: lib/services/sync_service.dart
+    description: Gmail経由のグループ同期（プッシュ・プル・GC）
+    methods:
+      - getDeviceId()
+      - pushChange(String entityType, String entityId, String action, Map<String, dynamic> data)
+      - pullChanges()
+      - cleanOldSyncMessages()
+      - labelSentPdf(String messageId)
+      - cleanOldBccPdfMessages()
+      - runGarbageCollection()
+    tables: [sync_log]
+
+  - name: SyncQueue
+    file: lib/services/sync_queue.dart
+    description: 親子デバイス間のGmail同期キュー
+    methods:
+      - setForeground(bool fg)
+      - onCompanySwitch()
+      - init()
+      - setParentEmail(String? email)
+      - setActive(bool active)
+      - push(String changeJson)
+      - startPolling()
+      - stopPolling()
+      - sendNotification(String title, String detail)
+      - setupGmailFilter()
+    tables: [sync_config, sync_children, sync_notifications, documents]
+
+  - name: SheetsSyncService
+    file: lib/services/sheets_sync_service.dart
+    description: Google Sheetsとのデータ連携（商品・試算表・売上分析）
+    methods:
+      - ensureSpreadsheet(String title)
+      - openUrl(String url)
+      - exportProducts(String spreadsheetId)
+      - importProducts(String spreadsheetId)
+      - exportTrialBalance(String spreadsheetId)
+      - ensureAnalysisSpreadsheet()
+      - exportAnalysisData(String ssId)
+    tables: [products, journal_entries, documents, document_items]
+
+  - name: GoogleAuthService
+    file: lib/services/google_auth_service.dart
+    description: Google認証・OAuth2トークン管理
+    methods:
+      - init()
+      - isSignedIn()
+      - getEmail()
+      - signIn()
+      - signOut()
+      - getAccessToken()
+      - getAuthenticatedClient()
+    tables: []
+
+  - name: GmailSender
+    file: lib/services/gmail_sender.dart
+    description: Gmail経由のPDFメール送信
+    methods:
+      - sendPdf(String to, String? bcc, String? replyTo, String subject, String body, Uint8List pdfBytes, String pdfFilename)
+    tables: []
+
+  - name: DriveBackupService
+    file: lib/services/drive_backup_service.dart
+    description: Google DriveへのDBバックアップ・復元
+    methods:
+      - uploadBackup(String filePath, String? companyName)
+      - listBackups()
+      - downloadBackup(String fileId, String localPath)
+      - deleteBackup(String fileId)
+      - cleanOldBackups(int keep)
+    tables: []
+
+  - name: PermissionService
+    file: lib/services/permission_service.dart
+    description: 子分アカウントの機能権限制御
+    methods:
+      - loadFromDb()
+      - applySyncPermissions(Map<String, bool> perms)
+      - hasPermission(AppFeature feature)
+    tables: [permissions]
+
+  - name: ErrorReporter
+    file: lib/services/error_reporter.dart
+    description: エラー報告（Mattermost Webhook/PAT・Gmail）
+    methods:
+      - setWebhookUrl(String url)
+      - sendError(String message, String? detail, String? screenId, StackTrace? stackTrace)
+      - sendErrorViaGmail(String message, String? screenId, StackTrace? stackTrace)
+      - sendLog(String message)
+      - showError(BuildContext context, String message, String? detail, String? screenId, StackTrace? stackTrace)
+      - tryWithReport(String label, Future<T?> Function() fn, String? screenId)
+    tables: []
+
+  - name: MmCommandService
+    file: lib/services/mm_command_service.dart
+    description: Mattermost経由のリモートコマンド実行（ポーリング・ファイルアップロード）
+    methods:
+      - loadConfig()
+      - setEnabled(bool v)
+      - start()
+      - stop()
+      - uploadFile(List<int> bytes, String filename, String? message)
+    tables: []
+
+  - name: DebugConsole
+    file: lib/services/debug_console.dart
+    description: デバッグコマンドのレジストリと実行
+    methods:
+      - register(String name, Future<String> Function(List<String> args) fn)
+      - call(String name, List<String> args)
+    tables: []
+
+  - name: HashUtils
+    file: lib/services/hash_utils.dart
+    description: SHA-256ハッシュ計算・ハッシュチェーン検証
+    methods:
+      - calculateSha256(String input)
+      - calculateCustomerHash(...)
+      - calculateProductHash(...)
+      - calculateDocumentHash(...)
+      - verifyHashChain(String currentHash, String currentInput, String? actualPreviousHash, String? expectedPreviousHash)
+      - verifyCustomerIntegrity(...)
+      - verifyProductIntegrity(...)
+    tables: []
+
+  - name: GeminiOcrService
+    file: lib/services/gemini_ocr_service.dart
+    description: Gemini AIによるレシートOCR解析
+    methods:
+      - getApiKey()
+      - setApiKey(String key)
+      - analyzeReceipt(String imagePath)
+    tables: []
+
+  - name: LegacyMigrator
+    file: lib/services/legacy_migrator.dart
+    description: 旧バージョンDBからのデータ移行
+    methods:
+      - hasLegacyDatabase()
+      - migrate()
+    tables: [customers, products, invoices, invoice_items, product_categories, suppliers, company_info, payment_schedules]
+
+  - name: SyncGarbageCollector
+    file: lib/services/sync_garbage_collector.dart
+    description: 同期関連のガベージコレクション実行
+    methods:
+      - runAll()
+    tables: []
+
+  - name: LogDispatcher
+    file: lib/services/log_dispatcher.dart
+    description: ログ出力先の振り分け（Mattermost/Gmail）
+    methods:
+      - loadConfig()
+      - setDest(String d)
+      - send(String text)
+    tables: []
+
+  - name: BarcodeUtils
+    file: lib/services/barcode_utils.dart
+    description: バーコードの種類判別・チェックデジット検証・正規化
+    methods:
+      - detectType(String code)
+      - calcCheckDigit(String code)
+      - validate(String code)
+      - normalize(String code)
+      - display(String code)
+    tables: []
+
+  - name: GpsService
+    file: lib/services/gps_service.dart
+    description: GPS位置情報の取得
+    methods:
+      - requestPermission()
+      - getCurrentLocation()
+      - distanceKm(double lat1, double lng1, double lat2, double lng2)
+    tables: []
+
+  - name: NavigationService
+    file: lib/services/navigation_service.dart
+    description: 画面遷移サービス（スタブ）
+    methods:
+      - pushNamed<T>(BuildContext context, String route)
+    tables: []
+
+  - name: CustomerDataCleaner
+    file: lib/services/customer_data_cleaner.dart
+    description: 顧客データの敬称クレンジング（スタブ）
+    methods:
+      - analyzeCustomer(dynamic customer)
+      - screenAll(List<dynamic> customers)
+    tables: []
+
+  - name: MasterCsvExporter
+    file: lib/services/master_csv_exporter.dart
+    description: マスターデータのCSVエクスポート（スタブ）
+    methods:
+      - export(String entityName, List<String> headers, List<List<dynamic>> rows)
+    tables: []
