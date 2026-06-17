@@ -5,6 +5,7 @@ import '../../../services/product_category_repository.dart';
 import '../../../models/product_category_model.dart';
 import '../../../services/input_style_service.dart';
 import '../../../services/error_reporter.dart';
+import '../../../services/sheets_sync_service.dart';
 import '../screens/product_editor_screen.dart';
 import '../../../constants/screen_ids.dart';
 
@@ -112,7 +113,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _createProduct,
+        onPressed: _showProductActions,
         child: const Icon(Icons.add),
       ),
     );
@@ -408,12 +409,99 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   }
 
   // --- 操作 ---
-  void _createProduct() async {
-    final result = await Navigator.push<Product>(
-      context,
-      MaterialPageRoute(builder: (_) => const ProductEditorScreen()),
+  void _showProductActions() async {
+    final cs = Theme.of(context).colorScheme;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: Icon(Icons.edit, color: cs.primary),
+            title: const Text('手動で登録'),
+            subtitle: const Text('フォームから1件ずつ入力'),
+            onTap: () => Navigator.pop(ctx, 'manual'),
+          ),
+          ListTile(
+            leading: Icon(Icons.table_chart, color: Colors.green),
+            title: const Text('スプレッドシートから取込'),
+            subtitle: const Text('Google Sheetsのデータを商品として登録'),
+            onTap: () => Navigator.pop(ctx, 'import'),
+          ),
+          ListTile(
+            leading: Icon(Icons.file_download_outlined, color: Colors.orange),
+            title: const Text('テンプレートを出力'),
+            subtitle: const Text('商品データをGoogle Sheetsに書き出し'),
+            onTap: () => Navigator.pop(ctx, 'export'),
+          ),
+        ]),
+      ),
     );
-    if (result != null) _load();
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'manual':
+        final result = await Navigator.push<Product>(
+          context,
+          MaterialPageRoute(builder: (_) => const ProductEditorScreen()),
+        );
+        if (result != null) _load();
+      case 'import':
+        await _importFromSheets();
+      case 'export':
+        await _exportToSheets();
+    }
+  }
+
+  Future<void> _exportToSheets() async {
+    try {
+      final svc = SheetsSyncService.instance;
+      final id = await svc.ensureProductSheet();
+      if (id == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ Google Sheets連携に失敗しました')),
+        );
+        return;
+      }
+      await svc.exportProducts(id);
+      final url = 'https://docs.google.com/spreadsheets/d/$id';
+      await svc.openUrl(url);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ テンプレートを作成しました。記入後「取込」を実行')),
+      );
+    } catch (e) {
+      debugPrint('[Products] exportSheets error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ エクスポート失敗: $e')),
+      );
+    }
+  }
+
+  Future<void> _importFromSheets() async {
+    try {
+      final svc = SheetsSyncService.instance;
+      final id = await svc.ensureProductSheet();
+      if (id == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ 先に「テンプレートを出力」してください')),
+        );
+        return;
+      }
+      final count = await svc.importProducts(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('✅ $count件の商品を取り込みました')),
+      );
+      await _load();
+    } catch (e) {
+      debugPrint('[Products] importSheets error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ インポート失敗: $e')),
+      );
+    }
   }
 
   void _openProductViewer(Product product) {

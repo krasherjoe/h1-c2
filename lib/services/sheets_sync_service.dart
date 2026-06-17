@@ -3,6 +3,7 @@ import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'google_auth_service.dart';
 import 'product_repository.dart';
 import '../models/product_model.dart';
@@ -11,6 +12,33 @@ import '../plugins/accounting2/services/account_repository.dart';
 import '../plugins/accounting2/models/account.dart';
 import '../plugins/accounting2/models/journal_entry.dart';
 import '../plugins/documents/models/document_model.dart';
+
+const _kGasAiFunction = r'''function AI(prompt, data) {
+  var apiKey = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+  if (!apiKey) return "エラー: スクリプトプロパティに GEMINI_API_KEY を設定してください";
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+  var dataStr = "";
+  if (data) {
+    dataStr = Array.isArray(data) ? "\n## データ\n" + data.map(function(r) { return r.join("\t"); }).join("\n") : "\n## データ\n" + data;
+  }
+  var fullPrompt = prompt + dataStr + "\n\n回答は簡潔に。データが表形式なら1行で回答。";
+  var payload = {
+    contents: [{ parts: [{ text: fullPrompt }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
+  };
+  var response = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
+  });
+  var result = JSON.parse(response.getContentText());
+  if (result.candidates && result.candidates.length > 0) {
+    return result.candidates[0].content.parts[0].text.trim();
+  }
+  return "エラー: " + JSON.stringify(result);
+}
+''';
 
 const _kGeminiAnalysisPrompt = '''
 # 販売アシスト1号core 売上分析
@@ -75,6 +103,78 @@ class SheetsSyncService {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<String?> ensureProductSheet() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getString('product_ss_id');
+    if (savedId != null && savedId.isNotEmpty) {
+      try {
+        final api = await _getApi();
+        if (api == null) return null;
+        await api.spreadsheets.get(savedId);
+        return savedId;
+      } catch (_) {
+        await prefs.remove('product_ss_id');
+      }
+    }
+    final api = await _getApi();
+    if (api == null) return null;
+    try {
+      final ss = await api.spreadsheets.create(sheets.Spreadsheet(
+        properties: sheets.SpreadsheetProperties(title: '商品マスター取込'),
+        sheets: [
+          _sheet('商品取込', ['メーカー', '商品名', 'バーコード', '単価']),
+          sheets.Sheet(properties: sheets.SheetProperties(title: '入力の手引き')),
+        ],
+      ));
+      final id = ss.spreadsheetId ?? '';
+      if (id.isEmpty) return null;
+      await prefs.setString('product_ss_id', id);
+      await _writeGuideSheet(id);
+      return id;
+    } catch (e) {
+      debugPrint('[Sheets] ensureProductSheet error: $e');
+      return null;
+    }
+  }
+
+  Future<void> _writeGuideSheet(String spreadsheetId) async {
+    final api = await _getApi();
+    if (api == null) return;
+    final gas = _kGasAiFunction.split('\n');
+    final guide = <List<String>>[
+      ['📋 商品マスター取込 マニュアル', ''],
+      ['', ''],
+      ['📝 手順', '①「商品取込」シートにデータを入力\n②アプリのFAB→「スプレッドシートから取込」を選択'],
+      ['', ''],
+      ['🤖 =AI() 関数を使う', '以下のGASコードをデプロイすると、セルに =AI("プロンプト", セル) と書くだけでGeminiが自動処理します'],
+      ['', ''],
+      ['▼ GASコード（拡張機能→Apps Script→コード.gsに貼付）', ''],
+      ...gas.map((l) => [l, '']),
+      ['', ''],
+      ['▼ GEMINI_API_KEY の設定方法', 'Apps Scriptエディタ→プロジェクトの設定→スクリプトプロパティ→GEMINI_API_KEYを追加'],
+      ['', ''],
+      ['▼ 使用例（商品取込シートのE列以降に貼付）', ''],
+      ['', ''],
+      ['=AI("この商品名からメーカー名を略称で推測して", B2)', '商品名からメーカーを自動補完'],
+      ['=AI("この商品の適正な販売単価を1~10000の整数だけで答えて", D2)', '単価の妥当性チェック'],
+      ['=AI("このバーコードの形式はJAN/EAN/UPCとして正しい？YES/NOで答えて", C2)', 'バーコード検証'],
+      ['=AI("この商品カテゴリを1つだけ提案して(" & A2 & ")", B2)', 'カテゴリ提案'],
+      ['=AI("この商品名を20字以内のキャッチコピーにしてください", B2)', '商品名のブラッシュアップ'],
+      ['', ''],
+      ['⚠️ 注意事項', '・バーコードは重複不可（同じコードの商品は上書き更新されます）\n・単価は半角数字のみ\n・商品名が空の行はスキップされます\n・=AI()を使うにはGASのデプロイとAPIキー設定が必要です'],
+    ];
+    try {
+      await api.spreadsheets.values.update(
+        sheets.ValueRange(values: guide),
+        spreadsheetId,
+        '入力の手引き!A1',
+        valueInputOption: 'USER_ENTERED',
+      );
+    } catch (e) {
+      debugPrint('[Sheets] writeGuideSheet error: $e');
     }
   }
 
