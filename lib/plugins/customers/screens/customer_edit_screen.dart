@@ -573,7 +573,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
 
             FilledButton.icon(
             onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
-              icon: const Icon(Icons.check),
+              icon: const Icon(Icons.save),
               label: Text(
                 _isEdit ? '変更を保存' : '顧客を登録',
                 style: const TextStyle(
@@ -601,8 +601,8 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
           title: _isEdit ? '顧客を編集' : '顧客を新規登録',
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary),
+            IconButton(
+            icon: const Icon(Icons.save),
             tooltip: '保存',
             onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
           ),
