@@ -214,6 +214,6 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final repo = DocumentRepository();
     await repo.delete(item.id);
     await repo.addEditLog(item.id, '削除',
-      details: '${item.documentType.label} #${item.documentNumber} ${item.customerName}');
+      details: '${item.documentType.label} #${item.documentNumber} ${item.customerName}\n${item.items.length}明細');
   }
 }

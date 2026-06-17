@@ -50,6 +50,7 @@ class _DocumentPageState extends State<DocumentPage> {
   String? _projectId;
   String? _projectName;
   late List<_EditableItem> _items;
+  List<_EditableItem> _originalItems = [];
 
   static const _maxUndo = 30;
   List<_Snapshot> _undoStack = [];
@@ -83,6 +84,12 @@ class _DocumentPageState extends State<DocumentPage> {
     _titleCtl.text = subjLines.first;
     _memoCtl.text = subjLines.length > 1 ? subjLines.sublist(1).join('\n') : '';
     _items = (doc?.items ?? []).map((e) => _EditableItem(
+      id: e.id, productId: e.productId, productName: e.productName,
+      maker: e.maker, productCode: e.productCode,
+      quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
+      discountAmount: e.discountAmount, discountRate: e.discountRate, notes: e.notes,
+    )).toList();
+    _originalItems = _items.map((e) => _EditableItem(
       id: e.id, productId: e.productId, productName: e.productName,
       maker: e.maker, productCode: e.productCode,
       quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
@@ -675,7 +682,7 @@ class _DocumentPageState extends State<DocumentPage> {
       final docNumber = await _repo.generateDocumentNumber(target);
       await _repo.save(doc.copyWith(documentNumber: docNumber));
       await _repo.addEditLog(doc.id, '変換',
-        details: '${target.label}として作成（原本: ${widget.document?.documentNumber ?? ""}）');
+        details: '${target.label}として作成（原本: ${widget.document?.documentNumber ?? ""}）\n${_items.length}明細');
       if (mounted) setState(() => _copied = true);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('作成エラー: $e')));
@@ -699,7 +706,7 @@ class _DocumentPageState extends State<DocumentPage> {
         final repo = DocumentRepository();
         await repo.save(docCopy.copyWith(status: 'confirmed', isLocked: true));
         await repo.addEditLog(docCopy.id, '正式発行',
-          details: '${docCopy.documentType.label} #${docCopy.documentNumber} ${docCopy.customerName}');
+          details: '${docCopy.documentType.label} #${docCopy.documentNumber} ${docCopy.customerName}\n${_items.length}明細');
         return true;
       },
       showShare: true, showPrint: true, customerEmail: email,
@@ -733,7 +740,7 @@ class _DocumentPageState extends State<DocumentPage> {
       );
       await _repo.save(saved);
       await _repo.addEditLog(saved.id, '保存',
-        details: '${_type.label} #${saved.documentNumber} ${_customerName} ${_items.length}明細');
+        details: '${_type.label} #${saved.documentNumber} ${_customerName}\n${_buildDiff()}');
       if (!mounted) return;
       Navigator.pop(context, saved);
     } catch (e, st) {
@@ -742,6 +749,35 @@ class _DocumentPageState extends State<DocumentPage> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  String _buildDiff() {
+    final orig = _originalItems;
+    final curr = _items;
+    final added = curr.where((c) => !orig.any((o) => o.id == c.id)).toList();
+    final removed = orig.where((o) => !curr.any((c) => c.id == o.id)).toList();
+    final changed = curr.where((c) {
+      final o = orig.where((o) => o.id == c.id);
+      return o.isNotEmpty && (o.first.quantity != c.quantity || o.first.unitPrice != c.unitPrice || o.first.productName != c.productName);
+    }).toList();
+    final parts = <String>[];
+    if (added.isNotEmpty) {
+      parts.addAll(added.map((i) => '+ ${i.productName} (数量${i.quantity}, 単価¥${i.unitPrice})'));
+    }
+    if (removed.isNotEmpty) {
+      parts.addAll(removed.map((i) => '- ${i.productName} (数量${i.quantity}, 単価¥${i.unitPrice})'));
+    }
+    if (changed.isNotEmpty) {
+      parts.addAll(changed.map((c) {
+        final o = orig.firstWhere((o) => o.id == c.id);
+        final diffs = <String>[];
+        if (o.productName != c.productName) diffs.add('名称: ${o.productName}→${c.productName}');
+        if (o.quantity != c.quantity) diffs.add('数量: ${o.quantity}→${c.quantity}');
+        if (o.unitPrice != c.unitPrice) diffs.add('単価: ¥${o.unitPrice}→¥${c.unitPrice}');
+        return '~ ${c.productName} (${diffs.join(", ")})';
+      }));
+    }
+    return parts.isEmpty ? '(変更なし)' : parts.join('\n');
   }
 
   String _formatMoney(int amount) =>
