@@ -8,6 +8,7 @@ import '../../../widgets/screen_id_title.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../widgets/h1_form_field.dart';
 import '../../../services/sync_service.dart';
+import '../../../services/error_reporter.dart';
 import '../../../constants/screen_ids.dart';
 
 class CustomerEditScreen extends StatefulWidget {
@@ -127,11 +128,11 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-
     try {
+      if (_formKey.currentState == null || !_formKey.currentState!.validate()) return;
+
       final isLocked = widget.customer?.isLocked ?? false;
-      final newId = isLocked ? Uuid().v4() : (widget.customer?.id ?? Uuid().v4());
+      final newId = isLocked ? const Uuid().v4() : (widget.customer?.id ?? const Uuid().v4());
       final newCustomer = Customer(
         id: newId,
         displayName: _stripHonorific(_displayNameCtl.text.trim()),
@@ -164,8 +165,9 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
       );
       if (!mounted) return;
       Navigator.pop(context, newCustomer);
-    } catch (e) {
+    } catch (e, st) {
       if (!mounted) return;
+      ErrorReporter.sendError(message: '顧客保存失敗: $e', screenId: S.c2, stackTrace: st);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('保存エラー: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
