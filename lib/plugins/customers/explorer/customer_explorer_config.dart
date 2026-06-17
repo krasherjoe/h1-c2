@@ -161,7 +161,7 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
   }
 
   @override
-  List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
+  List<({IconData icon, String label, Future<void> Function() onTap})>? fabActions(
           BuildContext context) =>
       [
         (
@@ -176,7 +176,7 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
         ),
       ];
 
-  void _openNewEditor(BuildContext context) async {
+  Future<void> _openNewEditor(BuildContext context) async {
     try {
       final result = await Navigator.push<dynamic>(
         context,
@@ -202,11 +202,12 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
     }
   }
 
-  void _openPhonebookImport(BuildContext context) {
+  Future<void> _openPhonebookImport(BuildContext context) {
     showPhonebookImport(
       context: context,
       customerRepo: CustomerRepository(),
       onComplete: () {},
     );
+    return Future<void>.value();
   }
 }

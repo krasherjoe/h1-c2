@@ -464,7 +464,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   void _showFabMenu(
-    List<({IconData icon, String label, VoidCallback onTap})> actions,
+    List<({IconData icon, String label, Future<void> Function() onTap})> actions,
   ) {
     showModalBottomSheet(
       context: context,
@@ -477,7 +477,11 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
                     title: Text(a.label),
                     onTap: () {
                       Navigator.pop(ctx);
-                      Future.microtask(() => a.onTap());
+                      Future.microtask(() {
+                        a.onTap().then((_) {
+                          if (mounted) _loadItems();
+                        });
+                      });
                     },
                   ))
               .toList(),

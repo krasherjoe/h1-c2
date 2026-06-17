@@ -62,7 +62,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   };
 
   @override
-  List<({IconData icon, String label, VoidCallback onTap})>? fabActions(
+  List<({IconData icon, String label, Future<void> Function() onTap})>? fabActions(
           BuildContext context) =>
       DocumentType.values.map((t) => (
         icon: _typeIcon(t),
@@ -70,8 +70,8 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
         onTap: () => _openNewDocument(context, t),
       )).toList();
 
-  void _openNewDocument(BuildContext context, DocumentType type) {
-    Navigator.push<dynamic>(
+  Future<void> _openNewDocument(BuildContext context, DocumentType type) async {
+    final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
         builder: (_) => DocumentPage(
@@ -79,9 +79,10 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
           initialType: type,
         ),
       ),
-    ).then((result) {
-      if (result != null) onListChanged?.call();
-    });
+    );
+    if (result != null) {
+      onListChanged?.call();
+    }
   }
 
   @override
