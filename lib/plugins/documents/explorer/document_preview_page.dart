@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import '../models/document_model.dart';
 import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
+import '../services/document_repository.dart';
 import '../../../services/error_reporter.dart';
 import '../../../utils/theme_utils.dart';
 import '../../../services/google_auth_service.dart';
@@ -86,7 +87,22 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   Future<Uint8List> _buildPdfBytes([PdfPageFormat? format]) async {
     try {
       final doc = await generateDocumentPdf(_effectiveDocument);
-      return Uint8List.fromList(await doc.save());
+      final pdfBytes = Uint8List.fromList(await doc.save());
+      
+      // 電子帳簿保存法テーブルにPDF生成JSONを保存（ハッシュチェーン付き）
+      try {
+        final documentRepo = DocumentRepository();
+        await documentRepo.saveElectronicBookkeeping(
+          documentType: _effectiveDocument.documentType.name,
+          documentId: _effectiveDocument.id,
+          pdfJson: _effectiveDocument.toPdfJson(),
+        );
+      } catch (e) {
+        // 電帳法保存エラーはPDF生成を妨げない
+        debugPrint('[DocumentPreview] 電帳法保存エラー: $e');
+      }
+      
+      return pdfBytes;
     } catch (e, st) {
       ErrorReporter.sendError(
         message: 'PDF生成失敗: $e',

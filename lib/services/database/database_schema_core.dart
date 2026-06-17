@@ -34,6 +34,23 @@ Future<void> createCoreSchema(Database db) async {
     'CREATE INDEX IF NOT EXISTS idx_hash_chain_document ON hash_chain(document_type, document_id)',
   );
 
+  // 電子帳簿保存法対応 - PDF生成JSONのハッシュチェーン
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS electronic_bookkeeping (
+      id TEXT PRIMARY KEY,
+      document_type TEXT NOT NULL,
+      document_id TEXT NOT NULL,
+      pdf_json TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      previous_hash TEXT,
+      version INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_eb_document ON electronic_bookkeeping(document_type, document_id)',
+  );
+
   await db.execute('''
     CREATE TABLE IF NOT EXISTS sync_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

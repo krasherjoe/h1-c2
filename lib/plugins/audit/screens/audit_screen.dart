@@ -76,13 +76,11 @@ class _AuditScreenState extends State<AuditScreen> {
       children: [
         _buildStatusCard(theme, result),
         const SizedBox(height: 16),
-        _buildDetailCard(theme, '顧客', result.lastCustomerCheck),
-        const SizedBox(height: 8),
-        _buildDetailCard(theme, '商品', result.lastProductCheck),
-        const SizedBox(height: 8),
         _buildDetailCard(theme, '請求書', result.lastInvoiceCheck),
         const SizedBox(height: 8),
         _buildDetailCard(theme, '伝票', result.lastDocumentCheck),
+        const SizedBox(height: 8),
+        _buildDetailCard(theme, '電帳法(PDF生成JSON)', result.lastElectronicBookkeepingCheck),
       ],
     );
   }

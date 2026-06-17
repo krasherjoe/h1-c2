@@ -12,7 +12,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 6;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -159,6 +159,24 @@ Future<void> _migrateToVersion(Database db, int version) async {
       try {
         await db.execute('ALTER TABLE company_info ADD COLUMN closing_day INTEGER DEFAULT 20');
       } catch (_) {}
+      break;
+    case 6:
+      // 電子帳簿保存法対応 - PDF生成JSONのハッシュチェーンテーブル
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS electronic_bookkeeping (
+          id TEXT PRIMARY KEY,
+          document_type TEXT NOT NULL,
+          document_id TEXT NOT NULL,
+          pdf_json TEXT NOT NULL,
+          content_hash TEXT NOT NULL,
+          previous_hash TEXT,
+          version INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_eb_document ON electronic_bookkeeping(document_type, document_id)',
+      );
       break;
     default:
       break;

@@ -4,8 +4,6 @@ import 'package:uuid/uuid.dart';
 import '../models/product_model.dart';
 import 'database_helper.dart';
 import 'activity_log_repository.dart';
-import 'hash_utils.dart';
-import 'hash_chain_verify_result.dart';
 import 'barcode_utils.dart';
 
 class ResolvedPrice {
@@ -186,7 +184,6 @@ class ProductRepository {
           where: 'id = ? AND is_current = 1',
           whereArgs: [adjusted.id],
         );
-
         if (existing.isNotEmpty) {
           await txn.update(
             'products',
@@ -195,37 +192,13 @@ class ProductRepository {
             whereArgs: [adjusted.id],
           );
         }
-
         final productMap = adjusted.toMap();
-        final previousHash = existing.isNotEmpty
-            ? existing.first['content_hash']
-            : null;
-
-        final contentHash = HashUtils.calculateProductHash(
-          id: adjusted.id,
-          name: adjusted.name,
-          defaultUnitPrice: adjusted.defaultUnitPrice,
-          wholesalePrice: adjusted.wholesalePrice,
-          barcode: adjusted.barcode,
-          category: adjusted.category,
-          categoryId: adjusted.categoryId,
-          stockQuantity: adjusted.stockQuantity,
-          odooId: adjusted.odooId,
-          isLocked: adjusted.isLocked,
-          isHidden: adjusted.isHidden,
-          validFrom: adjusted.validFrom,
-          previousHash: adjusted.previousHash,
-        );
-
-        productMap['content_hash'] = contentHash;
-        productMap['previous_hash'] = previousHash ?? '';
         productMap['is_current'] = 1;
         final currentVersion =
             (existing.isNotEmpty ? existing.first['version'] : 0) as int? ?? 0;
         productMap['version'] = currentVersion + 1;
         productMap['valid_from'] = DateTime.now().toIso8601String();
         productMap['valid_to'] = null;
-
         await txn.insert(
           'products',
           productMap,
@@ -329,75 +302,6 @@ class ProductRepository {
       }
     } catch (e) {
       debugPrint('[ProductRepo] updateStockQuantities error: $e');
-      rethrow;
-    }
-  }
-
-  /// 最新の N 件の商品を遡ってハッシュチェーン整合性を検証する
-  Future<HashChainVerifyResult> verifyTailN({int n = 5}) async {
-    try {
-      final db = await _dbHelper.database;
-      final rows = await db.query(
-        'products',
-        where: 'is_current = 1 AND content_hash IS NOT NULL',
-        orderBy: 'updated_at DESC',
-        limit: n,
-      );
-      final broken = <String>[];
-      for (final row in rows) {
-        final storedHash = row['content_hash'] as String?;
-        if (storedHash == null) continue;
-
-        final product = Product.fromMap(row as Map<String, dynamic>);
-        final recomputed = HashUtils.calculateProductHash(
-          id: product.id,
-          name: product.name,
-          defaultUnitPrice: product.defaultUnitPrice,
-          wholesalePrice: product.wholesalePrice,
-          barcode: product.barcode,
-          category: product.category,
-          categoryId: product.categoryId,
-          stockQuantity: product.stockQuantity,
-          odooId: product.odooId,
-          isLocked: product.isLocked,
-          isHidden: product.isHidden,
-          validFrom: product.validFrom,
-          validTo: product.validTo,
-          isCurrentFlag: product.isCurrent,
-          version: product.version,
-          previousHash: product.previousHash,
-        );
-
-        if (recomputed != storedHash) {
-          broken.add(product.id);
-          continue;
-        }
-
-        if (product.version > 1 &&
-            product.previousHash != null &&
-            product.previousHash!.isNotEmpty) {
-          final prevRows = await db.query(
-            'products',
-            columns: ['content_hash'],
-            where: 'id = ? AND version = ?',
-            whereArgs: [product.id, product.version - 1],
-            limit: 1,
-          );
-          if (prevRows.isNotEmpty) {
-            final prevContentHash = prevRows.first['content_hash'] as String?;
-            if (prevContentHash != null && product.previousHash != prevContentHash) {
-              broken.add(product.id);
-            }
-          }
-        }
-      }
-      return HashChainVerifyResult(
-        checked: rows.length,
-        brokenIds: broken,
-        verifiedAt: DateTime.now(),
-      );
-    } catch (e) {
-      debugPrint('[ProductRepo] verifyTailN error: $e');
       rethrow;
     }
   }

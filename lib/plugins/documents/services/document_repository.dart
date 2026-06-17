@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:convert';
 import '../../../services/database_helper.dart';
 import '../../../services/hash_utils.dart';
 import '../../../services/hash_chain_verify_result.dart';
@@ -250,12 +251,166 @@ class DocumentRepository {
       'created_at': DateTime.now().toIso8601String(),
     });
   }
-
   Future<List<DocumentEditLog>> getEditLogs(String docId) async {
     final db = await _db;
     final maps = await db.query('document_edit_logs',
       where: 'document_id = ?', whereArgs: [docId],
       orderBy: 'created_at DESC', limit: 5);
     return maps.map(DocumentEditLog.fromMap).toList();
+  }
+
+  /// PDF生成JSONを電子帳簿保存法テーブルに保存（ハッシュチェーン付き）
+  Future<void> saveElectronicBookkeeping({
+    required String documentType,
+    required String documentId,
+    required Map<String, dynamic> pdfJson,
+  }) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      // 前回のバージョンのハッシュを取得
+      String previousHash = '';
+      int currentVersion = 0;
+      final existing = await txn.query(
+        'electronic_bookkeeping',
+        columns: ['content_hash', 'version'],
+        where: 'document_type = ? AND document_id = ?',
+        whereArgs: [documentType, documentId],
+        orderBy: 'version DESC',
+        limit: 1,
+      );
+      if (existing.isNotEmpty) {
+        previousHash = (existing.first['content_hash'] as String?) ?? '';
+        currentVersion = (existing.first['version'] as int?) ?? 0;
+      }
+
+      final newVersion = currentVersion + 1;
+      final pdfJsonString = jsonEncode(pdfJson);
+      
+      // PDF JSONのハッシュを計算
+      final contentHash = HashUtils.calculateSha256(
+        '$pdfJsonString|$previousHash',
+      );
+
+      // 電子帳簿保存法テーブルに保存
+      final id = '${documentType}_${documentId}_v$newVersion';
+      await txn.insert(
+        'electronic_bookkeeping',
+        {
+          'id': id,
+          'document_type': documentType,
+          'document_id': documentId,
+          'pdf_json': pdfJsonString,
+          'content_hash': contentHash,
+          'previous_hash': previousHash,
+          'version': newVersion,
+          'created_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
+  }
+
+  /// PDF生成JSONのハッシュチェーンを検証する
+  Future<HashChainVerifyResult> verifyElectronicBookkeeping({
+    String? documentType,
+    String? documentId,
+  }) async {
+    final db = await _db;
+    final conditions = <String>[];
+    final args = <dynamic>[];
+    
+    if (documentType != null) {
+      conditions.add('document_type = ?');
+      args.add(documentType);
+    }
+    if (documentId != null) {
+      conditions.add('document_id = ?');
+      args.add(documentId);
+    }
+    
+    final where = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
+    final rows = await db.query(
+      'electronic_bookkeeping',
+      where: where.isNotEmpty ? where : null,
+      whereArgs: args.isNotEmpty ? args : null,
+      orderBy: 'created_at DESC',
+      limit: 100,
+    );
+    
+    final broken = <String>[];
+    for (final row in rows) {
+      final storedHash = row['content_hash'] as String?;
+      if (storedHash == null) continue;
+      
+      final pdfJsonString = row['pdf_json'] as String?;
+      final previousHash = row['previous_hash'] as String? ?? '';
+      
+      if (pdfJsonString == null) {
+        broken.add(row['id'] as String);
+        continue;
+      }
+      
+      // ハッシュを再計算
+      final recomputed = HashUtils.calculateSha256(
+        '$pdfJsonString|$previousHash',
+      );
+      
+      if (recomputed != storedHash) {
+        broken.add(row['id'] as String);
+        continue;
+      }
+      
+      // 前バージョンのハッシュを検証
+      final version = row['version'] as int? ?? 1;
+      if (version > 1 && previousHash.isNotEmpty) {
+        final prevRows = await db.query(
+          'electronic_bookkeeping',
+          columns: ['content_hash'],
+          where: 'document_type = ? AND document_id = ? AND version = ?',
+          whereArgs: [row['document_type'], row['document_id'], version - 1],
+          limit: 1,
+        );
+        if (prevRows.isNotEmpty) {
+          final prevContentHash = prevRows.first['content_hash'] as String?;
+          if (prevContentHash != null && previousHash != prevContentHash) {
+            broken.add(row['id'] as String);
+          }
+        }
+      }
+    }
+    
+    return HashChainVerifyResult(
+      checked: rows.length,
+      brokenIds: broken,
+      verifiedAt: DateTime.now(),
+    );
+  }
+
+  /// 電子帳簿保存法テーブルからPDF生成JSONを取得する
+  Future<Map<String, dynamic>?> getElectronicBookkeepingPdfJson({
+    required String documentType,
+    required String documentId,
+    int? version,
+  }) async {
+    final db = await _db;
+    final where = version != null
+        ? 'document_type = ? AND document_id = ? AND version = ?'
+        : 'document_type = ? AND document_id = ?';
+    final whereArgs = version != null
+        ? [documentType, documentId, version]
+        : [documentType, documentId];
+    
+    final maps = await db.query(
+      'electronic_bookkeeping',
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: 'version DESC',
+      limit: 1,
+    );
+    
+    if (maps.isEmpty) return null;
+    final pdfJsonString = maps.first['pdf_json'] as String?;
+    if (pdfJsonString == null) return null;
+    return jsonDecode(pdfJsonString) as Map<String, dynamic>;
   }
 }

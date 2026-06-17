@@ -1,11 +1,9 @@
-import 'hash_chain_verify_result.dart';
 import 'package:flutter/material.dart' show debugPrint;
 import 'package:sqflite/sqflite.dart';
 import '../models/customer_model.dart';
 import '../services/database_helper.dart';
 import '../services/activity_log_repository.dart';
 import '../models/customer_contact.dart';
-import 'hash_utils.dart';
 
 class CustomerRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -168,27 +166,6 @@ class CustomerRepository {
     }
   }
 
-  Future<String> _calculateContentHash(Customer customer) async {
-    return HashUtils.calculateCustomerHash(
-      id: customer.id,
-      displayName: customer.displayName,
-      formalName: customer.formalName,
-      title: customer.title,
-      department: customer.department,
-      address: customer.address,
-      tel: customer.tel,
-      email: customer.email,
-      contactVersionId: customer.contactVersionId,
-      odooId: customer.odooId,
-      isLocked: customer.isLocked,
-      isHidden: customer.isHidden,
-      headChar1: customer.headChar1,
-      headChar2: customer.headChar2,
-      validFrom: customer.validFrom,
-      previousHash: customer.previousHash,
-    );
-  }
-
   Future<void> saveCustomer(
     Customer customer, {
     bool force = false,
@@ -216,7 +193,6 @@ class CustomerRepository {
           whereArgs: [customer.id],
         );
 
-        String previousHashValue = '';
         int currentVersion = 0;
 
         if (originalId != null && originalId != customer.id) {
@@ -226,8 +202,6 @@ class CustomerRepository {
             whereArgs: [originalId],
           );
           if (originalRecord.isNotEmpty) {
-            previousHashValue =
-                (originalRecord.first['content_hash'] as String?) ?? '';
             currentVersion =
                 (originalRecord.first['version'] as int?) ?? 0;
           }
@@ -242,8 +216,6 @@ class CustomerRepository {
             whereArgs: [originalId],
           );
         } else if (existing.isNotEmpty) {
-          previousHashValue =
-              (existing.first['content_hash'] as String?) ?? '';
           currentVersion =
               (existing.first['version'] as int?) ?? 0;
           await txn.update(
@@ -256,32 +228,8 @@ class CustomerRepository {
 
         final newVersion = currentVersion + 1;
         final newValidFrom = DateTime.now();
-
-        final contentHash = HashUtils.calculateCustomerHash(
-          id: customer.id,
-          displayName: customer.displayName,
-          formalName: customer.formalName,
-          title: customer.title,
-          department: customer.department,
-          address: customer.address,
-          tel: customer.tel,
-          email: customer.email,
-          contactVersionId: customer.contactVersionId,
-          odooId: customer.odooId,
-          isLocked: customer.isLocked,
-          isHidden: customer.isHidden,
-          headChar1: customer.headChar1,
-          headChar2: customer.headChar2,
-          validFrom: newValidFrom,
-          version: newVersion,
-          isCurrentFlag: true,
-          previousHash: previousHashValue,
-        );
-
         final customerMap = customer.toMap();
         customerMap.remove('kana');
-        customerMap['content_hash'] = contentHash;
-        customerMap['previous_hash'] = previousHashValue;
         customerMap['is_current'] = 1;
         customerMap['version'] = newVersion;
         customerMap['valid_from'] = newValidFrom.toIso8601String();
@@ -660,76 +608,6 @@ class CustomerRepository {
       });
     } catch (e) {
       debugPrint('[CustomerRepo] _upsertActiveContact error: $e');
-      rethrow;
-    }
-  }
-
-  Future<HashChainVerifyResult> verifyTailN({int n = 5}) async {
-    try {
-      final db = await _dbHelper.database;
-      final rows = await db.query(
-        'customers',
-        where: 'is_current = 1 AND content_hash IS NOT NULL',
-        orderBy: 'updated_at DESC',
-        limit: n,
-      );
-      final broken = <String>[];
-      for (final row in rows) {
-        final storedHash = row['content_hash'] as String?;
-        if (storedHash == null) continue;
-        
-        final customer = Customer.fromMap(row as Map<String, dynamic>);
-        final recomputed = HashUtils.calculateCustomerHash(
-          id: customer.id,
-          displayName: customer.displayName,
-          formalName: customer.formalName,
-          title: customer.title,
-          department: customer.department,
-          address: customer.address,
-          tel: customer.tel,
-          email: customer.email,
-          contactVersionId: customer.contactVersionId,
-          odooId: customer.odooId,
-          isLocked: customer.isLocked,
-          isHidden: customer.isHidden,
-          headChar1: customer.headChar1,
-          headChar2: customer.headChar2,
-          validFrom: customer.validFrom,
-          validTo: customer.validTo,
-          isCurrentFlag: customer.isCurrent,
-          version: customer.version,
-          previousHash: customer.previousHash,
-        );
-        
-        if (recomputed != storedHash) {
-          broken.add(customer.id);
-          continue;
-        }
-        if (customer.version > 1 &&
-            customer.previousHash != null &&
-            customer.previousHash!.isNotEmpty) {
-          final prevRows = await db.query(
-            'customers',
-            columns: ['content_hash'],
-            where: 'id = ? AND version = ?',
-            whereArgs: [customer.id, customer.version - 1],
-            limit: 1,
-          );
-          if (prevRows.isNotEmpty) {
-            final prevContentHash = prevRows.first['content_hash'] as String?;
-            if (prevContentHash != null && customer.previousHash != prevContentHash) {
-              broken.add(customer.id);
-            }
-          }
-        }
-      }
-      return HashChainVerifyResult(
-        checked: rows.length,
-        brokenIds: broken,
-        verifiedAt: DateTime.now(),
-      );
-    } catch (e) {
-      debugPrint('[CustomerRepo] verifyTailN error: $e');
       rethrow;
     }
   }

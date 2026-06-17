@@ -244,6 +244,29 @@ class DocumentModel extends H1ExplorerItem {
     'previous_hash': previousHash,
   };
 
+  /// PDF生成用JSON（ハッシュチェーンフィールドを含まない）
+  /// 電子帳簿保存法テーブルに保存される
+  Map<String, dynamic> toPdfJson() => {
+    'id': id,
+    'document_type': documentType.name,
+    'customer_id': customerId,
+    'customer_name': customerName,
+    'document_number': documentNumber,
+    'date': date.toIso8601String().substring(0, 10),
+    'total': total,
+    'status': status,
+    'linked_document_id': linkedDocumentId,
+    'project_id': projectId,
+    'subject': subject,
+    'items': items.map((item) => item.toMap(id)).toList(),
+    'include_tax': includeTax,
+    'tax_rate': taxRate,
+    'total_discount_amount': totalDiscountAmount,
+    'total_discount_rate': totalDiscountRate,
+    'price_adjustment_type': priceAdjustmentType,
+    'price_adjustment_unit': priceAdjustmentUnit,
+  };
+
   factory DocumentModel.fromMap(Map<String, dynamic> map, {List<DocumentItem> items = const []}) {
     return DocumentModel(
       id: map['id'] as String,

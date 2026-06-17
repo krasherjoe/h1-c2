@@ -52,6 +52,23 @@ github: https://github.com/krasherjoe/h1-core.git
 - PDF生成 (pdf, printing)
 - その他: path_provider, intl, crypto, uuid, shared_preferences
 
+## 基本思想（設計原則）
+
+**このシステムをコーディングする際の根本的な設計思想は `docs/electronic_bookkeeping_hash_chain_justification.md` に記載されている。必読。**
+
+### 要約
+
+1. **メインDBは自由** - 電帳法の真の要件は「PDF再現可能」であり、DBの不変性ではない
+2. **PDF生成JSONにHash Chainを適用** - 電帳法要件を充足する対象はこれだけ
+3. **数学的事実は法的解釈に依存しない** - Hash chainの改ざん防止効果は数学的に保証
+
+### コーディング時の指針
+
+- メインDBは自由に変更・最適化可能
+- PDF生成時に必要なデータを電帳法テーブルに保存
+- 電帳法テーブルのJSONにHash chainを適用
+- PDFはJSONから再現可能
+
 ## OpenCode連携システム
 
 ### 概要
