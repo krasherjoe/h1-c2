@@ -156,11 +156,11 @@ class _PurchasePreviewPageState extends State<PurchasePreviewPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade600,
+                    color: cs.tertiary,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: cs.surface, width: 1.5),
                   ),
-                  child: Text(badge, style: TextStyle(fontSize: 9, color: textColorOn(Colors.green.shade600), fontWeight: FontWeight.bold)),
+                  child: Text(badge, style: TextStyle(fontSize: 9, color: textColorOn(cs.tertiary), fontWeight: FontWeight.bold)),
                 ),
               ),
           ],

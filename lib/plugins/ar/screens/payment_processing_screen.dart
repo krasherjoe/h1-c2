@@ -145,7 +145,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                           final received = (inv['received_amount'] as num?)?.toInt() ?? 0;
                           final remaining = total - received;
                           final isPartial = received > 0 && remaining > 0;
-                          final statusColor = isPartial ? Colors.orange : cs.error;
+                          final statusColor = isPartial ? cs.secondary : cs.error;
                           return Card(
                             color: selected ? cs.primaryContainer.withValues(alpha: 0.3) : null,
                             child: InkWell(

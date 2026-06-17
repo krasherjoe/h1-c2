@@ -79,6 +79,7 @@ class _StockInboundScreenState extends State<StockInboundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('${S.whi}:入庫処理')),
       floatingActionButton: FloatingActionButton.extended(
@@ -97,12 +98,12 @@ class _StockInboundScreenState extends State<StockInboundScreen> {
                       child: ListTile(
                         leading: Container(
                           width: 40, height: 40,
-                          decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.inbox, color: Colors.blue),
+                          decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+                          child: Icon(Icons.inbox, color: cs.primary),
                         ),
                         title: Text(t.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('${_df.format(t.createdAt)}${t.notes != null ? " / ${t.notes}" : ""}'),
-                        trailing: Text('+${t.quantity}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green.shade700)),
+                        trailing: Text('+${t.quantity}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: cs.tertiary)),
                       ),
                     );
                   },

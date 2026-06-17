@@ -113,7 +113,7 @@ class _SalesAnalysisScreenState extends State<SalesAnalysisScreen> {
         children: [
           _card('総売上', '¥${_nf.format(_totalRevenue)}', Icons.trending_up, cs.primary),
           const SizedBox(width: 8),
-          _card('粗利益', '¥${_nf.format(_totalProfit)}', Icons.show_chart, Colors.green),
+          _card('粗利益', '¥${_nf.format(_totalProfit)}', Icons.show_chart, cs.tertiary),
           const SizedBox(width: 8),
           _card('粗利率', '$margin%', Icons.percent, cs.tertiary),
           const SizedBox(width: 8),

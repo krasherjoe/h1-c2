@@ -185,7 +185,7 @@ class _QuickActionSettingsScreenState extends State<QuickActionSettingsScreen> {
               _save();
               Navigator.pop(ctx);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
             child: const Text('削除'),
           ),
         ],

@@ -151,7 +151,7 @@ class _ArDashboardScreenState extends State<ArDashboardScreen> {
                           final inv = _unpaid[i];
                           final days = DateTime.now().difference(inv.date).inDays;
                           final aging = days <= 30 ? '30日以内' : days <= 60 ? '60日以内' : '60日超';
-                          final agingColor = days <= 30 ? Colors.orange : days <= 60 ? Colors.deepOrange : cs.error;
+                          final agingColor = days <= 30 ? cs.secondary : days <= 60 ? cs.error : cs.error;
                           return Card(
                             child: InkWell(
                               borderRadius: BorderRadius.circular(4),

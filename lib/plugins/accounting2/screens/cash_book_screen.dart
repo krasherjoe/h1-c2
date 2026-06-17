@@ -138,7 +138,7 @@ class _CashBookScreenState extends State<CashBookScreen> {
                         dense: true,
                         leading: Icon(
                           t.type == 'inflow' ? Icons.arrow_downward : Icons.arrow_upward,
-                          color: t.type == 'inflow' ? Colors.green : cs.error,
+                          color: t.type == 'inflow' ? cs.tertiary : cs.error,
                           size: 20,
                         ),
                         title: Text('${_formatMoney(t.amount)}  ${accountName(t.accountId)}',

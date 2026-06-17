@@ -54,11 +54,11 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cs.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: SingleChildScrollView(
-                        child: Text(_preview, style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.black)),
+                        child: Text(_preview, style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: cs.onSurface)),
                       ),
                     ),
                   ),

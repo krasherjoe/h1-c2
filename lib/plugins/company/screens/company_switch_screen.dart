@@ -163,7 +163,7 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
     if (_companies.contains(name)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('「$name」は既に存在します'), backgroundColor: Colors.red),
+        SnackBar(content: Text('「$name」は既に存在します'), backgroundColor: Theme.of(context).colorScheme.error),
       );
       return;
     }
@@ -176,7 +176,7 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('作成エラー: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('作成エラー: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     }
   }
@@ -185,7 +185,7 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
     if (_companies.length <= 1) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('最後の法人は削除できません'), backgroundColor: Colors.red),
+        SnackBar(content: Text('最後の法人は削除できません'), backgroundColor: Theme.of(context).colorScheme.error),
       );
       return;
     }
@@ -221,7 +221,7 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('削除エラー: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('削除エラー: $e'), backgroundColor: Theme.of(context).colorScheme.error),
       );
     }
   }

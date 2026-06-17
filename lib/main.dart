@@ -571,7 +571,15 @@ class _H1CoreAppState extends State<H1CoreApp> {
     return TabbedWorkspace(dashboard: const DashboardScreen());
   }
 
-  void _applySystemNavBar(ThemeMode mode) {}
+  void _applySystemNavBar(ThemeMode mode) {
+    final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system &&
+        PlatformDispatcher.instance.platformBrightness == Brightness.dark);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    ));
+  }
 }
 
 Never _showFatalError(String message) {

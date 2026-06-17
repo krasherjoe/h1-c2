@@ -77,7 +77,7 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
         const SizedBox(width: 8),
         Expanded(child: _summaryCard(cs, '未回収', '¥${_nf.format(unpaid)}', cs.error)),
         const SizedBox(width: 8),
-        Expanded(child: _summaryCard(cs, '本日売上', '¥${_nf.format(today)}', Colors.blue)),
+        Expanded(child: _summaryCard(cs, '本日売上', '¥${_nf.format(today)}', cs.primary)),
       ],
     );
   }

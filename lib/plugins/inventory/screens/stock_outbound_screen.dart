@@ -36,6 +36,7 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
   }
 
   Future<void> _outbound() async {
+    final cs = Theme.of(context).colorScheme;
     final product = await Navigator.push<Product>(
       context,
       MaterialPageRoute(builder: (_) => const _ProductSelectionScreen()),
@@ -53,7 +54,7 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
       context: context, builder: (ctx) => AlertDialog(
         title: Text('出庫: ${product.name}'),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('在庫: ${product.stockQuantity}個', style: TextStyle(color: Colors.grey.shade600)),
+          Text('在庫: ${product.stockQuantity}個', style: TextStyle(color: cs.onSurfaceVariant)),
           const SizedBox(height: 8),
           H1TextField(controller: qtyCtrl,
             decoration: const InputDecoration(labelText: '出庫数', isDense: true),
@@ -91,6 +92,7 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('${S.who}:出庫処理')),
       floatingActionButton: FloatingActionButton.extended(
@@ -109,12 +111,12 @@ class _StockOutboundScreenState extends State<StockOutboundScreen> {
                       child: ListTile(
                         leading: Container(
                           width: 40, height: 40,
-                          decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.outbox, color: Colors.orange),
+                          decoration: BoxDecoration(color: cs.secondary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+                          child: Icon(Icons.outbox, color: cs.secondary),
                         ),
                         title: Text(t.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('${_df.format(t.createdAt)}${t.notes != null ? " / ${t.notes}" : ""}'),
-                        trailing: Text('${t.quantity}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.red.shade700)),
+                        trailing: Text('${t.quantity}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: cs.error)),
                       ),
                     );
                   },

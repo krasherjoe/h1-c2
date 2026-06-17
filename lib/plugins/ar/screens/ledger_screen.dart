@@ -257,9 +257,9 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
-                                    _agingBadge('~30日', r.aging30, Colors.orange, cs),
+                                    _agingBadge('~30日', r.aging30, cs.secondary, cs),
                                     const SizedBox(width: 4),
-                                    _agingBadge('31~60日', r.aging60, Colors.deepOrange, cs),
+                                    _agingBadge('31~60日', r.aging60, cs.error, cs),
                                     const SizedBox(width: 4),
                                     _agingBadge('60日~', r.aging90, cs.error, cs),
                                   ],

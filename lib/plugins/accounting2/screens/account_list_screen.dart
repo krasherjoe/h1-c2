@@ -37,8 +37,8 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
   Color _categoryColor(String c, ColorScheme cs) => switch (c) {
     'asset' => cs.primary, 'liability' => cs.error,
-    'equity' => cs.tertiary, 'revenue' => Colors.green,
-    'expense' => Colors.orange, _ => cs.onSurface,
+    'equity' => cs.tertiary, 'revenue' => cs.tertiary,
+    'expense' => cs.secondary, _ => cs.onSurface,
   };
 
   Future<void> _addOrEdit(Account? existing) async {

@@ -256,7 +256,7 @@ class _DriveBackupScreenState extends State<DriveBackupScreen> {
                       width: double.infinity,
                       child: FilledButton.icon(
                         icon: _uploading
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
                             : const Icon(Icons.cloud_upload),
                         label: Text(_uploading ? 'バックアップ中...' : '今すぐバックアップ'),
                         onPressed: _uploading ? null : _uploadNow,

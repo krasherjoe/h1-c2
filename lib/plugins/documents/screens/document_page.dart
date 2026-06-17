@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/theme_utils.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import '../models/document_model.dart';
@@ -287,7 +288,7 @@ class _DocumentPageState extends State<DocumentPage> {
             color: color,
             borderRadius: BorderRadius.circular(4)),
           child: Text('確定', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-            color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white))),
+            color: textColorOn(color)))),
       const Spacer(),
       if (widget.document?.documentNumber != null && widget.document!.documentNumber.isNotEmpty)
         Text(widget.document!.documentNumber,
