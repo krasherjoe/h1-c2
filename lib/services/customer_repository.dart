@@ -145,8 +145,8 @@ class CustomerRepository {
 
       if (name != null && name.isNotEmpty) {
         String where =
-            '(display_name LIKE ? OR formal_name LIKE ?) AND is_hidden = 0 AND is_current = 1';
-        List<dynamic> whereArgs = ['%$name%', '%$name%'];
+            '(display_name = ? OR formal_name = ?) AND is_hidden = 0 AND is_current = 1';
+        List<dynamic> whereArgs = [name, name];
         if (excludeId != null) {
           where += ' AND id != ?';
           whereArgs.add(excludeId);
@@ -169,13 +169,12 @@ class CustomerRepository {
   Future<void> saveCustomer(
     Customer customer, {
     bool force = false,
-    String? originalId,
   }) async {
     try {
       final db = await _dbHelper.database;
-
       await db.transaction((txn) async {
         if (!force) {
+          // 重複検出
           final isDuplicate = await checkDuplicateTxn(txn,
             tel: customer.tel,
             email: customer.email,
@@ -187,59 +186,33 @@ class CustomerRepository {
             throw DuplicateCustomerException(customer);
           }
         }
+
+        // 既存顧客を確認
         final existing = await txn.query(
           'customers',
-          where: 'id = ? AND is_current = 1',
+          where: 'id = ?',
           whereArgs: [customer.id],
         );
 
-        int currentVersion = 0;
-
-        if (originalId != null && originalId != customer.id) {
-          final originalRecord = await txn.query(
-            'customers',
-            where: 'id = ? AND is_current = 1',
-            whereArgs: [originalId],
-          );
-          if (originalRecord.isNotEmpty) {
-            currentVersion =
-                (originalRecord.first['version'] as int?) ?? 0;
-          }
-          await txn.update(
-            'customers',
-            {
-              'next_version_id': customer.id,
-              'is_current': 0,
-              'valid_to': DateTime.now().toIso8601String(),
-            },
-            where: 'id = ?',
-            whereArgs: [originalId],
-          );
-        } else if (existing.isNotEmpty) {
-          currentVersion =
-              (existing.first['version'] as int?) ?? 0;
-          await txn.update(
-            'customers',
-            {'is_current': 0, 'valid_to': DateTime.now().toIso8601String()},
-            where: 'id = ? AND is_current = 1',
-            whereArgs: [customer.id],
-          );
-        }
-
-        final newVersion = currentVersion + 1;
-        final newValidFrom = DateTime.now();
         final customerMap = customer.toMap();
         customerMap.remove('kana');
-        customerMap['is_current'] = 1;
-        customerMap['version'] = newVersion;
-        customerMap['valid_from'] = newValidFrom.toIso8601String();
-        customerMap['valid_to'] = null;
 
-        await txn.insert(
-          'customers',
-          customerMap,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        if (existing.isNotEmpty) {
+          // バージョンをインクリメント
+          final currentVersion = (existing.first['version'] as int?) ?? 0;
+          customerMap['version'] = currentVersion + 1;
+          // 既存顧客を更新
+          await txn.update(
+            'customers',
+            customerMap,
+            where: 'id = ?',
+            whereArgs: [customer.id],
+          );
+        } else {
+          // 新規顧客はバージョン1
+          customerMap['version'] = 1;
+          await txn.insert('customers', customerMap);
+        }
         await _upsertActiveContact(txn, customer);
       });
 
@@ -247,8 +220,7 @@ class CustomerRepository {
         action: "SAVE_CUSTOMER",
         targetType: "CUSTOMER",
         targetId: customer.id,
-        details:
-            "名称：${customer.formalName}, 敬称：${HonorificCode.toName(customer.title)} (version up)",
+        details: "名称：${customer.formalName}, 敬称：${HonorificCode.toName(customer.title)}",
       );
     } catch (e) {
       debugPrint('[CustomerRepo] saveCustomer error: $e');

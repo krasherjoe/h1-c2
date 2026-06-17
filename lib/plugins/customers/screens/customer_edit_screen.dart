@@ -156,6 +156,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
         lng: _customer?.lng,
         isLocked: false,
       );
+      // 顧客を保存
       await CustomerRepository().saveCustomer(newCustomer);
       SyncService.pushChange(
         entityType: 'customer',
