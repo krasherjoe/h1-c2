@@ -320,32 +320,37 @@ void main() async {
   }
 
   // 履歴DBから伝票テーブルの整合性チェック＋自動リペア
-  try {
-    final restored = await HistoryDbService().repairDocumentsTable(db);
-    if (restored > 0) {
-      debugPrint('[Startup] 🔧 自動リペア完了: $restored件の伝票を復元');
+  {
+    // deleted_atカラムを確保（documentsテーブルが存在しない場合は何もしない）
+    try {
+      await db.execute("ALTER TABLE documents ADD COLUMN deleted_at TEXT DEFAULT NULL");
+      // リペア
+      final restored = await HistoryDbService().repairDocumentsTable(db);
+      if (restored > 0) {
+        debugPrint('[Startup] 🔧 自動リペア完了: $restored件の伝票を復元');
+      }
+      // 30日以上前のhistoryエントリをパージ
+      await HistoryDbService().purgeOldEntries();
+      // ソフトデリートから30日経過したレコードを完全削除
+      final cutoff = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+      final purgeTargets = await db.query('documents',
+        columns: ['id'],
+        where: 'deleted_at IS NOT NULL AND deleted_at < ?',
+        whereArgs: [cutoff],
+      );
+      if (purgeTargets.isNotEmpty) {
+        await db.transaction((txn) async {
+          for (final t in purgeTargets) {
+            final id = t['id'] as String;
+            await txn.delete('document_items', where: 'document_id = ?', whereArgs: [id]);
+            await txn.delete('documents', where: 'id = ?', whereArgs: [id]);
+          }
+        });
+        debugPrint('[Startup] 🧹 古いソフトデリートデータをパージ: ${purgeTargets.length}件');
+      }
+    } catch (_) {
+      // documentsテーブル未作成（初回起動時など）の場合は静かにスキップ
     }
-    await HistoryDbService().purgeOldEntries();
-    // ソフトデリートから30日経過したレコードを完全削除
-    final cutoff = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
-    final purgeTargets = await db.query('documents',
-      columns: ['id'],
-      where: 'deleted_at IS NOT NULL AND deleted_at < ?',
-      whereArgs: [cutoff],
-    );
-    if (purgeTargets.isNotEmpty) {
-      await db.transaction((txn) async {
-        for (final t in purgeTargets) {
-          final id = t['id'] as String;
-          await txn.delete('document_items', where: 'document_id = ?', whereArgs: [id]);
-          await txn.delete('documents', where: 'id = ?', whereArgs: [id]);
-        }
-      });
-      debugPrint('[Startup] 🧹 古いソフトデリートデータをパージ: ${purgeTargets.length}件');
-    }
-  } catch (e, st) {
-    debugPrint('[Startup] HistoryDBリペア/パージエラー: $e');
-    ErrorReporter.sendError(message: '[Startup] HistoryDBリペア/パージエラー: $e', stackTrace: st);
   }
 
   final context = PluginContext(database: db, preferences: prefs);
