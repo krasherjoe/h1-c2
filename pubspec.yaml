@@ -36,6 +36,7 @@ dependencies:
   permission_handler: ^11.3.0
   google_generative_ai: ^0.4.7
   package_info_plus: ^10.1.0
+  logger: ^2.5.0
 
 dev_dependencies:
   flutter_test:

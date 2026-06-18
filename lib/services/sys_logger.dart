@@ -1,12 +1,14 @@
-import 'package:flutter/foundation.dart';
+import 'logger_service.dart';
 
 class SysLogger {
   static final SysLogger instance = SysLogger._();
   SysLogger._();
 
-  void logError(String tag, dynamic message) =>
-      debugPrint('[$tag] ERROR: $message');
+  void logError(String tag, dynamic message) {
+    LoggerService.instance.error(tag, message.toString());
+  }
 
-  void logInfo(String tag, String message) =>
-      debugPrint('[$tag] INFO: $message');
+  void logInfo(String tag, String message) {
+    LoggerService.instance.info(tag, message);
+  }
 }
