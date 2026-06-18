@@ -69,10 +69,8 @@ class GoogleAuthService {
       final secure = SecureStorageService.instance;
       await secure.write(SecureStorageKeys.googleEmail, user.email);
       await secure.write(SecureStorageKeys.googleAccessToken, auth.accessToken!);
-      // refreshToken が提供されている場合のみ保存（offline_accessスコープの有無による）
-      if (auth.refreshToken != null && auth.refreshToken!.isNotEmpty) {
-        await secure.write(SecureStorageKeys.googleRefreshToken, auth.refreshToken!);
-      }
+      // google_sign_in 6.x では refreshToken は公開APIではないため保存しない
+      // トークンリフレッシュは signInSilently() の内部処理に任せる
       final expiry = DateTime.now().add(const Duration(hours: 1));
       await secure.write(SecureStorageKeys.googleTokenExpiry, expiry.toIso8601String());
       _cachedEmail = user.email;
@@ -122,9 +120,7 @@ class GoogleAuthService {
             if (auth.accessToken != null) {
               final secure = SecureStorageService.instance;
               await secure.write(SecureStorageKeys.googleAccessToken, auth.accessToken!);
-              if (auth.refreshToken != null && auth.refreshToken!.isNotEmpty) {
-                await secure.write(SecureStorageKeys.googleRefreshToken, auth.refreshToken!);
-              }
+              // google_sign_in 6.x では refreshToken は利用不可（signInSilentlyが内部処理）
               final newExpiry = DateTime.now().add(const Duration(hours: 1));
               await secure.write(SecureStorageKeys.googleTokenExpiry, newExpiry.toIso8601String());
               return auth.accessToken;
