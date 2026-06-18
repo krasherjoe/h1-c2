@@ -1,7 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class SecureStorageService {
+/// Abstract interface for secure storage (mockable for tests)
+abstract class ISecureStorage {
+  Future<String?> read(String key);
+  Future<void> write(String key, String value);
+  Future<void> delete(String key);
+  Future<bool> containsKey(String key);
+  Future<void> migrateFromPrefs(Map<String, String> entries);
+}
+
+class SecureStorageService implements ISecureStorage {
   static final SecureStorageService instance = SecureStorageService._();
   SecureStorageService._();
 
