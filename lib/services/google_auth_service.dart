@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'error_reporter.dart';
+import '../constants/secure_storage_keys.dart';
+import '../constants/env_config.dart';
+import 'secure_storage_service.dart';
 
 class GoogleAuthService {
   static final GoogleAuthService instance = GoogleAuthService._();
@@ -14,14 +16,9 @@ class GoogleAuthService {
   String? _lastClientId;
   List<String>? _lastScopes;
 
-  static const _keyEmail = 'google_email';
-  static const _keyAccessToken = 'google_access_token';
-  static const _keyRefreshToken = 'google_refresh_token';
-  static const _keyTokenExpiry = 'google_token_expiry';
-
   void init() {
     if (_initialized) return;
-    _lastClientId = '468424259506-vmdhvaf5npk65a0r6kic9097h2i06kqt.apps.googleusercontent.com';
+    _lastClientId = EnvConfig.googleClientIdOrDefault;
     _lastScopes = [
       'email',
       'https://www.googleapis.com/auth/gmail.modify',
@@ -41,14 +38,12 @@ class GoogleAuthService {
   }
 
   Future<bool> isSignedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString(_keyEmail);
+    final email = await SecureStorageService.instance.read(SecureStorageKeys.googleEmail);
     return email != null && email.isNotEmpty;
   }
 
   Future<String?> getEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyEmail);
+    return await SecureStorageService.instance.read(SecureStorageKeys.googleEmail);
   }
 
   Future<bool> signIn() async {
@@ -78,14 +73,14 @@ class GoogleAuthService {
       _log('   idToken=${auth.idToken?.substring(0, 20)}...');
       _log('   serverAuthCode=${auth.serverAuthCode}');
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_keyEmail, user.email);
-      await prefs.setString(_keyAccessToken, auth.accessToken!);
-      await prefs.setString(_keyRefreshToken, auth.idToken ?? '');
+      final secure = SecureStorageService.instance;
+      await secure.write(SecureStorageKeys.googleEmail, user.email);
+      await secure.write(SecureStorageKeys.googleAccessToken, auth.accessToken!);
+      await secure.write(SecureStorageKeys.googleRefreshToken, auth.idToken ?? '');
       final expiry = DateTime.now().add(const Duration(hours: 1));
-      await prefs.setString(_keyTokenExpiry, expiry.toIso8601String());
+      await secure.write(SecureStorageKeys.googleTokenExpiry, expiry.toIso8601String());
       _cachedEmail = user.email;
-      _log('✅ signIn success, saved to SP: email=${user.email}');
+      _log('✅ signIn success, saved to SecureStorage: email=${user.email}');
       return true;
     } catch (e, st) {
       _log('❌ signIn EXCEPTION: $e');
@@ -99,11 +94,11 @@ class GoogleAuthService {
     init();
     try {
       await _googleSignIn!.signOut();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_keyEmail);
-      await prefs.remove(_keyAccessToken);
-      await prefs.remove(_keyRefreshToken);
-      await prefs.remove(_keyTokenExpiry);
+      final secure = SecureStorageService.instance;
+      await secure.delete(SecureStorageKeys.googleEmail);
+      await secure.delete(SecureStorageKeys.googleAccessToken);
+      await secure.delete(SecureStorageKeys.googleRefreshToken);
+      await secure.delete(SecureStorageKeys.googleTokenExpiry);
       _cachedEmail = null;
       _log('✅ signOut success');
       return true;
@@ -128,8 +123,7 @@ class GoogleAuthService {
           return auth.accessToken;
         }
       }
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_keyAccessToken);
+      return await SecureStorageService.instance.read(SecureStorageKeys.googleAccessToken);
     } catch (e) {
       debugPrint('[GoogleAuth] getToken error: $e');
       return null;
