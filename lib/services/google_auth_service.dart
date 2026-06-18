@@ -110,7 +110,6 @@ class GoogleAuthService {
 
   void _log(String msg) {
     debugPrint('[GoogleAuth] $msg');
-    ErrorReporter.sendLog(message: '[GoogleAuth] $msg');
   }
 
   Future<String?> getAccessToken() async {
