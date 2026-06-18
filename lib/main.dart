@@ -35,6 +35,7 @@ import 'plugins/company/company_plugin.dart';
 import 'plugins/explorer/explorer_plugin.dart';
 import 'plugins/backup/backup_plugin.dart';
 import 'plugins/conversion/conversion_plugin.dart';
+import 'plugins/debug/services/debug_service.dart';
 import 'plugins/conversion/services/data_migration_service.dart';
 import 'plugins/conversion/screens/conversion_guard_screen.dart';
 import 'plugins/analysis/analysis_plugin.dart';
@@ -249,6 +250,8 @@ void main() async {
   runZonedGuarded(() async {
     // 起動時エラーでMattermostにログを送信できるよう、先にErrorReporterを初期化
     try {
+      await ErrorReporter.initVersion();
+      await DebugService.initVersion();
       await MmCommandService.instance.loadConfig();
       await ErrorReporter.sendLog(message: '[Startup] main() begin - app starting');
     } catch (_) {}

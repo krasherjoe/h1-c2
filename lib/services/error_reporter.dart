@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:googleapis/gmail/v1.dart' as gmail;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'google_auth_service.dart';
@@ -13,7 +14,17 @@ class ErrorReporter {
   static const _kWebhookUrlKey = 'mattermost_webhook_url';
   static const _kDefaultWebhookUrl = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
   static const _kEnvUrl = String.fromEnvironment('MATTERMOST_WEBHOOK_URL');
-  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
+  static String _appVersion = '';
+
+  static Future<void> initVersion() async {
+    if (_appVersion.isNotEmpty) return;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _appVersion = '${info.version}+${info.buildNumber}';
+    } catch (_) {
+      _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
+    }
+  }
   static const _kPatKey = 'mattermost_pat';
   static const _kBaseUrlKey = 'mattermost_base_url';
   static const _kTeamKey = 'mattermost_team_name';
@@ -77,7 +88,7 @@ class ErrorReporter {
     final now = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
     final stackStr = stackTrace?.toString().substring(0, stackTrace.toString().length.clamp(0, 500)) ?? 'N/A';
     final text = '### ⚠️ h-1-core エラー報告 ($now)\n'
-        '**version:** $_kAppVersion\n'
+        '**version:** $_appVersion\n'
         '**message:** $message\n'
         '**screen:** ${screenId ?? "N/A"}\n'
         '**detail:** ${detail ?? "N/A"}\n'
@@ -98,7 +109,7 @@ class ErrorReporter {
         'text': [
           '### ⚠️ h-1-core エラー報告 ($now)',
           '',
-          '**version:** $_kAppVersion',
+          '**version:** $_appVersion',
           '**message:** $message',
           if (detail != null) '**detail:** $detail',
           if (screenId != null) '**screen:** $screenId',
@@ -132,7 +143,7 @@ class ErrorReporter {
           : '$now [Error:h1-core] $shortMsg';
       final stackStr = stackTrace?.toString() ?? '';
       final bodyContent = '''
-version: $_kAppVersion
+version: $_appVersion
 message: $message
 screen: ${screenId ?? 'N/A'}
 
@@ -163,11 +174,11 @@ $stackStr
         await http.post(
           Uri.parse(url),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'text': '🧪 **h-1-core ログ** ($_kAppVersion)\n$message'}),
+          body: jsonEncode({'text': '🧪 **h-1-core ログ** ($_appVersion)\n$message'}),
         );
       }
     } catch (_) {}
-    await _sendViaPat('🧪 **h-1-core ログ** ($_kAppVersion)\n$message');
+    await _sendViaPat('🧪 **h-1-core ログ** ($_appVersion)\n$message');
   }
 
   static void showError(

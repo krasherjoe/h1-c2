@@ -6,6 +6,8 @@ import '../../../services/database_helper.dart';
 import '../../../services/hash_utils.dart';
 import '../../../services/hash_chain_verify_result.dart';
 import '../../../services/history_db_service.dart';
+import '../../../services/fiscal_year_service.dart';
+import '../../../services/company_repository.dart';
 import '../models/document_model.dart';
 import '../models/document_edit_log.dart';
 
@@ -78,6 +80,12 @@ class DocumentRepository {
   }
 
   Future<void> save(DocumentModel document) async {
+    if (document.isConfirmed && !document.isRedInvoice) {
+      final company = await CompanyRepository().getCompanyInfo();
+      if (company != null && FiscalYearService.isLocked(document.date, company.fiscalYearStart, company.closingDay)) {
+        throw Exception('前年度の確定伝票は編集できません');
+      }
+    }
     final db = await _db;
     bool isUpdate = false;
     Map<String, dynamic>? savedSnapshot;

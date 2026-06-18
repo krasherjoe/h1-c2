@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/database_helper.dart';
 
@@ -12,9 +13,19 @@ class DebugService {
   static const _kWebhookKey = 'mattermost_webhook_url';
   static const _kRootIdKey = 'mm_root_id';
   static const _kChannelName = 'h1-debug';
-  static const _kAppVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
+  static String _appVersion = '';
 
-  String get appVersion => _kAppVersion;
+  String get appVersion => _appVersion;
+
+  static Future<void> initVersion() async {
+    if (_appVersion.isNotEmpty) return;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _appVersion = '${info.version}+${info.buildNumber}';
+    } catch (_) {
+      _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
+    }
+  }
 
   String? _pat;
   String? _baseUrl;
@@ -170,7 +181,7 @@ class DebugService {
         headers: _headers,
         body: jsonEncode({
           'channel_id': channelId,
-          'message': ':floppy_disk: **h-1-core DB送信** | v$_kAppVersion | ${sizeMb}MB',
+          'message': ':floppy_disk: **h-1-core DB送信** | v$_appVersion | ${sizeMb}MB',
           'file_ids': fileIds,
         }),
       );

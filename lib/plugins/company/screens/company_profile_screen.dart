@@ -35,6 +35,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   );
   final _regNumberCtrl = TextEditingController();
   bool _isExempt = false;
+  int _fiscalYearStart = 4;
+  int _closingDay = 20;
 
   @override
   void initState() {
@@ -72,6 +74,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       _bankAccounts = _parseBankAccounts(info.bankAccounts);
       _regNumberCtrl.text = info.registrationNumber ?? '';
       _isExempt = info.isExemptTaxpayer;
+      _fiscalYearStart = info.fiscalYearStart;
+      _closingDay = info.closingDay;
     }
     setState(() {
       _info = info;
@@ -111,6 +115,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       registrationNumber: regNum.isEmpty ? null : regNum,
       isExemptTaxpayer: _isExempt,
       taxDisplayMode: _isExempt ? 'hidden' : 'normal',
+      fiscalYearStart: _fiscalYearStart,
+      closingDay: _closingDay,
     );
     await _companyRepo.saveCompanyInfo(info);
 
@@ -283,6 +289,8 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   _buildTaxSection(),
                   const SizedBox(height: 24),
                   _buildBankSection(),
+                  const SizedBox(height: 24),
+                  _buildFiscalYearSection(),
                   const SizedBox(height: 24),
 
                   // 角印管理セクション
@@ -480,6 +488,61 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
               onChanged: (v) => _bankAccounts[index] = account.copyWith(holderName: v),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiscalYearSection() {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: cardDecoration(cs, color: cs.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
+        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5))),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.calendar_month, color: cs.primary, size: 24),
+            const SizedBox(width: 12),
+            Text('年度設定',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.primary)),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('決算月', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  value: _fiscalYearStart,
+                  decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  items: List.generate(12, (i) => i + 1).map((m) =>
+                    DropdownMenuItem(value: m, child: Text('${m}月'))).toList(),
+                  onChanged: (v) { if (v != null) setState(() => _fiscalYearStart = v); },
+                ),
+              ],
+            )),
+            const SizedBox(width: 16),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('決算日', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  value: _closingDay,
+                  decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  items: [1, 5, 10, 15, 20, 25, 28, 31].map((d) =>
+                    DropdownMenuItem(value: d, child: Text('${d}日'))).toList(),
+                  onChanged: (v) { if (v != null) setState(() => _closingDay = v); },
+                ),
+              ],
+            )),
+          ]),
+          const SizedBox(height: 8),
+          Text('決算日より前の日付の確定伝票は編集できなくなります',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
         ],
       ),
     );
