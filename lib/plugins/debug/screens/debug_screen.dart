@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/debug_service.dart';
 import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
@@ -74,21 +73,11 @@ class _DebugScreenState extends State<DebugScreen> {
     final buf = StringBuffer();
     buf.writeln('### \u{1F50D} Google診断');
     try {
-      final prefs = await SharedPreferences.getInstance();
-      buf.writeln('**SharedPreferences:**');
-      buf.writeln('  google_email: ${prefs.getString("google_email") ?? "未設定"}');
-      buf.writeln('  google_access_token: ${prefs.getString("google_access_token")?.substring(0, 20) ?? "未設定"}...');
-      buf.writeln('  google_token_expiry: ${prefs.getString("google_token_expiry") ?? "未設定"}');
-
       final email = await GoogleAuthService.instance.getEmail();
-      buf.writeln('**GoogleAuthService.getEmail():** $email');
-
       final signedIn = await GoogleAuthService.instance.isSignedIn();
-      buf.writeln('**isSignedIn():** $signedIn');
-
-      buf.writeln('**ClientID:** 468424259506-vmdhvaf5npk65a0r6kic9097h2i06kqt');
-      buf.writeln('**Package:** com.h1.core');
-      buf.writeln('**SHA-1:** 8A:BC:41:8B:51:7D:CF:39:29:1F:94:5D:2E:FF:A3:12:42:A3:CB:A5');
+      buf.writeln('**メール:** ${email ?? "未設定"}');
+      buf.writeln('**ログイン状態:** ${signedIn ? "済" : "未"}');
+      buf.writeln('**パッケージ:** com.h1.core');
 
       if (_service.isConfigured) {
         final ok = await _service.sendTextViaPat(buf.toString());
