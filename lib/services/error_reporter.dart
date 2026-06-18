@@ -6,47 +6,44 @@ import 'package:googleapis/gmail/v1.dart' as gmail;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'google_auth_service.dart';
+import '../constants/secure_storage_keys.dart';
+import '../constants/env_config.dart';
+import 'secure_storage_service.dart';
 
 class ErrorReporter {
-  static const _kWebhookUrlKey = 'mattermost_webhook_url';
-  static const _kDefaultWebhookUrl = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
-  static const _kEnvUrl = String.fromEnvironment('MATTERMOST_WEBHOOK_URL');
   static String _appVersion = '';
 
   static Future<void> initVersion() async {
     if (_appVersion.isNotEmpty) return;
     try {
       final info = await PackageInfo.fromPlatform();
-      _appVersion = '${info.version}+${info.buildNumber}';
+      _appVersion = info.version;
     } catch (_) {
       _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
     }
   }
-  static const _kPatKey = 'mattermost_pat';
-  static const _kBaseUrlKey = 'mattermost_base_url';
-  static const _kTeamKey = 'mattermost_team_name';
   static const _kChannelName = 'h1-debug';
 
   static Future<String> _getWebhookUrl() async {
-    if (_kEnvUrl.isNotEmpty) return _kEnvUrl;
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kWebhookUrlKey) ?? _kDefaultWebhookUrl;
+    final envUrl = EnvConfig.mattermostWebhookUrl;
+    if (envUrl.isNotEmpty) return envUrl;
+    final secure = SecureStorageService.instance;
+    final saved = await secure.read(SecureStorageKeys.mattermostWebhookUrl);
+    return saved ?? '';
   }
 
   static Future<void> setWebhookUrl(String url) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kWebhookUrlKey, url);
+    await SecureStorageService.instance.write(SecureStorageKeys.mattermostWebhookUrl, url);
   }
 
   static Future<bool> _sendViaPat(String text) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final pat = prefs.getString(_kPatKey);
-      final baseUrl = prefs.getString(_kBaseUrlKey) ?? 'https://mm.ka.sugeee.com';
-      final teamName = prefs.getString(_kTeamKey) ?? 'cyb';
+      final secure = SecureStorageService.instance;
+      final pat = await secure.read(SecureStorageKeys.mattermostPat);
+      final baseUrl = await secure.read(SecureStorageKeys.mattermostBaseUrl) ?? EnvConfig.mattermostBaseUrl;
+      final teamName = await secure.read(SecureStorageKeys.mattermostTeamName) ?? EnvConfig.mattermostTeamName;
       if (pat == null) {
         debugPrint('[ErrorReporter] PATキー未設定のため送信できません');
         return false;
