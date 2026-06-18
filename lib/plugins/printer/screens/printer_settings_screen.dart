@@ -34,7 +34,12 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
     sb.writeln('-' * 32);
     sb.writeln(' 合計: ${doc.total}');
     sb.writeln('=' * 32);
-    sb.writeln(' 署名: _________________');
+    sb.writeln('  ── 署名 ──');
+    sb.writeln('');
+    sb.writeln('  ________________________________');
+    sb.writeln('');
+    sb.writeln('');
+    sb.writeln('');
     setState(() => _preview = sb.toString());
   }
 

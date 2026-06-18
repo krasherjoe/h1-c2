@@ -720,7 +720,7 @@ class _DocumentPageState extends State<DocumentPage> {
   }
 
   Future<void> _issueCreditNote(BuildContext context, ColorScheme cs) async {
-    final doc = _buildDoc();
+    final doc = widget.document!;
     final docNum = doc.documentNumber.isNotEmpty ? doc.documentNumber : '(未発番)';
     final totalStr = '￥${_formatMoney(doc.total)}';
 
