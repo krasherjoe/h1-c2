@@ -12,6 +12,7 @@ class MmCommandService {
 
   static const _kEnabledKey = 'mm_polling_enabled';
   static const _kLastCheckKey = 'mm_polling_last_check';
+  static const _kProcessedKey = 'mm_processed_posts';
   static const _kPatKey = 'mattermost_pat';
   static const _kBaseUrlKey = 'mattermost_base_url';
   static const _kTeamKey = 'mattermost_team_name';
@@ -98,7 +99,7 @@ class MmCommandService {
 
     final prefs = await SharedPreferences.getInstance();
     final since = prefs.getInt(_kLastCheckKey) ?? 0;
-    final isFirstPoll = since == 0;
+    final processed = prefs.getStringList(_kProcessedKey) ?? [];
 
     try {
       final res = await http.get(
@@ -112,18 +113,22 @@ class MmCommandService {
       if (posts == null || posts.isEmpty) return;
 
       int latest = since;
+      final newProcessed = List<String>.from(processed);
       for (final entry in posts.entries) {
         final post = entry.value as Map<String, dynamic>;
         final msg = post['message'] as String? ?? '';
         final createAt = post['create_at'] as int? ?? 0;
+        final postId = post['id'] as String? ?? '';
         if (createAt > latest) latest = createAt;
         if (!msg.startsWith(_kPrefix)) continue;
         final reply = post['parent_id'] != null;
         if (reply) continue;
-        if (isFirstPoll) continue;
+        if (processed.contains(postId)) continue;
+        newProcessed.add(postId);
         await _dispatch(msg, post);
       }
       await prefs.setInt(_kLastCheckKey, latest + 1);
+      await prefs.setStringList(_kProcessedKey, newProcessed.take(200).toList());
     } catch (e) {
       debugPrint('[MmCmd] poll failed: $e');
     }
