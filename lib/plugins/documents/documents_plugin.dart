@@ -78,10 +78,6 @@ class DocumentsPlugin extends H1Plugin {
     await safeAddColumn(context.database, 'document_items', "maker TEXT NOT NULL DEFAULT ''");
     await safeAddColumn(context.database, 'document_items', "product_code TEXT NOT NULL DEFAULT ''");
     await safeAddColumn(context.database, 'document_items', 'notes TEXT DEFAULT NULL');
-    await safeAddColumn(context.database, 'documents', "deleted_at TEXT DEFAULT NULL");
-    await safeAddColumn(context.database, 'documents', "payment_status TEXT DEFAULT NULL");
-    await safeAddColumn(context.database, 'documents', "received_amount INTEGER DEFAULT NULL");
-    await safeAddColumn(context.database, 'documents', "due_date TEXT DEFAULT NULL");
     try {
       final cutoff = DateTime.now().subtract(const Duration(days: 14)).toIso8601String();
       await context.database.delete('document_edit_logs',
