@@ -4,7 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/env_config.dart';
+import '../constants/secure_storage_keys.dart';
 import 'debug_console.dart';
+import 'secure_storage_service.dart';
 
 class MmCommandService {
   static final MmCommandService instance = MmCommandService._();
@@ -13,9 +16,6 @@ class MmCommandService {
   static const _kEnabledKey = 'mm_polling_enabled';
   static const _kLastCheckKey = 'mm_polling_last_check';
   static const _kProcessedKey = 'mm_processed_posts';
-  static const _kPatKey = 'mattermost_pat';
-  static const _kBaseUrlKey = 'mattermost_base_url';
-  static const _kTeamKey = 'mattermost_team_name';
   static const _kChannelName = 'h1-debug';
   static const _kPrefix = '!opencode';
 
@@ -38,12 +38,33 @@ class MmCommandService {
   };
 
   Future<void> loadConfig() async {
+    final secure = SecureStorageService.instance;
+    _pat = await secure.read(SecureStorageKeys.mattermostPat);
+    _baseUrl = await secure.read(SecureStorageKeys.mattermostBaseUrl) ?? EnvConfig.mattermostBaseUrl;
+    _teamName = await secure.read(SecureStorageKeys.mattermostTeamName) ?? EnvConfig.mattermostTeamName;
     final prefs = await SharedPreferences.getInstance();
-    _pat = prefs.getString(_kPatKey);
-    _baseUrl = prefs.getString(_kBaseUrlKey) ?? 'https://mm.ka.sugeee.com';
-    _teamName = prefs.getString(_kTeamKey) ?? 'cyb';
     _enabled = prefs.getBool(_kEnabledKey) ?? false;
     enabledNotifier.value = _enabled;
+
+    // 移行: SharedPreferences → SecureStorage
+    final oldPat = prefs.getString('mattermost_pat');
+    final oldBaseUrl = prefs.getString('mattermost_base_url');
+    final oldTeam = prefs.getString('mattermost_team_name');
+    if (oldPat != null && _pat == null) {
+      await secure.write(SecureStorageKeys.mattermostPat, oldPat);
+      _pat = oldPat;
+      await prefs.remove('mattermost_pat');
+    }
+    if (oldBaseUrl != null && _baseUrl == null) {
+      await secure.write(SecureStorageKeys.mattermostBaseUrl, oldBaseUrl);
+      _baseUrl = oldBaseUrl;
+      await prefs.remove('mattermost_base_url');
+    }
+    if (oldTeam != null && _teamName == null) {
+      await secure.write(SecureStorageKeys.mattermostTeamName, oldTeam);
+      _teamName = oldTeam;
+      await prefs.remove('mattermost_team_name');
+    }
   }
 
   Future<void> setEnabled(bool v) async {
