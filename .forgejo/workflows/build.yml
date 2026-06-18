@@ -1,0 +1,58 @@
+name: Build & Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.12.x'
+          channel: 'stable'
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build APK
+        run: |
+          flutter build apk --release --dart-define=APP_VERSION="${{ github.ref_name }}"
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          APK_NAME="h1-core-${{ github.ref_name }}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "/tmp/$APK_NAME"
+          LOG=$(git log --oneline --no-decorate "$(git tag --sort=-creatordate | head -1)"..HEAD 2>/dev/null || true)
+          BODY="## ${{ github.ref_name }} 変更点"
+          if [ -n "$LOG" ]; then
+            BODY="$BODY"$'\n'"$LOG"
+          fi
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --notes "$BODY" \
+            "/tmp/$APK_NAME#$APK_NAME"
+
+      - name: Cleanup Old Releases (keep last 5)
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh release list --limit 200 --json tagName --jq '.[].tagName' \
+            | sort -V \
+            | head -n -5 \
+            | while read tag; do
+                echo "  削除: $tag"
+                gh release delete "$tag" --yes 2>/dev/null || true
+              done
