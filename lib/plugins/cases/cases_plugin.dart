@@ -69,8 +69,8 @@ class CasesPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     // 既存テーブルに足りないカラムを追加（互換性）
-    try { await context.database.execute('ALTER TABLE cases ADD COLUMN assignee TEXT'); } catch (_) {}
-    try { await context.database.execute('ALTER TABLE cases ADD COLUMN due_date TEXT'); } catch (_) {}
+    await safeAddColumn(context.database, 'cases', 'assignee TEXT');
+    await safeAddColumn(context.database, 'cases', 'due_date TEXT');
 
     final repo = CaseRepository();
     await repo.escalateAll();

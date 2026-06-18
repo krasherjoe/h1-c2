@@ -8,6 +8,7 @@ import 'explorer/document_explorer_config.dart';
 import '../../services/debug_console.dart';
 import '../../services/history_db_service.dart';
 import '../../constants/screen_ids.dart';
+import '../../services/database/database_utils.dart';
 
 const _kDocTable = '''
   CREATE TABLE IF NOT EXISTS documents (
@@ -73,38 +74,14 @@ class DocumentsPlugin extends H1Plugin {
   @override
   Future<void> initialize(PluginContext context) async {
     await _recoverFromConversion(context.database);
-    try {
-      await context.database.execute(
-        'ALTER TABLE document_edit_logs ADD COLUMN details TEXT NOT NULL DEFAULT \'\'');
-    } catch (_) {}
-    try {
-      await context.database.execute(
-        "ALTER TABLE document_items ADD COLUMN maker TEXT NOT NULL DEFAULT ''");
-    } catch (_) {}
-    try {
-      await context.database.execute(
-        "ALTER TABLE document_items ADD COLUMN product_code TEXT NOT NULL DEFAULT ''");
-    } catch (_) {}
-    try {
-      await context.database.execute(
-        'ALTER TABLE document_items ADD COLUMN notes TEXT DEFAULT NULL');
-    } catch (_) {}
-    try {
-      await context.database.execute(
-        "ALTER TABLE documents ADD COLUMN deleted_at TEXT DEFAULT NULL");
-    } catch (_) {}
-    try {
-      await context.database.execute(
-        "ALTER TABLE documents ADD COLUMN payment_status TEXT DEFAULT NULL");
-    } catch (_) {}
-    try {
-      await context.database.execute(
-        "ALTER TABLE documents ADD COLUMN received_amount INTEGER DEFAULT NULL");
-    } catch (_) {}
-    try {
-      await context.database.execute(
-        "ALTER TABLE documents ADD COLUMN due_date TEXT DEFAULT NULL");
-    } catch (_) {}
+    await safeAddColumn(context.database, 'document_edit_logs', "details TEXT NOT NULL DEFAULT ''");
+    await safeAddColumn(context.database, 'document_items', "maker TEXT NOT NULL DEFAULT ''");
+    await safeAddColumn(context.database, 'document_items', "product_code TEXT NOT NULL DEFAULT ''");
+    await safeAddColumn(context.database, 'document_items', 'notes TEXT DEFAULT NULL');
+    await safeAddColumn(context.database, 'documents', "deleted_at TEXT DEFAULT NULL");
+    await safeAddColumn(context.database, 'documents', "payment_status TEXT DEFAULT NULL");
+    await safeAddColumn(context.database, 'documents', "received_amount INTEGER DEFAULT NULL");
+    await safeAddColumn(context.database, 'documents', "due_date TEXT DEFAULT NULL");
     try {
       final cutoff = DateTime.now().subtract(const Duration(days: 14)).toIso8601String();
       await context.database.delete('document_edit_logs',
@@ -225,101 +202,25 @@ class DocumentsPlugin extends H1Plugin {
     for (final sql in _kMissingTables) {
       try { await db.execute(sql); } catch (_) {}
     }
-    try {
-      await db.execute(
-        'ALTER TABLE documents ADD COLUMN project_id TEXT',
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        'ALTER TABLE documents ADD COLUMN subject TEXT',
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN include_tax INTEGER DEFAULT 0",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN tax_rate REAL DEFAULT 0.10",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN total_discount_amount INTEGER",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN total_discount_rate REAL",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN price_adjustment_type TEXT",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN price_adjustment_unit INTEGER",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN is_locked INTEGER DEFAULT 0",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN content_hash TEXT",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE document_items ADD COLUMN discount_amount INTEGER",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE document_items ADD COLUMN discount_rate REAL",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN version INTEGER DEFAULT 1",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN is_current INTEGER DEFAULT 1",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN previous_hash TEXT",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE document_items ADD COLUMN variant_label TEXT",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN payment_status TEXT DEFAULT NULL",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN received_amount INTEGER DEFAULT NULL",
-      );
-    } catch (_) {}
-    try {
-      await db.execute(
-        "ALTER TABLE documents ADD COLUMN due_date TEXT DEFAULT NULL",
-      );
-    } catch (_) {}
+    await safeAddColumn(db, 'documents', 'project_id TEXT');
+    await safeAddColumn(db, 'documents', 'subject TEXT');
+    await safeAddColumn(db, 'documents', 'include_tax INTEGER DEFAULT 0');
+    await safeAddColumn(db, 'documents', 'tax_rate REAL DEFAULT 0.10');
+    await safeAddColumn(db, 'documents', 'total_discount_amount INTEGER');
+    await safeAddColumn(db, 'documents', 'total_discount_rate REAL');
+    await safeAddColumn(db, 'documents', 'price_adjustment_type TEXT');
+    await safeAddColumn(db, 'documents', 'price_adjustment_unit INTEGER');
+    await safeAddColumn(db, 'documents', 'is_locked INTEGER DEFAULT 0');
+    await safeAddColumn(db, 'documents', 'content_hash TEXT');
+    await safeAddColumn(db, 'document_items', 'discount_amount INTEGER');
+    await safeAddColumn(db, 'document_items', 'discount_rate REAL');
+    await safeAddColumn(db, 'documents', 'version INTEGER DEFAULT 1');
+    await safeAddColumn(db, 'documents', 'is_current INTEGER DEFAULT 1');
+    await safeAddColumn(db, 'documents', 'previous_hash TEXT');
+    await safeAddColumn(db, 'document_items', 'variant_label TEXT');
+    await safeAddColumn(db, 'documents', 'payment_status TEXT DEFAULT NULL');
+    await safeAddColumn(db, 'documents', 'received_amount INTEGER DEFAULT NULL');
+    await safeAddColumn(db, 'documents', 'due_date TEXT DEFAULT NULL');
   }
 
   @override

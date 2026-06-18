@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import 'company_service.dart';
 import 'database/database_schema_core.dart';
+import 'database/database_utils.dart';
 import 'history_db_service.dart';
 
 export 'database/database_utils.dart';
@@ -135,9 +136,7 @@ Future<void> _migrateToVersion(Database db, int version) async {
     case 2:
       break;
     case 3:
-      try {
-        await db.execute('ALTER TABLE projects ADD COLUMN contract_months INTEGER');
-      } catch (_) {}
+      await safeAddColumn(db, 'projects', 'contract_months INTEGER');
       break;
     case 4:
       await db.execute('''
@@ -161,9 +160,7 @@ Future<void> _migrateToVersion(Database db, int version) async {
       );
       break;
     case 5:
-      try {
-        await db.execute('ALTER TABLE company_info ADD COLUMN closing_day INTEGER DEFAULT 20');
-      } catch (_) {}
+      await safeAddColumn(db, 'company_info', 'closing_day INTEGER DEFAULT 20');
       break;
     case 6:
       // 電子帳簿保存法対応 - PDF生成JSONのハッシュチェーンテーブル

@@ -6,6 +6,7 @@ import '../../../plugin_system/screen_definition.dart';
 import 'screens/category_explorer_screen.dart';
 import '../../../services/debug_console.dart';
 import '../../constants/screen_ids.dart';
+import '../../services/database/database_utils.dart';
 
 class ProductsPlugin extends H1Plugin {
   @override
@@ -47,9 +48,7 @@ class ProductsPlugin extends H1Plugin {
       'previous_hash': 'TEXT',
     };
     for (final e in missing.entries) {
-      try {
-        await db.execute('ALTER TABLE products ADD COLUMN ${e.key} ${e.value}');
-      } catch (_) {}
+      await safeAddColumn(db, 'products', '${e.key} ${e.value}');
     }
   }
 

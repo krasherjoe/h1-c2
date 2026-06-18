@@ -337,7 +337,7 @@ void main() async {
   {
     // deleted_atカラムを確保（documentsテーブルが存在しない場合は何もしない）
     try {
-      await db.execute("ALTER TABLE documents ADD COLUMN deleted_at TEXT DEFAULT NULL");
+      await safeAddColumn(db, 'documents', "deleted_at TEXT DEFAULT NULL");
       // リペア
       final restored = await HistoryDbService().repairDocumentsTable(db);
       if (restored > 0) {

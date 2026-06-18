@@ -7,6 +7,7 @@ import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/project_explorer_config.dart';
 import 'screens/project_detail_screen.dart';
 import '../../constants/screen_ids.dart';
+import '../../services/database/database_utils.dart';
 
 class ProjectPlugin extends H1Plugin {
   @override
@@ -83,8 +84,6 @@ class ProjectPlugin extends H1Plugin {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)',
     );
-    try {
-      await db.execute('ALTER TABLE projects ADD COLUMN sort_order INTEGER DEFAULT 0');
-    } catch (_) {}
+    await safeAddColumn(db, 'projects', 'sort_order INTEGER DEFAULT 0');
   }
 }

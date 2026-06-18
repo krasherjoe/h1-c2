@@ -7,6 +7,7 @@ import '../../services/debug_console.dart';
 import 'screens/price_explorer_screen.dart';
 import 'commands/pricing_commands.dart';
 import '../../constants/screen_ids.dart';
+import '../../services/database/database_utils.dart';
 
 class PriceListPlugin extends H1Plugin {
   @override
@@ -57,14 +58,10 @@ class PriceListPlugin extends H1Plugin {
   @override
   Future<void> migrate(Database db, int fromVersion, int toVersion) async {
     if (fromVersion < 2) {
-      try {
-        await db.execute('ALTER TABLE price_entries ADD COLUMN supplier_id TEXT');
-      } catch (_) {}
+      await safeAddColumn(db, 'price_entries', 'supplier_id TEXT');
     }
     if (fromVersion < 3) {
-      try {
-        await db.execute('ALTER TABLE price_entries ADD COLUMN customer_id TEXT');
-      } catch (_) {}
+      await safeAddColumn(db, 'price_entries', 'customer_id TEXT');
     }
   }
 

@@ -7,6 +7,7 @@ import '../../../plugins/explorer/h1_explorer.dart';
 import 'explorer/customer_explorer_config.dart';
 import '../../../services/debug_console.dart';
 import '../../constants/screen_ids.dart';
+import '../../services/database/database_utils.dart';
 
 class CustomersPlugin extends H1Plugin {
   @override
@@ -27,10 +28,10 @@ class CustomersPlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
-    try { await context.database.execute("ALTER TABLE customers ADD COLUMN email2 TEXT"); } catch (_) {}
-    try { await context.database.execute("ALTER TABLE customers ADD COLUMN email3 TEXT"); } catch (_) {}
-    try { await context.database.execute("ALTER TABLE customer_contacts ADD COLUMN email2 TEXT"); } catch (_) {}
-    try { await context.database.execute("ALTER TABLE customer_contacts ADD COLUMN email3 TEXT"); } catch (_) {}
+    await safeAddColumn(context.database, 'customers', 'email2 TEXT');
+    await safeAddColumn(context.database, 'customers', 'email3 TEXT');
+    await safeAddColumn(context.database, 'customer_contacts', 'email2 TEXT');
+    await safeAddColumn(context.database, 'customer_contacts', 'email3 TEXT');
     DebugConsole.register('customers.stats', (_) async {
       final cnt = await context.database.rawQuery('SELECT COUNT(*) as c FROM customers');
       return '顧客: ${cnt.first['c']}件';
@@ -79,9 +80,7 @@ class CustomersPlugin extends H1Plugin {
         'valid_to': 'TEXT',
       };
       for (final e in cols.entries) {
-        try {
-          await db.execute('ALTER TABLE customers ADD COLUMN ${e.key} ${e.value}');
-        } catch (_) {}
+        await safeAddColumn(db, 'customers', '${e.key} ${e.value}');
       }
       try {
         await db.execute('''
@@ -102,9 +101,7 @@ class CustomersPlugin extends H1Plugin {
           )
         ''');
       } catch (_) {}
-      try {
-        await db.execute('ALTER TABLE customer_contacts ADD COLUMN version INTEGER DEFAULT 1');
-      } catch (_) {}
+      await safeAddColumn(db, 'customer_contacts', 'version INTEGER DEFAULT 1');
     }
   }
 

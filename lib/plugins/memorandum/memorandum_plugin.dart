@@ -8,6 +8,7 @@ import 'screens/memorandum_list_screen.dart';
 import 'screens/memorandum_input_screen.dart';
 import 'screens/memorandum_preview_screen.dart';
 import '../../constants/screen_ids.dart';
+import '../../services/database/database_utils.dart';
 
 class MemorandumPlugin extends H1Plugin {
   @override
@@ -93,11 +94,7 @@ class MemorandumPlugin extends H1Plugin {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_memorandums_project ON memorandums(project_id)',
     );
-    try {
-      await db.execute('ALTER TABLE memorandums ADD COLUMN customer_representative TEXT');
-    } catch (_) {}
-    try {
-      await db.execute('ALTER TABLE memorandums ADD COLUMN company_representative TEXT');
-    } catch (_) {}
+    await safeAddColumn(db, 'memorandums', 'customer_representative TEXT');
+    await safeAddColumn(db, 'memorandums', 'company_representative TEXT');
   }
 }

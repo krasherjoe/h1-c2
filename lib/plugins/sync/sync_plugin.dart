@@ -95,8 +95,8 @@ class SyncPlugin extends H1Plugin with WidgetsBindingObserver {
         read_at TEXT
       )''');
     for (final table in ['documents', 'journal_entries', 'cash_transactions']) {
-      try { await db.execute("ALTER TABLE $table ADD COLUMN sync_source TEXT DEFAULT ''"); } catch (_) {}
-      try { await db.execute("ALTER TABLE $table ADD COLUMN sync_version INTEGER DEFAULT 0"); } catch (_) {}
+      await safeAddColumn(db, table, "sync_source TEXT DEFAULT ''");
+      await safeAddColumn(db, table, "sync_version INTEGER DEFAULT 0");
     }
   }
 
