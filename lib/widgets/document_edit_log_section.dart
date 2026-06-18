@@ -23,7 +23,7 @@ class DocumentEditLogSection extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('📝 編集履歴(2週間保持しています)',
-            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
           const SizedBox(height: 4),
           ...(editLogs.take(5)).map((log) => Container(
             margin: const EdgeInsets.only(bottom: 2),
@@ -35,14 +35,14 @@ class DocumentEditLogSection extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Text('${log.createdAt.month}/${log.createdAt.day} ${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
-                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                 const SizedBox(width: 8),
                 Text(log.action,
-                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
               ]),
               if (log.details.isNotEmpty)
                 Text(log.details,
-                  style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
+                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
                   maxLines: 2, overflow: TextOverflow.ellipsis),
             ]),
           )),

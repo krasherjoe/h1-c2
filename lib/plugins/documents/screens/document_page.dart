@@ -59,6 +59,7 @@ class _DocumentPageState extends State<DocumentPage> {
   List<_Snapshot> _undoStack = [];
   List<_Snapshot> _redoStack = [];
   bool _isSaving = false;
+  _Snapshot? _initialSnapshot;
 
   @override
   void initState() {
@@ -105,7 +106,37 @@ class _DocumentPageState extends State<DocumentPage> {
     if (doc != null) {
       _editLogs = await _repo.getEditLogs(doc.id);
     }
-    if (mounted) setState(() => _loading = false);
+    if (mounted) setState(() {
+      _initialSnapshot = _snapshotFromCurrent();
+      _loading = false;
+    });
+  }
+
+  bool _hasChanges() {
+    if (_initialSnapshot == null) return true;
+    final s = _initialSnapshot!;
+    if (_type != s.type) return true;
+    if (_customerId != s.customerId) return true;
+    if (_customerName != s.customerName) return true;
+    if (_date != s.date) return true;
+    if (_projectId != s.projectId) return true;
+    if (_titleCtl.text != s.title) return true;
+    if (_memoCtl.text != s.memo) return true;
+    if (_includeTax != s.includeTax) return true;
+    if (_totalDiscountAmount != s.totalDiscountAmount) return true;
+    if (_totalDiscountRate != s.totalDiscountRate) return true;
+    if (_items.length != s.items.length) return true;
+    for (var i = 0; i < _items.length; i++) {
+      final a = _items[i], b = s.items[i];
+      if (a.productId != b.productId || a.productName != b.productName ||
+          a.maker != b.maker || a.productCode != b.productCode ||
+          a.quantity != b.quantity || a.unitPrice != b.unitPrice ||
+          a.taxRate != b.taxRate ||
+          a.discountAmount != b.discountAmount ||
+          a.discountRate != b.discountRate ||
+          a.notes != b.notes) return true;
+    }
+    return false;
   }
 
   int get _subtotal => _items.fold(0, (s, i) => s + i.subtotal);
@@ -847,6 +878,10 @@ class _DocumentPageState extends State<DocumentPage> {
   }
 
   Future<void> _save() async {
+    if (!_hasChanges()) {
+      if (mounted) Navigator.pop(context, widget.document);
+      return;
+    }
     if (_customerName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('顧客を選択してください')));
       return;
