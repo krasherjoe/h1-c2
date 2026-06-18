@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../main.dart' show themeNotifier;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
@@ -25,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _inputStyle = 'raised';
   String? _googleEmail;
   bool _googleSignedIn = false;
+  String _lastBackup = '';
   bool _devExpanded = false;
 
   @override
@@ -45,6 +47,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _inputStyle = _repo.inputFieldStyle;
       _googleEmail = email;
       _googleSignedIn = email != null && email.isNotEmpty;
+      final lastBackupStr = prefs.getString('drive_backup_last');
+      if (lastBackupStr != null) {
+        final dt = DateTime.tryParse(lastBackupStr);
+        _lastBackup = dt != null ? DateFormat('yyyy/MM/dd HH:mm').format(dt) : '';
+      } else {
+        _lastBackup = '';
+      }
     });
   }
 
@@ -303,8 +312,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               title: Text('Driveバックアップ', style: TextStyle(fontWeight: FontWeight.w600,
                   color: SyncQueue.instance.isParent ? cs.onSurface : cs.onSurfaceVariant)),
-              subtitle: Text('Google Driveに自動バックアップ。端末故障や\nアプリ削除時のデータ復旧に使います',
-                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Google Driveに自動バックアップ（24時間ごと）',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                    if (_lastBackup.isNotEmpty)
+                      Text('最終: $_lastBackup',
+                          style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant.withValues(alpha: 0.7))),
+                  ]),
               trailing: SyncQueue.instance.isParent
                   ? const Icon(Icons.chevron_right)
                   : Row(mainAxisSize: MainAxisSize.min, children: [

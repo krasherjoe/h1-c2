@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
@@ -52,6 +53,13 @@ class DriveBackupPlugin extends H1Plugin {
     cleanOldLocalBackups();
     Future.delayed(const Duration(seconds: 10), () async {
       try {
+        final prefs = await SharedPreferences.getInstance();
+        final lastStr = prefs.getString('drive_backup_last');
+        if (lastStr != null) {
+          final last = DateTime.tryParse(lastStr);
+          if (last != null && DateTime.now().difference(last).inHours < 24) return;
+        }
+        await prefs.setString('drive_backup_last', DateTime.now().toIso8601String());
         final db = await DatabaseHelper().database;
         final dbPath = db.path;
         final dir = await getApplicationDocumentsDirectory();
