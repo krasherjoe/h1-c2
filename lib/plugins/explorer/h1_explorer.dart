@@ -3,13 +3,14 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'h1_explorer_config.dart';
 import 'h1_explorer_item.dart';
 import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
 import '../../services/mm_command_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants/screen_ids.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
@@ -49,6 +50,8 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   List<TreeFolder> _folders = [];
   List<TreeFolder> _breadcrumbs = [];
 
+  String _appVersion = '';
+
   bool get _hasActiveFilters =>
       _statusFilter.isNotEmpty || _dateFrom != null || _dateTo != null ||
       widget.config.typeFilter.isNotEmpty;
@@ -61,6 +64,17 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     _loadDisplaySize();
     widget.config.onListChanged = _loadItems;
     _loadItems();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _appVersion = '${info.version}+${info.buildNumber}';
+    } catch (_) {
+      _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: '');
+    }
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadDisplaySize() async {
@@ -390,7 +404,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   Future<void> _captureDiagnostic() async {
     final buf = StringBuffer();
     buf.writeln('📷 **D1診断** (${widget.config.explorerTitle})');
-    buf.writeln('items: ${_items.length} | loading: $_isLoading | tree: $_treeMode');
+    buf.writeln('version: $_appVersion | items: ${_items.length} | loading: $_isLoading | tree: $_treeMode');
     buf.writeln('DB: ${_dbSize != null ? "${(_dbSize! / 1024).round()}KB" : "--"}');
     try {
       final db = await DatabaseHelper().database;
@@ -424,10 +438,13 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     final count = _items.length;
     final sizeStr = _dbSize != null ? '${(_dbSize! / 1024).round()}KB' : '--';
     final empty = count == 0;
+    final versionStr = _appVersion.isNotEmpty ? 'v$_appVersion' : '';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
+          Icon(Icons.info_outline, size: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+          const SizedBox(width: 4),
           Text(
             empty ? '全0件' : '全$count件',
             style: TextStyle(
@@ -436,7 +453,14 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
               fontWeight: empty ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          const SizedBox(width: 8),
+          if (versionStr.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Text(
+              versionStr,
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+            ),
+          ],
+          const Spacer(),
           Text(
             '${S.db}: $sizeStr',
             style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
