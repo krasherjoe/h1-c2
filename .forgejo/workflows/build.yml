@@ -39,6 +39,7 @@ jobs:
             BODY="$BODY"$'\n'"$LOG"
           fi
           gh release create "${{ github.ref_name }}" \
+            --repo krasherjoe/h1-core \
             --title "${{ github.ref_name }}" \
             --notes "$BODY" \
             "/tmp/$APK_NAME#$APK_NAME"
@@ -47,10 +48,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          gh release list --limit 200 --json tagName --jq '.[].tagName' \
+          gh release list --limit 200 --repo krasherjoe/h1-core --json tagName --jq '.[].tagName' \
             | sort -V \
             | head -n -5 \
             | while read tag; do
                 echo "  削除: $tag"
-                gh release delete "$tag" --yes 2>/dev/null || true
+                gh release delete "$tag" --repo krasherjoe/h1-core --yes 2>/dev/null || true
               done
