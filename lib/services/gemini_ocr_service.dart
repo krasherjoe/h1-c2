@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/secure_storage_keys.dart';
+import 'secure_storage_service.dart';
 
 class ReceiptOcrResult {
   final String? vendor;
@@ -23,17 +24,12 @@ class ReceiptOcrResult {
 }
 
 class GeminiOcrService {
-  static const _kPrefKey = 'gemini_api_key';
-
   static Future<String?> getApiKey() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = prefs.getString(_kPrefKey);
-    return key?.isNotEmpty == true ? key : null;
+    return await SecureStorageService.instance.read(SecureStorageKeys.geminiApiKey);
   }
 
   static Future<void> setApiKey(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kPrefKey, key);
+    await SecureStorageService.instance.write(SecureStorageKeys.geminiApiKey, key);
   }
 
   Future<ReceiptOcrResult?> analyzeReceipt(String imagePath) async {

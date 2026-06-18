@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/env_config.dart';
 
 class LogDispatcher {
   static const _kDestKey = 'log_output_dest';
   static const _kWebhookKey = 'mattermost_webhook_url';
-  static const _kDefaultWebhook = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
-
   static String _dest = 'mm';
 
   static Future<void> loadConfig() async {
@@ -30,7 +29,7 @@ class LogDispatcher {
   static Future<void> _sendMm(String text) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final url = prefs.getString(_kWebhookKey) ?? _kDefaultWebhook;
+      final url = prefs.getString(_kWebhookKey) ?? EnvConfig.mattermostWebhookUrl;
       await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},

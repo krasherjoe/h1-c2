@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'debug_console.dart';
+import '../constants/secure_storage_keys.dart';
+import '../constants/env_config.dart';
+import 'secure_storage_service.dart';
 
 class MattermostBridge {
   static Timer? _timer;
@@ -11,15 +14,10 @@ class MattermostBridge {
   static String? _lastPostId;
 
   static const _kEnabledKey = 'mm_polling_enabled';
-  static const _kBotTokenKey = 'mm_bot_token';
-  static const _kDevUserIdKey = 'mm_dev_user_id';
   static const _kChannelId = 'n6fr87ipuj8epc463o7fu7gdao';
   static const _kPollInterval = Duration(seconds: 10);
 
-  static String get _baseUrl {
-    const webhook = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
-    return webhook.replaceAll(RegExp(r'/hooks/.*'), '');
-  }
+  static String get _baseUrl => EnvConfig.mattermostBaseUrl;
 
   static bool get isRunning => _running;
 
@@ -39,23 +37,19 @@ class MattermostBridge {
   }
 
   static Future<String?> get botToken async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kBotTokenKey);
+    return await SecureStorageService.instance.read(SecureStorageKeys.mmBotToken);
   }
 
   static Future<void> setBotToken(String v) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kBotTokenKey, v);
+    await SecureStorageService.instance.write(SecureStorageKeys.mmBotToken, v);
   }
 
   static Future<String?> get devUserId async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kDevUserIdKey);
+    return await SecureStorageService.instance.read(SecureStorageKeys.mmDevUserId);
   }
 
   static Future<void> setDevUserId(String v) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kDevUserIdKey, v);
+    await SecureStorageService.instance.write(SecureStorageKeys.mmDevUserId, v);
   }
 
   static void start() {
@@ -119,7 +113,8 @@ class MattermostBridge {
 
   static Future<void> _postResult(String text) async {
     try {
-      const webhook = 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
+      final webhook = EnvConfig.mattermostWebhookUrl;
+      if (webhook.isEmpty) return;
       await http.post(
         Uri.parse(webhook),
         headers: {'Content-Type': 'application/json'},
