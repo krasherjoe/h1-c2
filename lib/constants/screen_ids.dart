@@ -88,4 +88,6 @@ class S {
   static const dv = 'DV';
   static const de = 'DE';
   static const pp = 'PP';
+  // ICEデバッグ
+  static const ice = 'ICE';
 }

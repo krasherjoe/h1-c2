@@ -41,6 +41,7 @@ import 'plugins/conversion/screens/conversion_guard_screen.dart';
 import 'plugins/analysis/analysis_plugin.dart';
 import 'plugins/audit/audit_plugin.dart';
 import 'plugins/debug/debug_plugin.dart';
+import 'plugins/ice/ice_plugin.dart';
 import 'plugins/project/project_plugin.dart';
 import 'plugins/memorandum/memorandum_plugin.dart';
 import 'plugins/ar/ar_plugin.dart';
@@ -382,7 +383,7 @@ void main() async {
     ConversionPlugin(), AuditPlugin(), DebugPlugin(),
     DriveBackupPlugin(), ProjectPlugin(), MemorandumPlugin(),
     ArPlugin(), DailyPlugin(), PriceListPlugin(), SuppliersPlugin(),
-    SyncPlugin(), PrinterPlugin(), CasesPlugin(),
+    SyncPlugin(), PrinterPlugin(), CasesPlugin(), IcePlugin(),
   ];
   for (final plugin in plugins) {
     try {
