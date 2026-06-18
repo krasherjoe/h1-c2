@@ -3,15 +3,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/database_helper.dart';
+import '../../../constants/secure_storage_keys.dart';
+import '../../../constants/env_config.dart';
+import '../../../services/secure_storage_service.dart';
 
 class DebugService {
-  static const _kPatKey = 'mattermost_pat';
-  static const _kTeamKey = 'mattermost_team_name';
-  static const _kBaseUrlKey = 'mattermost_base_url';
-  static const _kWebhookKey = 'mattermost_webhook_url';
-  static const _kRootIdKey = 'mm_root_id';
   static const _kChannelName = 'h1-debug';
   static String _appVersion = '';
 
@@ -21,7 +18,7 @@ class DebugService {
     if (_appVersion.isNotEmpty) return;
     try {
       final info = await PackageInfo.fromPlatform();
-      _appVersion = '${info.version}+${info.buildNumber}';
+      _appVersion = info.version;
     } catch (_) {
       _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
     }
@@ -35,14 +32,14 @@ class DebugService {
 
   bool get isConfigured => _pat != null && _baseUrl != null;
 
-  String get baseUrl => _baseUrl ?? 'https://mm.ka.sugeee.com';
+  String get baseUrl => _baseUrl ?? EnvConfig.mattermostBaseUrl;
 
   Future<void> loadConfig() async {
-    final prefs = await SharedPreferences.getInstance();
-    _pat = prefs.getString(_kPatKey);
-    _baseUrl = prefs.getString(_kBaseUrlKey) ?? 'https://mm.ka.sugeee.com';
-    _teamName = prefs.getString(_kTeamKey) ?? 'cyb';
-    _rootId = prefs.getString(_kRootIdKey);
+    final secure = SecureStorageService.instance;
+    _pat = await secure.read(SecureStorageKeys.mattermostPat);
+    _baseUrl = await secure.read(SecureStorageKeys.mattermostBaseUrl) ?? EnvConfig.mattermostBaseUrl;
+    _teamName = await secure.read(SecureStorageKeys.mattermostTeamName) ?? EnvConfig.mattermostTeamName;
+    _rootId = await secure.read(SecureStorageKeys.mmRootId);
   }
 
   Future<void> saveConfig({
@@ -50,10 +47,10 @@ class DebugService {
     String? baseUrl,
     String? teamName,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (pat != null) { _pat = pat; await prefs.setString(_kPatKey, pat); }
-    if (baseUrl != null) { _baseUrl = baseUrl; await prefs.setString(_kBaseUrlKey, baseUrl); }
-    if (teamName != null) { _teamName = teamName; await prefs.setString(_kTeamKey, teamName); }
+    final secure = SecureStorageService.instance;
+    if (pat != null) { _pat = pat; await secure.write(SecureStorageKeys.mattermostPat, pat); }
+    if (baseUrl != null) { _baseUrl = baseUrl; await secure.write(SecureStorageKeys.mattermostBaseUrl, baseUrl); }
+    if (teamName != null) { _teamName = teamName; await secure.write(SecureStorageKeys.mattermostTeamName, teamName); }
   }
 
   Map<String, String> get _headers => {
@@ -89,8 +86,9 @@ class DebugService {
   }
 
   Future<String> _getWebhookUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kWebhookKey) ?? 'https://mm.ka.sugeee.com/hooks/x6nxx8q35jdkuetbmh89ogt5ze';
+    final secure = SecureStorageService.instance;
+    final saved = await secure.read(SecureStorageKeys.mattermostWebhookUrl);
+    return saved ?? EnvConfig.mattermostWebhookUrl;
   }
 
   Future<bool> sendText(String text) async {
@@ -107,13 +105,13 @@ class DebugService {
       );
       if (res.statusCode == 200 && _rootId == null && res.body.trim().isNotEmpty) {
         _rootId = res.body.trim();
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_kRootIdKey, _rootId!);
+        final secure = SecureStorageService.instance;
+        await secure.write(SecureStorageKeys.mmRootId, _rootId!);
       }
       if (res.statusCode == 404 && _rootId != null) {
         _rootId = null;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove(_kRootIdKey);
+        final secure = SecureStorageService.instance;
+        await secure.delete(SecureStorageKeys.mmRootId);
         return sendText(text);
       }
       return res.statusCode == 200;
