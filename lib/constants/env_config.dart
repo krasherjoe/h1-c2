@@ -18,5 +18,5 @@ class EnvConfig {
   static String get googleClientIdOrDefault =>
       googleClientId.isNotEmpty
           ? googleClientId
-          : '468424259506-vmdhvaf5npk65a0r6kic9097h2i06kqt.apps.googleusercontent.com';
+          : '';
 }
