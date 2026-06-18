@@ -98,6 +98,7 @@ class MmCommandService {
 
     final prefs = await SharedPreferences.getInstance();
     final since = prefs.getInt(_kLastCheckKey) ?? 0;
+    final isFirstPoll = since == 0;
 
     try {
       final res = await http.get(
@@ -119,6 +120,7 @@ class MmCommandService {
         if (!msg.startsWith(_kPrefix)) continue;
         final reply = post['parent_id'] != null;
         if (reply) continue;
+        if (isFirstPoll) continue;
         await _dispatch(msg, post);
       }
       await prefs.setInt(_kLastCheckKey, latest + 1);
