@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'plugin_interface.dart';
 import 'plugin_context.dart';
@@ -7,6 +8,9 @@ import '../services/database_helper.dart';
 
 class PluginRegistry {
   static final PluginRegistry instance = PluginRegistry._();
+
+  @visibleForTesting
+  PluginRegistry();
 
   PluginRegistry._();
 
