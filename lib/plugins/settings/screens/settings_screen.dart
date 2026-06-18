@@ -295,11 +295,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: SyncQueue.instance.isParent ? cs.tertiaryContainer : cs.surfaceContainerHighest,
+                  color: SyncQueue.instance.isParent ? Colors.green.shade50 : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.cloud_upload,
-                    color: SyncQueue.instance.isParent ? cs.tertiary : cs.onSurfaceVariant, size: 20),
+                child: Icon(Icons.cloud,
+                    color: SyncQueue.instance.isParent ? Colors.green.shade700 : cs.onSurfaceVariant, size: 20),
               ),
               title: Text('Driveバックアップ', style: TextStyle(fontWeight: FontWeight.w600,
                   color: SyncQueue.instance.isParent ? cs.onSurface : cs.onSurfaceVariant)),
