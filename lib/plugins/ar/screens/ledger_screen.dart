@@ -56,6 +56,7 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
         LEFT JOIN customers c ON c.id = d.customer_id AND c.is_current = 1
         WHERE d.is_current = 1 AND d.status = 'confirmed' AND d.document_type = 'invoice'
           AND d.deleted_at IS NULL
+          AND (d.linked_document_id IS NULL OR d.total >= 0)
           AND (d.payment_status IS NULL OR d.payment_status != 'paid')
         GROUP BY COALESCE(c.display_name, d.customer_name, '不明')
         ORDER BY total_amount DESC

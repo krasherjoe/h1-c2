@@ -613,4 +613,25 @@ class DocumentRepository {
     if (pdfJsonString == null) return null;
     return jsonDecode(pdfJsonString) as Map<String, dynamic>;
   }
+
+  /// 取消伝票（赤伝）を作成する
+  Future<DocumentModel> createCreditNote(DocumentModel original) async {
+    if (!original.isConfirmed || original.isLocked == false) {
+      throw Exception('確定済みの伝票のみ赤伝を発行できます');
+    }
+    if (original.isRedInvoice) {
+      throw Exception('赤伝に対する赤伝は発行できません');
+    }
+    final newId = const Uuid().v4();
+    final docNumber = await generateDocumentNumber(original.documentType);
+    final creditNote = original.toCreditNote(
+      newId: newId,
+      newDocumentNumber: docNumber,
+      originalSubject: '取消: ${original.documentNumber} ${original.customerName}',
+    );
+    await save(creditNote);
+    await addEditLog(original.id, '赤伝発行',
+      details: '取消伝票 #$docNumber を発行');
+    return creditNote;
+  }
 }

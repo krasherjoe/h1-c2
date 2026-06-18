@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../services/database_helper.dart';
 import '../models/journal_entry.dart';
 import 'account_repository.dart';
+import '../../../plugins/documents/models/document_model.dart';
 
 class AutoJournalService {
   final _db = DatabaseHelper();
@@ -136,6 +137,45 @@ class AutoJournalService {
         creditAccountId: cashId,
         amount: total,
         description: baseDesc,
+        entryType: 'auto',
+      ).toMap());
+    }
+  }
+
+  Future<void> createFromCreditNote(DocumentModel creditNote) async {
+    if (!creditNote.isRedInvoice) return;
+    final db = await _db.database;
+    final now = DateTime.now();
+    final amt = creditNote.total.abs();
+
+    if (creditNote.documentType == DocumentType.invoice) {
+      // 逆仕訳: 売上高(401) / 売掛金(103)
+      final debitId = await _accountId('401');
+      final creditId = await _accountId('103');
+      if (debitId == null || creditId == null) return;
+      await db.insert('journal_entries', JournalEntry(
+        id: _uuid.v4(),
+        date: now,
+        debitAccountId: debitId,
+        creditAccountId: creditId,
+        amount: amt,
+        description: '自動: 取消_請求${creditNote.customerName.isNotEmpty ? " (${creditNote.customerName})" : ""}',
+        documentId: creditNote.id,
+        entryType: 'auto',
+      ).toMap());
+    } else if (creditNote.documentType == DocumentType.receipt) {
+      // 逆仕訳: 売掛金(103) / 現金(101)
+      final debitId = await _accountId('103');
+      final creditId = await _accountId('101');
+      if (debitId == null || creditId == null) return;
+      await db.insert('journal_entries', JournalEntry(
+        id: _uuid.v4(),
+        date: now,
+        debitAccountId: debitId,
+        creditAccountId: creditId,
+        amount: amt,
+        description: '自動: 取消_入金${creditNote.customerName.isNotEmpty ? " (${creditNote.customerName})" : ""}',
+        documentId: creditNote.id,
         entryType: 'auto',
       ).toMap());
     }

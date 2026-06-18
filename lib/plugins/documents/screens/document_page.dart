@@ -253,6 +253,17 @@ class _DocumentPageState extends State<DocumentPage> {
                 builder: (_) => PrinterSettingsScreen(document: _buildDoc()),
               )),
             )),
+            if (_isLocked && !_isRedInvoice) ...[
+              const SizedBox(height: 8),
+              SizedBox(width: double.infinity, child: OutlinedButton.icon(
+                icon: Icon(Icons.cancel_outlined, color: cs.error),
+                label: Text('赤伝を発行', style: TextStyle(color: cs.error)),
+                onPressed: () => _issueCreditNote(context, cs),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+                ),
+              )),
+            ],
           ],
           if (_memoCtl.text.isNotEmpty || widget.isEditing) ...[
             const SizedBox(height: 16),
@@ -276,6 +287,7 @@ class _DocumentPageState extends State<DocumentPage> {
   }
 
   bool get _isLocked => widget.document?.isLocked ?? false;
+  bool get _isRedInvoice => widget.document?.isRedInvoice ?? false;
 
   Widget _buildTypeBadge(ColorScheme cs) {
     final color = documentTypeColor(_type, cs, cs.brightness == Brightness.dark);
@@ -705,6 +717,105 @@ class _DocumentPageState extends State<DocumentPage> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('作成エラー: $e')));
     }
+  }
+
+  Future<void> _issueCreditNote(BuildContext context, ColorScheme cs) async {
+    final doc = _buildDoc();
+    final docNum = doc.documentNumber.isNotEmpty ? doc.documentNumber : '(未発番)';
+    final totalStr = '￥${_formatMoney(doc.total)}';
+
+    // 第1段階: 操作の不可逆性を警告
+    final step1 = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(children: [
+          Icon(Icons.warning_amber, color: Colors.red.shade700, size: 24),
+          const SizedBox(width: 8),
+          const Text('赤伝（取消伝票）の発行'),
+        ]),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('この操作は取り消せません。', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          _warnItem(cs, '元伝票の取消として赤伝を発行します'),
+          _warnItem(cs, '発行後は編集・削除できません'),
+          _warnItem(cs, '取消仕訳が自動生成されます'),
+          _warnItem(cs, '取消PDFが顧客に送信されます'),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('次へ')),
+        ],
+      ),
+    );
+    if (step1 != true || !mounted) return;
+
+    // 第2段階: 伝票情報の確認
+    final step2 = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('取消伝票を作成'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('元伝票: $docNum ($totalStr)'),
+          Text('顧客: ${doc.customerName}'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: cs.errorContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.error_outline, size: 18, color: cs.error),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                'この操作を元に戻すことはできません。\n本当に取消伝票を作成しますか？',
+                style: TextStyle(fontSize: 13, color: cs.error),
+              )),
+            ]),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('取消伝票を作成'),
+          ),
+        ],
+      ),
+    );
+    if (step2 != true || !mounted) return;
+
+    // 赤伝作成
+    try {
+      final creditNote = await _repo.createCreditNote(doc);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('取消伝票を作成しました: #${creditNote.documentNumber}')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DocumentPage(document: creditNote, isEditing: true),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('赤伝作成エラー: $e'), backgroundColor: cs.error),
+      );
+    }
+  }
+
+  Widget _warnItem(ColorScheme cs, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(children: [
+        Icon(Icons.check_circle_outline, size: 16, color: cs.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Text(text, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+      ]),
+    );
   }
 
   Future<void> _preview() async {

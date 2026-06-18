@@ -60,6 +60,7 @@ class _ArDashboardScreenState extends State<ArDashboardScreen> {
         WHERE d.is_current = 1 AND d.status = 'confirmed'
           AND d.document_type = 'invoice'
           AND d.deleted_at IS NULL
+          AND (d.linked_document_id IS NULL OR d.total >= 0)
           AND (d.payment_status IS NULL OR d.payment_status != 'paid')
         ORDER BY d.date ASC
       ''');

@@ -36,19 +36,15 @@ pw.Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
   );
 }
 
-String _docTypeTitle(DocumentType type) {
-  switch (type) {
-    case DocumentType.invoice:
-      return 'ご請求書';
-    case DocumentType.receipt:
-      return '領収書';
-    case DocumentType.estimation:
-      return '見積書';
-    case DocumentType.order:
-      return '受注書';
-    case DocumentType.delivery:
-      return '納品書';
-  }
+String _docTypeTitle(DocumentType type, {bool isRedInvoice = false}) {
+  final base = switch (type) {
+    DocumentType.invoice => 'ご請求書',
+    DocumentType.receipt => '領収書',
+    DocumentType.estimation => '見積書',
+    DocumentType.order => '受注書',
+    DocumentType.delivery => '納品書',
+  };
+  return isRedInvoice ? '取消$base' : base;
 }
 
 bool _anyItemHasDiscount(List<DocumentItem> items) =>
@@ -130,34 +126,28 @@ pw.Widget _cell(String text, pw.Font font, bool isEven, {bool alignRight = false
   );
 }
 
-String _amountLabel(DocumentType type) {
-  switch (type) {
-    case DocumentType.invoice:
-      return 'ご請求金額';
-    case DocumentType.receipt:
-      return '領収金額';
-    case DocumentType.estimation:
-      return 'お見積り金額';
-    case DocumentType.order:
-      return '受注金額';
-    case DocumentType.delivery:
-      return '納品金額';
-  }
+String _amountLabel(DocumentType type, {bool isRedInvoice = false}) {
+  final prefix = isRedInvoice ? '取消' : '';
+  final base = switch (type) {
+    DocumentType.invoice => 'ご請求金額',
+    DocumentType.receipt => '領収金額',
+    DocumentType.estimation => 'お見積り金額',
+    DocumentType.order => '受注金額',
+    DocumentType.delivery => '納品金額',
+  };
+  return '$prefix$base';
 }
 
-String _totalLabel(DocumentType type) {
-  switch (type) {
-    case DocumentType.invoice:
-      return 'ご請求合計';
-    case DocumentType.receipt:
-      return '領収金額合計';
-    case DocumentType.estimation:
-      return 'お見積り合計';
-    case DocumentType.order:
-      return '受注合計';
-    case DocumentType.delivery:
-      return '納品合計';
-  }
+String _totalLabel(DocumentType type, {bool isRedInvoice = false}) {
+  final prefix = isRedInvoice ? '取消' : '';
+  final base = switch (type) {
+    DocumentType.invoice => 'ご請求合計',
+    DocumentType.receipt => '領収金額合計',
+    DocumentType.estimation => 'お見積り合計',
+    DocumentType.order => '受注合計',
+    DocumentType.delivery => '納品合計',
+  };
+  return '$prefix$base';
 }
 
 String _footerMessage(DocumentType type) {
@@ -182,10 +172,12 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
   final pdfJsonString = jsonEncode(pdfJson);
   final pdfHash = sha256.convert(utf8.encode(pdfJsonString)).toString();
 
+  final isRed = document.isRedInvoice;
+  final docTypeTitle = _docTypeTitle(document.documentType, isRedInvoice: isRed);
   final pdf = pw.Document(
-    title: '${_docTypeTitle(document.documentType)} ${document.documentNumber}',
+    title: '$docTypeTitle ${document.documentNumber}',
     author: 'h1-core (販売アシスト1号)',
-    subject: '${document.customerName}向け${_docTypeTitle(document.documentType)}',
+    subject: '${document.customerName}向け$docTypeTitle',
     creator: 'h1-core v${document.version}',
     keywords: 'h1-core,${document.documentType.name},${document.documentNumber},$pdfHash',
   );
@@ -264,13 +256,27 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
       ),
       build: (context) {
         final content = <pw.Widget>[
+          if (isRed)
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              decoration: const pw.BoxDecoration(color: PdfColors.red700),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  pw.Text('取  消  伝  票',
+                    style: pw.TextStyle(
+                      fontSize: 18, fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white, letterSpacing: 8)),
+                ],
+              ),
+            ),
           pw.Header(
             level: 0,
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  _docTypeTitle(document.documentType),
+                  _docTypeTitle(document.documentType, isRedInvoice: isRed),
                   style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold),
                 ),
                 pw.Column(
@@ -299,6 +305,12 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                       pw.Padding(
                         padding: const pw.EdgeInsets.only(top: 8),
                         child: pw.Text(document.subject!, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                      ),
+                    if (isRed && document.linkedDocumentId != null)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(top: 6),
+                        child: pw.Text('元伝票番号: ${document.linkedDocumentId}',
+                            style: pw.TextStyle(fontSize: 11, color: PdfColors.red700)),
                       ),
                     pw.SizedBox(height: 10),
                     pw.Text(
@@ -358,9 +370,11 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text(_amountLabel(document.documentType), style: const pw.TextStyle(fontSize: 16)),
+                pw.Text(_amountLabel(document.documentType, isRedInvoice: isRed), style: const pw.TextStyle(fontSize: 16)),
                 pw.Text(
-                  '￥${amountFormatter.format(document.total)} -',
+                  isRed
+                      ? '(￥${amountFormatter.format(document.total.abs())})'
+                      : '￥${amountFormatter.format(document.total)} -',
                   style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
                 ),
               ],
@@ -385,8 +399,10 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                       _buildSummaryRow('消費税 (${(document.taxRate * 100).round()}%)', amountFormatter.format(tax)),
                     pw.Divider(),
                     _buildSummaryRow(
-                      _totalLabel(document.documentType),
-                      '￥${amountFormatter.format(document.total)}',
+                      _totalLabel(document.documentType, isRedInvoice: isRed),
+                      isRed
+                          ? '(￥${amountFormatter.format(document.total.abs())})'
+                          : '￥${amountFormatter.format(document.total)}',
                       isBold: true,
                     ),
                   ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../../plugins/explorer/h1_explorer_item.dart';
 
 enum DocumentType { estimation, order, delivery, invoice, receipt }
@@ -110,6 +111,7 @@ class DocumentModel extends H1ExplorerItem {
 
   bool get isDraft => status == 'draft';
   bool get isConfirmed => status == 'confirmed';
+  bool get isRedInvoice => total < 0 && linkedDocumentId != null;
 
   @override
   bool get canEdit => !isLocked;
@@ -258,6 +260,50 @@ class DocumentModel extends H1ExplorerItem {
     'received_amount': receivedAmount,
     'due_date': dueDate,
   };
+
+  /// 取消伝票（赤伝）を生成する
+  DocumentModel toCreditNote({
+    required String newId,
+    required String newDocumentNumber,
+    required String? originalSubject,
+  }) {
+    return DocumentModel(
+      id: newId,
+      documentType: documentType,
+      customerId: customerId,
+      customerName: customerName,
+      documentNumber: newDocumentNumber,
+      date: DateTime.now(),
+      total: -total.abs(),
+      status: 'draft',
+      linkedDocumentId: id,
+      projectId: projectId,
+      subject: originalSubject ?? '取消: $documentNumber $customerName',
+      items: items.map((item) => DocumentItem(
+        id: Uuid().v4(),
+        productId: item.productId,
+        productName: item.productName,
+        maker: item.maker,
+        productCode: item.productCode,
+        quantity: -(item.quantity.abs()),
+        unitPrice: item.unitPrice,
+        taxRate: item.taxRate,
+        discountAmount: item.discountAmount != null ? -(item.discountAmount!.abs()) : null,
+        discountRate: item.discountRate,
+        variantLabel: item.variantLabel,
+        notes: item.notes,
+      )).toList(),
+      includeTax: includeTax,
+      taxRate: taxRate,
+      totalDiscountAmount: totalDiscountAmount != null ? -(totalDiscountAmount!.abs()) : null,
+      totalDiscountRate: totalDiscountRate,
+      priceAdjustmentType: priceAdjustmentType,
+      priceAdjustmentUnit: priceAdjustmentUnit,
+      isLocked: false,
+      version: 1,
+      isCurrent: true,
+    );
+  }
 
   /// PDF生成用JSON（ハッシュチェーンフィールドを含まない）
   /// 電子帳簿保存法テーブルに保存される

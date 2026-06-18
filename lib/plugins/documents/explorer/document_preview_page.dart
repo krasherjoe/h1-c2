@@ -334,7 +334,9 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                               } catch (_) {}
                               try {
                                 final journal = AutoJournalService();
-                                if (widget.document.documentType.name == 'invoice') {
+                                if (widget.document.isRedInvoice) {
+                                  await journal.createFromCreditNote(widget.document);
+                                } else if (widget.document.documentType.name == 'invoice') {
                                   await journal.createFromInvoice(
                                     documentId: widget.document.id,
                                     total: widget.document.total,

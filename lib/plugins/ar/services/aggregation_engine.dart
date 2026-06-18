@@ -7,7 +7,8 @@ class AggregationEngine {
 
   AggregationEngine([DatabaseHelper? db]) : _db = db ?? DatabaseHelper();
 
-  String get _arFilter => "is_current = 1 AND status = 'confirmed'";
+  String get _arFilter => "is_current = 1 AND status = 'confirmed' AND deleted_at IS NULL";
+  String get _noRedFilter => "(linked_document_id IS NULL OR total >= 0)";
 
   Future<List<ArLedgerRow>> arLedger() async {
     try {
@@ -19,7 +20,7 @@ class AggregationEngine {
                MAX(date) as last_date,
                COUNT(*) as cnt
         FROM documents
-        WHERE $_arFilter AND document_type = 'invoice' AND deleted_at IS NULL
+        WHERE $_arFilter AND document_type = 'invoice' AND $_noRedFilter
         GROUP BY customer_name
         ORDER BY total DESC
       ''');
@@ -38,7 +39,7 @@ class AggregationEngine {
                payment_status, linked_document_id as source_document_id
         FROM documents
         WHERE is_current = 1 AND status = 'confirmed' AND document_type = 'invoice'
-          AND deleted_at IS NULL
+          AND deleted_at IS NULL AND $_noRedFilter
           AND (payment_status IS NULL OR payment_status != 'paid')
         ORDER BY date DESC, customer_name ASC
       ''');
