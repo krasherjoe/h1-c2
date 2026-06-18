@@ -35,15 +35,7 @@ class AppSettingsRepository {
     await _prefs?.setBool(key, value);
   }
 
-  Future<String?> getSummaryTheme() async => null;
-
-  Future<void> setSummaryTheme(String value) async {}
-
   Future<String> getHomeMode() async => 'all';
 
   Stream<String> watchHomeMode() => const Stream.empty();
-
-  Future<bool> getShowHistoryInvoiceNumber() async => true;
-
-  Future<void> setShowHistoryInvoiceNumber(bool value) async {}
 }

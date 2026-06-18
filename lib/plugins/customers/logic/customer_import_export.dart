@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/customer_model.dart';
 import '../../../services/customer_repository.dart';
-import '../../../services/customer_data_cleaner.dart';
 import '../../../services/master_csv_exporter.dart';
 import '../../../services/sys_logger.dart';
 import '../../../services/screen_id_logger.dart';
@@ -83,8 +82,7 @@ Future<void> showPhonebookImport({
         );
         return;
       }
-      final issue = CustomerDataCleaner.analyzeCustomer(customer);
-      final cleanCustomer = issue?.fixed ?? customer;
+      final cleanCustomer = customer;
       try {
         await customerRepo.saveCustomer(cleanCustomer);
         if (!context.mounted) return;

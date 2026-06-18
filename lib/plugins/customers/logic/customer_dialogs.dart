@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../models/customer_model.dart';
 import '../../../models/custom_field_model.dart';
 import '../../../services/customer_repository.dart';
-import '../../../services/customer_data_cleaner.dart';
-import '../../../services/sys_logger.dart';
 import '../../../widgets/custom_field_display_widget.dart';
 import '../../../widgets/h1_text_field.dart';
 
@@ -217,125 +215,7 @@ Future<void> cleanDuplicateHonorific({
   required CustomerRepository customerRepo,
   required VoidCallback onComplete,
 }) async {
-  try {
-    final issues = CustomerDataCleaner.screenAll(customers);
-    if (issues.isEmpty) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('敬称の重複は見つかりませんでした')));
-      return;
-    }
-    if (!context.mounted) return;
-    await _showHonorificScreeningDialog(context, issues, customerRepo, onComplete);
-  } catch (e) {
-    SysLogger.instance.logError('C1', e);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('エラーが発生しました: $e')));
-  }
-}
-
-Future<void> _showHonorificScreeningDialog(
-  BuildContext context,
-  List<HonorificsIssue> issues,
-  CustomerRepository customerRepo,
-  VoidCallback onComplete,
-) async {
-  final selected = <String, bool>{};
-  for (final i in issues) selected[i.original.id] = true;
-
-  await showDialog(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setDialogState) {
-        final checked = issues.where((i) => selected[i.original.id] ?? true).toList();
-        return AlertDialog(
-          title: Row(children: [
-            Icon(Icons.auto_fix_high, color: Theme.of(context).colorScheme.secondary),
-            const SizedBox(width: 8),
-            const Text('敬称重複チェック'),
-          ]),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(children: [
-                    Icon(Icons.warning_amber, color: Theme.of(context).colorScheme.secondary, size: 18),
-                    const SizedBox(width: 6),
-                    Text('${issues.length}件の問題を検出', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer)),
-                    const Spacer(),
-                    TextButton(onPressed: () => setDialogState(() { for (final i in issues) selected[i.original.id] = true; }), child: const Text('全選択')),
-                    TextButton(onPressed: () => setDialogState(() { for (final i in issues) selected[i.original.id] = false; }), child: const Text('解除')),
-                  ]),
-                ),
-                const SizedBox(height: 8),
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.45),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: issues.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final issue = issues[i];
-                      final isChecked = selected[issue.original.id] ?? true;
-                      return CheckboxListTile(
-                        value: isChecked,
-                        onChanged: (v) => setDialogState(() => selected[issue.original.id] = v ?? false),
-                        dense: true,
-                        title: Text(issue.original.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          if (issue.fixedFormalName != issue.original.formalName)
-                            RichText(text: TextSpan(style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface), children: [
-                              TextSpan(text: '正式: ', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                              TextSpan(text: issue.original.formalName, style: TextStyle(color: Theme.of(context).colorScheme.error, decoration: TextDecoration.lineThrough)),
-                              const TextSpan(text: ' → '),
-                              TextSpan(text: issue.fixedFormalName, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                            ])),
-                          if (issue.fixedDisplayName != issue.original.displayName)
-                            RichText(text: TextSpan(style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface), children: [
-                              TextSpan(text: '表示: ', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                              TextSpan(text: issue.original.displayName, style: TextStyle(color: Theme.of(context).colorScheme.error, decoration: TextDecoration.lineThrough)),
-                              const TextSpan(text: ' → '),
-                              TextSpan(text: issue.fixedDisplayName, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                            ])),
-                          Text('敬称: ${issue.original.title}', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                        ]),
-                      );
-                    },
-                  ),
-                ),
-                if (checked.isNotEmpty)
-                  Padding(padding: const EdgeInsets.only(top: 8), child: Text('${checked.length}件を修正します', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary))),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.auto_fix_high, size: 18),
-              label: Text('${checked.length}件を修正'),
-              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.secondary),
-              onPressed: checked.isEmpty ? null : () async {
-                Navigator.pop(ctx);
-                for (final issue in checked) {
-                  try {
-                    if (issue.fixed != null) await customerRepo.saveCustomer(issue.fixed!);
-                  } catch (e) {
-                    debugPrint('[CustomerMaster] honorific fix error: $e');
-                  }
-                }
-                onComplete();
-              },
-            ),
-          ],
-        );
-      },
-    ),
-  );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('敬称の重複は見つかりませんでした')));
+  return;
 }
