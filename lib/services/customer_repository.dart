@@ -31,28 +31,13 @@ class CustomerRepository {
     }
   }
 
-  Future<void> _safeAddColumn(
-    Database db,
-    String table,
-    String columnDefinition,
-  ) async {
-    try {
-      final columns = await db.query(table, limit: 1);
-      final columnName = columnDefinition.split(' ')[0];
-      if (!columns.first.containsKey(columnName)) {
-        await db.execute('ALTER TABLE $table ADD COLUMN $columnDefinition');
-      }
-    } catch (_) {
-    }
-  }
-
   Future<void> ensureCustomerColumns() async {
     try {
       final db = await _dbHelper.database;
-      await _safeAddColumn(db, 'customers', 'contact_version_id INTEGER');
-      await _safeAddColumn(db, 'customers', 'head_char1 TEXT');
-      await _safeAddColumn(db, 'customers', 'head_char2 TEXT');
-      await _safeAddColumn(db, 'customers', 'kana TEXT');
+      await safeAddColumn(db, 'customers', 'contact_version_id INTEGER');
+      await safeAddColumn(db, 'customers', 'head_char1 TEXT');
+      await safeAddColumn(db, 'customers', 'head_char2 TEXT');
+      await safeAddColumn(db, 'customers', 'kana TEXT');
     } catch (e) {
       debugPrint('[CustomerRepo] ensureCustomerColumns error: $e');
       rethrow;
