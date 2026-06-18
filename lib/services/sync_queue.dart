@@ -26,6 +26,14 @@ class SyncQueue {
   int _backoffMultiplier = 1;
   bool _isForeground = true;
 
+  // 許可テーブルリスト（受信データ検証用）
+  static const _allowedTables = <String>{
+    'products', 'customers', 'customer_contacts',
+    'invoices', 'invoice_items', 'documents', 'document_items',
+    'sync_config', 'sync_children', 'permissions',
+  };
+  static const _allowedActions = <String>{'insert', 'update', 'delete'};
+
   bool get isParent => _parentEmail == null || _parentEmail!.isEmpty;
 
   void setForeground(bool fg) {
@@ -243,6 +251,17 @@ class SyncQueue {
         if (parts.length < 3) continue;
         final table = parts[0];
         final action = parts[1];
+
+        // 許可されていないテーブル/アクションは拒否
+        if (!_allowedTables.contains(table)) {
+          LoggerService.instance.warn('SyncQueue', '拒否: 許可されていないテーブル $table');
+          continue;
+        }
+        if (!_allowedActions.contains(action)) {
+          LoggerService.instance.warn('SyncQueue', '拒否: 許可されていないアクション $action');
+          continue;
+        }
+
         final jsonData = parts.sublist(2).join('\t');
         final data = jsonDecode(jsonData) as Map<String, dynamic>;
         data['sync_source'] = source;
