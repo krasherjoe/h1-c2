@@ -46,6 +46,7 @@ class IcePlugin extends H1Plugin {
       prefs: context.preferences,
       registry: PluginRegistry.instance,
     );
+    await _apiServer!.start();
     DebugConsole.register('ice.status', (_) async {
       if (_apiServer == null) return 'ICE: 未初期化';
       return 'ICE: ${_apiServer!.isRunning ? "稼働中" : "停止中"} (port: ${_apiServer!.port})';
