@@ -222,18 +222,43 @@ class ProductRepository {
   Future<void> deleteProduct(String id) async {
     try {
       final db = await _dbHelper.database;
-      await db.delete('products', where: 'id = ?', whereArgs: [id]);
+      await db.transaction((txn) async {
+        final references = await _checkProductReferences(txn, id);
+        if (references.isNotEmpty) {
+          throw ProductInUseException(id, references);
+        }
+        await txn.delete('products', where: 'id = ?', whereArgs: [id]);
+      });
 
       await _logRepo.logAction(
         action: "DELETE_PRODUCT",
         targetType: "PRODUCT",
         targetId: id,
-        details: "商品を削除しました",
+        details: "商品を完全削除しました",
       );
     } catch (e) {
       debugPrint('[ProductRepo] deleteProduct error: $e');
       rethrow;
     }
+  }
+
+  Future<List<String>> _checkProductReferences(DatabaseExecutor txn, String productId) async {
+    final references = <String>[];
+    for (final table in ['document_items', 'invoice_items', 'customer_product_prices']) {
+      try {
+        final rows = await txn.query(table, where: 'product_id = ?', whereArgs: [productId], limit: 1);
+        if (rows.isNotEmpty) references.add(table);
+      } catch (_) {}
+    }
+    try {
+      final pur = await txn.query('purchase_items', where: 'product_id = ?', whereArgs: [productId], limit: 1);
+      if (pur.isNotEmpty) references.add('purchase_items');
+    } catch (_) {}
+    try {
+      final stk = await txn.query('warehouse_stock', where: 'product_id = ?', whereArgs: [productId], limit: 1);
+      if (stk.isNotEmpty) references.add('warehouse_stock');
+    } catch (_) {}
+    return references;
   }
 
   Future<void> setHiddenProduct(String id, bool hidden) async {
@@ -671,4 +696,16 @@ class ProductRepository {
       ];
     });
   }
+}
+
+/// 商品使用中例外（他の伝票から参照されている）
+class ProductInUseException implements Exception {
+  final String productId;
+  final List<String> references;
+
+  ProductInUseException(this.productId, this.references);
+
+  @override
+  String toString() =>
+      '商品 $productId は参照中（${references.join(", ")}）のため削除できません';
 }
