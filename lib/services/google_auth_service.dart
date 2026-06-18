@@ -31,9 +31,9 @@ class GoogleAuthService {
         scopes: _lastScopes!,
       );
       _initialized = true;
-      _log('✅ GoogleSignIn initialized: clientId=$_lastClientId scopes=${_lastScopes?.join(",")}');
+      _log('GoogleSignIn initialized');
     } catch (e, st) {
-      _log('❌ GoogleSignIn init FAILED: $e\n$st');
+      _log('GoogleSignIn init FAILED: $e\n$st');
     }
   }
 
@@ -47,44 +47,39 @@ class GoogleAuthService {
   }
 
   Future<bool> signIn() async {
-    _log('▶️ signIn() called');
+    _log('signIn() called');
     init();
     if (_googleSignIn == null) {
-      _log('❌ _googleSignIn is null after init');
+      _log('_googleSignIn is null after init');
       return false;
     }
     try {
-      _log('⏳ Calling _googleSignIn.signIn()...');
       final user = await _googleSignIn!.signIn();
       if (user == null) {
-        _log('⚠️ signIn returned null (user cancelled or no account)');
+        _log('signIn returned null (user cancelled or no account)');
         return false;
       }
-      _log('✅ signIn got user: email=${user.email} displayName=${user.displayName} id=${user.id}');
 
-      _log('⏳ Calling user.authentication...');
       final auth = await user.authentication;
       if (auth.accessToken == null) {
-        _log('❌ auth.accessToken is null');
-        _log('   idToken=${auth.idToken?.substring(0, 20)}...');
+        _log('auth.accessToken is null');
         return false;
       }
-      _log('✅ Got accessToken: ${auth.accessToken!.substring(0, 20)}...');
-      _log('   idToken=${auth.idToken?.substring(0, 20)}...');
-      _log('   serverAuthCode=${auth.serverAuthCode}');
 
       final secure = SecureStorageService.instance;
       await secure.write(SecureStorageKeys.googleEmail, user.email);
       await secure.write(SecureStorageKeys.googleAccessToken, auth.accessToken!);
-      await secure.write(SecureStorageKeys.googleRefreshToken, auth.idToken ?? '');
+      // refreshToken が提供されている場合のみ保存（offline_accessスコープの有無による）
+      if (auth.refreshToken != null && auth.refreshToken!.isNotEmpty) {
+        await secure.write(SecureStorageKeys.googleRefreshToken, auth.refreshToken!);
+      }
       final expiry = DateTime.now().add(const Duration(hours: 1));
       await secure.write(SecureStorageKeys.googleTokenExpiry, expiry.toIso8601String());
       _cachedEmail = user.email;
-      _log('✅ signIn success, saved to SecureStorage: email=${user.email}');
+      _log('signIn success');
       return true;
     } catch (e, st) {
-      _log('❌ signIn EXCEPTION: $e');
-      _log('STACK: $st');
+      _log('signIn EXCEPTION: $e');
       ErrorReporter.sendError(message: 'Google Sign-In失敗: $e', stackTrace: st);
       return false;
     }
@@ -100,10 +95,10 @@ class GoogleAuthService {
       await secure.delete(SecureStorageKeys.googleRefreshToken);
       await secure.delete(SecureStorageKeys.googleTokenExpiry);
       _cachedEmail = null;
-      _log('✅ signOut success');
+      _log('signOut success');
       return true;
     } catch (e) {
-      _log('❌ signOut error: $e');
+      _log('signOut error: $e');
       return false;
     }
   }
@@ -115,6 +110,31 @@ class GoogleAuthService {
   Future<String?> getAccessToken() async {
     init();
     try {
+      // 保存済みトークンの期限をチェック
+      final expiryStr = await SecureStorageService.instance.read(SecureStorageKeys.googleTokenExpiry);
+      if (expiryStr != null) {
+        final expiry = DateTime.tryParse(expiryStr);
+        if (expiry != null && expiry.isBefore(DateTime.now())) {
+          // 期限切れ → signInSilentlyでリフレッシュ試行
+          final user = await _googleSignIn!.signInSilently();
+          if (user != null) {
+            final auth = await user.authentication;
+            if (auth.accessToken != null) {
+              final secure = SecureStorageService.instance;
+              await secure.write(SecureStorageKeys.googleAccessToken, auth.accessToken!);
+              if (auth.refreshToken != null && auth.refreshToken!.isNotEmpty) {
+                await secure.write(SecureStorageKeys.googleRefreshToken, auth.refreshToken!);
+              }
+              final newExpiry = DateTime.now().add(const Duration(hours: 1));
+              await secure.write(SecureStorageKeys.googleTokenExpiry, newExpiry.toIso8601String());
+              return auth.accessToken;
+            }
+          }
+          return null; // リフレッシュ失敗
+        }
+      }
+
+      // 期限内 or 期限未設定 → signInSilentlyで取得
       final user = await _googleSignIn!.signInSilently();
       if (user != null) {
         final auth = await user.authentication;
@@ -140,13 +160,13 @@ class _AuthClient extends http.BaseClient {
   final String _token;
   final http.Client _inner = http.Client();
   _AuthClient(this._token);
-  
+
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     request.headers['Authorization'] = 'Bearer $_token';
     return _inner.send(request);
   }
-  
+
   @override
   void close() => _inner.close();
 }
