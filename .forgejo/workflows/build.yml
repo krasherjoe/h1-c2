@@ -8,11 +8,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: 依存関係インストール
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq nodejs gh
+
       - uses: actions/checkout@v4
 
       - run: flutter pub get
 
-      - name: Build APK
+      - name: APKビルド
         run: |
           flutter build apk --release --dart-define=APP_VERSION="${{ github.ref_name }}"
 
@@ -32,7 +37,7 @@ jobs:
             --notes "$BODY" \
             "/tmp/$APK_NAME#$APK_NAME"
 
-      - name: Cleanup Old Releases (keep last 5)
+      - name: 古いリリース削除（最新5件のみ保持）
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
