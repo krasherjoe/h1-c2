@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:sqflite/sqflite.dart' show ConflictAlgorithm;
+import 'logger_service.dart';
 import 'package:uuid/uuid.dart';
 import 'database_helper.dart';
 import 'google_auth_service.dart';
@@ -53,20 +53,31 @@ class SyncQueue {
       _lastCheck = int.tryParse(config['last_check'] ?? '') ?? 0;
       _isActive = true;
       _restartPolling();
-    } catch (_) {}
+    } catch (e, st) {
+      LoggerService.instance.error('SyncQueue', 'init failed', e, st);
+    }
   }
 
   Future<void> _dbSet(String key, String value) async {
     try {
       final db = await DatabaseHelper().database;
       await db.insert('sync_config', {'key': key, 'value': value}, conflictAlgorithm: ConflictAlgorithm.replace);
-    } catch (_) {}
+    } catch (e, st) {
+      LoggerService.instance.error('SyncQueue', '_dbSet failed', e, st);
+    }
   }
 
   Future<void> setParentEmail(String? email) async {
     _parentEmail = email;
     if (email != null) await _dbSet('parent_email', email);
-    else { try { final db = await DatabaseHelper().database; await db.delete('sync_config', where: 'key = ?', whereArgs: ['parent_email']); } catch (_) {} }
+    else {
+      try {
+        final db = await DatabaseHelper().database;
+        await db.delete('sync_config', where: 'key = ?', whereArgs: ['parent_email']);
+      } catch (e, st) {
+        LoggerService.instance.error('SyncQueue', 'delete sync_config failed', e, st);
+      }
+    }
     _restartPolling();
   }
 
@@ -112,7 +123,9 @@ class SyncQueue {
       final encoded = base64UrlEncode(utf8.encode(raw));
       await api.users.messages.send(gmail.Message(raw: encoded), 'me');
       client.close();
-    } catch (_) {}
+    } catch (e, st) {
+      LoggerService.instance.error('SyncQueue', '_doSend failed', e, st);
+    }
   }
 
   // --- Polling ---
@@ -165,7 +178,11 @@ class SyncQueue {
                 _processIncoming(src, decoded);
               }
               // 処理済みはtrash
-              try { await api.users.messages.trash('me', msg.id!); } catch (_) {}
+              try {
+                await api.users.messages.trash('me', msg.id!);
+              } catch (e, st) {
+                LoggerService.instance.error('SyncQueue', 'trash message failed', e, st);
+              }
             }
           } else {
             // 空振り: 3回連続でバックオフ
@@ -180,8 +197,8 @@ class SyncQueue {
         _lastCheck = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await _dbSet('last_check', _lastCheck.toString());
         client.close();
-      } catch (e) {
-        debugPrint('[Sync] poll error: $e');
+      } catch (e, st) {
+        LoggerService.instance.error('SyncQueue', 'poll loop error', e, st);
       }
     }
   }
@@ -200,7 +217,9 @@ class SyncQueue {
               'email': email,
               'registered_at': DateTime.now().toIso8601String(),
             }, conflictAlgorithm: ConflictAlgorithm.replace);
-          } catch (_) {}
+          } catch (e, st) {
+            LoggerService.instance.error('SyncQueue', 'register child db insert failed', e, st);
+          }
         });
         _saveNotification(source, '子分登録', 'メール: $email');
         return;
@@ -210,7 +229,9 @@ class SyncQueue {
         _saveNotification(source, json['title'] as String? ?? '', json['detail'] as String? ?? '');
         return;
       }
-    } catch (_) {}
+    } catch (e, st) {
+      LoggerService.instance.error('SyncQueue', 'processIncoming json parse failed', e, st);
+    }
 
     // データ同期として処理
     final lines = body.split('\n');
@@ -237,9 +258,13 @@ class SyncQueue {
               final id = data['id'] as String?;
               if (id != null) await db.delete(table, where: 'id = ?', whereArgs: [id]);
             }
-          } catch (_) {}
+          } catch (e, st) {
+            LoggerService.instance.error('SyncQueue', 'data sync inner db operation failed', e, st);
+          }
         });
-      } catch (_) {}
+      } catch (e, st) {
+        LoggerService.instance.error('SyncQueue', 'data sync line parse failed', e, st);
+      }
     }
   }
 
@@ -250,7 +275,9 @@ class SyncQueue {
           'source': source, 'title': title, 'detail': detail,
           'created_at': DateTime.now().toIso8601String(),
         });
-      } catch (_) {}
+      } catch (e, st) {
+        LoggerService.instance.error('SyncQueue', 'saveNotification failed', e, st);
+      }
     });
   }
 
@@ -288,6 +315,8 @@ class SyncQueue {
       }
 
       client.close();
-    } catch (_) {}
+    } catch (e, st) {
+      LoggerService.instance.error('SyncQueue', 'setupGmailFilter failed', e, st);
+    }
   }
 }
