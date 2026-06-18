@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:h_1_core/services/company_service.dart';
@@ -14,21 +15,87 @@ class IceSettingsScreen extends StatefulWidget {
 
 class _IceSettingsScreenState extends State<IceSettingsScreen> {
   final _portController = TextEditingController(text: '8080');
+  final _sshConfigController = TextEditingController();
+  final _sshPubKeyController = TextEditingController();
   bool _running = false;
   String? _error;
   String? _info;
+  String? _sshDir;
 
   @override
   void initState() {
     super.initState();
     _running = widget.apiServer.isRunning;
     _portController.text = widget.apiServer.port.toString();
+    _loadSshFiles();
   }
 
   @override
   void dispose() {
     _portController.dispose();
+    _sshConfigController.dispose();
+    _sshPubKeyController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSshFiles() async {
+    try {
+      final dir = await CompanyService.getCompanyDirectory();
+      final sshDir = Directory('${dir.path}/.ssh');
+      _sshDir = sshDir.path;
+
+      final configFile = File('${sshDir.path}/config');
+      if (await configFile.exists()) {
+        _sshConfigController.text = await configFile.readAsString();
+      }
+
+      final pubKeyFile = File('${sshDir.path}/id_ed25519.pub');
+      if (await pubKeyFile.exists()) {
+        _sshPubKeyController.text = await pubKeyFile.readAsString();
+      }
+    } catch (e) {
+      debugPrint('[IceSettings] SSH load error: $e');
+    }
+  }
+
+  Future<void> _saveSshConfig() async {
+    try {
+      final dir = await CompanyService.getCompanyDirectory();
+      final file = File('${dir.path}/.ssh/config');
+      await file.parent.create(recursive: true);
+      await file.writeAsString(_sshConfigController.text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('SSH config 保存完了')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存失敗: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveSshPubKey() async {
+    try {
+      final dir = await CompanyService.getCompanyDirectory();
+      final file = File('${dir.path}/.ssh/id_ed25519.pub');
+      await file.parent.create(recursive: true);
+      await file.writeAsString(_sshPubKeyController.text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('公開鍵 保存完了')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存失敗: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _toggleServer() async {
@@ -81,6 +148,10 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
           _buildServerControl(cs, textColor),
           const SizedBox(height: 16),
           _buildSshKeyInfo(cs, textColor),
+          const SizedBox(height: 16),
+          _buildSshConfigEditor(cs, textColor),
+          const SizedBox(height: 16),
+          _buildSshPubKeyEditor(cs, textColor),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Card(
@@ -238,6 +309,84 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
                   ),
                 );
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSshConfigEditor(ColorScheme cs, Color textColor) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('SSH Config', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+            const SizedBox(height: 4),
+            Text('${_sshDir ?? ""}/config',
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant, fontFamily: 'monospace')),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _sshConfigController,
+              maxLines: 12,
+              style: TextStyle(fontSize: 12, color: textColor, fontFamily: 'monospace'),
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: '# SSH Config\nHost opencode-box\n  HostName example.com\n  User developer\n  IdentityFile ~/.ssh/id_ed25519\n  RemoteForward 8080 localhost:8080',
+                hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.4), fontFamily: 'monospace'),
+                contentPadding: const EdgeInsets.all(12),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: _saveSshConfig,
+                icon: const Icon(Icons.save, size: 16),
+                label: const Text('保存'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSshPubKeyEditor(ColorScheme cs, Color textColor) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('公開鍵 (id_ed25519.pub)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+            const SizedBox(height: 4),
+            Text('${_sshDir ?? ""}/id_ed25519.pub',
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant, fontFamily: 'monospace')),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _sshPubKeyController,
+              maxLines: 4,
+              style: TextStyle(fontSize: 12, color: textColor, fontFamily: 'monospace'),
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: 'ssh-ed25519 AAAA...',
+                hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.4), fontFamily: 'monospace'),
+                contentPadding: const EdgeInsets.all(12),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: _saveSshPubKey,
+                icon: const Icon(Icons.save, size: 16),
+                label: const Text('保存'),
+              ),
             ),
           ],
         ),
