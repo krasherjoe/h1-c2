@@ -308,6 +308,140 @@ class DocumentRepository {
     );
   }
 
+  Future<void> addReceipt(String documentId, int amount) async {
+    final db = await _db;
+    Map<String, dynamic>? docMap;
+    await db.transaction((txn) async {
+      final rows = await txn.query(
+        'documents',
+        where: 'id = ? AND deleted_at IS NULL',
+        whereArgs: [documentId],
+        limit: 1,
+      );
+      if (rows.isEmpty) throw Exception('伝票が見つかりません');
+      final docType = rows.first['document_type'] as String? ?? '';
+      if (docType != 'invoice' && docType != 'receipt') {
+        throw Exception('入金記録は請求書または領収書のみ可能です');
+      }
+      final total = rows.first['total'] as int? ?? 0;
+      final currentReceived = (rows.first['received_amount'] as int?) ?? 0;
+      final newReceived = currentReceived + amount;
+      final paymentStatus = newReceived >= total ? 'paid' : (newReceived > 0 ? 'partial' : 'unpaid');
+      await txn.update(
+        'documents',
+        {'received_amount': newReceived, 'payment_status': paymentStatus},
+        where: 'id = ?',
+        whereArgs: [documentId],
+      );
+      docMap = {'total': total, 'received_amount': newReceived, 'payment_status': paymentStatus};
+    });
+    if (docMap != null) {
+      docMap!['_action'] = 'addReceipt';
+      docMap!['_receipt_amount'] = amount;
+      await HistoryDbService().recordChange(
+        tableName: 'documents',
+        rowId: documentId,
+        action: 'RECEIPT',
+        row: docMap!,
+      );
+    }
+  }
+
+  Future<void> updatePaymentStatus(String documentId) async {
+    final db = await _db;
+    final rows = await db.query(
+      'documents',
+      columns: ['total', 'received_amount'],
+      where: 'id = ?',
+      whereArgs: [documentId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    final total = rows.first['total'] as int? ?? 0;
+    final received = (rows.first['received_amount'] as int?) ?? 0;
+    String paymentStatus;
+    if (received >= total) {
+      paymentStatus = 'paid';
+    } else if (received > 0) {
+      paymentStatus = 'partial';
+    } else {
+      paymentStatus = 'unpaid';
+    }
+    await db.update(
+      'documents',
+      {'payment_status': paymentStatus},
+      where: 'id = ?',
+      whereArgs: [documentId],
+    );
+  }
+
+  Future<List<DocumentModel>> getUnpaidDocuments() async {
+    final db = await _db;
+    final maps = await db.rawQuery('''
+      SELECT d.* FROM documents d
+      WHERE d.deleted_at IS NULL
+        AND d.is_current = 1
+        AND d.document_type = 'invoice'
+        AND d.status = 'confirmed'
+        AND (d.payment_status IS NULL OR d.payment_status IN ('unpaid', 'partial'))
+      ORDER BY d.date DESC
+    ''');
+    final docs = <DocumentModel>[];
+    for (final map in maps) {
+      final items = await _fetchItems(db, map['id'] as String);
+      docs.add(DocumentModel.fromMap(map, items: items));
+    }
+    return docs;
+  }
+
+  Future<int> getTotalUnpaidAmount() async {
+    final db = await _db;
+    final result = await db.rawQuery('''
+      SELECT COALESCE(SUM(d.total - COALESCE(d.received_amount, 0)), 0) AS total
+      FROM documents d
+      WHERE d.deleted_at IS NULL
+        AND d.is_current = 1
+        AND d.document_type = 'invoice'
+        AND d.status = 'confirmed'
+        AND (d.payment_status IS NULL OR d.payment_status IN ('unpaid', 'partial'))
+    ''');
+    return (result.first['total'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<Map<String, int>> getUnpaidAmountByCustomer() async {
+    final db = await _db;
+    final result = await db.rawQuery('''
+      SELECT d.customer_name,
+             SUM(d.total - COALESCE(d.received_amount, 0)) AS unpaid
+      FROM documents d
+      WHERE d.deleted_at IS NULL
+        AND d.is_current = 1
+        AND d.document_type = 'invoice'
+        AND d.status = 'confirmed'
+        AND (d.payment_status IS NULL OR d.payment_status IN ('unpaid', 'partial'))
+      GROUP BY d.customer_name
+      ORDER BY unpaid DESC
+    ''');
+    return {for (final r in result) (r['customer_name'] as String? ?? '不明'): (r['unpaid'] as num?)?.toInt() ?? 0};
+  }
+
+  Future<Map<String, int>> getMonthlyInvoiceTotals({int months = 12}) async {
+    final db = await _db;
+    final result = await db.rawQuery('''
+      SELECT substr(d.date, 1, 7) AS month,
+             SUM(d.total) AS total
+      FROM documents d
+      WHERE d.deleted_at IS NULL
+        AND d.is_current = 1
+        AND d.document_type IN ('invoice', 'receipt')
+        AND d.status = 'confirmed'
+      GROUP BY month
+      ORDER BY month DESC
+      LIMIT ?
+    ''', [months]);
+    return {for (final r in result) (r['month'] as String? ?? ''): (r['total'] as num?)?.toInt() ?? 0};
+  }
+
   Future<void> addEditLog(String docId, String action, {String details = ''}) async {
     final db = await _db;
     await db.insert('document_edit_logs', {

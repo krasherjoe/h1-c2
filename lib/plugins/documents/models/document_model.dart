@@ -52,6 +52,9 @@ class DocumentModel extends H1ExplorerItem {
   final int version;
   final bool isCurrent;
   final String? previousHash;
+  final String? paymentStatus;
+  final int? receivedAmount;
+  final String? dueDate;
 
   DocumentModel({
     required this.id,
@@ -77,6 +80,9 @@ class DocumentModel extends H1ExplorerItem {
     this.version = 1,
     this.isCurrent = true,
     this.previousHash,
+    this.paymentStatus,
+    this.receivedAmount,
+    this.dueDate,
   });
 
   @override
@@ -191,6 +197,9 @@ class DocumentModel extends H1ExplorerItem {
     int? version,
     bool? isCurrent,
     String? previousHash,
+    String? paymentStatus,
+    int? receivedAmount,
+    String? dueDate,
   }) {
     return DocumentModel(
       id: id ?? this.id,
@@ -216,6 +225,9 @@ class DocumentModel extends H1ExplorerItem {
       version: version ?? this.version,
       isCurrent: isCurrent ?? this.isCurrent,
       previousHash: previousHash ?? this.previousHash,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      receivedAmount: receivedAmount ?? this.receivedAmount,
+      dueDate: dueDate ?? this.dueDate,
     );
   }
 
@@ -242,6 +254,9 @@ class DocumentModel extends H1ExplorerItem {
     'version': version,
     'is_current': isCurrent ? 1 : 0,
     'previous_hash': previousHash,
+    'payment_status': paymentStatus,
+    'received_amount': receivedAmount,
+    'due_date': dueDate,
   };
 
   /// PDF生成用JSON（ハッシュチェーンフィールドを含まない）
@@ -292,6 +307,9 @@ class DocumentModel extends H1ExplorerItem {
       version: map['version'] as int? ?? 1,
       isCurrent: (map['is_current'] as int?) != 0,
       previousHash: map['previous_hash'] as String?,
+      paymentStatus: map['payment_status'] as String?,
+      receivedAmount: map['received_amount'] as int?,
+      dueDate: map['due_date'] as String?,
     );
   }
 }

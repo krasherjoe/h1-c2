@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../services/project_repository.dart';
+import '../../../services/database_helper.dart';
 import '../../../models/project_model.dart';
 import '../../documents/models/document_model.dart';
+import '../../documents/logic/document_converter.dart';
 import '../../documents/screens/document_page.dart';
 import '../../documents/services/document_repository.dart';
 import '../../memorandum/models/memorandum_model.dart';
 import '../../memorandum/services/memorandum_repository.dart';
 import '../../memorandum/screens/memorandum_input_screen.dart';
 import '../../memorandum/screens/memorandum_preview_screen.dart';
+import '../../ar/screens/payment_processing_screen.dart';
 import '../../../services/sync_service.dart';
 import '../../../constants/screen_ids.dart';
 import '../../../utils/theme_utils.dart' show cardBoxShadow;
@@ -141,11 +144,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           const SizedBox(height: 16),
           _buildStageSection(project, cs),
           const SizedBox(height: 16),
+          _buildNextActionGuide(project, cs),
+          const SizedBox(height: 16),
           _buildLinkedDocsSection(cs),
           const SizedBox(height: 16),
           _buildMemorandumSection(cs),
           const SizedBox(height: 16),
-          _buildActionsSection(project, cs),
+          _buildStatusActions(project, cs),
         ],
       ),
     );
@@ -523,7 +528,185 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
   }
 
-  Widget _buildActionsSection(Project project, ColorScheme cs) {
+  Widget _buildNextActionGuide(Project project, ColorScheme cs) {
+    const actions = {
+      '見積': _StageAction('見積書を作成して提出しましょう', '見積書を作成', DocumentType.estimation, null),
+      '受注': _StageAction('受注内容に基づき納品書を作成しましょう', '納品書を作成', DocumentType.delivery, DocumentType.estimation),
+      '発注': _StageAction('発注手配を確認しましょう', null, null, null),
+      '納品': _StageAction('納品完了後、請求書を作成しましょう', '請求書を作成', DocumentType.invoice, DocumentType.delivery),
+      '請求': _StageAction('入金を確認・登録しましょう', '入金登録へ', null, null),
+      '入金済': _StageAction('すべての工程が完了しました', null, null, null),
+    };
+
+    final action = actions[project.pipelineStage] ?? actions['見積']!;
+    final isTerminal = project.pipelineStage == '入金済';
+    final isReceipt = project.pipelineStage == '請求';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isTerminal ? cs.primaryContainer.withValues(alpha: 0.3) : cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: cardBoxShadow(cs),
+        border: isTerminal ? Border.all(color: cs.primary.withValues(alpha: 0.3)) : null,
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(isTerminal ? Icons.check_circle : Icons.touch_app, size: 20,
+                color: isTerminal ? cs.primary : cs.primary),
+            const SizedBox(width: 8),
+            Text(isTerminal ? '完了' : '次のアクション',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
+          ]),
+          const Divider(height: 20),
+          Text(action.label,
+              style: TextStyle(fontSize: 15, color: cs.onSurface)),
+          const SizedBox(height: 12),
+          if (action.buttonText != null && !isTerminal)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: Icon(isReceipt ? Icons.payments : _docTypeIcon(action.createType!), size: 18),
+                label: Text(action.buttonText!),
+                onPressed: () => _executeNextAction(project, action),
+              ),
+            ),
+          if (!isTerminal) ...[
+            const SizedBox(height: 12),
+            Center(
+              child: TextButton.icon(
+                icon: Icon(Icons.expand_more, size: 16, color: cs.onSurfaceVariant),
+                label: Text('他にも作成する',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                onPressed: () => _showOtherDocTypes(project, cs),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeNextAction(Project project, _StageAction action) async {
+    if (action.createType != null) {
+      await _createNextDocument(project, action.createType!, action.copyFromType);
+    } else if (project.pipelineStage == '請求') {
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PaymentProcessingScreen()),
+      );
+      if (!mounted) return;
+      await _load();
+    }
+  }
+
+  Future<void> _createNextDocument(Project project, DocumentType targetType, DocumentType? copyFromType) async {
+    DocumentModel? doc;
+    if (copyFromType != null) {
+      final source = _linkedDocs.where((d) =>
+        d['document_type'] == copyFromType.name && d['status'] == 'confirmed'
+      ).toList();
+      source.sort((a, b) => ((b['date'] as String?) ?? '').compareTo((a['date'] as String?) ?? ''));
+      if (source.isNotEmpty) {
+        final srcModel = await _docRepo.fetchById(source.first['id'] as String);
+        if (srcModel != null) {
+          doc = copyAsDocument(srcModel, targetType);
+        }
+      }
+    }
+    doc ??= DocumentModel(
+      id: const Uuid().v4(),
+      documentType: targetType,
+      customerId: project.customerId ?? '',
+      customerName: project.customerName ?? '',
+      documentNumber: await _docRepo.generateDocumentNumber(targetType),
+      date: DateTime.now(),
+      status: 'draft',
+      projectId: project.id,
+    );
+    if (!mounted) return;
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => DocumentPage(document: doc, isEditing: true)),
+    );
+    if (result == true) {
+      await _repo.linkDocument(projectId: project.id, documentType: targetType.name, documentId: doc!.id);
+      await _load();
+    }
+  }
+
+  Future<void> _showOtherDocTypes(Project project, ColorScheme cs) async {
+    final type = await showModalBottomSheet<DocumentType>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text('伝票を作成', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: cs.onSurface)),
+          ),
+          const Divider(),
+          ...DocumentType.values.map((t) => ListTile(
+            leading: Icon(_docTypeIcon(t), size: 20, color: cs.primary),
+            title: Text('${t.label}伝票'),
+            onTap: () => Navigator.pop(ctx, t),
+          )),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+    if (type != null) {
+      await _createNewDocument(type);
+    }
+  }
+
+  IconData _docTypeIcon(DocumentType type) {
+    switch (type) {
+      case DocumentType.estimation: return Icons.request_quote;
+      case DocumentType.order: return Icons.shopping_cart_checkout;
+      case DocumentType.delivery: return Icons.local_shipping;
+      case DocumentType.invoice: return Icons.receipt_long;
+      case DocumentType.receipt: return Icons.receipt;
+    }
+  }
+
+  Widget _buildStatusActions(Project project, ColorScheme cs) {
+    if (project.status == ProjectStatus.lost) {
+      return Container(
+        decoration: BoxDecoration(
+          color: cs.errorContainer.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.error.withValues(alpha: 0.3)),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(children: [
+          Icon(Icons.cancel, size: 20, color: cs.error),
+          const SizedBox(width: 8),
+          Text('失注案件', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.error)),
+          const Spacer(),
+          TextButton(
+            onPressed: () => _reactivateProject(project),
+            child: const Text('再開'),
+          ),
+        ]),
+      );
+    }
+    if (project.status == ProjectStatus.won) {
+      return Container(
+        decoration: BoxDecoration(
+          color: cs.primaryContainer.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(children: [
+          Icon(Icons.emoji_events, size: 20, color: cs.primary),
+          const SizedBox(width: 8),
+          Text('成約', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: cs.primary)),
+        ]),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
@@ -535,34 +718,162 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(Icons.add_circle, size: 20, color: cs.primary),
+            Icon(Icons.flag, size: 20, color: cs.primary),
             const SizedBox(width: 8),
-            Text('新規伝票作成', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
+            Text('案件ステータス', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
           ]),
           const Divider(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: DocumentType.values.map((type) {
-              return ActionChip(
-                avatar: Icon(_docTypeIcon(type), size: 16),
-                label: Text('${type.label}伝票'),
-                onPressed: () => _createNewDocument(type),
-              );
-            }).toList(),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.cancel_outlined, size: 18),
+              label: const Text('案件を失注にする'),
+              style: OutlinedButton.styleFrom(foregroundColor: cs.error),
+              onPressed: () => _markAsLost(project),
+            ),
           ),
+          if (project.pipelineStage == '入金済') ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.emoji_events, size: 18),
+                label: const Text('案件を成約にする'),
+                onPressed: () => _markAsWon(project),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  IconData _docTypeIcon(DocumentType type) {
-    switch (type) {
-      case DocumentType.estimation: return Icons.request_quote;
-      case DocumentType.order: return Icons.shopping_cart_checkout;
-      case DocumentType.delivery: return Icons.local_shipping;
-      case DocumentType.invoice: return Icons.receipt_long;
-      case DocumentType.receipt: return Icons.receipt;
+  Future<void> _markAsLost(Project project) async {
+    int? purchaseCount;
+    try {
+      final db = await DatabaseHelper().database;
+      final result = await db.rawQuery(
+        "SELECT COUNT(*) as c FROM purchases WHERE status NOT IN ('draft', 'cancelled')",
+      );
+      purchaseCount = (result.first['c'] as int?) ?? 0;
+    } catch (_) {}
+
+    final purchaseWarn = purchaseCount ?? 0;
+    if (purchaseWarn > 0) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('失注確認'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('この案件を失注としてマークします。'),
+              ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber, size: 18, color: Theme.of(context).colorScheme.error),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'アクティブな仕入が$purchaseWarn件あります。\n必要に応じてキャンセルしてください。',
+                          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('失注にする')),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    } else if (project.pipelineStage == '発注' || project.pipelineStage == '納品') {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('失注確認'),
+          content: const Text('この案件は発注以降のステージです。関連する仕入がある場合はキャンセルしてください。\n\nそれでも失注にしますか？'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('失注にする')),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    }
+    try {
+      final updated = project.copyWith(
+        status: ProjectStatus.lost,
+        endDate: DateTime.now(),
+      );
+      await _repo.save(updated);
+      SyncService.pushChange(
+        entityType: 'project', entityId: project.id, action: 'save', data: updated.toMap(),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('失注処理エラー: $e')),
+      );
+    }
+  }
+
+  Future<void> _markAsWon(Project project) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('成約確認'),
+        content: const Text('この案件を成約としてマークします。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('成約にする')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      final updated = project.copyWith(
+        status: ProjectStatus.won,
+        endDate: DateTime.now(),
+      );
+      await _repo.save(updated);
+      SyncService.pushChange(
+        entityType: 'project', entityId: project.id, action: 'save', data: updated.toMap(),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('成約処理エラー: $e')),
+      );
+    }
+  }
+
+  Future<void> _reactivateProject(Project project) async {
+    try {
+      final updated = project.copyWith(status: ProjectStatus.active);
+      await _repo.save(updated);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('再開エラー: $e')),
+      );
     }
   }
 
@@ -580,4 +891,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   String _formatDate(DateTime dt) =>
     '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+}
+
+class _StageAction {
+  final String label;
+  final String? buttonText;
+  final DocumentType? createType;
+  final DocumentType? copyFromType;
+  const _StageAction(this.label, this.buttonText, this.createType, this.copyFromType);
 }

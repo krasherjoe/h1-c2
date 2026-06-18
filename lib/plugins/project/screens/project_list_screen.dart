@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../services/project_repository.dart';
+import '../../../services/database_helper.dart';
 import '../../../models/project_model.dart';
 import '../../../widgets/h1_text_field.dart';
 import 'project_detail_screen.dart';
@@ -162,6 +163,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   void _showProjectMenu(Project project) {
+    final cs = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -182,9 +184,29 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 _showStageSheet(project);
               },
             ),
+            if (project.status == ProjectStatus.active) ...[
+              ListTile(
+                leading: Icon(Icons.cancel_outlined, color: cs.error),
+                title: Text('失注にする', style: TextStyle(color: cs.error)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _markAsLost(project);
+                },
+              ),
+            ],
+            if (project.status == ProjectStatus.lost) ...[
+              ListTile(
+                leading: Icon(Icons.refresh, color: cs.primary),
+                title: Text('再開', style: TextStyle(color: cs.primary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _reactivateProject(project);
+                },
+              ),
+            ],
             ListTile(
-              leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-              title: Text('削除', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              leading: Icon(Icons.delete, color: cs.error),
+              title: Text('削除', style: TextStyle(color: cs.error)),
               onTap: () {
                 Navigator.pop(ctx);
                 _confirmDelete(project);
@@ -195,6 +217,97 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _markAsLost(Project project) async {
+    int? purchaseCount;
+    try {
+      final db = await DatabaseHelper().database;
+      final result = await db.rawQuery(
+        "SELECT COUNT(*) as c FROM purchases WHERE status NOT IN ('draft', 'cancelled')",
+      );
+      purchaseCount = (result.first['c'] as int?) ?? 0;
+    } catch (_) {}
+    final purchaseWarn = purchaseCount ?? 0;
+    if (purchaseWarn > 0) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('失注確認'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('この案件を失注としてマークします。'),
+              ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber, size: 18, color: Theme.of(context).colorScheme.error),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'アクティブな仕入が$purchaseWarn件あります。\n必要に応じてキャンセルしてください。',
+                          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('失注にする')),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    } else {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('失注確認'),
+          content: const Text('この案件を失注としてマークします。よろしいですか？'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('失注にする')),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    }
+    try {
+      final updated = project.copyWith(status: ProjectStatus.lost, endDate: DateTime.now());
+      await _repo.save(updated);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('失注処理エラー: $e')),
+      );
+    }
+  }
+
+  Future<void> _reactivateProject(Project project) async {
+    try {
+      final updated = project.copyWith(status: ProjectStatus.active);
+      await _repo.save(updated);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('再開エラー: $e')),
+      );
+    }
   }
 
   Future<void> _confirmDelete(Project project) async {
@@ -415,8 +528,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildKanbanCardContent(Project project, ColorScheme cs) {
+    final isLost = project.status == ProjectStatus.lost;
+    final isWon = project.status == ProjectStatus.won;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
+      color: isLost ? cs.surfaceContainerHighest.withValues(alpha: 0.5) : null,
       child: Stack(
         children: [
           InkWell(
@@ -435,11 +551,26 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               padding: const EdgeInsets.fromLTRB(10, 10, 36, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(project.name,
-                    maxLines: 2, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cs.onSurface)),
-                  if (project.customerName != null && project.customerName!.isNotEmpty) ...[
+                    children: [
+                      Row(children: [
+                        Expanded(
+                          child: Text(project.name,
+                            maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
+                              color: isLost ? cs.onSurfaceVariant : cs.onSurface)),
+                        ),
+                        if (isLost)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(Icons.cancel, size: 14, color: cs.error),
+                          ),
+                        if (isWon)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(Icons.check_circle, size: 14, color: cs.primary),
+                          ),
+                      ]),
+                      if (project.customerName != null && project.customerName!.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Text(project.customerName!,
                       maxLines: 1, overflow: TextOverflow.ellipsis,

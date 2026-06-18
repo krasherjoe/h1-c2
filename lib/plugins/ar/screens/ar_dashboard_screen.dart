@@ -52,15 +52,16 @@ class _ArDashboardScreenState extends State<ArDashboardScreen> {
     try {
       final db = await _dbHelper.database;
       final rows = await db.rawQuery('''
-        SELECT i.id, i.date, i.total_amount, i.received_amount,
-               i.payment_status, i.source_document_id,
-               COALESCE(c.display_name, i.customer_formal_name, '不明') AS customer_name
-        FROM invoices i
-        LEFT JOIN customers c ON c.id = i.customer_id AND c.is_current = 1
-        WHERE i.is_current = 1 AND i.is_draft = 0
-          AND i.document_type = 'invoice'
-          AND (i.payment_status IS NULL OR i.payment_status != 'paid')
-        ORDER BY i.date ASC
+        SELECT d.id, d.date, d.total as total_amount, d.received_amount,
+               d.payment_status, d.linked_document_id as source_document_id,
+               COALESCE(c.display_name, d.customer_name, '不明') AS customer_name
+        FROM documents d
+        LEFT JOIN customers c ON c.id = d.customer_id AND c.is_current = 1
+        WHERE d.is_current = 1 AND d.status = 'confirmed'
+          AND d.document_type = 'invoice'
+          AND d.deleted_at IS NULL
+          AND (d.payment_status IS NULL OR d.payment_status != 'paid')
+        ORDER BY d.date ASC
       ''');
       final list = rows.map((r) => _ArRow(
         id: r['id'] as String? ?? '',

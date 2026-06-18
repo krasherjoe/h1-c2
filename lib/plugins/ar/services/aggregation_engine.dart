@@ -7,22 +7,20 @@ class AggregationEngine {
 
   AggregationEngine([DatabaseHelper? db]) : _db = db ?? DatabaseHelper();
 
-  String get _currentFilter => 'is_current = 1';
-  String get _draftFilter => 'is_draft = 0';
-  String get _arBaseFilter => '$_currentFilter AND $_draftFilter';
+  String get _arFilter => "is_current = 1 AND status = 'confirmed'";
 
   Future<List<ArLedgerRow>> arLedger() async {
     try {
       final db = await _db.database;
       final rows = await db.rawQuery('''
-        SELECT customer_formal_name as customer_name,
-               SUM(total_amount) as total,
-               SUM(CASE WHEN payment_status = 'paid' THEN total_amount ELSE 0 END) as paid,
+        SELECT customer_name,
+               SUM(total) as total,
+               SUM(CASE WHEN payment_status = 'paid' THEN total ELSE 0 END) as paid,
                MAX(date) as last_date,
                COUNT(*) as cnt
-        FROM invoices
-        WHERE $_arBaseFilter AND document_type = 'invoice'
-        GROUP BY customer_formal_name
+        FROM documents
+        WHERE $_arFilter AND document_type = 'invoice' AND deleted_at IS NULL
+        GROUP BY customer_name
         ORDER BY total DESC
       ''');
       return rows.map((r) => ArLedgerRow.fromMap(r)).toList();
@@ -36,15 +34,13 @@ class AggregationEngine {
     try {
       final db = await _db.database;
       final rows = await db.rawQuery('''
-        SELECT id, customer_formal_name, date, total_amount, received_amount,
-               payment_status, source_document_id
-        FROM invoices
-        WHERE $_currentFilter AND is_draft = 0 AND document_type = 'invoice'
-          AND NOT EXISTS (
-            SELECT 1 FROM invoices red
-            WHERE red.source_document_id = invoices.id AND red.total_amount < 0
-          )
-        ORDER BY date DESC, customer_formal_name ASC
+        SELECT id, customer_name, date, total as total_amount, received_amount,
+               payment_status, linked_document_id as source_document_id
+        FROM documents
+        WHERE is_current = 1 AND status = 'confirmed' AND document_type = 'invoice'
+          AND deleted_at IS NULL
+          AND (payment_status IS NULL OR payment_status != 'paid')
+        ORDER BY date DESC, customer_name ASC
       ''');
       return rows.map((r) => ArInvoiceRow.fromMap(r)).toList();
     } catch (e) {

@@ -3,7 +3,8 @@ import 'package:sqflite/sqflite.dart';
 import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
-import 'screens/project_list_screen.dart';
+import '../../plugins/explorer/h1_explorer.dart';
+import 'explorer/project_explorer_config.dart';
 import 'screens/project_detail_screen.dart';
 import '../../constants/screen_ids.dart';
 
@@ -35,7 +36,7 @@ class ProjectPlugin extends H1Plugin {
       id: S.prj,
       title: '案件管理',
       route: '/projects',
-      builder: (_) => const ProjectListScreen(),
+      builder: (_) => H1Explorer(config: ProjectExplorerConfig()),
       category: '販売',
       icon: Icons.workspaces,
       description: '案件の作成・進捗管理',
@@ -49,7 +50,7 @@ class ProjectPlugin extends H1Plugin {
 
   @override
   Map<String, WidgetBuilder> getRoutes() => {
-    '/projects': (_) => const ProjectListScreen(),
+    '/projects': (_) => H1Explorer(config: ProjectExplorerConfig()),
     '/projects/detail': (_) => const ProjectDetailScreen(),
   };
 

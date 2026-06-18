@@ -6,6 +6,7 @@ import '../../../services/input_style_service.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import '../screens/document_page.dart';
+import '../../project/screens/project_detail_screen.dart';
 import '../../../constants/screen_ids.dart';
 
 class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
@@ -159,6 +160,14 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
                             maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                       if (hasDraft) _statusBadge('下書き', Colors.orange, cs),
+                      if (item.projectId != null)
+                        GestureDetector(
+                          onTap: () => _openProject(context, item.projectId!),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(Icons.workspaces, size: 16, color: cs.primary),
+                          ),
+                        ),
                     ]),
                     if (subject != null)
                       Text(subject!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
@@ -203,6 +212,15 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
       ),
       child: Text(text,
           style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
+    );
+  }
+
+  void _openProject(BuildContext context, String projectId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProjectDetailScreen(projectId: projectId),
+      ),
     );
   }
 

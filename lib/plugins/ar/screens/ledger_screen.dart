@@ -44,19 +44,20 @@ class _LedgerScreenState extends State<LedgerScreen> with SingleTickerProviderSt
     try {
       final db = await _dbHelper.database;
       final rows = await db.rawQuery('''
-        SELECT COALESCE(c.display_name, i.customer_formal_name, '不明') as customer_name,
-               SUM(i.total_amount) as total_amount,
-               SUM(CASE WHEN i.payment_status = 'paid' THEN i.total_amount ELSE 0 END) as paid_amount,
-               MAX(i.date) as last_date,
+        SELECT COALESCE(c.display_name, d.customer_name, '不明') as customer_name,
+               SUM(d.total) as total_amount,
+               SUM(CASE WHEN d.payment_status = 'paid' THEN d.total ELSE 0 END) as paid_amount,
+               MAX(d.date) as last_date,
                COUNT(*) as count,
-               SUM(CASE WHEN julianday('now') - julianday(i.date) <= 30 THEN i.total_amount - i.received_amount ELSE 0 END) as aging_30,
-               SUM(CASE WHEN julianday('now') - julianday(i.date) > 30 AND julianday('now') - julianday(i.date) <= 60 THEN i.total_amount - i.received_amount ELSE 0 END) as aging_60,
-               SUM(CASE WHEN julianday('now') - julianday(i.date) > 60 THEN i.total_amount - i.received_amount ELSE 0 END) as aging_90
-        FROM invoices i
-        LEFT JOIN customers c ON c.id = i.customer_id AND c.is_current = 1
-        WHERE i.is_current = 1 AND i.is_draft = 0 AND i.document_type = 'invoice'
-          AND (i.payment_status IS NULL OR i.payment_status != 'paid')
-        GROUP BY COALESCE(c.display_name, i.customer_formal_name, '不明')
+               SUM(CASE WHEN julianday('now') - julianday(d.date) <= 30 THEN d.total - COALESCE(d.received_amount, 0) ELSE 0 END) as aging_30,
+               SUM(CASE WHEN julianday('now') - julianday(d.date) > 30 AND julianday('now') - julianday(d.date) <= 60 THEN d.total - COALESCE(d.received_amount, 0) ELSE 0 END) as aging_60,
+               SUM(CASE WHEN julianday('now') - julianday(d.date) > 60 THEN d.total - COALESCE(d.received_amount, 0) ELSE 0 END) as aging_90
+        FROM documents d
+        LEFT JOIN customers c ON c.id = d.customer_id AND c.is_current = 1
+        WHERE d.is_current = 1 AND d.status = 'confirmed' AND d.document_type = 'invoice'
+          AND d.deleted_at IS NULL
+          AND (d.payment_status IS NULL OR d.payment_status != 'paid')
+        GROUP BY COALESCE(c.display_name, d.customer_name, '不明')
         ORDER BY total_amount DESC
       ''');
       final list = rows.map((r) => _ArSummaryRow(

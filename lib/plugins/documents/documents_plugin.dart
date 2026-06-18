@@ -22,7 +22,10 @@ const _kDocTable = '''
     linked_document_id TEXT,
     project_id TEXT,
     subject TEXT,
-    deleted_at TEXT DEFAULT NULL
+    deleted_at TEXT DEFAULT NULL,
+    payment_status TEXT DEFAULT NULL,
+    received_amount INTEGER DEFAULT NULL,
+    due_date TEXT DEFAULT NULL
   )
 ''';
 
@@ -89,6 +92,18 @@ class DocumentsPlugin extends H1Plugin {
     try {
       await context.database.execute(
         "ALTER TABLE documents ADD COLUMN deleted_at TEXT DEFAULT NULL");
+    } catch (_) {}
+    try {
+      await context.database.execute(
+        "ALTER TABLE documents ADD COLUMN payment_status TEXT DEFAULT NULL");
+    } catch (_) {}
+    try {
+      await context.database.execute(
+        "ALTER TABLE documents ADD COLUMN received_amount INTEGER DEFAULT NULL");
+    } catch (_) {}
+    try {
+      await context.database.execute(
+        "ALTER TABLE documents ADD COLUMN due_date TEXT DEFAULT NULL");
     } catch (_) {}
     try {
       final cutoff = DateTime.now().subtract(const Duration(days: 14)).toIso8601String();
@@ -290,6 +305,21 @@ class DocumentsPlugin extends H1Plugin {
         "ALTER TABLE document_items ADD COLUMN variant_label TEXT",
       );
     } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN payment_status TEXT DEFAULT NULL",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN received_amount INTEGER DEFAULT NULL",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE documents ADD COLUMN due_date TEXT DEFAULT NULL",
+      );
+    } catch (_) {}
   }
 
   @override
@@ -319,96 +349,6 @@ class DocumentsPlugin extends H1Plugin {
 
   @override
   Future<void> createTables(Database db) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS invoices (
-        id TEXT NOT NULL,
-        customer_id TEXT NOT NULL,
-        date TEXT NOT NULL,
-        notes TEXT,
-        subject TEXT,
-        total_amount INTEGER,
-        tax_rate REAL DEFAULT 0.10,
-        document_type TEXT DEFAULT 'invoice',
-        order_status TEXT DEFAULT 'draft',
-        promised_date INTEGER,
-        fulfilled_date INTEGER,
-        source_document_id TEXT,
-        linked_delivery_id TEXT,
-        linked_invoice_id TEXT,
-        customer_formal_name TEXT,
-        is_synced INTEGER DEFAULT 0,
-        updated_at TEXT NOT NULL,
-        latitude REAL,
-        longitude REAL,
-        terminal_id TEXT DEFAULT 'T1',
-        is_draft INTEGER DEFAULT 0,
-        is_locked INTEGER DEFAULT 0,
-        total_discount_amount INTEGER DEFAULT 0,
-        total_discount_rate REAL DEFAULT 0,
-        include_tax INTEGER DEFAULT 1,
-        is_tax_inclusive_mode INTEGER DEFAULT 0,
-        payment_status TEXT DEFAULT 'unpaid',
-        received_amount INTEGER DEFAULT 0,
-        project_id TEXT,
-        is_test_document INTEGER DEFAULT 0,
-        printed_at TEXT,
-        email_sent_at TEXT,
-        email_sent_to TEXT,
-        is_receipt_issued INTEGER DEFAULT 0,
-        receipt_issued_at TEXT,
-        meta_json TEXT,
-        PRIMARY KEY (id),
-        FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
-      )
-    ''');
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(date)');
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_invoices_customer ON invoices(customer_id)');
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(order_status)');
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_invoices_doc_type ON invoices(document_type)');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS invoice_items (
-        id TEXT PRIMARY KEY,
-        invoice_id TEXT NOT NULL,
-        product_id TEXT,
-        description TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
-        unit_price INTEGER NOT NULL,
-        discount_amount INTEGER DEFAULT 0,
-        discount_rate REAL DEFAULT 0,
-        FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE
-      )
-    ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id)',
-    );
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS payment_schedules (
-        id TEXT PRIMARY KEY,
-        invoice_id TEXT NOT NULL,
-        due_date TEXT NOT NULL,
-        amount INTEGER NOT NULL,
-        paid_amount INTEGER DEFAULT 0,
-        status TEXT DEFAULT 'pending',
-        paid_at TEXT,
-        notes TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY(invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
-      )
-    ''');
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_payment_schedules_invoice ON payment_schedules(invoice_id)',
-    );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_payment_schedules_status ON payment_schedules(status)',
-    );
-
     await db.execute(_kDocTable);
     await db.execute(_kDocItemsTable);
   }

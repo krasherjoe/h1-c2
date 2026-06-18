@@ -49,3 +49,6 @@ gmail-mcp/credentials/*.json
 /android/app/profile
 /android/app/release
 *.md
+!.ai/context.md
+.opencode/
+!build/app/outputs/flutter-apk/*.apk

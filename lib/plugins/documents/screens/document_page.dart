@@ -16,7 +16,10 @@ import '../../../widgets/document_summary_section.dart';
 import '../../../widgets/document_item_card.dart';
 import '../../printer/screens/printer_settings_screen.dart';
 import '../../customers/screens/customer_edit_screen.dart';
-import '../../project/screens/project_list_screen.dart';
+import '../../project/models/project_explorer_item.dart';
+import '../../project/screens/project_detail_screen.dart';
+import '../../explorer/h1_explorer.dart';
+import '../../project/explorer/project_explorer_config.dart';
 import '../../products/widgets/variant_picker_sheet.dart';
 import '../explorer/document_preview_page.dart';
 
@@ -212,9 +215,13 @@ class _DocumentPageState extends State<DocumentPage> {
           if (widget.isEditing) _buildSubjectField(cs) else _buildSubjectDisplay(cs),
           const SizedBox(height: 12),
           _buildCustomerRow(cs),
-          if (widget.isEditing) ...[
+          if (_projectId != null) ...[
             const SizedBox(height: 12),
             _buildProjectRow(cs),
+          ],
+          if (widget.isEditing) ...[
+            const SizedBox(height: 12),
+            if (_projectId == null) _buildProjectRow(cs),
             const SizedBox(height: 12),
             _buildTaxToggle(cs),
           ],
@@ -384,22 +391,33 @@ class _DocumentPageState extends State<DocumentPage> {
   }
 
   Widget _buildProjectRow(ColorScheme cs) {
+    final hasProject = _projectId != null;
     return Container(
       decoration: cardDecoration(cs, color: cs.surfaceContainerLow, radius: 12).copyWith(
-        border: Border.all(color: cs.outlineVariant)),
+        border: Border.all(color: hasProject ? cs.primary.withValues(alpha: 0.3) : cs.outlineVariant)),
       child: ListTile(
-        leading: Icon(Icons.folder, color: cs.primary),
+        leading: Icon(hasProject ? Icons.workspaces : Icons.folder, color: cs.primary),
         title: Text(_projectName ?? '案件なし', style: TextStyle(fontWeight: FontWeight.w500, color: cs.onSurface)),
-        trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-        onTap: () async {
-          final id = await Navigator.push<String>(context, MaterialPageRoute(
-            builder: (_) => ProjectListScreen(selectionMode: true),
-          ));
-          if (id != null) {
-            final p = await ProjectRepository().getById(id);
-            if (p != null && mounted) setState(() { _projectId = p.id; _projectName = p.name; });
-          }
-        },
+        trailing: Icon(hasProject ? Icons.open_in_new : Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+        onTap: hasProject
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ProjectDetailScreen(projectId: _projectId)),
+              );
+            }
+          : () async {
+              final result = await Navigator.push<ProjectExplorerItem>(context, MaterialPageRoute(
+                builder: (_) => H1Explorer<ProjectExplorerItem>(
+                  config: ProjectExplorerConfig(),
+                  selectionMode: true,
+                ),
+              ));
+              if (result != null && mounted) {
+                final p = await ProjectRepository().getById(result.project.id);
+                if (p != null) setState(() { _projectId = p.id; _projectName = p.name; });
+              }
+            },
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

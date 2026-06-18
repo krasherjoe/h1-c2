@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/customer_model.dart';
+import '../../../models/project_model.dart';
 import '../../../services/customer_repository.dart';
+import '../../../services/project_repository.dart';
 import '../../../services/permission_service.dart';
 import '../../../widgets/customer_rank_badge.dart';
 import '../../../widgets/screen_id_title.dart';
@@ -10,6 +12,7 @@ import '../../../widgets/h1_form_field.dart';
 import '../../../services/sync_service.dart';
 import '../../../services/error_reporter.dart';
 import '../../../constants/screen_ids.dart';
+import '../../project/screens/project_detail_screen.dart';
 
 class CustomerEditScreen extends StatefulWidget {
   final Customer? customer;
@@ -567,6 +570,9 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
             ),
             const SizedBox(height: 28),
 
+            if (_isEdit && _customer != null) _RelatedProjectsSection(customerId: _customer!.id),
+            const SizedBox(height: 16),
+
             FilledButton.icon(
             onPressed: () async { if (await guardWrite(context, AppFeature.masterEdit)) await _save(); },
               icon: const Icon(Icons.save),
@@ -606,6 +612,82 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
       ),
       body: form,
     );
+  }
+}
+
+class _RelatedProjectsSection extends StatefulWidget {
+  final String customerId;
+  const _RelatedProjectsSection({required this.customerId});
+  @override
+  State<_RelatedProjectsSection> createState() => _RelatedProjectsSectionState();
+}
+
+class _RelatedProjectsSectionState extends State<_RelatedProjectsSection> {
+  List<dynamic> _projects = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final repo = ProjectRepository();
+      final projects = await repo.getByCustomer(widget.customerId);
+      if (!mounted) return;
+      setState(() { _projects = projects; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    if (_loading) return const SizedBox.shrink();
+    if (_projects.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(icon: Icons.workspaces, title: '関連案件 (${_projects.length})'),
+        const SizedBox(height: 8),
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            children: _projects.take(5).map<Widget>((p) {
+              final project = p as Project;
+              return ListTile(
+                leading: Icon(_stageIcon(project.pipelineStage), size: 20, color: cs.primary),
+                title: Text(project.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                subtitle: Text('${project.pipelineStage}  ¥${project.totalAmount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                trailing: Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ProjectDetailScreen(projectId: project.id)),
+                  );
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _stageIcon(String stage) {
+    switch (stage) {
+      case '見積': return Icons.request_quote;
+      case '受注': return Icons.shopping_cart_checkout;
+      case '発注': return Icons.local_shipping;
+      case '納品': return Icons.local_shipping;
+      case '請求': return Icons.receipt_long;
+      case '入金済': return Icons.check_circle;
+      default: return Icons.circle;
+    }
   }
 }
 
