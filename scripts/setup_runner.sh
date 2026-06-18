@@ -3,72 +3,66 @@
 # 使い方: このスクリプトをPVEサーバーに転送して実行
 # 事前に git.cyberius.biz で以下を用意:
 #   1. 管理画面 → サイト管理 → Actions → 有効化
-#   2. リポジトリ → Settings → Actions → Runner → 登録トークン発行
+#   2. リポジトリ → Settings → Actions Secrets → GH_TOKEN 追加（GitHub PAT）
 
 set -e
 
 echo "=== Forgejo Runner セットアップ ==="
 echo ""
 
-# 引数チェック
 if [ $# -lt 2 ]; then
-  echo "使い方: $0 <登録トークン> <GitHub PAT>"
-  echo "  <登録トークン>: git.cyberius.biz リポジトリ設定で発行"
-  echo "  <GitHub PAT>:   GitHub Personal Access Token (repo権限)"
+  echo "使い方: $0 <インスタンスURL> <登録トークン>"
+  echo "  <インスタンスURL>: https://git.cyberius.biz"
+  echo "  <登録トークン>:    Forgejo管理画面 → Actions → 登録トークン"
   exit 1
 fi
 
-REG_TOKEN="$1"
-GH_TOKEN="$2"
-INSTANCE="https://git.cyberius.biz"
+INSTANCE="$1"
+REG_TOKEN="$2"
 RUNNER_DIR="/root/runner"
 
-echo "1/5 ディレクトリ作成"
+echo "1/4 ディレクトリ作成"
 mkdir -p "$RUNNER_DIR"
 cd "$RUNNER_DIR"
 
-echo "2/5 runner バイナリダウンロード"
-wget -O runner.tar.gz \
-  "https://code.forgejo.org/forgejo/runner/releases/download/v12.11.1/forgejo-runner-12.11.1-linux-amd64.tar.gz"
-tar xzf runner.tar.gz
-rm runner.tar.gz
+echo "2/4 runner バイナリダウンロード"
+wget -q -O forgejo-runner \
+  "https://code.forgejo.org/forgejo/runner/releases/download/v12.11.1/forgejo-runner-12.11.1-linux-amd64"
+chmod +x forgejo-runner
+./forgejo-runner --version
 
-echo "3/5 登録"
-./forgejo-runner register \
-  --instance "$INSTANCE" \
-  --token "$REG_TOKEN" \
-  --name "pve-runner" \
-  --labels "ubuntu-latest:docker://node:20-bookworm"
-
-echo "4/5 設定ファイル編集（ラベル調整）"
-cat > config.yml << 'CONF'
+echo "3/4 設定ファイル作成"
+cat > config.yml << CONF
 log:
   level: info
-
-runner:
-  file: .runner
-  capacity: 2
-  envs:
-    AUTH_TOKEN: ""
-    DOCKER_HOST: ""
-    DOCKER_NETWORK: ""
-  timeout: 120m
 
 cache:
   enabled: true
   dir: /tmp/cache
+
+container:
+  network: host
+
+connection:
+  - address: $INSTANCE
+    token: $REG_TOKEN
 CONF
 
-echo "5/5 systemd サービス登録"
-cat > /etc/systemd/system/forgejo-runner.service << 'SVC'
+# Dockerイメージ事前pull（初回ジョブ高速化）
+echo "Dockerイメージ事前pull..."
+docker pull node:20-bookworm 2>&1 | tail -1
+
+echo "4/4 systemd サービス登録"
+cat > /etc/systemd/system/forgejo-runner.service << SVC
 [Unit]
 Description=Forgejo Runner
-After=network.target
+After=network.target docker.service
+Requires=docker.service
 
 [Service]
 Type=simple
-WorkingDirectory=/root/runner
-ExecStart=/root/runner/forgejo-runner daemon
+WorkingDirectory=$RUNNER_DIR
+ExecStart=$RUNNER_DIR/forgejo-runner daemon --config $RUNNER_DIR/config.yml
 Restart=always
 RestartSec=10
 User=root
@@ -86,8 +80,8 @@ echo "=== 完了 ==="
 echo "状態確認: systemctl status forgejo-runner"
 echo "ログ確認: journalctl -u forgejo-runner -f"
 echo ""
-echo "次に git.cyberius.biz のリポジトリ設定 → Actions Secrets に"
-echo "  GH_TOKEN = $GH_TOKEN"
-echo "を追加してください。"
+echo "次に Forgejo リポジトリ設定 → Actions Secrets に"
+echo "  GH_TOKEN = <GitHub PAT>"
+echo "を追加してください。PATは https://github.com/settings/tokens で repo権限付きで作成"
 echo ""
-echo "あとは git tag v1.x.x && git push --tags で自動ビルド開始"
+echo "あとは git tag v1.x.x && git push origin --tags で自動ビルド開始"
