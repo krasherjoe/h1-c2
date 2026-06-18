@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/database_helper.dart';
 import 'services/db_snapshot_service.dart';
 import 'services/company_service.dart';
+import 'services/collection_project_service.dart';
 import 'plugin_system/plugin_registry.dart';
 import 'plugin_system/plugin_interface.dart';
 import 'plugin_system/plugin_context.dart';
@@ -391,6 +392,11 @@ void main() async {
     if (!entry.value) {
       registry.setEnabled(entry.key, false);
     }
+  }
+
+  final collectionCount = await CollectionProjectService.autoCreateCollectionProjects();
+  if (collectionCount > 0) {
+    debugPrint('[Startup] ✅ 回収案件を $collectionCount 件作成');
   }
 
   runApp(H1CoreApp(registry: registry, db: db, prefs: prefs));

@@ -3,6 +3,7 @@ enum ProjectType {
   sales,
   development,
   other,
+  collection,
 }
 
 extension ProjectTypeX on ProjectType {
@@ -14,6 +15,8 @@ extension ProjectTypeX on ProjectType {
         return '開発';
       case ProjectType.other:
         return 'その他';
+      case ProjectType.collection:
+        return '回収';
     }
   }
 }
