@@ -7,6 +7,7 @@ import 'debug_console.dart';
 import '../constants/secure_storage_keys.dart';
 import '../constants/env_config.dart';
 import 'secure_storage_service.dart';
+import 'mm_command_service.dart';
 
 class MattermostBridge {
   static Timer? _timer;
@@ -14,8 +15,36 @@ class MattermostBridge {
   static String? _lastPostId;
 
   static const _kEnabledKey = 'mm_polling_enabled';
-  static const _kChannelId = 'n6fr87ipuj8epc463o7fu7gdao';
   static const _kPollInterval = Duration(seconds: 10);
+
+  static String? _cachedChannelId;
+
+  static Future<String?> _ensureChannelId() async {
+    if (_cachedChannelId != null) return _cachedChannelId;
+    final token = MmCommandService.instance.pat;
+    final baseUrl = MmCommandService.instance.baseUrl;
+    if (token == null || baseUrl == null) return null;
+    try {
+      final teamRes = await http.get(
+        Uri.parse('$baseUrl/api/v4/teams/name/cyb'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (teamRes.statusCode != 200) return null;
+      final team = jsonDecode(teamRes.body);
+      final teamId = team['id'] as String;
+      final chRes = await http.get(
+        Uri.parse('$baseUrl/api/v4/teams/$teamId/channels/name/h1-debug'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (chRes.statusCode != 200) return null;
+      final ch = jsonDecode(chRes.body);
+      _cachedChannelId = ch['id'] as String;
+      return _cachedChannelId;
+    } catch (e) {
+      debugPrint('[MattermostBridge] channel lookup failed: $e');
+      return null;
+    }
+  }
 
   static String get _baseUrl => EnvConfig.mattermostBaseUrl;
 
@@ -75,7 +104,9 @@ class MattermostBridge {
       final devId = await devUserId;
       if (devId == null || devId.isEmpty) return;
 
-      final uri = Uri.parse('$_baseUrl/api/v4/channels/$_kChannelId/posts');
+      final channelId = await _ensureChannelId();
+      if (channelId == null) return;
+      final uri = Uri.parse('$_baseUrl/api/v4/channels/$channelId/posts');
       final res = await http.get(uri, headers: {
         'Authorization': 'Bearer $token',
       });
