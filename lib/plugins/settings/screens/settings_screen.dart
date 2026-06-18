@@ -169,13 +169,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
               child: Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _googleSignedIn ? cs.tertiaryContainer : cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(_googleSignedIn ? Icons.cloud_done : Icons.cloud_off, color: _googleSignedIn ? cs.tertiary : cs.onSurfaceVariant, size: 20),
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: cs.primaryContainer,
+                  foregroundColor: cs.primary,
+                  child: Icon(_googleSignedIn ? Icons.cloud_done : Icons.cloud_off, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(
@@ -184,13 +182,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Text('Google アカウント', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
                     const SizedBox(height: 2),
                     Text(_googleSignedIn ? (_googleEmail ?? '') : '未設定',
-                        style: TextStyle(fontSize: 12, color: _googleSignedIn ? cs.tertiary : cs.error)),
+                        style: TextStyle(fontSize: 12, color: _googleSignedIn ? cs.primary : cs.error)),
                     const SizedBox(height: 2),
                     Text('正式発行した伝票の控えを自動メール送信します\nDriveへのバックアップにも使用します',
                         style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                   ],
                 )),
                 TextButton(
+                  style: _googleSignedIn ? TextButton.styleFrom(foregroundColor: cs.error) : null,
                   onPressed: () async {
                     if (_googleSignedIn) {
                       await GoogleAuthService.instance.signOut();
