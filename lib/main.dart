@@ -294,10 +294,20 @@ void main() async {
       final snaps = await DbSnapshotService.list();
       if (snaps.isEmpty) return 'スナップショットなし';
       final lines = snaps.asMap().entries.map((e) => '  ${e.key}: ${e.value.split('/').last}').join('\n');
-      return 'スナップショット一覧:\n$lines\n\n使用例: !opencode db.restore 0';
+      return 'スナップショット一覧:\n$lines\n\n⚠️ 復元すると現在のデータが失われます。\n使用例: !opencode db.restore 0 --force';
+    }
+    final hasForce = args.contains('--force');
+    if (!hasForce) {
+      final db = await DatabaseHelper().database;
+      final docCount = await db.rawQuery("SELECT COUNT(*) as c FROM documents WHERE is_current = 1");
+      final invCount = await db.rawQuery("SELECT COUNT(*) as c FROM invoices WHERE is_current = 1");
+      final docTotal = (docCount.first['c'] as int? ?? 0) + (invCount.first['c'] as int? ?? 0);
+      return '⚠️ 復元すると現在のデータ($docTotal件の伝票)が失われます。\n'
+             '続行する場合は --force を付けて再実行:\n'
+             '!opencode db.restore ${args[0]} --force';
     }
     final index = int.tryParse(args[0]);
-    if (index == null) return '数値を指定: !opencode db.restore 0';
+    if (index == null) return '数値を指定: !opencode db.restore <index> --force';
     await DbSnapshotService.restore(index);
     return '復元完了、アプリを再起動してください';
   });
