@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/case_model.dart';
 import '../services/case_repository.dart';
 import '../widgets/case_progress_bar.dart';
+import '../widgets/gantt_chart_widget.dart';
+import '../../purchase/models/purchase_model.dart';
+import '../../../services/database_helper.dart';
 import 'case_detail_screen.dart';
 import '../../../constants/screen_ids.dart';
 
@@ -98,6 +101,30 @@ class _CaseListScreenState extends State<CaseListScreen> {
     await _load();
   }
 
+  void _showGanttChart(BuildContext context) async {
+    final db = DatabaseHelper();
+    List<PurchaseModel> purchases = [];
+    try {
+      final d = await db.database;
+      final maps = await d.query('purchases', orderBy: 'date DESC');
+      purchases = maps.map((m) => PurchaseModel.fromMap(m)).toList();
+    } catch (_) {}
+
+    final nonResolved = _cases.where((c) => c.status < 99).toList();
+    final items = <GanttChartItem>[
+      ...nonResolved.map(GanttChartItem.fromCase),
+      ...purchases
+          .where((p) => p.purchaseType == PurchaseType.order || p.purchaseType == PurchaseType.receipt)
+          .map(GanttChartItem.fromPurchase),
+    ];
+    items.sort((a, b) => a.startDate.compareTo(b.startDate));
+
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => _GanttFullScreen(items: items),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -107,7 +134,16 @@ class _CaseListScreenState extends State<CaseListScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('${S.is_}:案件管理')),
+      appBar: AppBar(
+        title: const Text('${S.is_}:案件管理'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.timeline),
+            tooltip: 'ガントチャート',
+            onPressed: () => _showGanttChart(context),
+          ),
+        ],
+      ),
       body: _loading
         ? const Center(child: CircularProgressIndicator())
         : Column(children: [
@@ -323,5 +359,27 @@ class _CaseListScreenState extends State<CaseListScreen> {
         ),
       ]),
     ));
+  }
+}
+
+class _GanttFullScreen extends StatelessWidget {
+  final List<GanttChartItem> items;
+  const _GanttFullScreen({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('ガントチャート')),
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+            child: GanttChartWidget(items: items),
+          ),
+        ),
+      ),
+    );
   }
 }
