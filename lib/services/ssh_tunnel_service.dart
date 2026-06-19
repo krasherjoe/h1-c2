@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/foundation.dart';
@@ -49,6 +50,7 @@ class SshTunnelService {
 
   // ポートフォワード（Android:8080 → 最終ホスト:8080）
   SSHRemoteForward? _forward;
+  StreamSubscription? _forwardSubscription;
 
   /// SSH設定テキストと秘密鍵テキスト
   String? configText;
@@ -244,11 +246,48 @@ class SshTunnelService {
       // ポートフォワード: gui1:8080 → Android:8080 (ICE API)
       statusNotifier.value = 'ポートフォワード設定中...';
       if (lastClient != null) {
-        _forward = await lastClient!.forwardRemote(
-          host: '0.0.0.0',
-          port: 8080, // ICE API Server
-        );
-        debugPrint('[SshTunnel] Remote forward set up: ${chain.last.resolvedHostname}:0.0.0.0:8080 → Android');
+        try {
+          debugPrint('[SshTunnel] Setting up remote forward: 0.0.0.0:8080 → localhost:8080');
+          _forward = await lastClient!.forwardRemote(
+            host: '0.0.0.0',
+            port: 8080, // リモート側のポート
+          ).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw StateError('ポートフォワード設定タイムアウト');
+            },
+          );
+
+          if (_forward == null) {
+            throw StateError('ポートフォワード設定失敗（null returned）');
+          }
+
+          debugPrint('[SshTunnel] Remote forward set up successfully: ${chain.last.resolvedHostname}:0.0.0.0:8080 → localhost:8080');
+
+          // 接続を監視してローカルのICE API Serverに転送
+          _forwardSubscription = _forward!.connections.listen(
+            (connection) async {
+              try {
+                debugPrint('[SshTunnel] New remote connection, forwarding to localhost:8080');
+                final localSocket = await Socket.connect('localhost', 8080);
+                connection.stream.cast<List<int>>().pipe(localSocket);
+                localSocket.cast<List<int>>().pipe(connection.sink);
+              } catch (e) {
+                debugPrint('[SshTunnel] Forward connection error: $e');
+                connection.sink.close();
+              }
+            },
+            onError: (e) {
+              debugPrint('[SshTunnel] Forward stream error: $e');
+            },
+            onDone: () {
+              debugPrint('[SshTunnel] Forward stream done');
+            },
+          );
+        } catch (e) {
+          debugPrint('[SshTunnel] Remote forward failed: $e');
+          throw StateError('ポートフォワード設定失敗: $e');
+        }
       }
 
       // ONLINE状態
@@ -285,6 +324,11 @@ class SshTunnelService {
 
   /// 内部切断処理
   Future<void> _disconnectInternal() async {
+    try {
+      _forwardSubscription?.cancel();
+      _forwardSubscription = null;
+    } catch (_) {}
+
     try {
       _forward?.close();
       _forward = null;
