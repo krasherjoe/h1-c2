@@ -43,11 +43,11 @@ android {
         create("release") {
             storeFile = rootProject.file(keystoreProps.getProperty("storeFile") ?: "../keystore/debug.keystore")
             storePassword = keystoreProps.getProperty("storePassword")
-                ?: System.getenv("RELEASE_STORE_PASSWORD") ?: "android"
+                ?: (System.getenv("RELEASE_STORE_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android")
             keyAlias = keystoreProps.getProperty("keyAlias")
-                ?: System.getenv("RELEASE_KEY_ALIAS") ?: "androiddebugkey"
+                ?: (System.getenv("RELEASE_KEY_ALIAS")?.takeIf { it.isNotEmpty() } ?: "androiddebugkey")
             keyPassword = keystoreProps.getProperty("keyPassword")
-                ?: System.getenv("RELEASE_KEY_PASSWORD") ?: "android"
+                ?: (System.getenv("RELEASE_KEY_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android")
         }
     }
 
