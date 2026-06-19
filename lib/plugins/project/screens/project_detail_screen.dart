@@ -703,12 +703,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
         FilledButton(
           onPressed: () {
-            final startDate = startDateCtrl.text.isNotEmpty
-                ? DateTime.tryParse(startDateCtrl.text)
-                : null;
-            final endDate = endDateCtrl.text.isNotEmpty
-                ? DateTime.tryParse(endDateCtrl.text)
-                : null;
+            DateTime? parseYmd(String s) {
+              final parts = s.split('/');
+              if (parts.length != 3) return null;
+              final y = int.tryParse(parts[0]);
+              final m = int.tryParse(parts[1]);
+              final d = int.tryParse(parts[2]);
+              if (y == null || m == null || d == null) return null;
+              return DateTime(y, m, d);
+            }
+            final startDate = parseYmd(startDateCtrl.text);
+            final endDate = parseYmd(endDateCtrl.text);
             int? contractMonths;
             if (contractMonthsCtrl.text.isNotEmpty) {
               contractMonths = int.tryParse(contractMonthsCtrl.text);
