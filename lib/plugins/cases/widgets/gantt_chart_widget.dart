@@ -233,6 +233,20 @@ class _GanttChartWidgetState extends State<GanttChartWidget> {
 
   @override
   Widget build(BuildContext context) {
+    try {
+      return _build(context);
+    } catch (e, st) {
+      print('GanttChartWidget error: $e\n$st');
+      return SizedBox(
+        height: 60,
+        child: Center(
+          child: Text('Gantt: $e', style: const TextStyle(color: Colors.red, fontSize: 11)),
+        ),
+      );
+    }
+  }
+
+  Widget _build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final bg = cs.surface;
     final gridColor = cs.outlineVariant.withValues(alpha: 0.3);
