@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/case_model.dart';
 import '../services/case_repository.dart';
+import '../widgets/case_progress_bar.dart';
 import 'case_detail_screen.dart';
 import '../../../constants/screen_ids.dart';
 
@@ -223,9 +224,10 @@ class _CaseListScreenState extends State<CaseListScreen> {
         onLongPress: () => _showStatusMenu(c),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Row(children: [
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
-              width: 4, height: 48,
+              width: 4,
+              height: 62,
               decoration: BoxDecoration(
                 color: _statusTextColor(c.status, cs),
                 borderRadius: BorderRadius.circular(2),
@@ -263,7 +265,14 @@ class _CaseListScreenState extends State<CaseListScreen> {
                   Text(c.assignee!, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                 ],
               ]),
+              const SizedBox(height: 6),
+              CaseProgressBar(
+                status: c.status,
+                elapsedDays: c.elapsedDays,
+                isResolved: c.isResolved,
+              ),
             ])),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
@@ -271,7 +280,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(c.statusLabel,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _statusTextColor(c.status, cs))),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _statusTextColor(c.status, cs))),
             ),
           ]),
         ),

@@ -230,17 +230,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
               ),
             ),
           ),
-          if (c.notes != null && c.notes!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text('対応メモ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
-            const SizedBox(height: 4),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(c.notes!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-              ),
-            ),
-          ],
           // Gantt chart section
           const SizedBox(height: 20),
           Text('タイムライン', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
@@ -270,6 +259,17 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
               ),
             ),
           ),
+          if (c.notes != null && c.notes!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text('対応メモ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.onSurface)),
+            const SizedBox(height: 4),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(c.notes!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              ),
+            ),
+          ],
           if (c.resolvedAt != null) ...[
             const SizedBox(height: 16),
             Card(
