@@ -1,47 +1,36 @@
 #!/bin/bash
-# 両リモートpush + GitHub Release作成 一発スクリプト
-# 使い方: ./scripts/push_all.sh <バージョン> [リリースノート.md]
+# ソースコードpush + README更新 一発スクリプト
+# APKビルド・リリースは Forgejo Action が自動実行
+# 使い方: ./scripts/push_all.sh <バージョン>
 # 例: ./scripts/push_all.sh v1.1.0
-# 例: ./scripts/push_all.sh v1.1.0 ./docs/release_notes.md
 set -e
 
 if [ $# -lt 1 ]; then
-  echo "使い方: $0 <version> [リリースノート.md]"
+  echo "使い方: $0 <version>"
   echo "  バージョン例: v1.1.0"
   exit 1
 fi
 
 VERSION="$1"
-NOTES_FILE="${2:-}"
-NOTES_ARG=()
-APK_NAME="h1-core-${VERSION}.apk"
-APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 cd "$ROOT_DIR"
 
-# === 1. ソースコード → origin (git.cyberius.biz) ===
+# === 1. ソースコード + タグ → origin (git.cyberius.biz) ===
 BRANCH=$(git branch --show-current)
-echo "=== 1/4: ソースコード → origin ($BRANCH) ==="
+echo "=== 1/3: ソースコード → origin ($BRANCH) ==="
 git push origin "$BRANCH"
 echo "✅ origin/${BRANCH} へpush完了"
 
-# === 2. APK ビルド ===
 echo ""
-echo "=== 2/4: APK ビルド ==="
-VERSIONED_APK="build/app/outputs/flutter-apk/h1-core-${VERSION}.apk"
-DART_DEFINES="--dart-define=APP_VERSION=$VERSION"
-if [ -f "$ROOT_DIR/.env" ]; then
-  DART_DEFINES="$DART_DEFINES --dart-define-from-file=$ROOT_DIR/.env"
-fi
-flutter build apk --release $DART_DEFINES
-cp "$APK_PATH" "$VERSIONED_APK"
-cp "$APK_PATH" "/tmp/$APK_NAME"
-echo "✅ APK: /tmp/$APK_NAME ($(wc -c < "/tmp/$APK_NAME") bytes)"
+echo "=== タグ $VERSION を origin にpush ==="
+git tag -f "$VERSION" 2>/dev/null || git tag "$VERSION"
+git push origin "$VERSION" 2>/dev/null || true
+echo "✅ タグ $VERSION をpush完了（Forgejo Action が起動）"
 
-# === 3. README → GitHub ===
+# === 2. README → GitHub ===
 echo ""
-echo "=== 3/4: README → GitHub ==="
+echo "=== 2/3: README → GitHub ==="
 git fetch github --quiet 2>/dev/null || true
 if [ -d /tmp/h1-gh-push ]; then
   rm -rf /tmp/h1-gh-push
@@ -61,48 +50,9 @@ cp README.md /tmp/h1-gh-push/README.md
 )
 git worktree remove /tmp/h1-gh-push 2>/dev/null || true
 
-# === 4. GitHub Release ===
+# === 3. 完了 ===
 echo ""
-echo "=== 4/4: GitHub Release 作成 ==="
-if [ -n "$NOTES_FILE" ] && [ -f "$NOTES_FILE" ]; then
-  NOTES_ARG=(--notes-file "$NOTES_FILE")
-else
-  LOG=$(git log --oneline --no-decorate "$(git tag --sort=-creatordate | head -1)..HEAD" 2>/dev/null || true)
-  BODY="## ${VERSION} 変更点"
-  if [ -n "$LOG" ]; then
-    BODY="$BODY"$'\n'"$LOG"
-  fi
-  NOTES_ARG=(--notes "$BODY")
-fi
-
-# tag を origin にも打つ
-git tag -f "$VERSION" 2>/dev/null || git tag "$VERSION"
-git push origin "$VERSION" 2>/dev/null || true
-
-# gh はリモートに同じ tag が無いと怒るので一旦消して任せる
-git tag -d "$VERSION" 2>/dev/null || true
-gh release create "$VERSION" \
-  --title "$VERSION" \
-  "${NOTES_ARG[@]}" \
-  "/tmp/$APK_NAME#$APK_NAME"
-# 再度 local tag を打って origin と同期
-git tag "$VERSION"
-
-rm -f "/tmp/$APK_NAME"
-
-# === 5. 古いリリース削除（最新5件のみ保持） ===
-echo ""
-echo "=== 5/5: 古いリリース削除 ==="
-gh release list --limit 200 --json tagName --jq '.[].tagName' \
-  | sort -V \
-  | head -n -5 \
-  | while read tag; do
-      echo "  削除: $tag"
-      gh release delete "$tag" --yes 2>/dev/null || true
-      git push origin --delete "$tag" 2>/dev/null || true
-    done
-echo "✅ 古いリリース削除完了"
-
-echo ""
-echo "🎉 完了: https://github.com/krasherjoe/h1-core/releases/tag/${VERSION}"
+echo "=== 3/3: 完了 ==="
+echo "🎉 Forgejo Action が APK ビルド + GitHub Release を実行中"
 echo "   リリースURL: https://github.com/krasherjoe/h1-core/releases/tag/${VERSION}"
+echo "   Action 実行状況: https://git.cyberius.biz/joe/h1-core/actions"
