@@ -143,7 +143,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: '案件を編集',
-            onPressed: () => _showEditDialog(project),
+            onPressed: () => _showEditDialog(project.id),
           ),
         ],
       ),
@@ -540,8 +540,57 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
   }
 
-  Future<void> _showEditDialog(Project project) async {
-    final cs = Theme.of(context).colorScheme;
+  Future<void> _showEditDialog(String projectId) async {
+    final project = await _repo.getById(projectId);
+    if (project == null || !mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _buildEditDialog(ctx, project, setDialogState),
+      ),
+    ).then((result) async {
+      if (result == null) return;
+
+      final newStartDate = result['startDate'] as DateTime?;
+      final newEndDate = result['endDate'] as DateTime?;
+      final newContractMonths = result['contractMonths'] as int?;
+
+      if (newStartDate == project.startDate &&
+          newEndDate == project.endDate &&
+          newContractMonths == project.contractMonths) {
+        return;
+      }
+
+      try {
+        final updated = project.copyWith(
+          startDate: newStartDate,
+          endDate: newEndDate,
+          contractMonths: newContractMonths,
+        );
+        await _repo.save(updated);
+        SyncService.pushChange(
+          entityType: 'project',
+          entityId: projectId,
+          action: 'save',
+          data: updated.toMap(),
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('案件情報を更新しました')),
+        );
+        await _load();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新エラー: $e')),
+        );
+      }
+    });
+  }
+
+  Widget _buildEditDialog(BuildContext ctx, Project project, StateSetter setDialogState) {
+    final cs = Theme.of(ctx).colorScheme;
     final startDateCtrl = TextEditingController(
       text: project.startDate != null ? '${project.startDate!.year}/${project.startDate!.month.toString().padLeft(2, '0')}/${project.startDate!.day.toString().padLeft(2, '0')}' : '',
     );
@@ -550,160 +599,126 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
     final contractMonthsCtrl = TextEditingController(text: project.contractMonths?.toString() ?? '');
 
-    final result = await showDialog<Map<String, dynamic>?>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('案件を編集'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('開始日', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-                const SizedBox(height: 4),
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx,
-                      initialDate: project.startDate ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      setDialogState(() => startDateCtrl.text = '${picked.year}/${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}');
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 16, color: cs.onSurfaceVariant),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(startDateCtrl.text.isEmpty ? '未設定' : startDateCtrl.text,
-                            style: TextStyle(fontSize: 14)),
-                        ),
-                        if (startDateCtrl.text.isNotEmpty)
-                          IconButton(
-                            icon: Icon(Icons.clear, size: 16, color: cs.onSurfaceVariant),
-                            onPressed: () => setDialogState(() => startDateCtrl.text = ''),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text('終了日', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-                const SizedBox(height: 4),
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx,
-                      initialDate: project.endDate ?? (project.startDate ?? DateTime.now()).add(const Duration(days: 365)),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      setDialogState(() => endDateCtrl.text = '${picked.year}/${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}');
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 16, color: cs.onSurfaceVariant),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(endDateCtrl.text.isEmpty ? '未設定' : endDateCtrl.text,
-                            style: TextStyle(fontSize: 14)),
-                        ),
-                        if (endDateCtrl.text.isNotEmpty)
-                          IconButton(
-                            icon: Icon(Icons.clear, size: 16, color: cs.onSurfaceVariant),
-                            onPressed: () => setDialogState(() => endDateCtrl.text = ''),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text('契約期間（ヶ月）', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: contractMonthsCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: '例: 12',
-                    prefixIcon: Icon(Icons.date_range, size: 18, color: cs.onSurfaceVariant),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-            FilledButton(
-              onPressed: () {
-                final startDate = startDateCtrl.text.isNotEmpty
-                    ? DateTime.tryParse(startDateCtrl.text)
-                    : null;
-                final endDate = endDateCtrl.text.isNotEmpty
-                    ? DateTime.tryParse(endDateCtrl.text)
-                    : null;
-                int? contractMonths;
-                if (contractMonthsCtrl.text.isNotEmpty) {
-                  contractMonths = int.tryParse(contractMonthsCtrl.text);
+    return AlertDialog(
+      title: const Text('案件を編集'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('開始日', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: ctx,
+                  initialDate: project.startDate ?? DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  setDialogState(() => startDateCtrl.text = '${picked.year}/${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}');
                 }
-                Navigator.pop(ctx, {'startDate': startDate, 'endDate': endDate, 'contractMonths': contractMonths});
               },
-              child: const Text('保存'),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 16, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(startDateCtrl.text.isEmpty ? '未設定' : startDateCtrl.text,
+                        style: TextStyle(fontSize: 14)),
+                    ),
+                    if (startDateCtrl.text.isNotEmpty)
+                      IconButton(
+                        icon: Icon(Icons.clear, size: 16, color: cs.onSurfaceVariant),
+                        onPressed: () => setDialogState(() => startDateCtrl.text = ''),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('終了日', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: ctx,
+                  initialDate: project.endDate ?? (project.startDate ?? DateTime.now()).add(const Duration(days: 365)),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  setDialogState(() => endDateCtrl.text = '${picked.year}/${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}');
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 16, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(endDateCtrl.text.isEmpty ? '未設定' : endDateCtrl.text,
+                        style: TextStyle(fontSize: 14)),
+                    ),
+                    if (endDateCtrl.text.isNotEmpty)
+                      IconButton(
+                        icon: Icon(Icons.clear, size: 16, color: cs.onSurfaceVariant),
+                        onPressed: () => setDialogState(() => endDateCtrl.text = ''),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('契約期間（ヶ月）', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: contractMonthsCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: '例: 12',
+                prefixIcon: Icon(Icons.date_range, size: 18, color: cs.onSurfaceVariant),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
             ),
           ],
         ),
       ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+        FilledButton(
+          onPressed: () {
+            final startDate = startDateCtrl.text.isNotEmpty
+                ? DateTime.tryParse(startDateCtrl.text)
+                : null;
+            final endDate = endDateCtrl.text.isNotEmpty
+                ? DateTime.tryParse(endDateCtrl.text)
+                : null;
+            int? contractMonths;
+            if (contractMonthsCtrl.text.isNotEmpty) {
+              contractMonths = int.tryParse(contractMonthsCtrl.text);
+            }
+            Navigator.pop(ctx, {'startDate': startDate, 'endDate': endDate, 'contractMonths': contractMonths});
+          },
+          child: const Text('保存'),
+        ),
+      ],
     );
-
-    if (result == null) return;
-    final hasChanges = result['startDate'] != null || result['endDate'] != null || result['contractMonths'] != null;
-    if (!hasChanges) return;
-
-    try {
-      final updated = project.copyWith(
-        startDate: result['startDate'],
-        endDate: result['endDate'],
-        contractMonths: result['contractMonths'],
-      );
-      await _repo.save(updated);
-      SyncService.pushChange(
-        entityType: 'project',
-        entityId: project.id,
-        action: 'save',
-        data: updated.toMap(),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('案件情報を更新しました')),
-      );
-      await _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('更新エラー: $e')),
-      );
-    }
   }
 
   Widget _buildNextActionGuide(Project project, ColorScheme cs) {
