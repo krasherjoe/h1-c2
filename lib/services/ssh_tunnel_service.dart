@@ -241,20 +241,20 @@ class SshTunnelService {
         _clients.add(client);
       }
 
-      // ポートフォワード: 最終ホストのlocalhost:8080 → Android:8080
+      // ポートフォワード: gui1:8080 → Android:8080 (ICE API)
       statusNotifier.value = 'ポートフォワード設定中...';
       if (lastClient != null) {
         _forward = await lastClient!.forwardRemote(
-          host: '127.0.0.1',
-          port: 8080,
+          host: '0.0.0.0',
+          port: 8080, // ICE API Server
         );
-        debugPrint('[SshTunnel] Remote forward set up: ${chain.last.resolvedHostname}:127.0.0.1:8080 → Android');
+        debugPrint('[SshTunnel] Remote forward set up: ${chain.last.resolvedHostname}:0.0.0.0:8080 → Android');
       }
 
       // ONLINE状態
       onlineNotifier.value = true;
       statusNotifier.value = '接続済み (${lastClient?.remoteVersion ?? ''})';
-      debugPrint('[SshTunnel] Connected! ${chain.last.resolvedHostname} accessible on localhost:8080');
+      debugPrint('[SshTunnel] Connected! ${chain.last.resolvedHostname}:8080 → Android ICE API');
 
     } catch (e) {
       errorNotifier.value = e.toString();

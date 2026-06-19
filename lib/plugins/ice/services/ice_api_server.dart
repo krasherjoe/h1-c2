@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:h_1_core/plugin_system/plugin_registry.dart';
+import 'package:h_1_core/services/company_service.dart';
 import 'package:h_1_core/services/debug_console.dart';
 import 'ice_state_collector.dart';
 
@@ -13,13 +16,20 @@ class IceApiServer {
   int port;
   bool _running = false;
   late IceStateCollector _collector;
+  late final Database _db;
+  late final SharedPreferences _prefs;
+  late final PluginRegistry _registry;
+  String _version = 'unknown';
 
   IceApiServer({
-    this.port = 8080,
+    this.port = 8080, // ICE API Server
     required Database database,
     required SharedPreferences prefs,
     required PluginRegistry registry,
   }) {
+    _db = database;
+    _prefs = prefs;
+    _registry = registry;
     _collector = IceStateCollector(database, prefs, registry);
   }
 
@@ -28,9 +38,11 @@ class IceApiServer {
   Future<void> start() async {
     if (_running) return;
     try {
+      final info = await PackageInfo.fromPlatform();
+      _version = '${info.version}(${info.buildNumber})';
       _server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
       _running = true;
-      debugPrint('[IceApiServer] Started on http://localhost:$port');
+      debugPrint('[IceApiServer] Started on http://localhost:$port (v$_version)');
       _handleRequests();
     } catch (e) {
       debugPrint('[IceApiServer] Failed to start: $e');
@@ -114,16 +126,84 @@ class IceApiServer {
           }
           await _handleDbQuery(request);
 
+        case '/fs/read':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          final readPath = uri.queryParameters['path'];
+          if (readPath == null || readPath.isEmpty) {
+            await _error(request.response, HttpStatus.badRequest, 'path query parameter is required');
+            return;
+          }
+          await _handleFsRead(request.response, readPath);
+
+        case '/fs/write':
+          if (method != 'POST') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'POST required');
+            return;
+          }
+          await _handleFsWrite(request);
+
+        case '/fs/list':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          final listPath = uri.queryParameters['path'] ?? '.';
+          await _handleFsList(request.response, listPath);
+
+        case '/fs/download':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          final dlPath = uri.queryParameters['path'];
+          if (dlPath == null || dlPath.isEmpty) {
+            await _error(request.response, HttpStatus.badRequest, 'path query parameter is required');
+            return;
+          }
+          await _handleFsDownload(request.response, dlPath);
+
+        case '/api/workspace':
+          await _handleApiWorkspace(request.response);
+
+        case '/api/commands':
+          await _handleApiCommands(request.response);
+
+        case '/api/db/tables':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiDbTables(request.response);
+
+        case '/api/preferences':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          final key = uri.queryParameters['key'];
+          await _handleApiPreferences(request.response, key);
+
         default:
           await _respond(request.response, {
             'service': 'h-1-core ICE API',
-            'version': '1.0.0',
+            'version': _version,
             'endpoints': [
               'GET  /health',
               'GET  /state',
               'GET  /errors',
               'POST /command',
               'POST /db/query',
+              'GET  /fs/read?path=...',
+              'POST /fs/write',
+              'GET  /fs/list?path=...',
+              'GET  /fs/download?path=...',
+              'GET  /api/workspace',
+              'GET  /api/commands',
+              'GET  /api/db/tables',
+              'GET  /api/preferences?key=...',
             ],
           });
       }
@@ -180,6 +260,219 @@ class IceApiServer {
       }
     } else {
       await _error(request.response, HttpStatus.badRequest, 'Only SELECT/PRAGMA queries allowed');
+    }
+  }
+
+  Future<void> _handleFsRead(HttpResponse response, String path) async {
+    final file = File(path);
+    if (!await file.exists()) {
+      await _error(response, HttpStatus.notFound, 'File not found: $path');
+      return;
+    }
+    try {
+      final bytes = await file.readAsBytes();
+      final stat = await file.stat();
+      final size = stat.size;
+
+      if (size > 10 * 1024 * 1024) {
+        await _error(response, HttpStatus.badRequest, 'File too large: $size bytes (max 10MB)');
+        return;
+      }
+
+      final isText = ['txt', 'json', 'csv', 'xml', 'html', 'htm', 'md', 'yaml', 'yml', 'sql', 'log', 'key', 'pub'].contains(p.extension(path).replaceFirst('.', ''));
+
+      if (isText) {
+        final content = await file.readAsString();
+        await _respond(response, {
+          'path': path,
+          'size': size,
+          'text': true,
+          'content': content,
+        });
+      } else {
+        final base64Content = base64Encode(bytes);
+        response.headers.set('Content-Type', 'application/octet-stream');
+        response.headers.set('Content-Disposition', 'attachment; filename="${p.basename(path)}"');
+        response.write(jsonEncode({
+          'path': path,
+          'size': size,
+          'text': false,
+          'content': base64Content,
+        }));
+        await response.close();
+      }
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to read file: $e');
+    }
+  }
+
+  Future<void> _handleFsWrite(HttpRequest request) async {
+    final body = await utf8.decodeStream(request);
+    final data = jsonDecode(body) as Map<String, dynamic>;
+    final path = data['path'] as String?;
+    final content = data['content'] as String?;
+    final isBase64 = (data['isBase64'] as bool?) ?? false;
+
+    if (path == null || path.isEmpty) {
+      await _error(request.response, HttpStatus.badRequest, 'path is required');
+      return;
+    }
+    if (content == null) {
+      await _error(request.response, HttpStatus.badRequest, 'content is required');
+      return;
+    }
+
+    try {
+      final file = File(path);
+      if (isBase64) {
+        final bytes = base64Decode(content);
+        await file.writeAsBytes(bytes);
+      } else {
+        await file.writeAsString(content);
+      }
+      final stat = await file.stat();
+      await _respond(request.response, {
+        'path': path,
+        'size': stat.size,
+        'written': true,
+      });
+    } catch (e) {
+      await _error(request.response, HttpStatus.internalServerError, 'Failed to write file: $e');
+    }
+  }
+
+  Future<void> _handleFsList(HttpResponse response, String path) async {
+    final entity = await FileSystemEntity.type(path);
+    if (entity == FileSystemEntityType.notFound) {
+      await _error(response, HttpStatus.notFound, 'Path not found: $path');
+      return;
+    }
+
+    try {
+      final List<dynamic> entries = [];
+      final fsPath = path;
+
+      if (await Directory(fsPath).exists()) {
+        final dir = Directory(fsPath);
+        await for (final entity2 in dir.list(recursive: false)) {
+          final stat = await entity2.stat();
+          entries.add({
+            'path': entity2.path,
+            'name': p.basename(entity2.path),
+            'type': stat.type == FileSystemEntityType.directory ? 'directory' : 'file',
+            'size': stat.size,
+            'isDirectory': stat.type == FileSystemEntityType.directory,
+          });
+        }
+      } else {
+        final stat = await File(fsPath).stat();
+        entries.add({
+          'path': fsPath,
+          'name': p.basename(fsPath),
+          'type': 'file',
+          'size': stat.size,
+          'isDirectory': false,
+        });
+      }
+
+      await _respond(response, {
+        'path': path,
+        'entries': entries,
+        'count': entries.length,
+      });
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to list: $e');
+    }
+  }
+
+  Future<void> _handleFsDownload(HttpResponse response, String path) async {
+    final file = File(path);
+    if (!await file.exists()) {
+      await _error(response, HttpStatus.notFound, 'File not found: $path');
+      return;
+    }
+
+    try {
+      final bytes = await file.readAsBytes();
+      response.headers.set('Content-Type', 'application/octet-stream');
+      response.headers.set('Content-Disposition', 'attachment; filename="${p.basename(path)}"');
+      response.add(bytes);
+      await response.close();
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to download: $e');
+    }
+  }
+
+  Future<void> _handleApiWorkspace(HttpResponse response) async {
+    try {
+      final dir = await CompanyService.getCompanyDirectory();
+      final sshDir = Directory('${dir.path}/.ssh');
+      final dbFile = File(_db.path);
+      final dbExists = await dbFile.exists();
+      final dbSize = dbExists ? await dbFile.length() : 0;
+
+      final workspaceInfo = {
+        'company_dir': dir.path,
+        'db_path': _db.path,
+        'db_exists': dbExists,
+        'db_size_bytes': dbSize,
+        'ssh_dir': sshDir.path,
+        'ssh_config_exists': await File('${sshDir.path}/config').exists(),
+        'ssh_private_key_exists': await File('${sshDir.path}/id_ed25519').exists(),
+        'ssh_public_key_exists': await File('${sshDir.path}/id_ed25519.pub').exists(),
+        'plugins': _registry.allPlugins.map((p) => {'id': p.id, 'name': p.name, 'enabled': _registry.isEnabled(p.id)}).toList(),
+      };
+
+      await _respond(response, workspaceInfo);
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get workspace: $e');
+    }
+  }
+
+  Future<void> _handleApiCommands(HttpResponse response) async {
+    final commands = DebugConsole.registered;
+    await _respond(response, {'commands': commands, 'count': commands.length});
+  }
+
+  Future<void> _handleApiDbTables(HttpResponse response) async {
+    try {
+      final tables = await _db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+      );
+      final tableInfo = <Map<String, dynamic>>[];
+
+      for (final t in tables) {
+        final name = t['name'] as String;
+        try {
+          final cnt = await _db.rawQuery('SELECT COUNT(*) as c FROM "$name"');
+          final count = cnt.first['c'] as int;
+          tableInfo.add({'table': name, 'count': count});
+        } catch (e) {
+          tableInfo.add({'table': name, 'count': -1, 'error': e.toString()});
+        }
+      }
+
+      await _respond(response, {'tables': tableInfo, 'count': tableInfo.length});
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get tables: $e');
+    }
+  }
+
+  Future<void> _handleApiPreferences(HttpResponse response, String? key) async {
+    try {
+      if (key == null || key.isEmpty) {
+        final allPrefs = _prefs.getKeys();
+        final result = <String, dynamic>{};
+        for (final k in allPrefs) {
+          result[k] = _prefs.get(k);
+        }
+        await _respond(response, {'preferences': result});
+      } else {
+        final value = _prefs.get(key);
+        await _respond(response, {'key': key, 'value': value});
+      }
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get preferences: $e');
     }
   }
 
