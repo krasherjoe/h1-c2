@@ -27,7 +27,7 @@ class GoogleAuthService {
     ];
     try {
       _googleSignIn = GoogleSignIn(
-        clientId: _lastClientId.isNotEmpty ? _lastClientId : null,
+        clientId: (_lastClientId?.isNotEmpty ?? false) ? _lastClientId : null,
         scopes: _lastScopes!,
       );
       _initialized = true;
