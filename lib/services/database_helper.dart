@@ -14,7 +14,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 7;
+  static const _databaseVersion = 8;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -220,6 +220,10 @@ Future<void> _migrateToVersion(Database db, int version) async {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_email_history_sent_at ON email_send_history(sent_at)',
       );
+      break;
+    case 8:
+      await safeAddColumn(db, 'projects', 'start_date TEXT');
+      await safeAddColumn(db, 'projects', 'end_date TEXT');
       break;
     default:
       break;
