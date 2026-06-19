@@ -24,7 +24,7 @@ class ScreenAppBarTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$screenId: $title', style: primaryStyle),
+        Text(title, style: primaryStyle),
         if (caption != null)
           Text(
             caption!,

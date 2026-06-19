@@ -17,7 +17,7 @@ class PluginAppBarTitle extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('${item.id}: ${item.title}'),
+          Text(item.title),
           const SizedBox(width: 6),
           const GoogleAuthBadge(),
         ],
