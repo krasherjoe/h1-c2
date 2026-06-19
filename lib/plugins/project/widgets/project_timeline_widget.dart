@@ -3,7 +3,6 @@ import '../../../models/project_model.dart';
 
 class ProjectTimelineWidget extends StatelessWidget {
   final Project project;
-
   const ProjectTimelineWidget({super.key, required this.project});
 
   @override
@@ -11,14 +10,16 @@ class ProjectTimelineWidget extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final start = project.startDate;
     final end = project.endDate;
-    if (start == null) return const SizedBox.shrink();
+    final hasDates = start != null;
 
     final months = project.contractMonths ?? 1;
-    final totalDays = end != null ? end.difference(start).inDays : months * 30;
+    final totalDays = hasDates && end != null
+        ? end.difference(start).inDays
+        : (hasDates ? months * 30 : 1);
     final now = DateTime.now();
-    final elapsed = now.difference(start).inDays.clamp(0, totalDays);
-    final progress = totalDays > 0 ? elapsed / totalDays : 0.0;
-    final overdue = project.isOverdue;
+    final elapsed = hasDates ? now.difference(start).inDays.clamp(0, totalDays) : 0;
+    final progress = hasDates && totalDays > 0 ? elapsed / totalDays : 0.0;
+    final overdue = hasDates && project.isOverdue;
 
     return Container(
       decoration: BoxDecoration(
@@ -39,50 +40,83 @@ class ProjectTimelineWidget extends StatelessWidget {
             Text('タイムライン', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
           ]),
           const SizedBox(height: 16),
-          // 日付ラベル行
-          Row(children: [
-            Text(_fmt(start), style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-            const Spacer(),
-            if (end != null)
-              Text('${_fmt(start)} 〜 ${_fmt(end)}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-          ]),
-          const SizedBox(height: 8),
-          // タイムラインバー
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final w = constraints.maxWidth;
-              return SizedBox(
-                height: 40,
-                child: CustomPaint(
-                  size: Size(w, 40),
-                  painter: _TimelineBarPainter(
-                    progress: progress.clamp(0.0, 1.0),
-                    overdue: overdue,
-                    primaryColor: cs.primary,
-                    overdueColor: Colors.red,
-                    surfaceColor: cs.surfaceContainerHighest,
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          // 進捗率表示
-          Row(children: [
-            Text('${(progress * 100).toInt()}% 経過',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: overdue ? Colors.red : cs.onSurface,
-              )),
-            const Spacer(),
-            if (months > 0)
-              Text('${project.elapsedMonths}/$monthsヶ月',
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-          ]),
+          if (!hasDates)
+            _buildNoDates(cs)
+          else ...[
+            _buildDateLabels(start, end, cs),
+            const SizedBox(height: 8),
+            _buildTimelineBar(cs, progress, overdue),
+            const SizedBox(height: 8),
+            _buildProgressInfo(cs, progress, overdue, months),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildNoDates(ColorScheme cs) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.primaryContainer, width: 1),
+      ),
+      child: Column(children: [
+        Icon(Icons.date_range, size: 32, color: cs.primary.withValues(alpha: 0.6)),
+        const SizedBox(height: 8),
+        Text('開始日・契約期間を設定すると',
+          style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        Text('タイムラインが表示されます',
+          style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+      ]),
+    );
+  }
+
+  Widget _buildDateLabels(DateTime start, DateTime? end, ColorScheme cs) {
+    return Row(children: [
+      Text(_fmt(start), style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+      const Spacer(),
+      if (end != null)
+        Text('${_fmt(start)} 〜 ${_fmt(end)}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+    ]);
+  }
+
+  Widget _buildTimelineBar(ColorScheme cs, double progress, bool overdue) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        return SizedBox(
+          height: 40,
+          child: CustomPaint(
+            size: Size(w, 40),
+            painter: _TimelineBarPainter(
+              progress: progress.clamp(0.0, 1.0),
+              overdue: overdue,
+              primaryColor: cs.primary,
+              overdueColor: Colors.red,
+              surfaceColor: cs.surfaceContainerHighest,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProgressInfo(ColorScheme cs, double progress, bool overdue, int months) {
+    return Row(children: [
+      Text('${(progress * 100).toInt()}% 経過',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: overdue ? Colors.red : cs.onSurface,
+        )),
+      const Spacer(),
+      if (project.contractMonths != null && project.contractMonths! > 0)
+        Text('${project.elapsedMonths}/${months}ヶ月',
+          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+    ]);
   }
 
   String _fmt(DateTime d) => '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
@@ -111,11 +145,9 @@ class _TimelineBarPainter extends CustomPainter {
     final barY = (h - barH) / 2;
     final r = barH / 2;
 
-    // 背景バー
     final bgPaint = Paint()..color = surfaceColor;
     canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(0, barY, w, barH), topLeft: Radius.circular(r), bottomLeft: Radius.circular(r), topRight: Radius.circular(r), bottomRight: Radius.circular(r)), bgPaint);
 
-    // 進捗バー
     if (progress > 0) {
       final barColor = overdue ? overdueColor : primaryColor;
       final fgPaint = Paint()..color = barColor;
@@ -123,7 +155,6 @@ class _TimelineBarPainter extends CustomPainter {
       canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(0, barY, fw, barH), topLeft: Radius.circular(r), bottomLeft: Radius.circular(r), topRight: Radius.circular(r), bottomRight: Radius.circular(r)), fgPaint);
     }
 
-    // 現在日マーカー
     final markerPaint = Paint()
       ..color = overdue ? overdueColor : primaryColor
       ..strokeWidth = 2;
