@@ -135,12 +135,8 @@ class Project {
       customerId: map['customer_id'] as String?,
       customerName: map['customer_name'] as String?,
       status: status,
-      startDate: map['start_date'] != null
-          ? DateTime.tryParse(map['start_date'] as String? ?? '')
-          : null,
-      endDate: map['end_date'] != null
-          ? DateTime.tryParse(map['end_date'] as String? ?? '')
-          : null,
+      startDate: _parseProjectDate(map['start_date']),
+      endDate: _parseProjectDate(map['end_date']),
       contractMonths: map['contract_months'] as int?,
       notes: map['notes'] as String?,
       totalAmount: map['total_amount'] as int? ?? 0,
@@ -199,6 +195,26 @@ class Project {
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }
+}
+
+DateTime? _parseProjectDate(dynamic value) {
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  final s = value as String;
+  if (s.isEmpty) return null;
+  // ISO 8601 format stored by toMap()
+  try {
+    return DateTime.parse(s);
+  } catch (_) {}
+  // YYYY/MM/DD format from UI
+  final parts = s.split('/');
+  if (parts.length == 3) {
+    final y = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final d = int.tryParse(parts[2]);
+    if (y != null && m != null && d != null) return DateTime(y, m, d);
+  }
+  return null;
 }
 
 /// マイルストーンモデル
