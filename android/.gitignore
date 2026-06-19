@@ -12,3 +12,5 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+# ただしリポジトリ管理する署名鍵は除外（パスワードは別管理）
+!/keystore/debug.keystore

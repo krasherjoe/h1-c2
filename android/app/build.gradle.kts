@@ -4,6 +4,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// 署名鍵の設定
+// ローカル: android/key.properties（git管理外）
+// CI:      Forgejo Secrets（RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD）
+val keystoreProps = java.util.Properties().apply {
+    val localFile = rootProject.file("../key.properties")
+    if (localFile.exists()) load(localFile.inputStream())
+}
+
 android {
     namespace = "com.h1.core"
     compileSdk = 36
@@ -31,11 +39,21 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(keystoreProps.getProperty("storeFile") ?: "../keystore/debug.keystore")
+            storePassword = keystoreProps.getProperty("storePassword")
+                ?: System.getenv("RELEASE_STORE_PASSWORD") ?: "android"
+            keyAlias = keystoreProps.getProperty("keyAlias")
+                ?: System.getenv("RELEASE_KEY_ALIAS") ?: "androiddebugkey"
+            keyPassword = keystoreProps.getProperty("keyPassword")
+                ?: System.getenv("RELEASE_KEY_PASSWORD") ?: "android"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs["release"]
         }
     }
 }

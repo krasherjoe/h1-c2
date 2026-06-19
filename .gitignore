@@ -48,6 +48,10 @@ gmail-mcp/credentials/*.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+# 署名鍵パスワード（git管理外）
+/android/key.properties
+# 署名鍵ファイル本体（リポジトリ管理）
+# /android/keystore/ は管理対象
 *.md
 !.ai/context.md
 .env
