@@ -1,213 +1,80 @@
 # リリースアーキテクチャ
 
+## バージョン番号ルール
+
+```
+v{MAJOR}.{MINOR}.{PATCH}
+```
+
+| パラメータ | 桁数 | 説明 |
+|-----------|------|------|
+| MAJOR | 任意 | 原則 1。大きな設計変更時にインクリメント |
+| MINOR | 任意 | 原則 3。大きな区切りのタイミングでインクリメント |
+| PATCH | **3桁** | リリースごとに +1。ゼロ埋め（001, 002, ..., 010, 099, 100） |
+
+**ルール:**
+- 機能追加でもバグ修正でも PATCH をインクリメント（基本的に MINOR のまま）
+- MINOR を上げるのは「DBスキーマ破壊的変更」や「大きな設計変更」など、区切りの良いタイミングのみ
+- PATCH は常に3桁で表記。例: `v1.3.008`、`v1.3.010`、`v1.4.001`
+
 ## 全体像
 
 ```
 [開発環境]
-  push_all.sh v1.x.x
+  push_all.sh v1.3.010
        │
        ├── ① ソースコード + タグ → git.cyberius.biz (Forgejo)
-       │                              │
-       │                              ├── ② Forgejo Action 発火（タグ検出）
-       │                              │        │
-       │                              │        ├── ③ ジョブ割当
-       │                              │        │
-       │                              ▼         ▼
-       │                       ┌──────────────┐
-       │                       │  Runner       │
-       │                       │  192.168.99.120│
-       │                       │  (PVE container)│
-       │                       │               │
-       │                       │  Docker:      │
-       │                       │  cirruslabs/  │
-       │                       │  flutter:3.44.0│
-       │                       │               │
-       │                       │  flutter build │
-       │                       │  → app-release│
-       │                       │     .apk      │
-       │                       └───────┬───────┘
-       │                               │
-       │                               ├── ④ GitHub Release 作成
-       │                               │    krasherjoe/h1-core
-       │                               │    https://github.com/.../releases/tag/v1.x.x
-       │                               │
-       │                               └── ⑤ 古いリリース削除（最新5件保持）
        │
-       └── ⑥ README → GitHub (gh worktree push)
+       ├── ② README → GitHub (gh worktree push)
+       │
+       ├── ③ flutter build apk --release (ローカル)
+       │    android/keystore/debug.keystore で署名
+       │
+       ├── ④ gh release create → GitHub Releases
+       │    https://github.com/.../releases/tag/v1.3.010
+       │
+       └── ⑤ 古いリリース削除（最新5件のみ保持）
 ```
+
+**全てローカルで完結**。Forgejo Action は使用しない。
 
 ## コンポーネント
 
 ### git.cyberius.biz（Forgejo）
 
-- **役割**: ソースコード管理 + Actions トリガー
+- **役割**: ソースコード管理
 - **URL**: `ssh://git@git.cyberius.biz/joe/h1-core.git`
 - **認証**: SSH (公開鍵)
-- **Actions トリガー条件**: タグ `v*` のプッシュ
 - **実体**: `www.cyberius.biz:5000` 上のコンテナ（osa ユーザーの環境）
-- **リポジトリ設定**: GitHub のミラーとして運用。GitHub Release は Forgejo の GH_TOKEN Secret から gh CLI 経由で作成
-
-### Runner（192.168.99.120 / hostname: forgejo）
-
-- **役割**: Forgejo Action のジョブを実際に実行する
-- **OS**: PVE 上のコンテナ
-- **ホスト名**: `forgejo`
-- **SSH**: `ssh git`（設定: `~/.ssh/config` → `Host git`）
-- **場所**: `192.168.99.120:22`（LAN 内）
-- **作業ディレクトリ**: `/root/runner/`
-- **プロセス**: `forgejo-runner daemon --config /root/runner/config.yml`
-- **サービス**: `forgejo-runner.service`（systemd, 自動起動）
-- **ログ**: `journalctl -u forgejo-runner -f`
-
-**注意**: このコンテナ内には他プロジェクトの Forgejo も同居している。**触ってはならない。**
-
-### Docker イメージ（ghcr.io/cirruslabs/flutter:3.44.0）
-
-- **ベース**: Ubuntu 24.04
-- **Flutter**: 3.44.0（Dart 3.12.0）
-- **Android SDK**: 同梱（APK ビルド可能）
-- **容量**: 2.28GB（Content）/ 7.08GB（Total）
-- **代替**: `ghcr.io/cirruslabs/flutter:3.12.0` もキャッシュ済み（1.36GB）
-- **runner 設定**: `config.yml` のラベル指定:
-
-```yaml
-labels:
-  - ubuntu-latest:docker://ghcr.io/cirruslabs/flutter:3.44.0
-```
 
 ### GitHub（krasherjoe/h1-core）
 
 - **公開内容**: APK ファイル + README.md のみ
 - **Release URL**: `https://github.com/krasherjoe/h1-core/releases`
-- **認証**: `GH_TOKEN`（Personal Access Token, repo 権限）
-- **Secret 保存場所**: git.cyberius.biz のリポジトリ設定 → Actions Secrets → `GH_TOKEN`
+- **認証**: gh CLI（GITHUB_TOKEN 環境変数、開発マシン上で `gh auth login` 済み）
 
 ### 開発環境（ローカルマシン）
 
 - **物理**: PVE 上の別コンテナ
 - **OS**: Linux
 - **ツール**: Flutter SDK, Android SDK, gh CLI, OpenCode
-- **リリーススクリプト**: `scripts/push_all.sh`
+- **リリーススクリプト**: `scripts/push_all.sh`（一発で全工程を実行）
 
-## リリースフロー詳細
-
-### ローカルリリース（push_all.sh）
+## リリースフロー
 
 ```
-./scripts/push_all.sh v1.x.x
+./scripts/push_all.sh v1.3.010
 ```
 
-| ステップ | 処理 | 対象 |
-|---------|------|------|
-| 1/3 | git push origin (ソースコード + タグ) | git.cyberius.biz |
-| 2/3 | README 更新 | GitHub main |
-| 3/3 | 完了表示 | - |
+| ステップ | 処理 |
+|---------|------|
+| 1/5 | git push origin (ソースコード + タグ) |
+| 2/5 | README 更新（GitHub worktree push） |
+| 3/5 | flutter build apk --release（ローカルビルド） |
+| 4/5 | gh release create（GitHub Release 作成） |
+| 5/5 | 古いリリース削除（最新5件のみ保持） |
 
-APK ビルドと GitHub Release 作成は Forgejo Action が自動実行する。ローカルではビルドしない。
-
-### Forgejo Action リリース（自動）
-
-タグ `v*` を git.cyberius.biz にプッシュすると自動起動:
-
-| ステップ | 処理 | 実行環境 |
-|---------|------|---------|
-| 1 | apt で gh CLI インストール | Docker コンテナ |
-| 2 | actions/checkout@v4 | Docker コンテナ |
-| 3 | flutter pub get | Docker コンテナ |
-| 4 | flutter build apk --release | Docker コンテナ |
-| 5 | gh release create (GitHub Release) | Docker コンテナ |
-| 6 | 古いリリース削除（最新5件保持） | Docker コンテナ |
-
-**トリガー条件**: `on push tags: 'v*'`
-
-### リリースフロー
-
-```mermaid
-sequenceDiagram
-    participant Dev as 開発者
-    participant Forgejo as git.cyberius.biz
-    participant Runner as Runner(192.168.99.120)
-    participant GH as GitHub Releases
-
-    Dev->>Forgejo: git push origin (ソースコード + タグ v*)
-    Dev->>Dev: push_all.sh (pushのみ, ビルドなし)
-    
-    Forgejo->>Runner: ジョブ割当（タグプッシュ検出）
-    Runner->>Runner: Docker起動(cirruslabs/flutter:3.44.0)
-    Runner->>Runner: apt install gh
-    Runner->>Runner: flutter pub get
-    Runner->>Runner: flutter build apk
-    Runner->>GH: gh release create
-    Runner->>GH: 古いリリース削除（最新5件保持）
-    
-    Note over GH: Forgejo Action が全てのビルド・リリースを担当
-```
-
-## ワークフロー定義
-
-`.forgejo/workflows/build.yml`:
-
-```yaml
-name: Build & Release
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 依存関係インストール
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq ca-certificates curl gnupg gh
-          mkdir -p /etc/apt/keyrings
-          curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-          echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
-          apt-get update -qq
-          apt-get install -y -qq nodejs
-          node --version
-
-      - uses: actions/checkout@v4
-
-      - run: flutter pub get
-
-      - name: APKビルド
-        run: |
-          flutter build apk --release --dart-define=APP_VERSION="${{ github.ref_name }}"
-
-      - name: GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          APK_NAME="h1-core-${{ github.ref_name }}.apk"
-          cp build/app/outputs/flutter-apk/app-release.apk "/tmp/$APK_NAME"
-          LOG=$(git log --oneline --no-decorate "$(git tag --sort=-creatordate | head -1)"..HEAD 2>/dev/null || true)
-          BODY="## ${{ github.ref_name }} 変更点"
-          if [ -n "$LOG" ]; then
-            BODY="$BODY"$'\n'"$LOG"
-          fi
-          gh release view "${{ github.ref_name }}" --repo krasherjoe/h1-core &>/dev/null \
-            && gh release delete "${{ github.ref_name }}" --repo krasherjoe/h1-core --yes
-          gh release create "${{ github.ref_name }}" \
-            --repo krasherjoe/h1-core \
-            --title "${{ github.ref_name }}" \
-            --notes "$BODY" \
-            "/tmp/$APK_NAME#$APK_NAME"
-
-      - name: 古いリリース削除（最新5件のみ保持）
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          gh release list --limit 200 --repo krasherjoe/h1-core --json tagName --jq '.[].tagName' \
-            | sort -V \
-            | head -n -5 \
-            | while read tag; do
-                echo "  削除: $tag"
-                gh release delete "$tag" --repo krasherjoe/h1-core --yes 2>/dev/null || true
-              done
-```
+**注意:** 鍵は `android/keystore/debug.keystore`（リポジトリ管理）。パスワードはデフォルトの debug 用。`key.properties`（gitignore）はローカルでパスワード上書きが必要な場合のみ使用。
 
 ## SSH 接続設定
 

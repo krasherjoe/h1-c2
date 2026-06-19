@@ -322,11 +322,18 @@ Mattermost h1-debugチャンネル経由で `!opencode <cmd>` 形式のコマン
 - **origin**: `ssh://git@git.cyberius.biz/joe/h1-core.git`（ソースコード用, Forgejo）
 - **github**: `https://github.com/krasherjoe/h1-core.git`（APK+READMEのみ公開）
 - **絶対にGitHubにソースコードをpushしない**
-- リリース: `scripts/push_all.sh v1.x.x`（ソースコードpush + README更新のみ）
-- APKビルド・GitHub Release作成は **Forgejo Action** が自動実行
-- Forgejo Action の runner は PVE コンテナ（`192.168.99.120`）上で稼働
-- Runner の Docker イメージ: `ghcr.io/cirruslabs/flutter:3.44.0`
-- GitHubリリースは最新5件のみ保持（Actionが自動削除）
+- リリース: `scripts/push_all.sh v1.3.010`（一発で全工程実行）
+- push_all.sh が **ソースコードpush → README更新 → ローカルAPKビルド → GitHub Release** まで一貫実行
+- APK署名: `android/keystore/debug.keystore`（リポジトリ管理、パスワードはデフォルトdebug）
+- GitHubリリースは最新5件のみ保持（push_all.sh が自動削除）
+- Forgejo Action は使用しない（ローカルビルドに統一）
+
+### バージョン番号ルール
+
+フォーマット: `v{Major}.{Minor}.{Patch}`
+- PATCH は **3桁** で表記（ゼロ埋め）。例: `v1.3.001`, `v1.3.010`, `v1.3.100`
+- 機能追加もバグ修正も **PATCH をインクリメント**（MINOR は原則変えない）
+- MINOR を上げるのは DBスキーマ破壊的変更など区切りの良いタイミングのみ
 
 ### SSH 接続
 

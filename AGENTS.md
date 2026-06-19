@@ -26,13 +26,20 @@ github: https://github.com/krasherjoe/h1-core.git
 
    ```bash
    # 一発スクリプト (推奨)
-   ./scripts/push_all.sh v1.1.0
+   ./scripts/push_all.sh v1.3.010
    ```
 
-   `push_all.sh` はソースコードpush + README更新のみ行う。
-   APKビルドとGitHub Release作成は **Forgejo Action** が自動実行する（タグ `v*` のpushを検出）。
+   `push_all.sh` が **ソースコードpush → README更新 → ローカルAPKビルド → GitHub Release** まで一貫実行。
 
 3. **README.md**: `push_all.sh` が自動的にGitHubにpushする。大幅な変更があった場合も同様。
+
+### バージョン番号ルール
+
+フォーマット: `v{Major}.{Minor}.{Patch}`
+
+- PATCH は **3桁** で表記（ゼロ埋め）。例: `v1.3.001`, `v1.3.010`, `v1.3.100`
+- 機能追加もバグ修正も **PATCH をインクリメント**（MINOR は原則変えない）
+- MINOR を上げるのは DBスキーマ破壊的変更など区切りの良いタイミングのみ
 
 ## プロジェクト概要
 
