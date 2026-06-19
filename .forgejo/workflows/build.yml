@@ -38,6 +38,8 @@ jobs:
           if [ -n "$LOG" ]; then
             BODY="$BODY"$'\n'"$LOG"
           fi
+          gh release view "${{ github.ref_name }}" --repo krasherjoe/h1-core &>/dev/null \
+            && gh release delete "${{ github.ref_name }}" --repo krasherjoe/h1-core --yes
           gh release create "${{ github.ref_name }}" \
             --repo krasherjoe/h1-core \
             --title "${{ github.ref_name }}" \
