@@ -3,9 +3,6 @@ import '../../explorer/h1_explorer_config.dart';
 import '../models/project_explorer_item.dart';
 import '../screens/project_detail_screen.dart';
 import '../../../services/project_repository.dart';
-import '../../../services/database_helper.dart';
-import '../../../services/customer_repository.dart';
-import '../../../models/customer_model.dart';
 import '../../../models/project_model.dart';
 
 class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
@@ -136,101 +133,8 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
       ];
 
   Future<void> _createProject(BuildContext context) async {
-    final cs = Theme.of(context).colorScheme;
-    final type = await showModalBottomSheet<String>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('案件の種類を選択', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: cs.onSurface)),
-          ),
-          const Divider(),
-          ListTile(
-            leading: Icon(Icons.trending_up, color: cs.primary),
-            title: const Text('売上案件'),
-            subtitle: const Text('見積→受注→納品→請求のパイプライン'),
-            onTap: () => Navigator.pop(ctx, 'sales'),
-          ),
-          ListTile(
-            leading: Icon(Icons.code, color: cs.tertiary),
-            title: const Text('開発案件'),
-            subtitle: const Text('契約期間のある案件管理'),
-            onTap: () => Navigator.pop(ctx, 'development'),
-          ),
-          ListTile(
-            leading: Icon(Icons.payments, color: cs.error),
-            title: const Text('回収案件'),
-            subtitle: const Text('未回収請求の追跡'),
-            onTap: () => Navigator.pop(ctx, 'collection'),
-          ),
-          ListTile(
-            leading: Icon(Icons.more_horiz, color: cs.onSurfaceVariant),
-            title: const Text('その他'),
-            onTap: () => Navigator.pop(ctx, 'other'),
-          ),
-          const SizedBox(height: 8),
-        ]),
-      ),
-    );
-    if (type == null || !context.mounted) return;
-
-    String? customerId;
-    String? customerName;
-
-    final pickCustomer = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('取引先'),
-        content: const Text('取引先を選択しますか？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('スキップ')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('選択する')),
-        ],
-      ),
-    );
-    if (pickCustomer == true && context.mounted) {
-      final db = await DatabaseHelper().database;
-      final customers = await db.query('customers',
-        columns: ['id', 'display_name'],
-        where: 'is_current = 1 AND deleted_at IS NULL',
-        orderBy: 'display_name ASC',
-      );
-      if (!context.mounted) return;
-      final selected = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('取引先を選択'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: customers.length,
-              itemBuilder: (_, i) => ListTile(
-                dense: true,
-                title: Text(customers[i]['display_name'] as String? ?? ''),
-                onTap: () => Navigator.pop(ctx, customers[i]),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-          ],
-        ),
-      );
-      if (selected != null) {
-        customerId = selected['id'] as String?;
-        customerName = selected['display_name'] as String?;
-      }
-    }
-    if (!context.mounted) return;
-
-    final nameCtl = TextEditingController(
-      text: type == 'collection' && customerName != null
-          ? '${customerName} 回収'
-          : '',
-    );
-    final result = await showDialog<String>(
+    final nameCtl = TextEditingController();
+    final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('新規案件'),
@@ -255,14 +159,19 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
         ],
       ),
     );
-    if (result != null && context.mounted) {
+    if (name == null) return;
+    try {
       await ProjectRepository().createProject(
-        name: result,
-        customerId: customerId ?? '',
-        customerName: customerName ?? '',
-        type: type,
+        name: name,
+        customerId: '',
+        customerName: '',
       );
       onListChanged?.call();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('作成エラー: $e')),
+      );
     }
   }
 
