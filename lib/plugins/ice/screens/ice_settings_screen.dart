@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:h_1_core/services/company_service.dart';
+import 'package:h_1_core/services/ssh_tunnel_service.dart';
 import 'package:h_1_core/utils/theme_utils.dart';
 import '../services/ice_api_server.dart';
 
@@ -16,7 +17,7 @@ class IceSettingsScreen extends StatefulWidget {
 class _IceSettingsScreenState extends State<IceSettingsScreen> {
   final _portController = TextEditingController(text: '8080');
   final _sshConfigController = TextEditingController();
-  final _sshPubKeyController = TextEditingController();
+  final _sshPrivateKeyController = TextEditingController();
   bool _running = false;
   String? _error;
   String? _info;
@@ -30,11 +31,11 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     _loadSshFiles();
   }
 
-  @override
+ @override
   void dispose() {
     _portController.dispose();
     _sshConfigController.dispose();
-    _sshPubKeyController.dispose();
+    _sshPrivateKeyController.dispose();
     super.dispose();
   }
 
@@ -49,9 +50,9 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
         _sshConfigController.text = await configFile.readAsString();
       }
 
-      final pubKeyFile = File('${sshDir.path}/id_ed25519.pub');
-      if (await pubKeyFile.exists()) {
-        _sshPubKeyController.text = await pubKeyFile.readAsString();
+      final privateKeyFile = File('${sshDir.path}/id_ed25519');
+      if (await privateKeyFile.exists()) {
+        _sshPrivateKeyController.text = await privateKeyFile.readAsString();
       }
     } catch (e) {
       debugPrint('[IceSettings] SSH load error: $e');
@@ -64,6 +65,9 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       final file = File('${dir.path}/.ssh/config');
       await file.parent.create(recursive: true);
       await file.writeAsString(_sshConfigController.text);
+
+      SshTunnelService.instance.configText = _sshConfigController.text;
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('SSH config 保存完了')),
@@ -78,15 +82,18 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     }
   }
 
-  Future<void> _saveSshPubKey() async {
+  Future<void> _saveSshPrivateKey() async {
     try {
       final dir = await CompanyService.getCompanyDirectory();
-      final file = File('${dir.path}/.ssh/id_ed25519.pub');
+      final file = File('${dir.path}/.ssh/id_ed25519');
       await file.parent.create(recursive: true);
-      await file.writeAsString(_sshPubKeyController.text);
+      await file.writeAsString(_sshPrivateKeyController.text);
+
+      SshTunnelService.instance.keyText = _sshPrivateKeyController.text;
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('公開鍵 保存完了')),
+          const SnackBar(content: Text('秘密鍵 保存完了')),
         );
       }
     } catch (e) {
@@ -151,7 +158,7 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
           const SizedBox(height: 16),
           _buildSshConfigEditor(cs, textColor),
           const SizedBox(height: 16),
-          _buildSshPubKeyEditor(cs, textColor),
+           _buildSshPrivateKeyEditor(cs, textColor),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Card(
@@ -355,25 +362,25 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     );
   }
 
-  Widget _buildSshPubKeyEditor(ColorScheme cs, Color textColor) {
+  Widget _buildSshPrivateKeyEditor(ColorScheme cs, Color textColor) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('公開鍵 (id_ed25519.pub)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+            Text('秘密鍵 (id_ed25519)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
             const SizedBox(height: 4),
-            Text('${_sshDir ?? ""}/id_ed25519.pub',
+            Text('${_sshDir ?? ""}/id_ed25519',
               style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant, fontFamily: 'monospace')),
             const SizedBox(height: 8),
             TextFormField(
-              controller: _sshPubKeyController,
-              maxLines: 4,
+              controller: _sshPrivateKeyController,
+              maxLines: 16,
               style: TextStyle(fontSize: 12, color: textColor, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
-                hintText: 'ssh-ed25519 AAAA...',
+                hintText: '-----BEGIN OPENSSH PRIVATE KEY-----\nAAAAB3NzaC1...',
                 hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.4), fontFamily: 'monospace'),
                 contentPadding: const EdgeInsets.all(12),
                 isDense: true,
@@ -383,7 +390,7 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton.icon(
-                onPressed: _saveSshPubKey,
+                onPressed: _saveSshPrivateKey,
                 icon: const Icon(Icons.save, size: 16),
                 label: const Text('保存'),
               ),

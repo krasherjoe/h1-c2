@@ -23,7 +23,7 @@ Future<R> _mmLog<R>(String label, Future<R> Function() fn) async {
     final elapsed = DateTime.now().millisecondsSinceEpoch - t0;
     debugPrint('[MM-POLL-DBG] ✗ $label FAIL (${elapsed}ms): $e');
     try {
-      await ErrorReporter.sendError(
+      ErrorReporter.sendError(
         message: '[MM-POLL-DBG] $label FAIL: $e',
         detail: st.toString(),
       );

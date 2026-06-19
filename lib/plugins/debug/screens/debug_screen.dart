@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/debug_service.dart';
 import '../services/update_service.dart';
 import '../../../services/preview_settings_service.dart';
@@ -6,6 +7,7 @@ import '../../../services/google_auth_service.dart';
 import '../../../services/mm_command_service.dart';
 import '../../../services/sheets_sync_service.dart';
 import '../../../services/gemini_ocr_service.dart';
+import '../../../services/ssh_tunnel_service.dart';
 import '../../../widgets/h1_text_field.dart';
 import '../../../constants/screen_ids.dart';
 
@@ -35,6 +37,9 @@ class _DebugScreenState extends State<DebugScreen> {
   }
 
   Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _configCtrl.text = prefs.getString('ssh_config') ?? '';
+    _keyCtrl.text = prefs.getString('ssh_key') ?? '';
     await _service.loadConfig();
     _maxPages = await loadMaxPreviewPages();
     if (!mounted) return;
@@ -209,6 +214,8 @@ class _DebugScreenState extends State<DebugScreen> {
           _infoCard(),
           const SizedBox(height: 12),
           _updateCard(cs),
+          const SizedBox(height: 12),
+          _sshCard(cs),
         ],
       ),
     );
@@ -502,6 +509,129 @@ class _DebugScreenState extends State<DebugScreen> {
           Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w500)),
           Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
         ],
+      ),
+    );
+  }
+
+  final _configCtrl = TextEditingController();
+  final _keyCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _configCtrl.dispose();
+    _keyCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sshConnect() async {
+    SshTunnelService.instance.configText = _configCtrl.text;
+    SshTunnelService.instance.keyText = _keyCtrl.text;
+    await SshTunnelService.instance.connect();
+  }
+
+  Future<void> _saveSshConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('ssh_config', _configCtrl.text);
+    await prefs.setString('ssh_key', _keyCtrl.text);
+  }
+
+  Future<void> _sshDisconnect() async {
+    await SshTunnelService.instance.disconnect();
+  }
+
+  Widget _sshCard(ColorScheme cs) {
+    final ssh = SshTunnelService.instance;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('SSHトンネル', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ValueListenableBuilder<String>(
+              valueListenable: ssh.statusNotifier,
+              builder: (ctx, status, _) => Row(
+                children: [
+                  Icon(Icons.tune, size: 18, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  const Text('SSH接続'),
+                  const Spacer(),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ssh.onlineNotifier,
+                    builder: (ctx, online, _) {
+                      return Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: online ? cs.tertiary : cs.error,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(status, style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+            if (ssh.errorNotifier.value != null) ...[
+              const SizedBox(height: 4),
+              Text(ssh.errorNotifier.value!, style: TextStyle(fontSize: 12, color: cs.error)),
+            ],
+            const SizedBox(height: 8),
+            TextField(
+              controller: _configCtrl,
+              maxLines: 6,
+              onChanged: (_) => _saveSshConfig(),
+              decoration: const InputDecoration(
+                labelText: 'SSH config',
+                hintText: '# Host pve1\n#   HostName answer.mydns.jp\n#   Port 22252\n#\n# Host labo\n#   HostName 192.168.55.103\n#   ProxyJump pve1\n#\n# Host gui1\n#   HostName 10.0.100.130\n#   ProxyJump labo',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _keyCtrl,
+              maxLines: 4,
+              onChanged: (_) => _saveSshConfig(),
+              decoration: const InputDecoration(
+                labelText: '秘密鍵',
+                hintText: '-----BEGIN OPENSSH PRIVATE KEY-----\n...',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ValueListenableBuilder<bool>(
+              valueListenable: ssh.onlineNotifier,
+              builder: (ctx, online, _) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: online ? null : _sshConnect,
+                        icon: const Icon(Icons.link, size: 18),
+                        label: Text(online ? 'ONLINE' : '接続'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: !online ? null : _sshDisconnect,
+                        icon: const Icon(Icons.link_off, size: 18),
+                        label: Text(online ? 'OFFLINE' : '切断'),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
