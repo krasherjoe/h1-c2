@@ -1,5 +1,5 @@
 #!/bin/bash
-# ソースコードpush + ローカルAPKビルド + GitHub Release 一発スクリプト
+# ソースコードpush + ローカルAPKビルド + GitHub Release 一発スクリプト（Action廃止）
 # 使い方: ./scripts/push_all.sh <バージョン>
 # 例: ./scripts/push_all.sh v1.1.0
 set -e
@@ -25,7 +25,7 @@ echo ""
 echo "=== タグ $VERSION を origin にpush ==="
 git tag -f "$VERSION" 2>/dev/null || git tag "$VERSION"
 git push origin "$VERSION" 2>/dev/null || true
-echo "✅ タグ $VERSION をpush完了（Forgejo Action も起動するが、ローカルビルドが優先）"
+echo "✅ タグ $VERSION をpush完了"
 
 # === 2. README → GitHub ===
 echo ""
