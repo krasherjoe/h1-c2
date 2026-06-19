@@ -1,245 +1,143 @@
 # AI Agents向け開発ガイドライン
 
-## リポジトリ管理の重要なルール
+このファイルはあらゆるAI（OpenCode, Claude, Devin等）が最初に読むエントリポイント。
+補足の参考資料は `.ai/context.md`（技術スタック・設計・規約）。
 
-### ⚠️ 絶対に守ること
+---
 
-**GitHubにソースコードをアップロードしてはならない**
+## 🔴 絶対ルール
 
-- **GitHub (https://github.com/krasherjoe/h1-core)**: APKファイルとREADME.mdの公開専用
-- **git.cyberius.biz (ssh://git@git.cyberius.biz/joe/h1-core.git)**: ソースコード管理用の本当のリポジトリ
-
-### リモートリポジトリ設定
-
-```bash
-# ソースコード用 (メインリポジトリ)
-origin: ssh://git@git.cyberius.biz/joe/h1-core.git
-
-# APK公開用 (ソースコードは絶対にpushしない)
-github: https://github.com/krasherjoe/h1-core.git
-```
-
-### 運用フロー
-
-1. **ソースコードの変更**: `git push origin <branch>` でgit.cyberius.bizにpush
-2. **APKのリリース**: 以下の手順で行う:
-
-   ```bash
-   # 一発スクリプト (推奨)
-   ./scripts/push_all.sh v1.3.010
-   ```
-
-   `push_all.sh` が **ソースコードpush → README更新 → ローカルAPKビルド → GitHub Release** まで一貫実行。
-
-3. **README.md**: `push_all.sh` が自動的にGitHubにpushする。大幅な変更があった場合も同様。
-
-### バージョン番号ルール
-
-フォーマット: `v{Major}.{Minor}.{Patch}`
-
-- PATCH は **3桁** で表記（ゼロ埋め）。例: `v1.3.001`, `v1.3.010`, `v1.3.100`
-- 機能追加もバグ修正も **PATCH をインクリメント**（MINOR は原則変えない）
+### バージョン番号
+- フォーマット: `v{Major}.{Minor}.{PATCH}` — PATCHは**必ず3桁ゼロ埋め**
+- 例: `v1.3.001`, `v1.3.010`, `v1.3.100` （`v1.3.1`や`v1.3.10`は**禁止**）
+- 機能追加もバグ修正も PATCH をインクリメント。MINOR は原則変えない
 - MINOR を上げるのは DBスキーマ破壊的変更など区切りの良いタイミングのみ
+- リリース前に必ず `pubspec.yaml` のバージョンを確認する
+
+### リポジトリ
+- **絶対にソースコードをGitHubにpushしてはならない**
+- origin: `ssh://git@git.cyberius.biz/joe/h1-core.git`（Forgejo, ソースコード用）
+- github: `https://github.com/krasherjoe/h1-core.git`（APK+READMEのみ）
+- リリース: `bash scripts/push_all.sh v1.3.010`（一発で全工程＝ソースpush → README更新 → ローカルAPKビルド → GitHub Release）
+- Forgejo Action は使用しない（ローカルビルドに統一）
+
+### APK署名
+- 鍵: `android/keystore/debug.keystore`（リポジトリ管理の共通鍵）
+- パスワードはデフォルトdebug。`key.properties`（gitignore）で上書き可能
+- **この鍵が変わると既存ユーザーのデータが全損する**。絶対に別の鍵で署名しない
+
+### Google Client ID
+- Android用 Client ID は `android/app/src/main/res/values/strings.xml` の `default_web_client_id` — **絶対に削除しない**
+- iOS/Web用は `.env` + `--dart-define-from-file=.env` で注入（`.env` はgit管理外）
+- Client Secret は不要（Flutterは公開クライアント）
+
+### コード変更時の確認手順
+1. 既存パターンを確認してから書く（近隣ファイルを読む）
+2. 削除前に全参照を確認する（特に定数・設定値・Client ID）
+3. 変更後は必ず `dart analyze` を通す（エラーを0にする）
+4. コミット前に `git diff --stat` で意図したファイルだけが変わることを確認
+5. ビルド成果物（`build/`, `*.apk`, `problems-report`）が含まれていないか確認
+
+---
 
 ## プロジェクト概要
 
-**h-1-core** (販売アシスト1号 コア版)
-- 請求書・領収証発行
-- 顧客・商品マスター管理
+**h-1-core**（販売アシスト1号 コア版）
+- 請求書・領収証発行、顧客・商品マスター管理
 - Flutter製マルチプラットフォームアプリケーション
+- 状態管理: StatefulWidget + ValueNotifier + シンプルサービスクラス
 
-### 技術スタック
+基本設計思想は `docs/electronic_bookkeeping_hash_chain_justification.md` を参照。
 
-- Flutter SDK 3.12.0以上
-- sqflite (ローカルデータベース)
-- PDF生成 (pdf, printing)
-- その他: path_provider, intl, crypto, uuid, shared_preferences
+---
 
-## 基本思想（設計原則）
+## コンテキスト管理
 
-**このシステムをコーディングする際の根本的な設計思想は `docs/electronic_bookkeeping_hash_chain_justification.md` に記載されている。必読。**
+OpenCodeセッションへの知識注入は `.ai/context.md` を `.opencode/opencode.json` の `instructions` 経由で直接注入。
+`.ai/context.md` を更新すれば即座に全セッションの知識が最新になる。
 
-### 要約
+---
 
-1. **メインDBは自由** - 電帳法の真の要件は「PDF再現可能」であり、DBの不変性ではない
-2. **PDF生成JSONにHash Chainを適用** - 電帳法要件を充足する対象はこれだけ
-3. **数学的事実は法的解釈に依存しない** - Hash chainの改ざん防止効果は数学的に保証
+## タスク管理（`.deepseek/`）
 
-### コーディング時の指針
-
-- メインDBは自由に変更・最適化可能
-- PDF生成時に必要なデータを電帳法テーブルに保存
-- 電帳法テーブルのJSONにHash chainを適用
-- PDFはJSONから再現可能
-
-## コンテキスト管理（RAG廃止→直読方式）
-
-OpenCodeセッションへのプロジェクト知識の注入は、**ベクトルDBのRAGを使わず** `.ai/context.md` をシステムプロンプトに直接注入する方式に統一。
-
-- `opencode-rag-plugin` は無効化済み
-- `.opencode/rag_db/` は削除済み
-- RAGの代わりに `.opencode/opencode.json` の `instructions` 経由で `.ai/context.md` を全セッションに自動注入
-- `.ai/context.md` を更新すれば即座に全セッションの知識が最新になる
-
-## OpenCode連携システム
-
-### 概要
-
-OpenCode（DeepSeek V4 Flash OpenCode）との連携用に `.deepseek/` ディレクトリを使用します。
-タスクをファイルとして配置し、OpenCodeが読んで実装する仕組みです。
-
-### ディレクトリ構造
+タスクはファイルで管理する。OpenCodeがファイルを監視して実装、Cascade（Claude）がレビュー。
 
 ```
 .deepseek/
 ├── tasks/
-│   ├── inbox/          # 新規タスクを置く場所
-│   ├── in_progress/    # OpenCodeが作業中のタスク
-│   └── completed/      # 完了したタスク
-├── context/            # プロジェクトコンテキスト情報（.ai/context.mdに集約済み）
+│   ├── inbox/          新規タスク（YYYYMMDD_HHMM_タスク名.md）
+│   │   └── TEMPLATE.md  テンプレート
+│   ├── in_progress/    OpenCode作業中
+│   └── completed/      完了
 ├── questions/
-│   ├── pending/
-│   └── answered/
+│   ├── pending/        回答待ち（YYYYMMDD_HHMM_質問.md）
+│   └── answered/       回答済み
 └── README.md
 ```
 
-### タスク作成ルール
-
-1. **ファイル名**: `YYYYMMDD_HHMM_タスク名.md`
-   - 例: `20260601_1730_プラグインシステム実装.md`
-
-2. **優先度**: ファイル名の先頭に付与可能
-   - `P1_` = 最優先
-   - `P2_` = 通常（デフォルト）
-   - `P3_` = 低優先
-
-3. **テンプレート**: `.deepseek/tasks/inbox/TEMPLATE.md` を参照
-
 ### ワークフロー
 
-```
-[あなた] タスク作成
-  ↓
-.deepseek/tasks/inbox/[タスク].md
-  ↓
-[OpenCode] タスク発見・作業開始
-  ↓
-.deepseek/tasks/in_progress/[タスク].md
-  ↓ 不明点があれば
-.deepseek/questions/pending/[タスク]_質問.md  ← 質問状を出す
-  ↓
-[あなた] 回答を記入 → answered/ に移動
-.deepseek/questions/answered/[タスク]_質問.md
-  ↓
-[OpenCode] 回答を読んで作業再開
-  ↓
-[OpenCode] 実装完了
-  ↓
-.deepseek/tasks/completed/[タスク].md
-  ↓
-[あなた] レビュー & マージ
-```
+Cascade → inbox (タスク投函) → OpenCode → in_progress (実装中) → 不明点は pending → Cascade → answered → 再開 → completed → Cascadeレビュー → マージ
 
-### 質問状のルール（OpenCode向け）
+### 質問状ルール
 
-**質問状を出すべき場面:**
-- タスクの要件が矛盾している
-- 設計の方向性を確認したい
-- 複数の実装方法があり選択が必要
-- 参照先ファイルが見つからない
+出すべき場面: 要件矛盾、設計確認、複数の実装方法、参照先不明。
+質問状は `questions/pending/` に作成。回答は `answered/` に移動されたら確認。
 
-**質問状の作り方:**
-1. `questions/pending/` に質問ファイルを作成
-2. ファイル名: `YYYYMMDD_HHMM_[タスク名]_質問.md`
-3. テンプレート: `.deepseek/questions/pending/TEMPLATE.md` を参照
-4. 作業中タスクは `in_progress/` に残したまま待機すること
-
-**回答の確認:**
-- `questions/answered/` にファイルが移動していたら回答済み
-- 回答欄を読んで作業を再開すること
-
-### エージェントの役割分担
+### エージェント役割
 
 - **Cascade (Claude)**: タスク設計・投函・レビュー
-- **OpenCode (DeepSeek V4 Flash)**: コーディング・実装・テスト・GitHubリリース（APK公開）
+- **OpenCode (DeepSeek V4 Flash)**: コーディング・実装・テスト・GitHubリリース
 
-### タスク作成のコツ
+---
 
-- **具体的に書く**: 曖昧な指示は避ける
-- **参考を示す**: 既存コードや設計書を参照
-- **制約を明記**: やってはいけないことを書く
-- **期待する出力を明示**: どのような実装を期待するか
+## mmcheck 手順
 
-### 注意事項
+1. `mattermost_get_channel_messages(channel_id: "n6fr87ipuj8epc463o7fu7gdao", limit: 10)`
+2. `### ⚠️ h-1-core エラー報告` を含む投稿を探す
+3. 内容（version, message, detail, screen, stack）を解析し原因特定・修正
+4. ユーザーに日本語で報告する
 
-⚠️ `.deepseek/` ディレクトリは **git.cyberius.biz にのみpush**  
-⚠️ GitHubにはソースコードを含むディレクトリをpushしない
+## MM Command Bridge
 
-## 用語
+Mattermost h1-debug 経由で `!opencode <cmd>` 形式のリモートコマンドを受信・実行（15秒間隔ポーリング、PAT認証）。
 
-- **oldh1**: 販売アシスト1号の旧バージョン（h1-core以前）。`lib/screens/` 以下の旧UIコードを指す。`InvoicePdfPreviewPage` など。
-- **mm / mmcheck**: Mattermost の接続状態を確認すること。MCPサーバーの Mattermost tools (`mattermost_get_user_status`, `mattermost_get_channel_messages` 等) を使用してチェックする。コード内の `DebugConsole` にも `mmcheck` コマンドが登録されている。
-
-### mmcheck の正しい使い方
-
-ユーザーから `mmcheck` または `mm` と言われたら以下の手順を実行すること:
-
-1. `mattermost_get_channel_messages` で `channel_id: "n6fr87ipuj8epc463o7fu7gdao"` (h1-debugチャンネル) のメッセージを取得する
-2. `limit: 10` 程度で最新のメッセージを取得
-3. メッセージの中から `### ⚠️ h-1-core エラー報告` を含む投稿を探す
-4. エラーメッセージの内容（version, message, detail, screen, stack）を解析し、問題の原因を特定する
-5. 特定した原因をユーザーに日本語で報告する
-6. エラーがある場合は、該当するコードを調査して修正する
-
-詳細は `.deepseek/README.md` を参照してください。
-
-### MM Command Bridge (開発者用リモートコマンド)
-
-Mattermost の h1-debug チャンネル経由でアプリにコマンドを送信し、実行結果を取得できるシステム。
-
-#### アーキテクチャ
-
-```
-Mattermost h1-debug
-  └─ `!opencode <cmd> [args...]` と投稿
-       ↓ (15秒間隔ポーリング)
-MmCommandService._poll()
-  └─ DebugConsole.call(name, args)
-       ↓
- 結果をスレッド返信
-```
-
-#### 設定手順
-
-1. デバッグ画面（`DB:デバッグ`）を開く
-2. 「PAT設定」から Mattermost の Personal Access Token を入力
-3. 「MMポーリング」をONにする
-4. h1-debug チャンネルに `!opencode ping` と投稿 → `pong` が返れば成功
-
-#### 利用可能なコマンド
+### 利用可能コマンド
 
 | コマンド | 説明 |
 |---------|------|
-| `ping` | 疎通確認 → `pong` |
+| `ping` | 疎通確認 |
 | `mmcheck` | Mattermost API疎通診断 |
 | `system.status` | システム状態（DBサイズ、登録数等） |
+| `system.env` | 環境設定表示 |
 | `system.dump` | 全状態ダンプ |
-| `db.send` | DBファイルをMMにアップロード |
-| `db.snapshot` | DBスナップショット作成 |
-| `db.restore <index>` | スナップショット復元 |
-| `documents.stats` | 伝票統計（種別ごと件数） |
+| `google.status` | Google認証状態表示 |
+| `db.send` | DBをMMにアップロード |
+| `db.snapshot` / `db.restore` | DBスナップショット管理 |
+| `documents.stats` | 伝票統計 |
 
-#### 関連ファイル
+### 設定
 
-- `lib/services/mm_command_service.dart`: ポーリング・コマンド実行・結果投稿
-- `lib/services/debug_console.dart`: コマンドレジストリ
-- `lib/plugins/debug/screens/debug_screen.dart`: PAT設定・ON/OFF切替UI
+1. デバッグ画面（`DB:デバッグ`）を開く
+2. 「PAT設定」から Mattermost PAT を入力
+3. 「MMポーリング」をONにする
+4. h1-debug に `!opencode ping` → `pong` が返れば成功
 
-#### 注意事項
+### 関連ファイル
 
-- **開発専用**。将来的に削除予定
-- PAT は SharedPreferences に平文保存（プロダクション運用では注意）
-- ポーリング間隔: 15秒（`lib/services/mm_command_service.dart:84`）
-- コマンドプレフィックス: `!opencode`（`lib/services/mm_command_service.dart:19`）
-- スレッド返信で結果を投稿（元メッセージの `root_id` を設定）
-- 初回起動時は `last_check` が `0` のため過去全投稿をスキャンする
+- `lib/services/mm_command_service.dart` — ポーリング・実行・結果投稿
+- `lib/services/debug_console.dart` — コマンドレジストリ
+- `lib/plugins/debug/screens/debug_screen.dart` — PAT設定UI
+
+### 注意事項
+
+- 開発専用、PATはSharedPreferencesに平文保存
+- ポーリング間隔: 15秒（`mm_command_service.dart:84`）
+- コマンドプレフィックス: `!opencode`（`mm_command_service.dart:19`）
+
+---
+
+## 用語
+
+- **oldh1**: 販売アシスト1号の旧バージョン。`lib/screens/` 以下の旧UIコード
+- **mm / mmcheck**: Mattermost接続確認。MCP tools または `DebugConsole` の `mmcheck` コマンドで実行
