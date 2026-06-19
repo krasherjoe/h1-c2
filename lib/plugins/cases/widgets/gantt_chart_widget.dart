@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/case_model.dart';
 import '../../purchase/models/purchase_model.dart';
+import '../../../services/error_reporter.dart';
 
 enum TimelineEventType { caseEvent, purchaseOrder, purchaseReceipt, delivery, tracking }
 
@@ -236,13 +237,8 @@ class _GanttChartWidgetState extends State<GanttChartWidget> {
     try {
       return _build(context);
     } catch (e, st) {
-      print('GanttChartWidget error: $e\n$st');
-      return SizedBox(
-        height: 60,
-        child: Center(
-          child: Text('Gantt: $e', style: const TextStyle(color: Colors.red, fontSize: 11)),
-        ),
-      );
+      ErrorReporter.sendError(message: 'GanttChartWidget build error: $e', stackTrace: st);
+      return const SizedBox(height: 40);
     }
   }
 
