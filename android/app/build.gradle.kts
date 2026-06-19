@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -6,10 +9,11 @@ plugins {
 
 // 署名鍵の設定
 // ローカル: android/key.properties（git管理外）
-// CI:      Forgejo Secrets（RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD）
-val keystoreProps = java.util.Properties().apply {
-    val localFile = rootProject.file("../key.properties")
-    if (localFile.exists()) load(localFile.inputStream())
+// CI:      デフォルト値でフォールバック（keystoreはリポジトリ管理）
+val keystoreProps = Properties()
+val localKeyFile = rootProject.file("key.properties")
+if (localKeyFile.exists()) {
+    keystoreProps.load(FileInputStream(localKeyFile))
 }
 
 android {
@@ -41,7 +45,7 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = rootProject.file(keystoreProps.getProperty("storeFile") ?: "../keystore/debug.keystore")
+            storeFile = file(keystoreProps.getProperty("storeFile") ?: "../keystore/debug.keystore")
             storePassword = keystoreProps.getProperty("storePassword")
                 ?: (System.getenv("RELEASE_STORE_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android")
             keyAlias = keystoreProps.getProperty("keyAlias")
