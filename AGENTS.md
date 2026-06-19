@@ -22,21 +22,17 @@ github: https://github.com/krasherjoe/h1-core.git
 ### 運用フロー
 
 1. **ソースコードの変更**: `git push origin <branch>` でgit.cyberius.bizにpush
-2. **APKのリリース**: GitHubにはgit pushでソースコードを送らない。以下の手順で行う:
+2. **APKのリリース**: 以下の手順で行う:
 
    ```bash
    # 一発スクリプト (推奨)
    ./scripts/push_all.sh v1.1.0
-
-   # 手動の場合:
-   flutter build apk --release
-   gh release create v1.1.0 \
-     --title "v1.1.0" \
-     --notes "リリースノート" \
-     "build/app/outputs/flutter-apk/app-release.apk#h1-core-v1.1.0.apk"
    ```
 
-3. **README.md**: `gh release create` 時に自動生成される。README.mdに大幅な変更があった場合は `scripts/push_all.sh` 経由でGitHubにpushする（APKと一緒に更新される）。
+   `push_all.sh` はソースコードpush + README更新のみ行う。
+   APKビルドとGitHub Release作成は **Forgejo Action** が自動実行する（タグ `v*` のpushを検出）。
+
+3. **README.md**: `push_all.sh` が自動的にGitHubにpushする。大幅な変更があった場合も同様。
 
 ## プロジェクト概要
 

@@ -302,7 +302,9 @@ Mattermost h1-debugチャンネル経由で `!opencode <cmd>` 形式のコマン
 | `ping` | 疎通確認 |
 | `mmcheck` | Mattermost API疎通診断 |
 | `system.status` | システム状態 |
+| `system.env` | 環境設定表示（Client ID, MM設定等） |
 | `system.dump` | 全状態ダンプ |
+| `google.status` | Google認証状態表示 |
 | `db.send` | DBをMMにアップロード |
 | `db.snapshot` / `db.restore` | DBスナップショット |
 | `documents.stats` | 伝票統計 |
@@ -315,11 +317,37 @@ Mattermost h1-debugチャンネル経由で `!opencode <cmd>` 形式のコマン
 
 ## リポジトリ管理（重要）
 
-- **origin**: `ssh://git@git.cyberius.biz/joe/h1-core.git`（ソースコード用）
+詳細なアーキテクチャは `docs/release_architecture.md` 参照。
+
+- **origin**: `ssh://git@git.cyberius.biz/joe/h1-core.git`（ソースコード用, Forgejo）
 - **github**: `https://github.com/krasherjoe/h1-core.git`（APK+READMEのみ公開）
 - **絶対にGitHubにソースコードをpushしない**
-- リリース: `scripts/push_all.sh v1.x.x`（APKビルド→GitHub Release→README自動更新）
-- GitHubリリースは最新5件のみ保持
+- リリース: `scripts/push_all.sh v1.x.x`（ソースコードpush + README更新のみ）
+- APKビルド・GitHub Release作成は **Forgejo Action** が自動実行
+- Forgejo Action の runner は PVE コンテナ（`192.168.99.120`）上で稼働
+- Runner の Docker イメージ: `ghcr.io/cirruslabs/flutter:3.44.0`
+- GitHubリリースは最新5件のみ保持（Actionが自動削除）
+
+### SSH 接続
+
+| エイリアス | 接続先 | 認証 | 用途 |
+|-----------|--------|------|------|
+| `ssh git.cyberius.biz` | Forgejo | SSH鍵 (ProxyJump cyb0) | git push/pull |
+| `ssh git` | Runner コンテナ | SSH鍵 | メンテナンス |
+| `ssh cyb0` | PVE ホスト | SSH鍵 | インフラ |
+
+### Google Client ID 管理
+
+Google Sign-In に必要な Client ID の管理方法：
+
+| プラットフォーム | 設定場所 | 備考 |
+|----------------|---------|------|
+| Android | `android/app/src/main/res/values/strings.xml` → `default_web_client_id` | ネイティブ設定 |
+| iOS / Web | `--dart-define=GOOGLE_CLIENT_ID=...` または `.env` + `--dart-define-from-file=.env` | ビルド時注入 |
+
+Android は `strings.xml` の Client ID を使用するため、`--dart-define` は不要。
+iOS/Web ビルド時は `.env` ファイル（git管理外）に Client ID を記載し、`push_all.sh` が自動読み込み。
+Client Secret は公開クライアント（Flutter）では不要。
 
 ## mmcheck 手順
 
