@@ -39,8 +39,12 @@ class _CaseListScreenState extends State<CaseListScreen> {
   }
 
   Future<void> _load() async {
-    await _repo.escalateAll();
-    _cases = await _repo.fetchAll();
+    try {
+      await _repo.escalateAll();
+      _cases = await _repo.fetchAll();
+    } catch (_) {
+      _cases = [];
+    }
     if (mounted) setState(() => _loading = false);
   }
 

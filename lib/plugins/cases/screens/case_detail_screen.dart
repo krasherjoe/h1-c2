@@ -33,9 +33,15 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
   }
 
   Future<void> _load() async {
-    _case = await _repo.fetchById(widget.caseId);
-    _allCases = await _repo.fetchAll();
-    _purchases = await _fetchPurchases();
+    try {
+      _case = await _repo.fetchById(widget.caseId);
+      _allCases = await _repo.fetchAll();
+      _purchases = await _fetchPurchases();
+    } catch (_) {
+      _case = null;
+      _allCases = [];
+      _purchases = [];
+    }
     if (mounted) setState(() => _loading = false);
   }
 
