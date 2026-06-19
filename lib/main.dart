@@ -48,6 +48,8 @@ import 'plugins/ar/ar_plugin.dart';
 import 'plugins/daily/daily_plugin.dart';
 import 'plugins/pricelist/price_list_plugin.dart';
 import 'plugins/suppliers/suppliers_plugin.dart';
+import 'constants/env_config.dart';
+import 'services/google_auth_service.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
 import 'services/history_db_service.dart';
@@ -188,6 +190,49 @@ Future<String> _cmdStatus(List<String> _) async {
   }
 }
 
+Future<String> _cmdEnv(List<String> _) async {
+  final buf = StringBuffer();
+  buf.writeln('```');
+  buf.writeln('環境設定');
+  buf.writeln('  GOOGLE_CLIENT_ID(dart-define): '
+      '${EnvConfig.googleClientId.isNotEmpty ? "✅ ${EnvConfig.googleClientId}" : "❌ 未設定"}');
+  buf.writeln('  Android default_web_client_id: '
+      '${EnvConfig.googleClientIdOrDefault.isNotEmpty ? "✅ ${EnvConfig.googleClientIdOrDefault}" : "❌ 未設定"}');
+  buf.writeln('  MATTERMOST_BASE_URL: ${EnvConfig.mattermostBaseUrl}');
+  buf.writeln('  MATTERMOST_TEAM_NAME: ${EnvConfig.mattermostTeamName}');
+  buf.writeln('  MATTERMOST_WEBHOOK_URL: '
+      '${EnvConfig.mattermostWebhookUrl.isNotEmpty ? "✅ 設定済み" : "❌ 未設定"}');
+  if (Platform.isAndroid) {
+    buf.writeln('');
+    buf.writeln('  ※ Android は AndroidManifest.xml の default_web_client_id を使用');
+    buf.writeln('    (strings.xml に定義)');
+  }
+  buf.writeln('```');
+  return buf.toString();
+}
+
+Future<String> _cmdGoogleStatus(List<String> _) async {
+  try {
+    GoogleAuthService.instance.init();
+    final signedIn = await GoogleAuthService.instance.isSignedIn();
+    final buf = StringBuffer();
+    buf.writeln('```');
+    buf.writeln('Google 認証状態');
+    buf.writeln('  ログイン: ${signedIn ? "✅ 済" : "❌ 未"}');
+    if (signedIn) {
+      final email = await GoogleAuthService.instance.getEmail();
+      buf.writeln('  アカウント: $email');
+      final token = await GoogleAuthService.instance.getAccessToken();
+      buf.writeln('  トークン: ${token != null ? "✅ 有効" : "❌ 取得失敗"}');
+    }
+    buf.writeln('  起動時ClientID: ${EnvConfig.googleClientIdOrDefault.isNotEmpty ? EnvConfig.googleClientIdOrDefault : "未設定"}');
+    buf.writeln('```');
+    return buf.toString();
+  } catch (e) {
+    return 'Google状態取得失敗: $e';
+  }
+}
+
 Future<String> _cmdDump(List<String> _) async {
   try {
     final buf = StringBuffer();
@@ -287,6 +332,8 @@ void main() async {
   DebugConsole.register('ping', (_) async => 'pong');
   DebugConsole.register('mmcheck', _cmdMmCheck);
   DebugConsole.register('system.status', _cmdStatus);
+  DebugConsole.register('system.env', _cmdEnv);
+  DebugConsole.register('google.status', _cmdGoogleStatus);
   DebugConsole.register('system.dump', _cmdDump);
   DebugConsole.register('db.send', _cmdDbSend);
   DebugConsole.register('db.snapshot', (_) async {

@@ -96,6 +96,9 @@ class PurchaseModel extends H1ExplorerItem {
   final String status;
   final String? linkedDocumentId;
   final List<PurchaseItem> items;
+  final String? trackingNumber;
+  final String? courier;
+  final DateTime? expectedArrivalDate;
 
   PurchaseModel({
     required this.id,
@@ -108,6 +111,9 @@ class PurchaseModel extends H1ExplorerItem {
     this.status = 'draft',
     this.linkedDocumentId,
     this.items = const [],
+    this.trackingNumber,
+    this.courier,
+    this.expectedArrivalDate,
   });
 
   @override
@@ -139,6 +145,9 @@ class PurchaseModel extends H1ExplorerItem {
     String? status,
     String? linkedDocumentId,
     List<PurchaseItem>? items,
+    String? trackingNumber,
+    String? courier,
+    DateTime? expectedArrivalDate,
   }) {
     return PurchaseModel(
       id: id ?? this.id,
@@ -151,6 +160,9 @@ class PurchaseModel extends H1ExplorerItem {
       status: status ?? this.status,
       linkedDocumentId: linkedDocumentId ?? this.linkedDocumentId,
       items: items ?? this.items,
+      trackingNumber: trackingNumber ?? this.trackingNumber,
+      courier: courier ?? this.courier,
+      expectedArrivalDate: expectedArrivalDate ?? this.expectedArrivalDate,
     );
   }
 
@@ -164,6 +176,9 @@ class PurchaseModel extends H1ExplorerItem {
     'total': total,
     'status': status,
     'linked_document_id': linkedDocumentId,
+    'tracking_number': trackingNumber,
+    'courier': courier,
+    'expected_arrival_date': expectedArrivalDate?.toIso8601String().substring(0, 10),
   };
 
   factory PurchaseModel.fromMap(Map<String, dynamic> map, {List<PurchaseItem> items = const []}) {
@@ -178,6 +193,9 @@ class PurchaseModel extends H1ExplorerItem {
       status: map['status'] as String? ?? 'draft',
       linkedDocumentId: map['linked_document_id'] as String?,
       items: items,
+      trackingNumber: map['tracking_number'] as String?,
+      courier: map['courier'] as String?,
+      expectedArrivalDate: map['expected_arrival_date'] != null ? DateTime.tryParse(map['expected_arrival_date'] as String) : null,
     );
   }
 }

@@ -5,6 +5,7 @@ import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../plugins/explorer/h1_explorer.dart';
 import 'explorer/purchase_explorer_config.dart';
+import '../../services/database_helper.dart';
 import '../../services/debug_console.dart';
 import '../../constants/screen_ids.dart';
 
@@ -24,6 +25,10 @@ class PurchasePlugin extends H1Plugin {
 
   @override
   Future<void> initialize(PluginContext context) async {
+    await safeAddColumn(context.database, 'purchases', 'tracking_number TEXT');
+    await safeAddColumn(context.database, 'purchases', 'courier TEXT');
+    await safeAddColumn(context.database, 'purchases', 'expected_arrival_date TEXT');
+
     DebugConsole.register('purchase.stats', (_) async {
       final cnt = await context.database.rawQuery("SELECT purchase_type, COUNT(*) as c FROM purchases GROUP BY purchase_type");
       final lines = cnt.map((r) => '  ${r['purchase_type']}: ${r['c']}件').join('\n');
@@ -113,5 +118,17 @@ class PurchasePlugin extends H1Plugin {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_suppliers_display_name ON suppliers(display_name)',
     );
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS tracking_events (
+        id TEXT PRIMARY KEY,
+        source_type TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        location TEXT,
+        description TEXT,
+        event_time TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
   }
 }

@@ -6,12 +6,13 @@ import '../models/case_model.dart';
 class CaseRepository {
   final _db = DatabaseHelper();
 
-  Future<List<CaseModel>> fetchAll({String? type, bool onlyActive = true}) async {
+  Future<List<CaseModel>> fetchAll({String? type, String? assignee, bool onlyActive = true}) async {
     final db = await _db.database;
     final conditions = <String>[];
     final args = <dynamic>[];
     if (onlyActive) { conditions.add('status < 99'); }
     if (type != null && type.isNotEmpty) { conditions.add('type = ?'); args.add(type); }
+    if (assignee != null && assignee.isNotEmpty) { conditions.add('assignee = ?'); args.add(assignee); }
     final where = conditions.isNotEmpty ? conditions.join(' AND ') : null;
     final maps = await db.query('cases', where: where, whereArgs: args.isEmpty ? null : args, orderBy: 'status DESC, created_at DESC');
     return maps.map(CaseModel.fromMap).toList();
@@ -37,6 +38,11 @@ class CaseRepository {
       referenceType: referenceType, referenceId: referenceId, description: description,
       createdAt: DateTime.now()));
     return id;
+  }
+
+  Future<void> updateDueDate(String id, DateTime dueDate) async {
+    final db = await _db.database;
+    await db.update('cases', {'due_date': dueDate.toIso8601String()}, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> updateStatus(String id, int status, {String? notes}) async {

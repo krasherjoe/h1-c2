@@ -30,7 +30,11 @@ echo "✅ origin/${BRANCH} へpush完了"
 echo ""
 echo "=== 2/4: APK ビルド ==="
 VERSIONED_APK="build/app/outputs/flutter-apk/h1-core-${VERSION}.apk"
-flutter build apk --release --dart-define=APP_VERSION="$VERSION"
+DART_DEFINES="--dart-define=APP_VERSION=$VERSION"
+if [ -f "$ROOT_DIR/.env" ]; then
+  DART_DEFINES="$DART_DEFINES --dart-define-from-file=$ROOT_DIR/.env"
+fi
+flutter build apk --release $DART_DEFINES
 cp "$APK_PATH" "$VERSIONED_APK"
 cp "$APK_PATH" "/tmp/$APK_NAME"
 echo "✅ APK: /tmp/$APK_NAME ($(wc -c < "/tmp/$APK_NAME") bytes)"
