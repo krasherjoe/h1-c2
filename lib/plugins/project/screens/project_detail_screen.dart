@@ -15,6 +15,7 @@ import '../../ar/screens/payment_processing_screen.dart';
 import '../../../services/sync_service.dart';
 import '../../../constants/screen_ids.dart';
 import '../../../utils/theme_utils.dart' show cardBoxShadow;
+import '../widgets/project_timeline_widget.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final String? projectId;
@@ -143,6 +144,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           _buildInfoCard(project, cs),
           const SizedBox(height: 16),
           _buildStageSection(project, cs),
+          const SizedBox(height: 16),
+          ProjectTimelineWidget(project: project),
           const SizedBox(height: 16),
           _buildNextActionGuide(project, cs),
           const SizedBox(height: 16),
