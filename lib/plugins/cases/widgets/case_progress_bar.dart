@@ -6,10 +6,22 @@ class CaseProgressBar extends StatelessWidget {
   final bool isResolved;
 
   static const int _expectedDuration = 30;
+  static const List<Color> _segmentColors = [
+    Color(0xFF9E9E9E),
+    Color(0xFFFFA726),
+    Color(0xFFE65100),
+    Color(0xFFD32F2F),
+    Color(0xFF388E3C),
+  ];
 
   double get _progress {
     if (isResolved) return 1.0;
     return (elapsedDays / _expectedDuration).clamp(0.0, 1.0);
+  }
+
+  int get _currentSegment {
+    if (isResolved) return 4;
+    return status.clamp(0, 3);
   }
 
   const CaseProgressBar({
@@ -22,100 +34,81 @@ class CaseProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 18,
-      child: CustomPaint(
-        painter: _ProgressBarPainter(
-          progress: _progress,
-          markerColor: cs.onSurface,
-          trackColor: cs.surfaceContainerHighest,
-        ),
-      ),
-    );
-  }
-}
+    final progress = _progress;
+    final seg = _currentSegment;
 
-class _ProgressBarPainter extends CustomPainter {
-  final double progress;
-  final Color markerColor;
-  final Color trackColor;
+    return LayoutBuilder(builder: (context, constraints) {
+      final w = constraints.maxWidth;
+      final barH = 6.0;
+      final markerX = (w * progress).clamp(3.0, w - 3);
+      final segW = w / 5;
 
-  static const List<Color> _segmentColors = [
-    Color(0xFF9E9E9E), // 発見 gray
-    Colors.amber,       // 注意
-    Colors.deepOrange,  // 警告
-    Colors.redAccent,   // 重大
-    Colors.green,       // 解決
-  ];
-
-  _ProgressBarPainter({
-    required this.progress,
-    required this.markerColor,
-    required this.trackColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final barY = h / 2;
-    final barH = 4.0;
-    final segW = w / 5;
-
-    // background track
-    final bgPaint = Paint()
-      ..color = trackColor.withValues(alpha: 0.4);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTRB(0, barY - barH / 2, w, barY + barH / 2),
-        const Radius.circular(2),
-      ),
-      bgPaint,
-    );
-
-    // filled segments
-    for (int i = 0; i < 5; i++) {
-      final segStart = i * segW;
-      final segEnd = (i + 1) * segW;
-      final markerX = progress * w;
-
-      if (markerX <= segStart) break;
-
-      final fillEnd = markerX < segEnd ? markerX : segEnd;
-      final paint = Paint()..color = _segmentColors[i];
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTRB(segStart, barY - barH / 2, fillEnd, barY + barH / 2),
-          const Radius.circular(2),
-        ),
-        paint,
+      return SizedBox(
+        height: 28,
+        child: Stack(clipBehavior: Clip.none, children: [
+          // background track
+          Positioned(
+            top: (28 - barH) / 2,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: barH,
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+          // filled portion (up to marker)
+          Positioned(
+            top: (28 - barH) / 2,
+            left: 0,
+            child: Container(
+              width: markerX,
+              height: barH,
+              decoration: BoxDecoration(
+                color: _segmentColors[seg],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(3),
+                  bottomLeft: Radius.circular(3),
+                ),
+              ),
+            ),
+          ),
+          // segment dividers
+          ...List.generate(4, (i) {
+            final x = (i + 1) * segW;
+            final isPast = x <= markerX;
+            return Positioned(
+              top: (28 - barH) / 2,
+              left: x - 1,
+              child: Container(
+                width: 2,
+                height: barH,
+                decoration: BoxDecoration(
+                  color: isPast
+                      ? _segmentColors[i].withValues(alpha: 0.8)
+                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(0.5),
+                ),
+              ),
+            );
+          }),
+          // vertical marker
+          Positioned(
+            top: 0,
+            left: markerX - 1,
+            child: Container(
+              width: 2,
+              height: 28,
+              decoration: BoxDecoration(
+                color: cs.onSurfaceVariant,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ),
+        ]),
       );
-    }
-
-    // dots at boundaries
-    for (int i = 1; i < 5; i++) {
-      final dotX = i * segW;
-      final isPast = dotX <= progress * w;
-      canvas.drawCircle(
-        Offset(dotX, barY),
-        2.5,
-        Paint()..color = isPast ? _segmentColors[i - 1] : _segmentColors[i - 1].withValues(alpha: 0.25),
-      );
-    }
-
-    // vertical marker
-    final markerX = (progress * w).clamp(0.0, w);
-    canvas.drawLine(
-      Offset(markerX, 2),
-      Offset(markerX, h - 2),
-      Paint()
-        ..color = markerColor
-        ..strokeWidth = 1.5
-        ..strokeCap = StrokeCap.round,
-    );
+    });
   }
-
-  @override
-  bool shouldRepaint(_ProgressBarPainter old) => old.progress != progress;
 }
