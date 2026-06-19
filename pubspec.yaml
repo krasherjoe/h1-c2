@@ -37,6 +37,7 @@ dependencies:
   google_generative_ai: ^0.4.7
   package_info_plus: ^10.1.0
   logger: ^2.5.0
+  dartssh2: ^2.8.2
 
 dev_dependencies:
   flutter_test:

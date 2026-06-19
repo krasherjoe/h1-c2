@@ -8,6 +8,29 @@ import '../constants/env_config.dart';
 import '../constants/secure_storage_keys.dart';
 import 'debug_console.dart';
 import 'secure_storage_service.dart';
+import 'error_reporter.dart';
+
+// Polling debug logger — 各フェーズの前後にログ+Mattermost送信
+Future<R> _mmLog<R>(String label, Future<R> Function() fn) async {
+  final t0 = DateTime.now().millisecondsSinceEpoch;
+  debugPrint('[MM-POLL-DBG] ▶ $label');
+  try {
+    final result = await fn();
+    final elapsed = DateTime.now().millisecondsSinceEpoch - t0;
+    debugPrint('[MM-POLL-DBG] ◀ $label OK (${elapsed}ms)');
+    return result;
+  } catch (e, st) {
+    final elapsed = DateTime.now().millisecondsSinceEpoch - t0;
+    debugPrint('[MM-POLL-DBG] ✗ $label FAIL (${elapsed}ms): $e');
+    try {
+      await ErrorReporter.sendError(
+        message: '[MM-POLL-DBG] $label FAIL: $e',
+        detail: st.toString(),
+      );
+    } catch (_) {}
+    rethrow;
+  }
+}
 
 class MmCommandService {
   static final MmCommandService instance = MmCommandService._();
@@ -37,14 +60,17 @@ class MmCommandService {
     'Content-Type': 'application/json',
   };
 
-  Future<void> loadConfig() async {
+  Future<void> loadConfig() async => _mmLog('loadConfig', () async {
     final secure = SecureStorageService.instance;
     _pat = await secure.read(SecureStorageKeys.mattermostPat);
+    debugPrint('[MM-POLL-DBG] PAT loaded: ${_pat != null ? '${_pat!.substring(0, 8)}...' : 'null'}');
     _baseUrl = await secure.read(SecureStorageKeys.mattermostBaseUrl) ?? EnvConfig.mattermostBaseUrl;
     _teamName = await secure.read(SecureStorageKeys.mattermostTeamName) ?? EnvConfig.mattermostTeamName;
+    debugPrint('[MM-POLL-DBG] baseUrl: $_baseUrl, team: $_teamName');
     final prefs = await SharedPreferences.getInstance();
     _enabled = prefs.getBool(_kEnabledKey) ?? false;
     enabledNotifier.value = _enabled;
+    debugPrint('[MM-POLL-DBG] polling enabled: $_enabled');
 
     // 移行: SharedPreferences → SecureStorage
     final oldPat = prefs.getString('mattermost_pat');
@@ -54,18 +80,21 @@ class MmCommandService {
       await secure.write(SecureStorageKeys.mattermostPat, oldPat);
       _pat = oldPat;
       await prefs.remove('mattermost_pat');
+      debugPrint('[MM-POLL-DBG] migrated PAT from SharedPreferences');
     }
     if (oldBaseUrl != null && _baseUrl == null) {
       await secure.write(SecureStorageKeys.mattermostBaseUrl, oldBaseUrl);
       _baseUrl = oldBaseUrl;
       await prefs.remove('mattermost_base_url');
+      debugPrint('[MM-POLL-DBG] migrated baseUrl from SharedPreferences');
     }
     if (oldTeam != null && _teamName == null) {
       await secure.write(SecureStorageKeys.mattermostTeamName, oldTeam);
       _teamName = oldTeam;
       await prefs.remove('mattermost_team_name');
+      debugPrint('[MM-POLL-DBG] migrated team from SharedPreferences');
     }
-  }
+  });
 
   Future<void> setEnabled(bool v) async {
     _enabled = v;

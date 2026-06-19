@@ -31,6 +31,11 @@
 - iOS/Web用は `.env` + `--dart-define-from-file=.env` で注入（`.env` はgit管理外）
 - Client Secret は不要（Flutterは公開クライアント）
 
+### APKファイル名
+- フォーマット: `h1-core-{version}.apk` — 例: `h1-core-v1.3.023.apk`
+- `scripts/push_all.sh` の中で自動的に生成される（61行目）
+- GitHub Releaseにアップロードされるファイル名はこのフォーマットに従う
+
 ### コード変更時の確認手順
 1. 既存パターンを確認してから書く（近隣ファイルを読む）
 2. 削除前に全参照を確認する（特に定数・設定値・Client ID）
