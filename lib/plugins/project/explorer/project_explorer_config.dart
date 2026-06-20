@@ -188,6 +188,7 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
         : (Theme.of(context).cardTheme.color ?? cs.surface);
 
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(8),
