@@ -50,13 +50,13 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
     if (_pages.isEmpty) return 120;
     final screenW = MediaQuery.of(context).size.width - 64;
     final btnW = 72.0;
-    final gap = 4.0;
+    final gap = 6.0;
     final perRow = ((screenW + gap) / (btnW + gap)).floor().clamp(1, 10);
     final maxRows = _pages.fold(1, (max, page) {
       final rows = ((page.actionIds.length - 1) ~/ perRow) + 1;
       return rows > max ? rows : max;
     });
-    return 8.0 + (maxRows * 72.0) + ((maxRows - 1) * 6.0) + 4.0;
+    return 8.0 + (maxRows * QuickActionButton.itemHeight) + ((maxRows - 1) * 4.0) + 4.0;
   }
 
   void _openReorderSheet() {
@@ -206,7 +206,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
             controller: _pageCtrl,
             onPageChanged: (i) => setState(() => _currentPage = i),
             children: _pages.map((page) {
-              final gap = 4.0;
+    final gap = 6.0;
               final ids = page.actionIds;
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -214,7 +214,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                       child: Wrap(
                         alignment: WrapAlignment.center,
                         spacing: gap,
-                        runSpacing: 6,
+                        runSpacing: 4,
                         children: ids.asMap().entries.map((entry) {
                           final i = entry.key;
                           final route = entry.value;
