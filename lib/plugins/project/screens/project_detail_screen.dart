@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import '../../../services/project_repository.dart';
 import '../../../services/database_helper.dart';
+import '../../../services/error_log_service.dart';
 import '../../../models/project_model.dart';
 import '../../../models/document_type_colors.dart';
 import '../../documents/models/document_model.dart';
@@ -218,7 +219,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             data: updated.toMap(),
           );
           await _load();
-        } catch (e) {
+        } catch (e, stackTrace) {
+          await ErrorLogService.instance.logError(
+            'プリセット保存エラー: $e',
+            stackTrace: stackTrace.toString(),
+            screen: 'ProjectDetailScreen',
+            context: 'project_id: ${project.id}, preset: ${preset.id}',
+          );
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('プリセット保存エラー: $e')),

@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:h_1_core/plugin_system/plugin_registry.dart';
 import 'package:h_1_core/services/company_service.dart';
 import 'package:h_1_core/services/debug_console.dart';
+import 'package:h_1_core/services/error_log_service.dart';
+import 'package:h_1_core/services/project_repository.dart';
 import 'package:h_1_core/utils/app_theme.dart';
 import 'ice_state_collector.dart';
 
@@ -182,11 +184,14 @@ class IceApiServer {
           await _handleApiTheme(request.response);
 
         case '/api/projects':
-          if (method != 'GET') {
-            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+          if (method == 'POST') {
+            await _handleApiProjectUpdate(request);
+          } else if (method == 'GET') {
+            await _handleApiProjects(request.response);
+          } else {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET or POST required');
             return;
           }
-          await _handleApiProjects(request.response);
 
         case '/api/db/tables':
           if (method != 'GET') {
@@ -202,6 +207,13 @@ class IceApiServer {
           }
           final key = uri.queryParameters['key'];
           await _handleApiPreferences(request.response, key);
+
+        case '/api/errors':
+          if (method == 'DELETE') {
+            await _handleApiErrorsClear(request.response);
+          } else {
+            await _handleApiErrors(request.response);
+          }
 
         default:
           await _respond(request.response, {
@@ -223,6 +235,8 @@ class IceApiServer {
               'GET  /api/preferences?key=...',
               'GET  /api/theme',
               'GET  /api/projects',
+              'GET  /api/errors',
+              'DELETE /api/errors',
             ],
           });
       }
@@ -531,6 +545,43 @@ class IceApiServer {
     }
   }
 
+  Future<void> _handleApiProjectUpdate(HttpRequest request) async {
+    try {
+      final body = await utf8.decodeStream(request);
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      final projectId = data['project_id'] as String?;
+      final ganttConfig = data['gantt_config'] as String?;
+
+      if (projectId == null || projectId.isEmpty) {
+        await _error(request.response, HttpStatus.badRequest, 'project_id is required');
+        return;
+      }
+
+      final repo = ProjectRepository();
+      final project = await repo.getById(projectId);
+      if (project == null) {
+        await _error(request.response, HttpStatus.notFound, 'Project not found: $projectId');
+        return;
+      }
+
+      final updated = project.copyWith(ganttConfig: ganttConfig);
+      await repo.save(updated);
+
+      await _respond(request.response, {
+        'updated': true,
+        'project_id': projectId,
+        'gantt_config': ganttConfig,
+      });
+    } catch (e) {
+      await ErrorLogService.instance.logError(
+        'ICE-API project update error: $e',
+        screen: 'IceApiServer',
+        context: 'POST /api/projects',
+      );
+      await _error(request.response, HttpStatus.internalServerError, 'Failed to update project: $e');
+    }
+  }
+
   Future<void> _respond(HttpResponse response, dynamic data) async {
     response.statusCode = HttpStatus.ok;
     response.headers.contentType = ContentType.json;
@@ -543,5 +594,26 @@ class IceApiServer {
     response.headers.contentType = ContentType.json;
     response.write(jsonEncode({'error': message}));
     await response.close();
+  }
+
+  Future<void> _handleApiErrors(HttpResponse response) async {
+    try {
+      final logs = await ErrorLogService.instance.getLogs();
+      await _respond(response, {
+        'count': logs.length,
+        'errors': logs.map((e) => e.toJson()).toList(),
+      });
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get errors: $e');
+    }
+  }
+
+  Future<void> _handleApiErrorsClear(HttpResponse response) async {
+    try {
+      await ErrorLogService.instance.clearLogs();
+      await _respond(response, {'cleared': true});
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to clear errors: $e');
+    }
   }
 }
