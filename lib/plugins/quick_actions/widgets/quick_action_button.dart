@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../services/input_style_service.dart';
 
 class QuickActionButton extends StatelessWidget {
-  static const double _verticalPadding = 8;
-  static const double _iconSize = 22;
-  static const double _iconTextGap = 0.5;
-  static const double _textFontSize = 11;
-
-  static double get itemHeight =>
-      _verticalPadding * 2 + _iconSize + _iconTextGap + _textFontSize * 1.3;
   final double? width;
   final IconData icon;
   final String label;
@@ -43,7 +36,7 @@ class QuickActionButton extends StatelessWidget {
         final showShadow = inputStyle == 'raised';
         final btn = Container(
           width: width,
-          padding: EdgeInsets.symmetric(horizontal: 4, vertical: _verticalPadding),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: RadialGradient(
@@ -63,15 +56,15 @@ class QuickActionButton extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Icon(icon, color: accentColor, size: _iconSize),
-              SizedBox(height: _iconTextGap),
+              Icon(icon, color: accentColor, size: 22),
+              const SizedBox(height: 2),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: textColor,
-                  fontSize: _textFontSize,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),

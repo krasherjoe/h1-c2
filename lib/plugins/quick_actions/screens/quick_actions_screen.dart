@@ -56,7 +56,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
       final rows = ((page.actionIds.length - 1) ~/ perRow) + 1;
       return rows > max ? rows : max;
     });
-    return 4.0 + (maxRows * QuickActionButton.itemHeight) + ((maxRows - 1) * 4.0) + 4.0;
+    return 8.0 + (maxRows * 72.0) + ((maxRows - 1) * 6.0) + 4.0;
   }
 
   void _openReorderSheet() {
@@ -214,7 +214,7 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
                       child: Wrap(
                         alignment: WrapAlignment.center,
                         spacing: gap,
-                        runSpacing: 4,
+                        runSpacing: 6,
                         children: ids.asMap().entries.map((entry) {
                           final i = entry.key;
                           final route = entry.value;
