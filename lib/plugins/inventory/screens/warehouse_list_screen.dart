@@ -164,34 +164,37 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
                     itemCount: _filtered.length,
                     itemBuilder: (context, index) {
                       final w = _filtered[index];
-                      return ListTile(
-                        tileColor: theme.cardTheme.color ?? theme.colorScheme.surface,
-                        leading: CircleAvatar(
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          child: Icon(Icons.warehouse, color: theme.colorScheme.primary),
-                        ),
-                        title: Text(
-                          w.name + (w.isHidden ? ' (非表示)' : ''),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: w.isHidden ? theme.hintColor : theme.textTheme.bodyMedium?.color,
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        child: ListTile(
+                          tileColor: theme.cardTheme.color ?? theme.colorScheme.surface,
+                          leading: CircleAvatar(
+                            backgroundColor: theme.colorScheme.primaryContainer,
+                            child: Icon(Icons.warehouse, color: theme.colorScheme.primary),
                           ),
+                          title: Text(
+                            w.name + (w.isHidden ? ' (非表示)' : ''),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: w.isHidden ? theme.hintColor : theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                          subtitle: w.location != null ? Text(w.location!) : null,
+                          onTap: () {
+                            if (widget.selectionMode) {
+                              if (w.isHidden) return;
+                              Navigator.pop(context, w);
+                            } else {
+                              _showEditDialog(warehouse: w);
+                            }
+                          },
+                          trailing: widget.selectionMode
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => _showEditDialog(warehouse: w),
+                                ),
                         ),
-                        subtitle: w.location != null ? Text(w.location!) : null,
-                        onTap: () {
-                          if (widget.selectionMode) {
-                            if (w.isHidden) return;
-                            Navigator.pop(context, w);
-                          } else {
-                            _showEditDialog(warehouse: w);
-                          }
-                        },
-                        trailing: widget.selectionMode
-                            ? null
-                            : IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => _showEditDialog(warehouse: w),
-                              ),
                       );
                     },
                   ),

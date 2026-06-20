@@ -199,7 +199,7 @@ class _StockInquiryScreenState extends State<StockInquiryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    '${p.stockQuantity}',
+                                    '${p.stockQuantity ?? 0}',
                                     style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
