@@ -4,8 +4,10 @@ import '../../plugin_system/plugin_interface.dart';
 import '../../plugin_system/plugin_context.dart';
 import '../../plugin_system/screen_definition.dart';
 import '../../plugin_system/dashboard_section.dart';
+import '../../services/debug_console.dart';
 import 'screens/quick_actions_screen.dart';
 import 'screens/quick_action_settings_screen.dart';
+import 'services/quick_action_service.dart';
 import '../../constants/screen_ids.dart';
 
 class QuickActionsPlugin extends H1Plugin {
@@ -37,7 +39,13 @@ class QuickActionsPlugin extends H1Plugin {
   ];
 
   @override
-  Future<void> initialize(PluginContext context) async {}
+  Future<void> initialize(PluginContext context) async {
+    DebugConsole.register('quick_actions.layout', (_) async {
+      final info = QuickActionService.lastLayoutInfo;
+      if (info == null) return 'レイアウト情報なし（パネル未表示）';
+      return info.entries.map((e) => '${e.key}: ${e.value}').join('\n');
+    });
+  }
 
   @override
   Future<void> dispose() async {}

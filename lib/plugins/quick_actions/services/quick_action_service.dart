@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../plugin_system/plugin_registry.dart';
 import '../../../plugin_system/menu_item.dart';
+import '../../../services/debug_console.dart';
 import '../../../utils/app_theme.dart';
 import '../models/quick_action_page.dart';
 
 class QuickActionService {
   static const _kPagesKey = 'quick_action_pages';
+
+  static Map<String, dynamic>? lastLayoutInfo;
 
   Future<List<QuickActionPage>> loadPages() async {
     final prefs = await SharedPreferences.getInstance();
