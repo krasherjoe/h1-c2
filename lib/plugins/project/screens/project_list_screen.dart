@@ -530,7 +530,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget _buildKanbanCardContent(Project project, ColorScheme cs) {
     final isLost = project.status == ProjectStatus.lost;
     final isWon = project.status == ProjectStatus.won;
-    final hasBar = project.contractMonths != null && project.contractMonths! > 0;
+    final hasBar = project.startDate != null;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       clipBehavior: Clip.antiAlias,
@@ -621,8 +621,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildTimeProgressBar(Project project, ColorScheme cs) {
-    final progress = project.timeProgress;
+    final start = project.startDate;
+    if (start == null) return const SizedBox.shrink();
+    final now = DateTime.now();
+    final elapsedDays = now.difference(start).inDays;
     final overdue = project.isOverdue;
+    final hasContract = project.contractMonths != null && project.contractMonths! > 0;
+    final totalDays = hasContract && project.contractMonths != null
+        ? project.contractMonths! * 30
+        : 365;
+    final progress = (elapsedDays / totalDays).clamp(0.0, 1.0);
     final barColor = overdue ? cs.error : (progress >= 1.0 ? cs.secondary : cs.primary);
     return ClipRRect(
       child: LinearProgressIndicator(
@@ -635,7 +643,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildProjectCard(Project project, ColorScheme cs) {
-    final hasBar = project.contractMonths != null && project.contractMonths! > 0;
+    final hasBar = project.startDate != null;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
