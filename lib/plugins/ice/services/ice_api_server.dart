@@ -35,6 +35,7 @@ class IceApiServer {
   }
 
   bool get isRunning => _running;
+  String get version => _version;
 
   Future<void> start() async {
     if (_running) return;

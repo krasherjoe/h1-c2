@@ -63,7 +63,7 @@ class IcePlugin extends H1Plugin {
       await _apiServer?.stop();
       return 'ICE停止';
     });
-    await _autoConnectSsh();
+    _autoConnectSsh();
     debugPrint('[IcePlugin] Initialized (port: $port)');
   }
 
@@ -72,16 +72,25 @@ class IcePlugin extends H1Plugin {
       final dir = await CompanyService.getCompanyDirectory();
       final configFile = File('${dir.path}/.ssh/config');
       final keyFile = File('${dir.path}/.ssh/id_ed25519');
-      if (!await configFile.exists() || !await keyFile.exists()) return;
+      if (!await configFile.exists() || !await keyFile.exists()) {
+        SshTunnelService.instance.statusNotifier.value = '自動接続: config/key なし';
+        return;
+      }
       final config = await configFile.readAsString();
       final key = await keyFile.readAsString();
-      if (config.trim().isEmpty || key.trim().isEmpty) return;
+      if (config.trim().isEmpty || key.trim().isEmpty) {
+        SshTunnelService.instance.statusNotifier.value = '自動接続: config/key 空';
+        return;
+      }
       final ssh = SshTunnelService.instance;
       ssh.configText = config;
       ssh.keyText = key;
+      SshTunnelService.instance.statusNotifier.value = '自動接続中...';
       await ssh.connect();
+      SshTunnelService.instance.statusNotifier.value = '自動接続成功';
       debugPrint('[IcePlugin] SSH auto-connect succeeded');
     } catch (e) {
+      SshTunnelService.instance.errorNotifier.value = '自動接続失敗: $e';
       debugPrint('[IcePlugin] SSH auto-connect failed: $e');
     }
   }

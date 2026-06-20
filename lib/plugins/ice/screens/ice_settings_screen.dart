@@ -146,7 +146,9 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     final textColor = textColorOn(cs.surface);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ICEデバッグ設定')),
+      appBar: AppBar(
+        title: Text('ICEデバッグ設定 v${widget.apiServer.version}'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -225,8 +227,8 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
               valueListenable: ssh.onlineNotifier,
               builder: (ctx, online, _) => Row(
                 children: [
-                  Text('SSH接続', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
-                  const Spacer(),
+                  Text('SSH', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+                  const SizedBox(width: 8),
                   Switch(
                     value: online,
                     onChanged: (v) {
@@ -239,8 +241,56 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
                       }
                     },
                   ),
+                  if (online)
+                    OutlinedButton.icon(
+                      onPressed: () => ssh.disconnect(),
+                      icon: const Icon(Icons.link_off, size: 14),
+                      label: const Text('切断', style: TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: cs.error,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        minimumSize: Size.zero,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    )
+                  else
+                    FilledButton.icon(
+                      onPressed: () {
+                        ssh.configText = _sshConfigController.text;
+                        ssh.keyText = _sshPrivateKeyController.text;
+                        ssh.connect();
+                      },
+                      icon: const Icon(Icons.link, size: 14),
+                      label: const Text('接続', style: TextStyle(fontSize: 12)),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        minimumSize: Size.zero,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
                 ],
               ),
+            ),
+            const SizedBox(height: 4),
+            ValueListenableBuilder<String>(
+              valueListenable: ssh.statusNotifier,
+              builder: (ctx, status, _) {
+                if (status.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(status, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                );
+              },
+            ),
+            ValueListenableBuilder<String?>(
+              valueListenable: ssh.errorNotifier,
+              builder: (ctx, error, _) {
+                if (error == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(left: 4, top: 2),
+                  child: Text(error, style: TextStyle(fontSize: 11, color: cs.error)),
+                );
+              },
             ),
           ],
         ),
