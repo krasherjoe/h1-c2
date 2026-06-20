@@ -165,6 +165,7 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
                     itemBuilder: (context, index) {
                       final w = _filtered[index];
                       return ListTile(
+                        tileColor: theme.cardTheme.color ?? theme.colorScheme.surface,
                         leading: CircleAvatar(
                           backgroundColor: theme.colorScheme.primaryContainer,
                           child: Icon(Icons.warehouse, color: theme.colorScheme.primary),

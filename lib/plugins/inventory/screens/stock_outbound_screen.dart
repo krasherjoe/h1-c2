@@ -146,6 +146,7 @@ class _ProductSelectionScreen extends StatelessWidget {
             itemBuilder: (_, i) {
               final p = products[i];
               return ListTile(
+                tileColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                 leading: CircleAvatar(child: Text('${p.stockQuantity ?? 0}')),
                 title: Text(p.name),
                 subtitle: Text('¥${NumberFormat('#,###').format(p.defaultUnitPrice)}'),

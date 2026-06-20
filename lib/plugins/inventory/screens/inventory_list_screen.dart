@@ -83,6 +83,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                               final product = _filtered[i];
                               final stock = _stockMap[product.id] ?? 0;
                               return ListTile(
+                                tileColor: theme.cardTheme.color ?? theme.colorScheme.surface,
                                 leading: CircleAvatar(
                                   backgroundColor: stock > 0
                                       ? Theme.of(context).colorScheme.primaryContainer
@@ -171,6 +172,7 @@ class _StockHistorySheetState extends State<_StockHistorySheet> {
                         final t = transactions[i];
                         final isInbound = t.quantity > 0;
                         return ListTile(
+                          tileColor: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
                           dense: true,
                           leading: Icon(
                             isInbound ? Icons.add_circle : Icons.remove_circle,

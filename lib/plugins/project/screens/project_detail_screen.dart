@@ -231,6 +231,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               primaryColor: cs.primary,
               overdueColor: Colors.red,
               surfaceColor: cs.surfaceContainerHighest,
+              monthCount: months,
+              gridColor: cs.outlineVariant,
             ),
           ),
         ),

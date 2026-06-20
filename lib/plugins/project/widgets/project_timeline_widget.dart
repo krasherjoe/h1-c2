@@ -84,6 +84,7 @@ class ProjectTimelineWidget extends StatelessWidget {
   }
 
   Widget _buildTimelineBar(ColorScheme cs, double progress, bool overdue) {
+    final months = project.contractMonths ?? 1;
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
@@ -97,6 +98,8 @@ class ProjectTimelineWidget extends StatelessWidget {
               primaryColor: cs.primary,
               overdueColor: Colors.red,
               surfaceColor: cs.surfaceContainerHighest,
+              monthCount: months,
+              gridColor: cs.outlineVariant,
             ),
           ),
         );
@@ -128,6 +131,8 @@ class TimelineBarPainter extends CustomPainter {
   final Color primaryColor;
   final Color overdueColor;
   final Color surfaceColor;
+  final int monthCount;
+  final Color gridColor;
 
   TimelineBarPainter({
     required this.progress,
@@ -135,6 +140,8 @@ class TimelineBarPainter extends CustomPainter {
     required this.primaryColor,
     required this.overdueColor,
     required this.surfaceColor,
+    this.monthCount = 1,
+    this.gridColor = const Color(0x00000000),
   });
 
   @override
@@ -145,9 +152,22 @@ class TimelineBarPainter extends CustomPainter {
     final barY = (h - barH) / 2;
     final r = barH / 2;
 
+    // 縦線（月区切り）
+    if (monthCount > 1 && gridColor.alpha > 0) {
+      final gridPaint = Paint()
+        ..color = gridColor
+        ..strokeWidth = 1;
+      for (var i = 1; i < monthCount; i++) {
+        final x = w * i / monthCount;
+        canvas.drawLine(Offset(x, 0), Offset(x, h), gridPaint);
+      }
+    }
+
+    // 背景バー
     final bgPaint = Paint()..color = surfaceColor;
     canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(0, barY, w, barH), topLeft: Radius.circular(r), bottomLeft: Radius.circular(r), topRight: Radius.circular(r), bottomRight: Radius.circular(r)), bgPaint);
 
+    // 進捗バー
     if (progress > 0) {
       final barColor = overdue ? overdueColor : primaryColor;
       final fgPaint = Paint()..color = barColor;
@@ -155,6 +175,7 @@ class TimelineBarPainter extends CustomPainter {
       canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(0, barY, fw, barH), topLeft: Radius.circular(r), bottomLeft: Radius.circular(r), topRight: Radius.circular(r), bottomRight: Radius.circular(r)), fgPaint);
     }
 
+    // 現在位置マーカー
     final markerPaint = Paint()
       ..color = overdue ? overdueColor : primaryColor
       ..strokeWidth = 2;
@@ -163,5 +184,5 @@ class TimelineBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(TimelineBarPainter old) => old.progress != progress || old.overdue != overdue;
+  bool shouldRepaint(TimelineBarPainter old) => old.progress != progress || old.overdue != overdue || old.monthCount != monthCount;
 }
