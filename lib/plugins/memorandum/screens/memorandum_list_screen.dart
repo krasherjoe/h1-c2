@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/memorandum_model.dart';
 import '../services/memorandum_repository.dart';
 import 'memorandum_input_screen.dart';
+import '../../project/screens/project_detail_screen.dart';
 import '../../../constants/screen_ids.dart';
 
 class MemorandumListScreen extends StatefulWidget {
@@ -134,6 +135,32 @@ class _MemorandumListScreenState extends State<MemorandumListScreen> {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: const Text('下書き', style: TextStyle(fontSize: 10)),
+                                  ),
+                                if (m.projectId != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(context, MaterialPageRoute(
+                                          builder: (_) => ProjectDetailScreen(projectId: m.projectId!),
+                                        ));
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: cs.primaryContainer.withValues(alpha: 0.5),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.workspaces, size: 12, color: cs.onPrimaryContainer),
+                                            const SizedBox(width: 3),
+                                            Text('案件', style: TextStyle(fontSize: 10, color: cs.onPrimaryContainer, fontWeight: FontWeight.w500)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                               ],
                             ),

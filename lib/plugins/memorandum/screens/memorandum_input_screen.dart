@@ -3,6 +3,12 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/customer_model.dart';
 import '../../../services/customer_repository.dart';
+import '../../../services/project_repository.dart';
+import '../../../models/project_model.dart';
+import '../../project/screens/project_detail_screen.dart';
+import '../../project/explorer/project_explorer_config.dart';
+import '../../project/models/project_explorer_item.dart';
+import '../../explorer/h1_explorer.dart';
 import '../models/memorandum_model.dart';
 import '../services/memorandum_repository.dart';
 import 'memorandum_preview_screen.dart';
@@ -44,6 +50,8 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
 
   String _customerId = '';
   String _customerName = '';
+  String? _projectId;
+  String? _projectName;
   DateTime _contractDate = DateTime.now();
   DateTime _startDate = DateTime.now();
   int _contractMonths = 60;
@@ -57,6 +65,13 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
   @override
   void initState() {
     super.initState();
+    final projectId = widget.projectId ?? widget.memorandum?.projectId;
+    _projectId = projectId;
+    if (projectId != null) {
+      ProjectRepository().getById(projectId).then((p) {
+        if (mounted && p != null) setState(() => _projectName = p.name);
+      });
+    }
     if (widget.memorandum != null) {
       final m = widget.memorandum!;
       _customerId = m.customerId;
@@ -147,6 +162,24 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
     }
   }
 
+  Future<void> _pickProject() async {
+    final result = await Navigator.push<ProjectExplorerItem>(context, MaterialPageRoute(
+      builder: (_) => H1Explorer<ProjectExplorerItem>(
+        config: ProjectExplorerConfig(),
+        selectionMode: true,
+      ),
+    ));
+    if (result != null && mounted) {
+      final p = await ProjectRepository().getById(result.project.id);
+      if (p != null && mounted) {
+        setState(() {
+          _projectId = p.id;
+          _projectName = p.name;
+        });
+      }
+    }
+  }
+
   Future<void> _save({bool andPop = true}) async {
     if (_customerName.isEmpty) {
       if (!mounted) return;
@@ -184,7 +217,7 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
         notes: _notesCtrl.text.isEmpty ? null : _notesCtrl.text,
         customerRepresentative: _customerRepCtrl.text.isEmpty ? null : _customerRepCtrl.text,
         companyRepresentative: _companyRepCtrl.text.isEmpty ? null : _companyRepCtrl.text,
-        projectId: widget.projectId ?? widget.memorandum?.projectId,
+        projectId: _projectId ?? widget.memorandum?.projectId,
         estimateId: widget.estimateId ?? widget.memorandum?.estimateId,
         status: widget.memorandum?.status ?? MemorandumStatus.draft,
         createdAt: widget.memorandum?.createdAt ?? DateTime.now(),
@@ -272,22 +305,29 @@ class _MemorandumInputScreenState extends State<MemorandumInputScreen> {
               ),
               const SizedBox(height: 16),
               InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _contractDate,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null && mounted) {
-                    setState(() => _contractDate = picked);
-                  }
-                },
+                onTap: _pickProject,
                 child: InputDecorator(
                   decoration: const InputDecoration(
-                    labelText: '契約日',
+                    labelText: '案件',
                   ),
-                  child: Text(_df.format(_contractDate)),
+                  child: Row(children: [
+                    Expanded(child: Text(
+                      _projectName ?? 'タップして選択',
+                      style: TextStyle(color: _projectName != null ? null : cs.onSurfaceVariant),
+                    )),
+                    if (_projectId != null)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => ProjectDetailScreen(projectId: _projectId!),
+                          ));
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Icon(Icons.open_in_new, size: 16, color: cs.primary),
+                        ),
+                      ),
+                  ]),
                 ),
               ),
               const SizedBox(height: 16),

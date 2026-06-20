@@ -82,30 +82,33 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                             itemBuilder: (ctx, i) {
                               final product = _filtered[i];
                               final stock = _stockMap[product.id] ?? 0;
-                              return ListTile(
-                                tileColor: theme.cardTheme.color ?? theme.colorScheme.surface,
-                                leading: CircleAvatar(
-                                  backgroundColor: stock > 0
-                                      ? Theme.of(context).colorScheme.primaryContainer
-                                      : Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  child: Text(
-                                    stock.toString(),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: stock > 0
-                                          ? Theme.of(context).colorScheme.onPrimaryContainer
-                                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                              return Card(
+                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                child: ListTile(
+                                  tileColor: theme.cardTheme.color ?? theme.colorScheme.surface,
+                                  leading: CircleAvatar(
+                                    backgroundColor: stock > 0
+                                        ? Theme.of(context).colorScheme.primaryContainer
+                                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                    child: Text(
+                                      stock.toString(),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: stock > 0
+                                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
                                     ),
                                   ),
+                                  title: Text(product.name),
+                                  subtitle: Text(
+                                    '¥${NumberFormat('#,###').format(product.defaultUnitPrice)}',
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => _showHistory(context, product),
                                 ),
-                                title: Text(product.name),
-                                subtitle: Text(
-                                  '¥${NumberFormat('#,###').format(product.defaultUnitPrice)}',
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => _showHistory(context, product),
                               );
                             },
                           ),
