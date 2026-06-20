@@ -288,7 +288,7 @@ class _GanttChartWidgetState extends State<GanttChartWidget> {
                           bgColor: bg,
                           gridColor: gridColor,
                           markerColor: cs.error,
-                          horizontalLineColor: cs.primary.withValues(alpha: 0.15),
+                          horizontalLineColor: cs.primary.withValues(alpha: 0.3),
                           todayX: _dayToX(DateTime.now()),
                         ),
                       ),
