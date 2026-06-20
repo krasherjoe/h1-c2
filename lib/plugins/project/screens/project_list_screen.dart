@@ -534,7 +534,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       clipBehavior: Clip.antiAlias,
-      color: isLost ? cs.surfaceContainerHighest.withValues(alpha: 0.5) : Colors.white,
+      color: isLost ? cs.surfaceContainerHighest.withValues(alpha: 0.5) : null,
       child: Stack(
         children: [
           InkWell(
@@ -647,7 +647,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
-      color: Colors.white,
       child: Stack(
         children: [
           InkWell(
