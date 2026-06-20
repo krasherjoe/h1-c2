@@ -741,7 +741,7 @@ class _DocumentPageState extends State<DocumentPage> {
     try {
       final doc = copyAsDocument(_buildDoc(), target);
       final docNumber = await _repo.generateDocumentNumber(target);
-      await _repo.save(doc.copyWith(documentNumber: docNumber));
+      await _repo.save(doc.copyWith(documentNumber: docNumber, total: doc.totalAmount));
       await _repo.addEditLog(doc.id, '変換',
         details: '${target.label}として作成（原本: ${widget.document?.documentNumber ?? ""}）\n${_items.length}明細');
       if (mounted) setState(() => _copied = true);
