@@ -31,23 +31,23 @@ echo "✅ タグ $VERSION をpush完了"
 echo ""
 echo "=== 2/5: README → GitHub ==="
 git fetch github --quiet 2>/dev/null || true
-if [ -d /tmp/h1-gh-push ]; then
-  rm -rf /tmp/h1-gh-push
+if git worktree add --checkout /tmp/h1-gh-push github/main 2>/dev/null; then
+  cp README.md /tmp/h1-gh-push/README.md
+  (
+    cd /tmp/h1-gh-push
+    git add README.md
+    if git diff --cached --quiet; then
+      echo "   README 変更なし - skip"
+    else
+      git commit -m "README ${VERSION} 更新"
+      git push github HEAD:main
+      echo "✅ GitHub README 更新完了"
+    fi
+  )
+  git worktree remove /tmp/h1-gh-push 2>/dev/null || true
+else
+  echo "   ⚠️  GitHub worktree checkout 失敗 - README更新をスキップ"
 fi
-git worktree add --checkout /tmp/h1-gh-push github/main 2>/dev/null || true
-cp README.md /tmp/h1-gh-push/README.md
-(
-  cd /tmp/h1-gh-push
-  git add README.md
-  if git diff --cached --quiet; then
-    echo "   README 変更なし - skip"
-  else
-    git commit -m "README ${VERSION} 更新"
-    git push github HEAD:main
-    echo "✅ GitHub README 更新完了"
-  fi
-)
-git worktree remove /tmp/h1-gh-push 2>/dev/null || true
 
 # === 3. APKビルド（ローカル） ===
 echo ""
