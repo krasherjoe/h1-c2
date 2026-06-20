@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/project_model.dart';
+import '../../../utils/app_theme.dart';
 
 class ProjectTimelineWidget extends StatelessWidget {
   final Project project;
@@ -85,6 +86,7 @@ class ProjectTimelineWidget extends StatelessWidget {
 
   Widget _buildTimelineBar(ColorScheme cs, double progress, bool overdue) {
     final months = project.contractMonths ?? 1;
+    final isDark = cs.brightness == Brightness.dark;
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
@@ -95,9 +97,10 @@ class ProjectTimelineWidget extends StatelessWidget {
             painter: TimelineBarPainter(
               progress: progress.clamp(0.0, 1.0),
               overdue: overdue,
-              primaryColor: cs.primary,
-              overdueColor: Colors.red,
-              surfaceColor: cs.surfaceContainerHigh,
+              barColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
+              overdueColor: isDark ? AppTheme.timelineOverdueDark : AppTheme.timelineOverdueLight,
+              surfaceColor: isDark ? AppTheme.timelineBgDark : AppTheme.timelineBgLight,
+              markerColor: AppTheme.timelineMarker,
               monthCount: months,
             ),
           ),
@@ -127,17 +130,19 @@ class ProjectTimelineWidget extends StatelessWidget {
 class TimelineBarPainter extends CustomPainter {
   final double progress;
   final bool overdue;
-  final Color primaryColor;
+  final Color barColor;
   final Color overdueColor;
   final Color surfaceColor;
+  final Color markerColor;
   final int monthCount;
 
   TimelineBarPainter({
     required this.progress,
     required this.overdue,
-    required this.primaryColor,
+    required this.barColor,
     required this.overdueColor,
     required this.surfaceColor,
+    required this.markerColor,
     this.monthCount = 1,
   });
 
@@ -155,18 +160,17 @@ class TimelineBarPainter extends CustomPainter {
 
     // 進捗バー
     if (progress > 0) {
-      final barColor = overdue ? overdueColor : primaryColor;
-      final fgPaint = Paint()..color = barColor;
+      final color = overdue ? overdueColor : barColor;
+      final fgPaint = Paint()..color = color;
       final fw = w * progress;
       canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(0, barY, fw, barH), topLeft: Radius.circular(r), bottomLeft: Radius.circular(r), topRight: Radius.circular(r), bottomRight: Radius.circular(r)), fgPaint);
     }
 
-    // 赤丸マーカー（現在位置）
-    final markerX = w * progress.clamp(0.01, 0.99);
+    // 赤丸マーカー（現在位置：0進捗でも表示）
+    final markerX = w * progress.clamp(0.0, 0.99);
     final markerR = 6.0;
-    final markerPaint = Paint()..color = Colors.red;
+    final markerPaint = Paint()..color = markerColor;
     canvas.drawCircle(Offset(markerX, h / 2), markerR, markerPaint);
-    // 白い縁取り
     final borderPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke

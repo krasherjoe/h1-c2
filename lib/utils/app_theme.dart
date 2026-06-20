@@ -10,6 +10,16 @@ class AppTheme {
   static const cardLostDark = Color(0xFF38373A);
   static const cardProgressBgLight = Color(0xFFF5F3F1);
   static const cardProgressBgDark = Color(0xFF3E3C40);
+
+  // --- プロジェクト/タイムラインカラー ---
+  static const timelineBarLight = Color(0xFF1565C0);   // blue 800
+  static const timelineBarDark = Color(0xFF64B5F6);   // blue 300
+  static const timelineMarker = Color(0xFFD32F2F);    // red 700
+  static const timelineOverdueLight = Color(0xFFD32F2F); // red 700
+  static const timelineOverdueDark = Color(0xFFEF5350);  // red 400
+  static const timelineBgLight = Color(0xFFE3E0E3);   // バー背景
+  static const timelineBgDark = Color(0xFF3E3C40);
+
   static const fontFamily = 'IPAexGothic';
 
   // --- クイックアクションアクセントカラー ---

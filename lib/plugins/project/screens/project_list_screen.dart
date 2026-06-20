@@ -397,7 +397,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ReorderableListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 80),
         itemCount: _projects.length,
         onReorder: (oldI, newI) {
           setState(() {
@@ -533,7 +533,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     final isWon = project.status == ProjectStatus.won;
     final hasBar = project.startDate != null;
     return Card(
-      margin: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
       clipBehavior: Clip.antiAlias,
       color: isLost ? (cs.brightness == Brightness.dark ? AppTheme.cardLostDark : AppTheme.cardLostLight) : null,
       child: Stack(
@@ -646,7 +646,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget _buildProjectCard(Project project, ColorScheme cs) {
     final hasBar = project.startDate != null;
     return Card(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [

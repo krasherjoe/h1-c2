@@ -15,6 +15,7 @@ import '../../ar/screens/payment_processing_screen.dart';
 import '../../../services/sync_service.dart';
 import '../../../constants/screen_ids.dart';
 import '../../../utils/theme_utils.dart' show cardBoxShadow;
+import '../../../utils/app_theme.dart';
 import '../widgets/project_timeline_widget.dart' show TimelineBarPainter;
 
 class ProjectDetailScreen extends StatefulWidget {
@@ -228,9 +229,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             painter: TimelineBarPainter(
               progress: progress.clamp(0.0, 1.0),
               overdue: overdue,
-              primaryColor: cs.primary,
-              overdueColor: Colors.red,
-              surfaceColor: cs.surfaceContainerHigh,
+              barColor: cs.brightness == Brightness.dark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
+              overdueColor: cs.brightness == Brightness.dark ? AppTheme.timelineOverdueDark : AppTheme.timelineOverdueLight,
+              surfaceColor: cs.brightness == Brightness.dark ? AppTheme.timelineBgDark : AppTheme.timelineBgLight,
+              markerColor: AppTheme.timelineMarker,
               monthCount: months,
             ),
           ),
