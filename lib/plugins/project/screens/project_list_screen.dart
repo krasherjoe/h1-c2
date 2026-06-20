@@ -4,6 +4,7 @@ import '../../../services/database_helper.dart';
 import '../../../models/project_model.dart';
 import '../../../utils/app_theme.dart';
 import '../../../widgets/h1_text_field.dart';
+import '../widgets/project_timeline_widget.dart' show TimelineBarPainter;
 import 'project_detail_screen.dart';
 
 class ProjectListScreen extends StatefulWidget {
@@ -551,7 +552,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 ).then((_) => _load());
               },
             child: Padding(
-              padding: EdgeInsets.fromLTRB(10, 10, 36, hasBar ? 12 : 10),
+              padding: EdgeInsets.fromLTRB(10, 10, 36, hasBar ? 28 : 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -632,14 +633,26 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ? project.contractMonths! * 30
         : 365;
     final progress = (elapsedDays / totalDays).clamp(0.0, 1.0);
-    final barColor = overdue ? cs.error : (progress >= 1.0 ? cs.secondary : cs.primary);
-    return ClipRRect(
-      child: LinearProgressIndicator(
-        value: progress.clamp(0.0, 1.0),
-        minHeight: 2,
-        backgroundColor: cs.brightness == Brightness.dark ? AppTheme.cardProgressBgDark : AppTheme.cardProgressBgLight,
-        valueColor: AlwaysStoppedAnimation(barColor.withValues(alpha: 0.5)),
-      ),
+    final isDark = cs.brightness == Brightness.dark;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        return SizedBox(
+          height: 20,
+          child: CustomPaint(
+            size: Size(w, 20),
+            painter: TimelineBarPainter(
+              progress: progress.clamp(0.0, 1.0),
+              overdue: overdue,
+              barColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
+              overdueColor: isDark ? AppTheme.timelineOverdueDark : AppTheme.timelineOverdueLight,
+              surfaceColor: isDark ? AppTheme.cardProgressBgDark : AppTheme.cardProgressBgLight,
+              markerColor: AppTheme.timelineMarker,
+              monthCount: hasContract && project.contractMonths != null ? project.contractMonths! : 1,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -664,7 +677,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               },
             onLongPress: () => _showProjectMenu(project),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, hasBar ? 18 : 16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, hasBar ? 28 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
