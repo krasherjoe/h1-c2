@@ -4,6 +4,7 @@ import '../models/project_explorer_item.dart';
 import '../screens/project_detail_screen.dart';
 import '../../../services/project_repository.dart';
 import '../../../models/project_model.dart';
+import '../../../utils/app_theme.dart';
 
 class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
   String _projectStatusFilter = '';
@@ -184,7 +185,7 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isLost ? cs.surfaceContainerHighest.withValues(alpha: 0.5) : null,
+        color: isLost ? (cs.brightness == Brightness.dark ? AppTheme.cardLostDark : AppTheme.cardLostLight) : null,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(

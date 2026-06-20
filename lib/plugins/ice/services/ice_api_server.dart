@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:h_1_core/plugin_system/plugin_registry.dart';
 import 'package:h_1_core/services/company_service.dart';
 import 'package:h_1_core/services/debug_console.dart';
+import 'package:h_1_core/utils/app_theme.dart';
 import 'ice_state_collector.dart';
 
 class IceApiServer {
@@ -176,6 +177,16 @@ class IceApiServer {
         case '/api/commands':
           await _handleApiCommands(request.response);
 
+        case '/api/theme':
+          await _handleApiTheme(request.response);
+
+        case '/api/projects':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiProjects(request.response);
+
         case '/api/db/tables':
           if (method != 'GET') {
             await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
@@ -209,6 +220,8 @@ class IceApiServer {
               'GET  /api/commands',
               'GET  /api/db/tables',
               'GET  /api/preferences?key=...',
+              'GET  /api/theme',
+              'GET  /api/projects',
             ],
           });
       }
@@ -478,6 +491,42 @@ class IceApiServer {
       }
     } catch (e) {
       await _error(response, HttpStatus.internalServerError, 'Failed to get preferences: $e');
+    }
+  }
+
+  Future<void> _handleApiTheme(HttpResponse response) async {
+    final light = AppTheme.cardLight;
+    final dark = AppTheme.cardDark;
+    await _respond(response, {
+      'mode': 'light',
+      'cardLight': '#${light.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+      'cardDark': '#${dark.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+      'description': 'CardTheme color from AppTheme. Cards without explicit color inherit this. Lost projects use AppTheme.cardLostLight/cardLostDark.',
+    });
+  }
+
+  Future<void> _handleApiProjects(HttpResponse response) async {
+    try {
+      final rows = await _db.rawQuery(
+        "SELECT id, name, status, customer_name, type, pipeline_stage, progress, total_amount, start_date, end_date, contract_months, created_at, updated_at FROM projects ORDER BY sort_order IS NULL, sort_order, created_at DESC",
+      );
+      final lightHex = '#${AppTheme.cardLight.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';
+      final projects = rows.map((r) {
+        final status = r['status'] as String? ?? 'active';
+        final isLost = status == 'lost';
+        return {
+          ...r,
+          'cardColor': isLost ? 'cardLostLight/cardLostDark' : lightHex,
+          'isLost': isLost,
+        };
+      }).toList();
+      await _respond(response, {
+        'count': projects.length,
+        'cardColorLight': lightHex,
+        'projects': projects,
+      });
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get projects: $e');
     }
   }
 

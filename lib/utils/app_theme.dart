@@ -6,6 +6,10 @@ class AppTheme {
   static const wallpaperDark = Color(0xFF2C2C2E);
   static const cardLight = Color(0xFFFFFFFF);
   static const cardDark = Color(0xFF3E3E42);
+  static const cardLostLight = Color(0xFFF0ECEA);
+  static const cardLostDark = Color(0xFF38373A);
+  static const cardProgressBgLight = Color(0xFFF5F3F1);
+  static const cardProgressBgDark = Color(0xFF3E3C40);
   static const fontFamily = 'IPAexGothic';
 
   // --- クイックアクションアクセントカラー ---

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../services/project_repository.dart';
 import '../../../services/database_helper.dart';
 import '../../../models/project_model.dart';
+import '../../../utils/app_theme.dart';
 import '../../../widgets/h1_text_field.dart';
 import 'project_detail_screen.dart';
 
@@ -534,7 +535,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       clipBehavior: Clip.antiAlias,
-      color: isLost ? cs.surfaceContainerHighest.withValues(alpha: 0.5) : null,
+      color: isLost ? (cs.brightness == Brightness.dark ? AppTheme.cardLostDark : AppTheme.cardLostLight) : null,
       child: Stack(
         children: [
           InkWell(
@@ -636,7 +637,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       child: LinearProgressIndicator(
         value: progress.clamp(0.0, 1.0),
         minHeight: 2,
-        backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        backgroundColor: cs.brightness == Brightness.dark ? AppTheme.cardProgressBgDark : AppTheme.cardProgressBgLight,
         valueColor: AlwaysStoppedAnimation(barColor.withValues(alpha: 0.5)),
       ),
     );
