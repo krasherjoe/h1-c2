@@ -4,7 +4,7 @@ import '../../../../services/input_style_service.dart';
 class QuickActionButton extends StatelessWidget {
   static const double _verticalPadding = 8;
   static const double _iconSize = 22;
-  static const double _iconTextGap = 1;
+  static const double _iconTextGap = 0.5;
   static const double _textFontSize = 11;
 
   static double get itemHeight =>
