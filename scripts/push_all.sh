@@ -66,7 +66,7 @@ echo "✅ APKビルド完了"
 echo ""
 echo "=== 5/6: GitHub Release ==="
 APK_NAME="h1-core-$VERSION.apk"
-cp build/app/outputs/flutter-apk/app-release.apk "/tmp/$APK_NAME"
+cp build/app/outputs/flutter-apk/app-release.apk "$HOME/$APK_NAME"
 PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
 if [ -n "$PREV_TAG" ]; then
   LOG=$(git log --oneline --no-decorate "$PREV_TAG"..HEAD 2>/dev/null || true)
@@ -81,7 +81,8 @@ gh release create "$VERSION" \
   --repo krasherjoe/h1-core \
   --title "$VERSION" \
   --notes "$BODY" \
-  "/tmp/$APK_NAME#$APK_NAME"
+  "$HOME/$APK_NAME#$APK_NAME"
+rm -f "$HOME/$APK_NAME"
 echo "✅ GitHub Release 完了"
 
 # === 6. 古いリリース削除（最新5件のみ保持） ===
