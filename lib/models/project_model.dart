@@ -64,6 +64,7 @@ class Project {
   final String? schemeId;
   final int currentStageIndex;
   final int sortOrder;
+  final String? ganttConfig;
 
   const Project({
     required this.id,
@@ -84,6 +85,7 @@ class Project {
     this.schemeId,
     this.currentStageIndex = 0,
     this.sortOrder = 0,
+    this.ganttConfig,
   });
 
   int get elapsedMonths {
@@ -118,6 +120,7 @@ class Project {
         'scheme_id': schemeId,
         'current_stage_index': currentStageIndex,
         'sort_order': sortOrder,
+        'gantt_config': ganttConfig,
       };
 
   factory Project.fromMap(Map<String, dynamic> map) {
@@ -151,6 +154,7 @@ class Project {
       schemeId: map['scheme_id'] as String?,
       currentStageIndex: (map['current_stage_index'] as int?) ?? 0,
       sortOrder: (map['sort_order'] as int?) ?? 0,
+      ganttConfig: map['gantt_config'] as String?,
     );
   }
 
@@ -173,6 +177,7 @@ class Project {
     String? schemeId,
     int? currentStageIndex,
     int? sortOrder,
+    String? ganttConfig,
   }) {
     return Project(
       id: id ?? this.id,
@@ -193,6 +198,7 @@ class Project {
       schemeId: schemeId ?? this.schemeId,
       currentStageIndex: currentStageIndex ?? this.currentStageIndex,
       sortOrder: sortOrder ?? this.sortOrder,
+      ganttConfig: ganttConfig ?? this.ganttConfig,
     );
   }
 }

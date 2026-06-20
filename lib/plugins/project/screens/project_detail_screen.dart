@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:convert';
 import '../../../services/project_repository.dart';
 import '../../../services/database_helper.dart';
 import '../../../models/project_model.dart';
+import '../../../models/document_type_colors.dart';
 import '../../documents/models/document_model.dart';
 import '../../documents/logic/document_converter.dart';
 import '../../documents/screens/document_page.dart';
@@ -15,8 +17,7 @@ import '../../ar/screens/payment_processing_screen.dart';
 import '../../../services/sync_service.dart';
 import '../../../constants/screen_ids.dart';
 import '../../../utils/theme_utils.dart' show cardBoxShadow;
-import '../../../utils/app_theme.dart';
-import '../widgets/project_timeline_widget.dart' show TimelineBarPainter;
+import '../widgets/project_timeline_widget.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final String? projectId;
@@ -201,79 +202,31 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   Widget _buildTimeline(Project project, ColorScheme cs) {
-    final start = project.startDate!;
-    final end = project.endDate;
-    final months = project.contractMonths ?? 1;
-    final totalDays = end != null
-        ? end.difference(start).inDays
-        : months * 30;
-    final now = DateTime.now();
-    final elapsed = now.difference(start).inDays.clamp(0, totalDays);
-    final progress = totalDays > 0 ? elapsed / totalDays : 0.0;
-    final overdue = project.isOverdue;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          end != null
-              ? '${_fmtDate(start)} 〜 ${_fmtDate(end)}'
-              : '${_fmtDate(start)} 〜 ${months}ヶ月',
-          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
-        ),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 40,
-          child: CustomPaint(
-            size: const Size(double.infinity, 40),
-            painter: TimelineBarPainter(
-              progress: progress.clamp(0.0, 1.0),
-              overdue: overdue,
-              barColor: cs.brightness == Brightness.dark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
-              overdueColor: cs.brightness == Brightness.dark ? AppTheme.timelineOverdueDark : AppTheme.timelineOverdueLight,
-              surfaceColor: cs.brightness == Brightness.dark ? AppTheme.timelineBgDark : AppTheme.timelineBgLight,
-              markerColor: AppTheme.timelineMarker,
-              monthCount: months,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Row(children: [
-          Text('${(progress * 100).toInt()}% 経過',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: overdue ? Colors.red : cs.onSurface,
-            )),
-          const Spacer(),
-          if (project.contractMonths != null && project.contractMonths! > 0)
-            Text('${project.elapsedMonths}/${months}ヶ月',
-              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-        ]),
-        if (overdue) ...[
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.warning_amber, size: 14, color: Colors.red.shade700),
-                const SizedBox(width: 4),
-                Text('契約期間超過',
-                  style: TextStyle(fontSize: 12, color: Colors.red.shade700, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-        ],
-      ],
+    return ProjectTimelineWidget(
+      project: project,
+      linkedDocs: _linkedDocs,
+      onPresetChanged: (preset) async {
+        try {
+          final updated = project.copyWith(
+            ganttConfig: jsonEncode(preset.toJson()),
+          );
+          await _repo.save(updated);
+          SyncService.pushChange(
+            entityType: 'project',
+            entityId: project.id,
+            action: 'save',
+            data: updated.toMap(),
+          );
+          await _load();
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('プリセット保存エラー: $e')),
+          );
+        }
+      },
     );
   }
-
-  String _fmtDate(DateTime d) => '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
 
   DateTime _calcEndDate(Project project) {
     if (project.startDate == null || project.contractMonths == null) {
@@ -428,16 +381,47 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           ..._linkedDocs.map((doc) {
             final type = documentTypeFromString(doc['document_type'] as String? ?? '');
             final typeLabel = type?.label ?? doc['document_type'] as String? ?? '';
-            final docNum = doc['document_number'] as String? ?? '';
             final dateStr = doc['date'] as String? ?? '';
-            final total = doc['total'] as int? ?? 0;
+            final customerName = doc['customer_name'] as String? ?? '';
+            final subject = doc['subject'] as String? ?? '';
+            final badgeColor = type != null ? documentTypeBadgeColor(type) : cs.primaryContainer;
             return ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Icon(Icons.description, color: cs.primary, size: 20),
-              title: Text('$typeLabel: $docNum',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface)),
-              subtitle: Text('$dateStr  ￥${_formatMoney(total)}',
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              title: Row(
+                children: [
+                  Text(
+                    dateStr,
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: badgeColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      typeLabel,
+                      style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    customerName,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.onSurface),
+                  ),
+                  if (subject.isNotEmpty)
+                    Text(
+                      subject,
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    ),
+                ],
+              ),
               trailing: Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
               onTap: () async {
                 final docModel = await _docRepo.fetchById(doc['id'] as String);

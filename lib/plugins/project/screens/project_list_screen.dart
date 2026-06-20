@@ -646,8 +646,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               overdue: overdue,
               barColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
               overdueColor: isDark ? AppTheme.timelineOverdueDark : AppTheme.timelineOverdueLight,
-              surfaceColor: isDark ? AppTheme.cardProgressBgDark : AppTheme.cardProgressBgLight,
-              markerColor: AppTheme.timelineMarker,
+              surfaceColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
+              markerColor: Colors.red,
               monthCount: hasContract && project.contractMonths != null ? project.contractMonths! : 1,
             ),
           ),
@@ -677,7 +677,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               },
             onLongPress: () => _showProjectMenu(project),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, hasBar ? 28 : 16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, hasBar ? 28 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
