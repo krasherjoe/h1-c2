@@ -49,15 +49,22 @@ else
   echo "   ⚠️  GitHub worktree checkout 失敗 - README更新をスキップ"
 fi
 
-# === 3. APKビルド（ローカル） ===
+# === 3. pubspec.yaml バージョン更新 ===
 echo ""
-echo "=== 3/5: APKビルド（ローカル） ==="
+echo "=== 3/6: pubspec.yaml バージョン更新 ==="
+PURE_VERSION="${VERSION#v}"
+sed -i "s/^version: .*/version: $PURE_VERSION/" pubspec.yaml
+echo "✅ pubspec.yaml → $PURE_VERSION"
+
+# === 4. APKビルド（ローカル） ===
+echo ""
+echo "=== 4/6: APKビルド（ローカル） ==="
 flutter build apk --release --dart-define=APP_VERSION="$VERSION"
 echo "✅ APKビルド完了"
 
-# === 4. GitHub Release ===
+# === 5. GitHub Release ===
 echo ""
-echo "=== 4/5: GitHub Release ==="
+echo "=== 5/6: GitHub Release ==="
 APK_NAME="h1-core-$VERSION.apk"
 cp build/app/outputs/flutter-apk/app-release.apk "/tmp/$APK_NAME"
 PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -77,9 +84,9 @@ gh release create "$VERSION" \
   "/tmp/$APK_NAME#$APK_NAME"
 echo "✅ GitHub Release 完了"
 
-# === 5. 古いリリース削除（最新5件のみ保持） ===
+# === 6. 古いリリース削除（最新5件のみ保持） ===
 echo ""
-echo "=== 5/5: 古いリリース削除 ==="
+echo "=== 6/6: 古いリリース削除 ==="
 gh release list --limit 200 --repo krasherjoe/h1-core --json tagName --jq '.[].tagName' \
   | sort -V \
   | head -n -5 \
