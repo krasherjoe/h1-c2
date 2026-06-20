@@ -3,12 +3,10 @@ import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/document_type_colors.dart';
 import '../../../utils/theme_utils.dart' hide documentTypeColor;
 import '../../../services/input_style_service.dart';
-import '../../../services/project_repository.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import '../screens/document_page.dart';
 import '../../project/screens/project_detail_screen.dart';
-import '../../../models/project_model.dart';
 import '../../../constants/screen_ids.dart';
 
 class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
@@ -230,40 +228,31 @@ class _ProjectBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return FutureBuilder<Project?>(
-      future: ProjectRepository().getById(projectId),
-      builder: (context, snapshot) {
-        final name = snapshot.data?.name ?? '';
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProjectDetailScreen(projectId: projectId),
-              ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.only(left: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.workspaces, size: 12, color: cs.onPrimaryContainer),
-                if (name.isNotEmpty) ...[
-                  const SizedBox(width: 3),
-                  Text(name, style: TextStyle(fontSize: 10, color: cs.onPrimaryContainer, fontWeight: FontWeight.w500),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
-              ],
-            ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProjectDetailScreen(projectId: projectId),
           ),
         );
       },
+      child: Container(
+        margin: const EdgeInsets.only(left: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: cs.primaryContainer.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.workspaces, size: 12, color: cs.onPrimaryContainer),
+            const SizedBox(width: 3),
+            Text('案件', style: TextStyle(fontSize: 10, color: cs.onPrimaryContainer, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
     );
   }
 }
