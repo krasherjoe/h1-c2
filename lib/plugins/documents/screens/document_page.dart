@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../utils/theme_utils.dart' show textColorOn, cardDecoration;
 import 'package:uuid/uuid.dart';
 import 'dart:async';
@@ -348,8 +349,16 @@ class _DocumentPageState extends State<DocumentPage> {
             color: textColorOn(color)))),
       const Spacer(),
       if (widget.document?.documentNumber != null && widget.document!.documentNumber.isNotEmpty)
-        Text(widget.document!.documentNumber,
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+        GestureDetector(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: widget.document!.documentNumber));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('伝票コードをコピーしました: ${widget.document!.documentNumber}'), duration: const Duration(seconds: 2)),
+            );
+          },
+          child: Text(widget.document!.documentNumber,
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+        ),
     ]);
   }
 
@@ -922,7 +931,7 @@ class _DocumentPageState extends State<DocumentPage> {
     final removed = orig.where((o) => !curr.any((c) => c.id == o.id)).toList();
     final changed = curr.where((c) {
       final o = orig.where((o) => o.id == c.id);
-      return o.isNotEmpty && (o.first.quantity != c.quantity || o.first.unitPrice != c.unitPrice || o.first.productName != c.productName);
+      return o.isNotEmpty && (o.first.quantity != c.quantity || o.first.unitPrice != c.unitPrice || o.first.productName != c.productName || o.first.discountAmount != c.discountAmount || o.first.discountRate != c.discountRate);
     }).toList();
     final parts = <String>[];
     if (added.isNotEmpty) {
@@ -938,6 +947,16 @@ class _DocumentPageState extends State<DocumentPage> {
         if (o.productName != c.productName) diffs.add('名称: ${o.productName}→${c.productName}');
         if (o.quantity != c.quantity) diffs.add('数量: ${o.quantity}→${c.quantity}');
         if (o.unitPrice != c.unitPrice) diffs.add('単価: ¥${o.unitPrice}→¥${c.unitPrice}');
+        if (o.discountAmount != c.discountAmount) {
+          final oldD = o.discountAmount ?? 0;
+          final newD = c.discountAmount ?? 0;
+          diffs.add('値引額: ¥$oldD→¥$newD');
+        }
+        if (o.discountRate != c.discountRate) {
+          final oldR = o.discountRate ?? 0;
+          final newR = c.discountRate ?? 0;
+          diffs.add('値引率: ${(oldR * 100).toInt()}%→${(newR * 100).toInt()}%');
+        }
         return '~ ${c.productName} (${diffs.join(", ")})';
       }));
     }
