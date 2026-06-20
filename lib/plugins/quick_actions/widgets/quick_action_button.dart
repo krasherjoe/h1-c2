@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import '../../../../services/input_style_service.dart';
 
 class QuickActionButton extends StatelessWidget {
-  static const double _verticalPadding = 8;
+  static const double _verticalPadding = 4;
   static const double _iconSize = 22;
   static const double _iconTextGap = 1;
   static const double _textFontSize = 11;
 
   static double get itemHeight =>
-      (_verticalPadding * 2 + _iconSize + _iconTextGap + _textFontSize * 1.4).clamp(56.0, double.infinity);
+      (_verticalPadding * 2 + _iconSize + _iconTextGap + _textFontSize * 1.4).clamp(44.0, double.infinity);
   final double? width;
   final IconData icon;
   final String label;
