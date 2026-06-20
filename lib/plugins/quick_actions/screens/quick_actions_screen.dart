@@ -52,19 +52,18 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
     final btnW = 72.0;
     final gap = 4.0;
     final perRow = ((screenW + gap) / (btnW + gap)).floor().clamp(1, 10);
-    final maxRows = _pages.fold(1, (max, page) {
-      final rows = ((page.actionIds.length - 1) ~/ perRow) + 1;
-      return rows > max ? rows : max;
-    });
-    final height = 8.0 + (maxRows * QuickActionButton.itemHeight) + ((maxRows - 1) * 4.0) + 4.0;
+    // 現在表示中のページだけで行数を計算（全ページ最大値は使わない）
+    final currentItems = _pages[_currentPage].actionIds.length;
+    final rows = ((currentItems - 1) ~/ perRow) + 1;
+    final height = 8.0 + (rows * QuickActionButton.itemHeight) + ((rows - 1) * 4.0) + 4.0;
     QuickActionService.lastLayoutInfo = {
       'screenW': screenW.toInt(),
       'btnW': btnW.toInt(),
       'gap': gap.toInt(),
       'perRow': perRow,
-      'maxRows': maxRows,
+      'rows': rows,
       'pages': _pages.length,
-      'items': _pages.fold(0, (s, p) => s + p.actionIds.length),
+      'items': currentItems,
       'calcHeight': height.toInt(),
       'itemHeight': QuickActionButton.itemHeight.toInt(),
     };
@@ -212,7 +211,8 @@ class _QuickActionsPanelState extends State<QuickActionsPanel>
             ],
           ),
         ),
-        SizedBox(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           height: _calcHeight(),
           child: PageView(
             controller: _pageCtrl,
