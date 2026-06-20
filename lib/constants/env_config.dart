@@ -4,19 +4,12 @@ class EnvConfig {
   static String get googleClientId =>
       const String.fromEnvironment('GOOGLE_CLIENT_ID');
 
-  static String get mattermostBaseUrl =>
-      const String.fromEnvironment('MATTERMOST_BASE_URL',
-          defaultValue: 'https://mm.ka.sugeee.com');
-
-  static String get mattermostTeamName =>
-      const String.fromEnvironment('MATTERMOST_TEAM_NAME',
-          defaultValue: 'cyb');
-
-  static String get mattermostWebhookUrl =>
-      const String.fromEnvironment('MATTERMOST_WEBHOOK_URL');
-
   static String get googleClientIdOrDefault =>
       googleClientId.isNotEmpty
           ? googleClientId
           : '';
+
+  /// ビルド日付 (YYYYMMDD)。dart-define で注入、未設定の場合は空文字
+  static String get appBuildDate =>
+      const String.fromEnvironment('APP_BUILD_DATE');
 }

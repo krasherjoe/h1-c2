@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -35,7 +33,6 @@ import 'plugins/company/company_plugin.dart';
 import 'plugins/explorer/explorer_plugin.dart';
 import 'plugins/backup/backup_plugin.dart';
 import 'plugins/conversion/conversion_plugin.dart';
-import 'plugins/debug/services/debug_service.dart';
 import 'plugins/conversion/services/data_migration_service.dart';
 import 'plugins/conversion/screens/conversion_guard_screen.dart';
 import 'plugins/analysis/analysis_plugin.dart';
@@ -53,9 +50,7 @@ import 'services/google_auth_service.dart';
 import 'utils/app_theme.dart';
 import 'services/error_reporter.dart';
 import 'services/history_db_service.dart';
-import 'services/mm_command_service.dart';
 import 'services/debug_console.dart';
-import 'services/log_dispatcher.dart';
 import 'services/input_style_service.dart';
 import 'services/sync_garbage_collector.dart';
 import 'screens/dashboard_screen.dart';
@@ -112,73 +107,6 @@ Future<void> _migrateIfNeeded() async {
   await prefs.setBool('migrated_v2', true);
 }
 
-Future<String> _cmdMmCheck(List<String> _) async {
-  try {
-    final buf = StringBuffer();
-    final prefs = await SharedPreferences.getInstance();
-    final pat = prefs.getString('mattermost_pat');
-    final baseUrl = prefs.getString('mattermost_base_url') ?? 'https://mm.ka.sugeee.com';
-    final teamName = prefs.getString('mattermost_team_name') ?? 'cyb';
-    final webhookUrl = prefs.getString('mattermost_webhook_url');
-
-    buf.writeln('📡 Mattermost 診断');
-    buf.writeln('  URL: $baseUrl');
-    buf.writeln('  チーム: $teamName');
-    buf.writeln('  PAT: ${pat != null ? '✅ 設定済み (${pat.substring(0, 4)}...)': '❌ 未設定'}');
-    buf.writeln('  Webhook: ${webhookUrl != null ? '✅ 設定済み' : '❌ 未設定'}');
-
-    if (pat == null) {
-      buf.writeln('\n❌ PAT未設定のため接続テストをスキップ');
-      return buf.toString();
-    }
-
-    final headers = {'Authorization': 'Bearer $pat', 'Content-Type': 'application/json'};
-
-    buf.writeln('\n--- 接続テスト ---');
-    try {
-      final pingRes = await http.get(Uri.parse('$baseUrl/api/v4/system/ping'), headers: headers);
-      if (pingRes.statusCode == 200) {
-        buf.writeln('  Ping: ✅ ${pingRes.body}');
-      } else {
-        buf.writeln('  Ping: ❌ (${pingRes.statusCode})');
-      }
-    } catch (e) {
-      buf.writeln('  Ping: ❌ $e');
-      buf.writeln('\n❌ サーバーに到達できません');
-      return buf.toString();
-    }
-
-    try {
-      final teamRes = await http.get(Uri.parse('$baseUrl/api/v4/teams/name/$teamName'), headers: headers);
-      if (teamRes.statusCode == 200) {
-        final team = jsonDecode(teamRes.body);
-        buf.writeln('  チーム: ✅ ${team['display_name']} (${team['id']})');
-        final teamId = team['id'] as String;
-
-        final chRes = await http.get(
-          Uri.parse('$baseUrl/api/v4/teams/$teamId/channels/name/h1-debug'),
-          headers: headers,
-        );
-        if (chRes.statusCode == 200) {
-          final ch = jsonDecode(chRes.body);
-          buf.writeln('  チャンネル(h1-debug): ✅ ${ch['display_name']} (${ch['id']})');
-        } else {
-          buf.writeln('  チャンネル(h1-debug): ❌ (${chRes.statusCode})');
-        }
-      } else {
-        buf.writeln('  チーム: ❌ (${teamRes.statusCode})');
-      }
-    } catch (e) {
-      buf.writeln('  チーム/チャンネル取得: ❌ $e');
-    }
-
-    buf.writeln('\n✅ 診断完了');
-    return buf.toString();
-  } catch (e) {
-    return 'mmcheck 失敗: $e';
-  }
-}
-
 Future<String> _cmdStatus(List<String> _) async {
   try {
     final db = await DatabaseHelper().database;
@@ -198,10 +126,6 @@ Future<String> _cmdEnv(List<String> _) async {
       '${EnvConfig.googleClientId.isNotEmpty ? "✅ ${EnvConfig.googleClientId}" : "❌ 未設定"}');
   buf.writeln('  Android default_web_client_id: '
       '${EnvConfig.googleClientIdOrDefault.isNotEmpty ? "✅ ${EnvConfig.googleClientIdOrDefault}" : "❌ 未設定"}');
-  buf.writeln('  MATTERMOST_BASE_URL: ${EnvConfig.mattermostBaseUrl}');
-  buf.writeln('  MATTERMOST_TEAM_NAME: ${EnvConfig.mattermostTeamName}');
-  buf.writeln('  MATTERMOST_WEBHOOK_URL: '
-      '${EnvConfig.mattermostWebhookUrl.isNotEmpty ? "✅ 設定済み" : "❌ 未設定"}');
   if (Platform.isAndroid) {
     buf.writeln('');
     buf.writeln('  ※ Android は AndroidManifest.xml の default_web_client_id を使用');
@@ -257,49 +181,34 @@ Future<String> _cmdDump(List<String> _) async {
   }
 }
 
-Future<String> _cmdDbSend(List<String> _) async {
-  try {
-    final db = await DatabaseHelper().database;
-    final file = File(db.path);
-    if (!await file.exists()) return 'DBファイルなし';
-    final bytes = await file.readAsBytes();
-    final svc = MmCommandService.instance;
-    final channelId = await svc.channelId;
-    if (channelId == null) return 'チャンネル取得失敗';
-    if (svc.pat == null || svc.baseUrl == null) return 'PAT未設定';
+const _includeDebug = bool.fromEnvironment('INCLUDE_DEBUG', defaultValue: true);
 
-    final uploadReq = http.MultipartRequest(
-      'POST', Uri.parse('${svc.baseUrl}/api/v4/files'),
-    );
-    uploadReq.headers['Authorization'] = 'Bearer ${svc.pat}';
-    uploadReq.fields['channel_id'] = channelId;
-    uploadReq.files.add(await http.MultipartFile.fromBytes('files', bytes, filename: 'h1-core_db_cmd.db'));
-    final uploadRes = await uploadReq.send();
-    final uploadBody = await uploadRes.stream.bytesToString();
-    if (uploadRes.statusCode != 201) return 'アップロード失敗(${uploadRes.statusCode})';
-    final data = jsonDecode(uploadBody);
-    final fileIds = (data['file_infos'] as List).map<String>((f) => f['id'] as String).toList();
-    await http.post(
-      Uri.parse('${svc.baseUrl}/api/v4/posts'),
-      headers: {'Authorization': 'Bearer ${svc.pat}', 'Content-Type': 'application/json'},
-      body: jsonEncode({'channel_id': channelId, 'message': ':floppy_disk: **コマンド経由DB送信**', 'file_ids': fileIds}),
-    );
-    return 'DB送信完了';
-  } catch (e) {
-    return 'DB送信失敗: $e';
+void _checkExpiryOrExit() {
+  final buildDateStr = EnvConfig.appBuildDate;
+  if (buildDateStr.isEmpty) return;
+  if (buildDateStr.length != 8) return;
+  final year = int.tryParse(buildDateStr.substring(0, 4));
+  final month = int.tryParse(buildDateStr.substring(4, 6));
+  final day = int.tryParse(buildDateStr.substring(6, 8));
+  if (year == null || month == null || day == null) return;
+  final buildDate = DateTime(year, month, day);
+  final expiry = buildDate.add(const Duration(days: 90));
+  if (DateTime.now().isAfter(expiry)) {
+    _showFatalError('このバージョンの有効期限が切れています。\n新しいバージョンをインストールしてください。\n\n'
+        'ビルド日付: $buildDateStr\n'
+        '有効期限: ${expiry.toIso8601String().substring(0, 10)}');
   }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ビルド日付チェック（90日経過で起動不可）
+  _checkExpiryOrExit();
+
   runZonedGuarded(() async {
-    // 起動時エラーでMattermostにログを送信できるよう、先にErrorReporterを初期化
     try {
       await ErrorReporter.initVersion();
-      await DebugService.initVersion();
-      await MmCommandService.instance.loadConfig();
-      await ErrorReporter.sendLog(message: '[Startup] main() begin - app starting');
     } catch (_) {}
 
     FlutterError.onError = (details) {
@@ -327,44 +236,38 @@ void main() async {
       );
     }
 
-    await LogDispatcher.loadConfig();
-
   DebugConsole.register('ping', (_) async => 'pong');
-  DebugConsole.register('mmcheck', _cmdMmCheck);
   DebugConsole.register('system.status', _cmdStatus);
   DebugConsole.register('system.env', _cmdEnv);
   DebugConsole.register('google.status', _cmdGoogleStatus);
-  DebugConsole.register('system.dump', _cmdDump);
-  DebugConsole.register('db.send', _cmdDbSend);
-  DebugConsole.register('db.snapshot', (_) async {
-    final path = await DbSnapshotService.snapshot();
-    return path != null ? 'スナップショット作成完了' : 'スナップショット失敗';
-  });
-  DebugConsole.register('db.restore', (args) async {
-    if (args.isEmpty) {
-      final snaps = await DbSnapshotService.list();
-      if (snaps.isEmpty) return 'スナップショットなし';
-      final lines = snaps.asMap().entries.map((e) => '  ${e.key}: ${e.value.split('/').last}').join('\n');
-      return 'スナップショット一覧:\n$lines\n\n⚠️ 復元すると現在のデータが失われます。\n使用例: !opencode db.restore 0 --force';
-    }
-    final hasForce = args.contains('--force');
-    if (!hasForce) {
-      final db = await DatabaseHelper().database;
-      final docCount = await db.rawQuery("SELECT COUNT(*) as c FROM documents WHERE is_current = 1");
-      final invCount = await db.rawQuery("SELECT COUNT(*) as c FROM invoices WHERE is_current = 1");
-      final docTotal = (docCount.first['c'] as int? ?? 0) + (invCount.first['c'] as int? ?? 0);
-      return '⚠️ 復元すると現在のデータ($docTotal件の伝票)が失われます。\n'
-             '続行する場合は --force を付けて再実行:\n'
-             '!opencode db.restore ${args[0]} --force';
-    }
-    final index = int.tryParse(args[0]);
-    if (index == null) return '数値を指定: !opencode db.restore <index> --force';
-    await DbSnapshotService.restore(index);
-    return '復元完了、アプリを再起動してください';
-  });
-
-  if (MmCommandService.instance.isEnabled) {
-    MmCommandService.instance.start();
+  if (_includeDebug) {
+    DebugConsole.register('system.dump', _cmdDump);
+    DebugConsole.register('db.snapshot', (_) async {
+      final path = await DbSnapshotService.snapshot();
+      return path != null ? 'スナップショット作成完了' : 'スナップショット失敗';
+    });
+    DebugConsole.register('db.restore', (args) async {
+      if (args.isEmpty) {
+        final snaps = await DbSnapshotService.list();
+        if (snaps.isEmpty) return 'スナップショットなし';
+        final lines = snaps.asMap().entries.map((e) => '  ${e.key}: ${e.value.split('/').last}').join('\n');
+        return 'スナップショット一覧:\n$lines\n\n⚠️ 復元すると現在のデータが失われます。\n使用例: !opencode db.restore 0 --force';
+      }
+      final hasForce = args.contains('--force');
+      if (!hasForce) {
+        final db = await DatabaseHelper().database;
+        final docCount = await db.rawQuery("SELECT COUNT(*) as c FROM documents WHERE is_current = 1");
+        final invCount = await db.rawQuery("SELECT COUNT(*) as c FROM invoices WHERE is_current = 1");
+        final docTotal = (docCount.first['c'] as int? ?? 0) + (invCount.first['c'] as int? ?? 0);
+        return '⚠️ 復元すると現在のデータ($docTotal件の伝票)が失われます。\n'
+               '続行する場合は --force を付けて再実行:\n'
+               '!opencode db.restore ${args[0]} --force';
+      }
+      final index = int.tryParse(args[0]);
+      if (index == null) return '数値を指定: !opencode db.restore <index> --force';
+      await DbSnapshotService.restore(index);
+      return '復元完了、アプリを再起動してください';
+    });
   }
 
   Database? db;
@@ -427,7 +330,7 @@ void main() async {
     InventoryPlugin(), PurchasePlugin(),
     AnalysisPlugin(), Accounting2Plugin(),
     QuickActionsPlugin(), ExplorerPlugin(), BackupPlugin(),
-    ConversionPlugin(), AuditPlugin(), DebugPlugin(),
+    ConversionPlugin(), AuditPlugin(), if (_includeDebug) DebugPlugin(),
     DriveBackupPlugin(), ProjectPlugin(), MemorandumPlugin(),
     ArPlugin(), DailyPlugin(), PriceListPlugin(), SuppliersPlugin(),
     SyncPlugin(), PrinterPlugin(), CasesPlugin(), IcePlugin(),

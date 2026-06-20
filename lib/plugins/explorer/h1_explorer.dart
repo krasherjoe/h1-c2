@@ -1,8 +1,6 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'h1_explorer_config.dart';
@@ -10,7 +8,6 @@ import 'h1_explorer_item.dart';
 import '../../widgets/h1_text_field.dart';
 import '../../services/error_reporter.dart';
 import '../../services/database_helper.dart';
-import '../../services/mm_command_service.dart';
 import '../../constants/screen_ids.dart';
 
 class H1Explorer<T extends H1ExplorerItem> extends StatefulWidget {
@@ -419,21 +416,6 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       }
     } catch (_) {}
     ErrorReporter.sendLog(message: buf.toString());
-
-    try {
-      final boundary = _diagnosticKey.currentContext?.findRenderObject();
-      if (boundary == null) { ErrorReporter.sendLog(message: '📷 screenshot: boundary null'); return; }
-      final repBoundary = boundary as RenderRepaintBoundary;
-      final image = await repBoundary.toImage(pixelRatio: 1.5);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) { ErrorReporter.sendLog(message: '📷 screenshot: byteData null'); return; }
-      final svc = MmCommandService.instance;
-      if (svc.pat == null) { ErrorReporter.sendLog(message: '📷 screenshot: PAT null'); return; }
-      final err = await svc.uploadFile(byteData.buffer.asUint8List(), 'd1_diagnostic.png');
-      if (err != null) ErrorReporter.sendLog(message: '📷 screenshot upload: $err');
-    } catch (e) {
-      ErrorReporter.sendLog(message: '📷 screenshot error: $e');
-    }
   }
 
   Widget _buildDbInfo() {

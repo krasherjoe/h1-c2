@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../main.dart' show themeNotifier;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
-import '../../../services/error_reporter.dart';
 import '../../../services/google_auth_service.dart';
 import '../../../services/sync_queue.dart';
 import '../../../widgets/screen_id_title.dart';
@@ -22,12 +21,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _taxRate = 10;
   String _prefix = '';
   ThemeMode _themeMode = ThemeMode.system;
-  String _webhookUrl = '';
   String _inputStyle = 'raised';
   String? _googleEmail;
   bool _googleSignedIn = false;
   String _lastBackup = '';
-  bool _devExpanded = false;
 
   @override
   void initState() {
@@ -43,7 +40,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _taxRate = _repo.defaultTaxRate;
       _prefix = _repo.documentNumberPrefix;
       _themeMode = _repo.themeMode;
-      _webhookUrl = prefs.getString('mattermost_webhook_url') ?? '';
       _inputStyle = _repo.inputFieldStyle;
       _googleEmail = email;
       _googleSignedIn = email != null && email.isNotEmpty;
@@ -82,7 +78,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               _repo.defaultTaxRate = _taxRate;
               _repo.documentNumberPrefix = _prefix;
-              if (_webhookUrl.isNotEmpty) ErrorReporter.setWebhookUrl(_webhookUrl);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('設定を保存しました'), duration: Duration(seconds: 1)),
               );
@@ -346,70 +341,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () => Navigator.pushNamed(context, '/backup'),
               ),
           ]),
-          const SizedBox(height: 16),
-
-          InkWell(
-            onTap: () => setState(() => _devExpanded = !_devExpanded),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(children: [
-                Icon(Icons.developer_mode, size: 16, color: cs.onSurfaceVariant),
-                const SizedBox(width: 6),
-                Text('開発者向け設定', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                const Spacer(),
-                Icon(_devExpanded ? Icons.expand_less : Icons.expand_more, size: 16, color: cs.onSurfaceVariant),
-              ]),
-            ),
-          ),
-          if (_devExpanded) ...[
-            const SizedBox(height: 8),
-            _settingsCard(cs, children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
-                        child: Icon(Icons.webhook, color: cs.onSurfaceVariant, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('エラー報告 (Mattermost)', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
-                          Text('アプリのエラーを開発者に自動報告します', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                        ],
-                      )),
-                    ]),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(
-                        child: H1TextField(
-                          controller: TextEditingController(text: _webhookUrl),
-                          decoration: const InputDecoration(hintText: 'Webhook URL', isDense: true),
-                          style: const TextStyle(fontSize: 12),
-                          onSubmitted: (v) {
-                            _webhookUrl = v.trim();
-                            ErrorReporter.setWebhookUrl(_webhookUrl);
-                          },
-                        ),
-                      ),
-                    ]),
-                  ],
-                ),
-              ),
-            ]),
-          ],
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _repo.defaultTaxRate = _taxRate;
           _repo.documentNumberPrefix = _prefix;
-          if (_webhookUrl.isNotEmpty) ErrorReporter.setWebhookUrl(_webhookUrl);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('設定を保存しました'), duration: Duration(seconds: 1)),
           );

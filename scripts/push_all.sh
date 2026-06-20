@@ -59,7 +59,11 @@ echo "✅ pubspec.yaml → $PURE_VERSION"
 # === 4. APKビルド（ローカル） ===
 echo ""
 echo "=== 4/6: APKビルド（ローカル） ==="
-flutter build apk --release --dart-define=APP_VERSION="$VERSION"
+  BUILD_DATE=$(date +%Y%m%d)
+  flutter build apk --release \
+    --dart-define=APP_VERSION="$VERSION" \
+    --dart-define=APP_BUILD_DATE="$BUILD_DATE" \
+    --dart-define=INCLUDE_DEBUG=false
 echo "✅ APKビルド完了"
 
 # === 5. GitHub Release ===
