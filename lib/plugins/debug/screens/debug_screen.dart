@@ -565,7 +565,7 @@ class _DebugScreenState extends State<DebugScreen> {
                         height: 12,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: online ? cs.tertiary : cs.error,
+                          color: online ? const Color(0xFF4CAF50) : cs.error,
                         ),
                       );
                     },
@@ -585,6 +585,7 @@ class _DebugScreenState extends State<DebugScreen> {
             TextField(
               controller: _configCtrl,
               maxLines: 6,
+              style: const TextStyle(fontSize: 12),
               onChanged: (_) => _saveSshConfig(),
               decoration: const InputDecoration(
                 labelText: 'SSH config',
@@ -597,6 +598,7 @@ class _DebugScreenState extends State<DebugScreen> {
             TextField(
               controller: _keyCtrl,
               maxLines: 4,
+              style: const TextStyle(fontSize: 12),
               onChanged: (_) => _saveSshConfig(),
               decoration: const InputDecoration(
                 labelText: '秘密鍵',
