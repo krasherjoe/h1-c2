@@ -59,12 +59,41 @@ echo "✅ pubspec.yaml → $PURE_VERSION"
 # === 4. APKビルド（ローカル） ===
 echo ""
 echo "=== 4/6: APKビルド（ローカル） ==="
-  BUILD_DATE=$(date +%Y%m%d)
-  flutter build apk --release \
+BUILD_DATE=$(date +%Y%m%d)
+BUILD_LOG="$ROOT_DIR/.build_history"
+
+echo ""
+echo "--- 直近のビルド時間 ---"
+if [ -f "$BUILD_LOG" ]; then
+  tac "$BUILD_LOG" | head -5 | while IFS='|' read -r v d t s; do
+    printf "  %-12s %s  %s  %s\n" "$v" "$d" "$t" "$s"
+  done
+else
+  echo "  （記録なし）"
+fi
+echo "------------------------"
+
+BUILD_START=$(date +%s)
+if flutter build apk --release \
     --dart-define=APP_VERSION="$VERSION" \
     --dart-define=APP_BUILD_DATE="$BUILD_DATE" \
-    --dart-define=INCLUDE_DEBUG=false
-echo "✅ APKビルド完了"
+    --dart-define=INCLUDE_DEBUG=false; then
+  BUILD_END=$(date +%s)
+  ELAPSED=$((BUILD_END - BUILD_START))
+  MIN=$((ELAPSED / 60))
+  SEC=$((ELAPSED % 60))
+  TIMESTR="${MIN}m${SEC}s"
+  STATUS="✓"
+  echo "✅ APKビルド完了（${TIMESTR}）"
+else
+  BUILD_END=$(date +%s)
+  ELAPSED=$((BUILD_END - BUILD_START))
+  TIMESTR="${ELAPSED}s"
+  STATUS="✗"
+  echo "❌ APKビルド失敗（${TIMESTR}）"
+fi
+echo "${VERSION}|${BUILD_DATE}|${TIMESTR}|${STATUS}" >> "$BUILD_LOG"
+[ "$STATUS" = "✗" ] && exit 1
 
 # === 5. GitHub Release ===
 echo ""
