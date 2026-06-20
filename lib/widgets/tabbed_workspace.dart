@@ -151,7 +151,6 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
                       itemBuilder: (ctx, i) => _buildTab(i + 1, cs),
                     ),
                   ),
-                  _buildAddButton(cs),
                 ],
               ),
             ),
@@ -217,61 +216,6 @@ class TabbedWorkspaceState extends State<TabbedWorkspace> {
               fontWeight: FontWeight.w500,
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddButton(ColorScheme cs) {
-    return GestureDetector(
-      onTap: _showPluginPicker,
-      child: Container(
-        margin: const EdgeInsets.only(right: 4),
-        width: 28,
-        height: 28,
-        alignment: Alignment.center,
-        child: Icon(Icons.add, size: 18, color: cs.onSurfaceVariant),
-      ),
-    );
-  }
-
-  void _showPluginPicker() {
-    final registry = PluginRegistry.instance;
-    final menuItems = registry.getAllMenuItems();
-    final categories = <String, List<MenuItem>>{};
-    for (final item in menuItems) {
-      categories.putIfAbsent(item.category, () => []).add(item);
-    }
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text('開く画面を選択', style: Theme.of(context).textTheme.titleMedium),
-            ),
-            const Divider(),
-            for (final entry in categories.entries) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-                child: Text(entry.key,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-              ),
-              for (final item in entry.value)
-                ListTile(
-                  leading: Icon(item.icon, size: 20),
-                  title: Text(item.title, style: const TextStyle(fontSize: 14)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    openTab(item.id, item.title, item.route);
-                  },
-                ),
-            ],
-            const SizedBox(height: 8),
-          ],
         ),
       ),
     );
