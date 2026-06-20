@@ -15,7 +15,7 @@ import '../../ar/screens/payment_processing_screen.dart';
 import '../../../services/sync_service.dart';
 import '../../../constants/screen_ids.dart';
 import '../../../utils/theme_utils.dart' show cardBoxShadow;
-import '../widgets/project_timeline_widget.dart';
+import '../widgets/project_timeline_widget.dart' show TimelineBarPainter;
 
 class ProjectDetailScreen extends StatefulWidget {
   final String? projectId;
@@ -154,8 +154,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           const SizedBox(height: 16),
           _buildStageSection(project, cs),
           const SizedBox(height: 16),
-          ProjectTimelineWidget(project: project),
-          const SizedBox(height: 16),
           _buildNextActionGuide(project, cs),
           const SizedBox(height: 16),
           _buildLinkedDocsSection(cs),
@@ -191,44 +189,88 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           _infoRow('種別', project.type.displayName, cs),
           _infoRow('ステージ', project.pipelineStage, cs),
           _infoRow('合計金額', '￥${_formatMoney(project.totalAmount)}', cs),
-          if (project.startDate != null)
-            _infoRow('開始日', _formatDate(project.startDate!), cs),
-          if (project.endDate != null)
-            _infoRow('終了日', _formatDate(project.endDate!), cs),
-          if (project.contractMonths != null && project.contractMonths! > 0) ...[
-            _infoRow('契約期間', '${project.contractMonths}ヶ月', cs),
-            if (project.startDate != null) ...[
-              _infoRow('契約期間',
-                '${_formatDate(project.startDate!)} → ${_formatDate(_calcEndDate(project))}',
-                cs),
-            ],
+          if (project.startDate != null) ...[
             const SizedBox(height: 8),
-            _buildTimeProgress(project, cs),
-            if (project.isOverdue) ...[
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.warning_amber, size: 14, color: Colors.red.shade700),
-                    const SizedBox(width: 4),
-                    Text('契約期間超過',
-                      style: TextStyle(fontSize: 12, color: Colors.red.shade700, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-            ],
+            _buildTimeline(project, cs),
           ],
           _infoRow('作成日', _formatDate(project.createdAt), cs),
         ],
       ),
     );
   }
+
+  Widget _buildTimeline(Project project, ColorScheme cs) {
+    final start = project.startDate!;
+    final end = project.endDate;
+    final months = project.contractMonths ?? 1;
+    final totalDays = end != null
+        ? end.difference(start).inDays
+        : months * 30;
+    final now = DateTime.now();
+    final elapsed = now.difference(start).inDays.clamp(0, totalDays);
+    final progress = totalDays > 0 ? elapsed / totalDays : 0.0;
+    final overdue = project.isOverdue;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          end != null
+              ? '${_fmtDate(start)} 〜 ${_fmtDate(end)}'
+              : '${_fmtDate(start)} 〜 ${months}ヶ月',
+          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 40,
+          child: CustomPaint(
+            size: const Size(double.infinity, 40),
+            painter: TimelineBarPainter(
+              progress: progress.clamp(0.0, 1.0),
+              overdue: overdue,
+              primaryColor: cs.primary,
+              overdueColor: Colors.red,
+              surfaceColor: cs.surfaceContainerHighest,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(children: [
+          Text('${(progress * 100).toInt()}% 経過',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: overdue ? Colors.red : cs.onSurface,
+            )),
+          const Spacer(),
+          if (project.contractMonths != null && project.contractMonths! > 0)
+            Text('${project.elapsedMonths}/${months}ヶ月',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        ]),
+        if (overdue) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.warning_amber, size: 14, color: Colors.red.shade700),
+                const SizedBox(width: 4),
+                Text('契約期間超過',
+                  style: TextStyle(fontSize: 12, color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _fmtDate(DateTime d) => '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
 
   DateTime _calcEndDate(Project project) {
     if (project.startDate == null || project.contractMonths == null) {
@@ -238,29 +280,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       project.startDate!.year + (project.startDate!.month + project.contractMonths! - 1) ~/ 12,
       (project.startDate!.month + project.contractMonths! - 1) % 12 + 1,
       project.startDate!.day,
-    );
-  }
-
-  Widget _buildTimeProgress(Project project, ColorScheme cs) {
-    final progress = project.timeProgress;
-    final overdue = project.isOverdue;
-    final barColor = overdue ? Colors.red : (progress >= 1.0 ? Colors.orange : cs.primary);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: LinearProgressIndicator(
-            value: progress.clamp(0.0, 1.0),
-            minHeight: 6,
-            backgroundColor: cs.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation(barColor),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text('${(progress * 100).toInt()}% 経過 (${project.elapsedMonths}/${project.contractMonths}ヶ月)',
-          style: TextStyle(fontSize: 11, color: barColor, fontWeight: FontWeight.w500)),
-      ],
     );
   }
 

@@ -91,7 +91,7 @@ class ProjectTimelineWidget extends StatelessWidget {
           height: 40,
           child: CustomPaint(
             size: Size(w, 40),
-            painter: _TimelineBarPainter(
+            painter: TimelineBarPainter(
               progress: progress.clamp(0.0, 1.0),
               overdue: overdue,
               primaryColor: cs.primary,
@@ -122,14 +122,14 @@ class ProjectTimelineWidget extends StatelessWidget {
   String _fmt(DateTime d) => '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
 }
 
-class _TimelineBarPainter extends CustomPainter {
+class TimelineBarPainter extends CustomPainter {
   final double progress;
   final bool overdue;
   final Color primaryColor;
   final Color overdueColor;
   final Color surfaceColor;
 
-  _TimelineBarPainter({
+  TimelineBarPainter({
     required this.progress,
     required this.overdue,
     required this.primaryColor,
@@ -163,5 +163,5 @@ class _TimelineBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TimelineBarPainter old) => old.progress != progress || old.overdue != overdue;
+  bool shouldRepaint(TimelineBarPainter old) => old.progress != progress || old.overdue != overdue;
 }
