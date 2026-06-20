@@ -530,13 +530,15 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget _buildKanbanCardContent(Project project, ColorScheme cs) {
     final isLost = project.status == ProjectStatus.lost;
     final isWon = project.status == ProjectStatus.won;
+    final hasBar = project.contractMonths != null && project.contractMonths! > 0;
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
+      clipBehavior: Clip.antiAlias,
       color: isLost ? cs.surfaceContainerHighest.withValues(alpha: 0.5) : null,
       child: Stack(
         children: [
           InkWell(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             onTap: widget.selectionMode
               ? () => Navigator.pop(context, project.id)
               : () {
@@ -548,29 +550,29 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 ).then((_) => _load());
               },
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 36, 10),
+              padding: EdgeInsets.fromLTRB(10, 10, 36, hasBar ? 12 : 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        Expanded(
-                          child: Text(project.name,
-                            maxLines: 2, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
-                              color: isLost ? cs.onSurfaceVariant : cs.onSurface)),
-                        ),
-                        if (isLost)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Icon(Icons.cancel, size: 14, color: cs.error),
-                          ),
-                        if (isWon)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Icon(Icons.check_circle, size: 14, color: cs.primary),
-                          ),
-                      ]),
-                      if (project.customerName != null && project.customerName!.isNotEmpty) ...[
+                children: [
+                  Row(children: [
+                    Expanded(
+                      child: Text(project.name,
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
+                          color: isLost ? cs.onSurfaceVariant : cs.onSurface)),
+                    ),
+                    if (isLost)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Icon(Icons.cancel, size: 14, color: cs.error),
+                      ),
+                    if (isWon)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Icon(Icons.check_circle, size: 14, color: cs.primary),
+                      ),
+                  ]),
+                  if (project.customerName != null && project.customerName!.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Text(project.customerName!,
                       maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -592,10 +594,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
                     ],
                   ),
-                  if (project.contractMonths != null && project.contractMonths! > 0) ...[
-                    const SizedBox(height: 6),
-                    _buildTimeProgressBar(project, cs),
-                  ],
                 ],
               ),
             ),
@@ -612,6 +610,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               ),
             ),
           ),
+          if (hasBar)
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: _buildTimeProgressBar(project, cs),
+            ),
         ],
       ),
     );
@@ -621,96 +624,95 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     final progress = project.timeProgress;
     final overdue = project.isOverdue;
     final barColor = overdue ? cs.error : (progress >= 1.0 ? cs.secondary : cs.primary);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            value: progress.clamp(0.0, 1.0),
-            minHeight: 4,
-            backgroundColor: cs.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation(barColor),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text('${(progress * 100).toInt()}% (${project.elapsedMonths}/${project.contractMonths}ヶ月)',
-          style: TextStyle(fontSize: 9, color: barColor)),
-      ],
+    return ClipRRect(
+      child: LinearProgressIndicator(
+        value: progress.clamp(0.0, 1.0),
+        minHeight: 2,
+        backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        valueColor: AlwaysStoppedAnimation(barColor.withValues(alpha: 0.5)),
+      ),
     );
   }
 
   Widget _buildProjectCard(Project project, ColorScheme cs) {
+    final hasBar = project.contractMonths != null && project.contractMonths! > 0;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: widget.selectionMode
-          ? () => Navigator.pop(context, project.id)
-          : () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProjectDetailScreen(projectId: project.id),
-              ),
-            ).then((_) => _load());
-          },
-        onLongPress: () => _showProjectMenu(project),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(project.name,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
+      clipBehavior: Clip.antiAlias,
+      color: Colors.white,
+      child: Stack(
+        children: [
+          InkWell(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            onTap: widget.selectionMode
+              ? () => Navigator.pop(context, project.id)
+              : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProjectDetailScreen(projectId: project.id),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _statusColor(project.status, cs).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(_statusLabel(project.status),
-                      style: TextStyle(fontSize: 11, color: _statusColor(project.status, cs), fontWeight: FontWeight.w500)),
+                ).then((_) => _load());
+              },
+            onLongPress: () => _showProjectMenu(project),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, hasBar ? 18 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(project.name,
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface)),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _statusColor(project.status, cs).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(_statusLabel(project.status),
+                          style: TextStyle(fontSize: 11, color: _statusColor(project.status, cs), fontWeight: FontWeight.w500)),
+                      ),
+                    ],
+                  ),
+                  if (project.customerName != null && project.customerName!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      Icon(Icons.business, size: 14, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(project.customerName!,
+                        style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+                    ]),
+                  ],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _stageColor(project.pipelineStage, cs).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(project.pipelineStage,
+                          style: TextStyle(fontSize: 12, color: _stageColor(project.pipelineStage, cs), fontWeight: FontWeight.w500)),
+                      ),
+                      const Spacer(),
+                      Text('￥${_formatMoney(project.totalAmount)}',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.primary)),
+                    ],
                   ),
                 ],
               ),
-              if (project.customerName != null && project.customerName!.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Row(children: [
-                  Icon(Icons.business, size: 14, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  Text(project.customerName!,
-                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-                ]),
-              ],
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: _stageColor(project.pipelineStage, cs).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(project.pipelineStage,
-                      style: TextStyle(fontSize: 12, color: _stageColor(project.pipelineStage, cs), fontWeight: FontWeight.w500)),
-                  ),
-                  const Spacer(),
-                  Text('￥${_formatMoney(project.totalAmount)}',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cs.primary)),
-                ],
-              ),
-              if (project.contractMonths != null && project.contractMonths! > 0) ...[
-                const SizedBox(height: 8),
-                _buildTimeProgressBar(project, cs),
-              ],
-            ],
+            ),
           ),
-        ),
+          if (hasBar)
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: _buildTimeProgressBar(project, cs),
+            ),
+        ],
       ),
     );
   }
