@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:h_1_core/plugin_system/plugin_interface.dart';
@@ -5,7 +6,9 @@ import 'package:h_1_core/plugin_system/plugin_context.dart';
 import 'package:h_1_core/plugin_system/plugin_registry.dart';
 import 'package:h_1_core/plugin_system/screen_definition.dart';
 import 'package:h_1_core/constants/screen_ids.dart';
+import 'package:h_1_core/services/company_service.dart';
 import 'package:h_1_core/services/debug_console.dart';
+import 'package:h_1_core/services/ssh_tunnel_service.dart';
 import 'screens/ice_settings_screen.dart';
 import 'services/ice_api_server.dart';
 
@@ -60,7 +63,27 @@ class IcePlugin extends H1Plugin {
       await _apiServer?.stop();
       return 'ICE停止';
     });
+    await _autoConnectSsh();
     debugPrint('[IcePlugin] Initialized (port: $port)');
+  }
+
+  Future<void> _autoConnectSsh() async {
+    try {
+      final dir = await CompanyService.getCompanyDirectory();
+      final configFile = File('${dir.path}/.ssh/config');
+      final keyFile = File('${dir.path}/.ssh/id_ed25519');
+      if (!await configFile.exists() || !await keyFile.exists()) return;
+      final config = await configFile.readAsString();
+      final key = await keyFile.readAsString();
+      if (config.trim().isEmpty || key.trim().isEmpty) return;
+      final ssh = SshTunnelService.instance;
+      ssh.configText = config;
+      ssh.keyText = key;
+      await ssh.connect();
+      debugPrint('[IcePlugin] SSH auto-connect succeeded');
+    } catch (e) {
+      debugPrint('[IcePlugin] SSH auto-connect failed: $e');
+    }
   }
 
   @override

@@ -69,6 +69,7 @@ class AppTheme {
         color: isDark ? cardDark : cardLight,
         elevation: 3,
         shadowColor: isDark ? const Color(0x50000000) : const Color(0x22000000),
+        surfaceTintColor: Colors.transparent,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: navBarColor,

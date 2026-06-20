@@ -201,36 +201,43 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 12, height: 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _running ? Colors.green : Colors.grey,
-              ),
+            Row(
+              children: [
+                Container(
+                  width: 12, height: 12,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _running ? Colors.green : Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _running ? 'API稼働中' : 'API停止中',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              _running ? 'API稼働中' : 'API停止中',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
-            ),
-            const SizedBox(width: 16),
+            const SizedBox(height: 12),
             ValueListenableBuilder<bool>(
               valueListenable: ssh.onlineNotifier,
               builder: (ctx, online, _) => Row(
                 children: [
-                  Container(
-                    width: 12, height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: online ? const Color(0xFF4CAF50) : cs.error,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    online ? 'SSH接続中' : 'SSH未接続',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+                  Text('SSH接続', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+                  const Spacer(),
+                  Switch(
+                    value: online,
+                    onChanged: (v) {
+                      if (v) {
+                        ssh.configText = _sshConfigController.text;
+                        ssh.keyText = _sshPrivateKeyController.text;
+                        ssh.connect();
+                      } else {
+                        ssh.disconnect();
+                      }
+                    },
                   ),
                 ],
               ),
