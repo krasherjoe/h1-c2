@@ -24,10 +24,11 @@ class IceStateCollector {
   }
 
   Future<Map<String, dynamic>> _collectSystem() async {
-    final info = await PackageInfo.fromPlatform();
     final dir = await CompanyService.getCompanyDirectory();
+    final envVersion = const String.fromEnvironment('APP_VERSION', defaultValue: '');
+    final info = await PackageInfo.fromPlatform();
     return {
-      'version': info.version,
+      'version': envVersion.isNotEmpty ? envVersion : info.version,
       'buildNumber': info.buildNumber,
       'packageName': info.packageName,
       'platform': Platform.operatingSystem,

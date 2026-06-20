@@ -68,11 +68,14 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   Future<void> _loadVersion() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      _appVersion = info.version;
-    } catch (_) {
-      _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: '');
+    _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: '');
+    if (_appVersion.isEmpty) {
+      try {
+        final info = await PackageInfo.fromPlatform();
+        _appVersion = info.version;
+      } catch (_) {
+        _appVersion = '';
+      }
     }
     if (mounted) setState(() {});
   }

@@ -16,11 +16,14 @@ class DebugService {
 
   static Future<void> initVersion() async {
     if (_appVersion.isNotEmpty) return;
-    try {
-      final info = await PackageInfo.fromPlatform();
-      _appVersion = info.version;
-    } catch (_) {
-      _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
+    _appVersion = const String.fromEnvironment('APP_VERSION', defaultValue: '');
+    if (_appVersion.isEmpty) {
+      try {
+        final info = await PackageInfo.fromPlatform();
+        _appVersion = info.version;
+      } catch (_) {
+        _appVersion = 'dev';
+      }
     }
   }
 

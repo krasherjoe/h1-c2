@@ -38,8 +38,13 @@ class IceApiServer {
   Future<void> start() async {
     if (_running) return;
     try {
-      final info = await PackageInfo.fromPlatform();
-      _version = '${info.version}(${info.buildNumber})';
+      final envVersion = const String.fromEnvironment('APP_VERSION', defaultValue: '');
+      if (envVersion.isNotEmpty) {
+        _version = envVersion;
+      } else {
+        final info = await PackageInfo.fromPlatform();
+        _version = '${info.version}(${info.buildNumber})';
+      }
       _server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
       _running = true;
       debugPrint('[IceApiServer] Started on http://localhost:$port (v$_version)');
