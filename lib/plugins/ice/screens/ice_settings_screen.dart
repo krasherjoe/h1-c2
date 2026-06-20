@@ -197,6 +197,7 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
   }
 
   Widget _buildStatusCard(ColorScheme cs, Color textColor) {
+    final ssh = SshTunnelService.instance;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -209,10 +210,30 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
                 color: _running ? Colors.green : Colors.grey,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Text(
-              _running ? 'APIサーバー稼働中' : 'APIサーバー停止中',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+              _running ? 'API稼働中' : 'API停止中',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+            ),
+            const SizedBox(width: 16),
+            ValueListenableBuilder<bool>(
+              valueListenable: ssh.onlineNotifier,
+              builder: (ctx, online, _) => Row(
+                children: [
+                  Container(
+                    width: 12, height: 12,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: online ? const Color(0xFF4CAF50) : cs.error,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    online ? 'SSH接続中' : 'SSH未接続',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -348,17 +369,50 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: _saveSshConfig,
-                icon: const Icon(Icons.save, size: 16),
-                label: const Text('保存'),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _saveSshConfig,
+                    icon: const Icon(Icons.save, size: 16),
+                    label: const Text('保存'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _sshConnectButton(cs),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _sshConnectButton(ColorScheme cs) {
+    final ssh = SshTunnelService.instance;
+    return ValueListenableBuilder<bool>(
+      valueListenable: ssh.onlineNotifier,
+      builder: (ctx, online, _) {
+        if (online) {
+          return OutlinedButton.icon(
+            onPressed: () => ssh.disconnect(),
+            icon: const Icon(Icons.link_off, size: 16),
+            label: const Text('切断'),
+            style: OutlinedButton.styleFrom(foregroundColor: cs.error),
+          );
+        }
+        return FilledButton.icon(
+          onPressed: () {
+            ssh.configText = _sshConfigController.text;
+            ssh.keyText = _sshPrivateKeyController.text;
+            ssh.connect();
+          },
+          icon: const Icon(Icons.link, size: 16),
+          label: const Text('接続'),
+        );
+      },
     );
   }
 
