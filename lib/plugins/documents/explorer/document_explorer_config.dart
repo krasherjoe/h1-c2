@@ -3,10 +3,12 @@ import '../../../plugins/explorer/h1_explorer_config.dart';
 import '../../../models/document_type_colors.dart';
 import '../../../utils/theme_utils.dart' hide documentTypeColor;
 import '../../../services/input_style_service.dart';
+import '../../../services/project_repository.dart';
 import '../models/document_model.dart';
 import '../services/document_repository.dart';
 import '../screens/document_page.dart';
 import '../../project/screens/project_detail_screen.dart';
+import '../../../models/project_model.dart';
 import '../../../constants/screen_ids.dart';
 
 class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
@@ -161,13 +163,7 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
                       ),
                       if (hasDraft) _statusBadge('下書き', Colors.orange, cs),
                       if (item.projectId != null)
-                        GestureDetector(
-                          onTap: () => _openProject(context, item.projectId!),
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Icon(Icons.workspaces, size: 16, color: cs.primary),
-                          ),
-                        ),
+                        _ProjectBadge(projectId: item.projectId!),
                     ]),
                     if (subject != null)
                       Text(subject!, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
@@ -215,15 +211,6 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     );
   }
 
-  void _openProject(BuildContext context, String projectId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ProjectDetailScreen(projectId: projectId),
-      ),
-    );
-  }
-
   @override
   Future<bool> canDelete(DocumentModel item) async => item.isDraft;
 
@@ -233,5 +220,50 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     await repo.delete(item.id);
     await repo.addEditLog(item.id, '削除',
       details: '${item.documentType.label} #${item.documentNumber} ${item.customerName}\n${item.items.length}明細');
+  }
+}
+
+class _ProjectBadge extends StatelessWidget {
+  final String projectId;
+  const _ProjectBadge({required this.projectId});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return FutureBuilder<Project?>(
+      future: ProjectRepository().getById(projectId),
+      builder: (context, snapshot) {
+        final name = snapshot.data?.name ?? '';
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProjectDetailScreen(projectId: projectId),
+              ),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(left: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.workspaces, size: 12, color: cs.onPrimaryContainer),
+                if (name.isNotEmpty) ...[
+                  const SizedBox(width: 3),
+                  Text(name, style: TextStyle(fontSize: 10, color: cs.onPrimaryContainer, fontWeight: FontWeight.w500),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
