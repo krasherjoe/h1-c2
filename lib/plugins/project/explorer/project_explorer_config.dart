@@ -180,12 +180,16 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
   Widget buildItemTileContent(BuildContext context, ProjectExplorerItem item) {
     final cs = Theme.of(context).colorScheme;
     final project = item.project;
+    final isDark = cs.brightness == Brightness.dark;
     final isLost = project.status == ProjectStatus.lost;
     final isWon = project.status == ProjectStatus.won;
+    final cardBg = isLost
+        ? (isDark ? AppTheme.cardLostDark : AppTheme.cardLostLight)
+        : (Theme.of(context).cardTheme.color ?? cs.surface);
 
     return Container(
       decoration: BoxDecoration(
-        color: isLost ? (cs.brightness == Brightness.dark ? AppTheme.cardLostDark : AppTheme.cardLostLight) : null,
+        color: cardBg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(

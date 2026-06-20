@@ -208,7 +208,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
                     alignment: Alignment.center,
                     margin: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: selected ? cs.surface : null,
+                      color: selected ? cs.surface : (Theme.of(context).cardTheme.color ?? cs.surface),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(_statusTabs[i],
