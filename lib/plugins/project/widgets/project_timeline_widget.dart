@@ -166,16 +166,12 @@ class TimelineBarPainter extends CustomPainter {
       canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(0, barY, fw, barH), topLeft: Radius.circular(r), bottomLeft: Radius.circular(r), topRight: Radius.circular(r), bottomRight: Radius.circular(r)), fgPaint);
     }
 
-    // 赤丸マーカー（現在位置：0進捗でも表示）
+    // 縦線マーカー（現在位置：0進捗でも表示）
     final markerX = w * progress.clamp(0.0, 0.99);
-    final markerR = 6.0;
-    final markerPaint = Paint()..color = markerColor;
-    canvas.drawCircle(Offset(markerX, h / 2), markerR, markerPaint);
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
+    final markerPaint = Paint()
+      ..color = markerColor
       ..strokeWidth = 2;
-    canvas.drawCircle(Offset(markerX, h / 2), markerR, borderPaint);
+    canvas.drawLine(Offset(markerX, 0), Offset(markerX, h), markerPaint);
   }
 
   @override

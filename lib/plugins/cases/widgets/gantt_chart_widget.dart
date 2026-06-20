@@ -287,6 +287,8 @@ class _GanttChartWidgetState extends State<GanttChartWidget> {
                           itemColorFn: _itemColor,
                           bgColor: bg,
                           gridColor: gridColor,
+                          markerColor: cs.error,
+                          horizontalLineColor: cs.primary.withValues(alpha: 0.15),
                           todayX: _dayToX(DateTime.now()),
                         ),
                       ),
@@ -376,6 +378,8 @@ class _GanttPainter extends CustomPainter {
   final Color Function(GanttChartItem) itemColorFn;
   final Color bgColor;
   final Color gridColor;
+  final Color markerColor;
+  final Color horizontalLineColor;
   final double todayX;
 
   _GanttPainter({
@@ -391,6 +395,8 @@ class _GanttPainter extends CustomPainter {
     required this.itemColorFn,
     required this.bgColor,
     required this.gridColor,
+    required this.markerColor,
+    required this.horizontalLineColor,
     required this.todayX,
   });
 
@@ -428,7 +434,7 @@ class _GanttPainter extends CustomPainter {
 
     // Horizontal lines
     final hLinePaint = Paint()
-      ..color = gridColor
+      ..color = horizontalLineColor
       ..strokeWidth = 0.5;
     for (int i = 0; i <= items.length; i++) {
       final y = headerHeight + i * rowHeight;
@@ -546,22 +552,19 @@ class _GanttPainter extends CustomPainter {
     final x = leftWidth + todayX;
     if (x < leftWidth || x > size.width) return;
 
-    final dashPaint = Paint()
-      ..color = Colors.red.withValues(alpha: 0.6)
-      ..strokeWidth = 1.5;
-
-    // Draw dashed line
-    const dash = 4.0;
-    const gap = 3.0;
-    double y = headerHeight;
-    while (y < size.height) {
-      canvas.drawLine(Offset(x, y), Offset(x, min(y + dash, size.height)), dashPaint);
-      y += dash + gap;
-    }
+    // Red circle marker
+    final markerR = 5.0;
+    final markerPaint = Paint()..color = markerColor;
+    canvas.drawCircle(Offset(x, headerHeight / 2), markerR, markerPaint);
+    final borderPaint = Paint()
+      ..color = bgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(Offset(x, headerHeight / 2), markerR, borderPaint);
 
     // "Today" label
     final tp = TextPainter(
-      text: TextSpan(text: 'Today', style: TextStyle(color: Colors.red[700], fontSize: 8, fontWeight: FontWeight.bold)),
+      text: TextSpan(text: 'Today', style: TextStyle(color: markerColor, fontSize: 8, fontWeight: FontWeight.bold)),
       textDirection: TextDirection.ltr,
     );
     tp.layout();
