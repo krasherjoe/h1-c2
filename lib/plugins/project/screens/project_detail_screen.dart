@@ -544,12 +544,25 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final project = await _repo.getById(projectId);
     if (project == null || !mounted) return;
 
+    final startDateCtrl = TextEditingController(
+      text: project.startDate != null ? '${project.startDate!.year}/${project.startDate!.month.toString().padLeft(2, '0')}/${project.startDate!.day.toString().padLeft(2, '0')}' : '',
+    );
+    final endDateCtrl = TextEditingController(
+      text: project.endDate != null ? '${project.endDate!.year}/${project.endDate!.month.toString().padLeft(2, '0')}/${project.endDate!.day.toString().padLeft(2, '0')}' : '',
+    );
+    final contractMonthsCtrl = TextEditingController(text: project.contractMonths?.toString() ?? '');
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => _buildEditDialog(ctx, project, setDialogState),
+        builder: (ctx, setDialogState) =>
+            _buildEditDialog(ctx, project, setDialogState, startDateCtrl, endDateCtrl, contractMonthsCtrl),
       ),
     ).then((result) async {
+      startDateCtrl.dispose();
+      endDateCtrl.dispose();
+      contractMonthsCtrl.dispose();
+
       if (result == null) return;
 
       final newStartDate = result['startDate'] as DateTime?;
@@ -589,15 +602,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     });
   }
 
-  Widget _buildEditDialog(BuildContext ctx, Project project, StateSetter setDialogState) {
+  Widget _buildEditDialog(
+    BuildContext ctx,
+    Project project,
+    StateSetter setDialogState,
+    TextEditingController startDateCtrl,
+    TextEditingController endDateCtrl,
+    TextEditingController contractMonthsCtrl,
+  ) {
     final cs = Theme.of(ctx).colorScheme;
-    final startDateCtrl = TextEditingController(
-      text: project.startDate != null ? '${project.startDate!.year}/${project.startDate!.month.toString().padLeft(2, '0')}/${project.startDate!.day.toString().padLeft(2, '0')}' : '',
-    );
-    final endDateCtrl = TextEditingController(
-      text: project.endDate != null ? '${project.endDate!.year}/${project.endDate!.month.toString().padLeft(2, '0')}/${project.endDate!.day.toString().padLeft(2, '0')}' : '',
-    );
-    final contractMonthsCtrl = TextEditingController(text: project.contractMonths?.toString() ?? '');
 
     return AlertDialog(
       title: const Text('案件を編集'),
