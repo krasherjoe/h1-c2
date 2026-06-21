@@ -42,6 +42,24 @@ class BackupPlugin extends H1Plugin {
   @override
   Future<void> createTables(Database db) async {}
 
+  @override
+  Future<Map<String, dynamic>> getDebugInfo() async {
+    final localService = LocalBackupService();
+    final backups = await localService.listBackups();
+    final storageInfo = await localService.getStorageInfo();
+    return {
+      'backup_count': backups.length,
+      'storage_size_bytes': storageInfo['sizeBytes'],
+      'storage_size_readable': storageInfo['sizeReadable'],
+      'recent_backups': backups.take(5).map((b) => {
+        'filename': b.filename,
+        'size_bytes': b.sizeBytes,
+        'created_at': b.createdAt.toIso8601String(),
+        'hash': b.hash,
+      }).toList(),
+    };
+  }
+
   void _runAutoBackup() async {
     try {
       final dbPath = await DatabaseHelper().getDatabasePath();

@@ -47,6 +47,28 @@ class DriveBackupPlugin extends H1Plugin {
   Future<void> dispose() async {}
   @override
   Future<void> createTables(Database db) async {}
+
+  @override
+  Future<Map<String, dynamic>> getDebugInfo() async {
+    final driveService = DriveBackupService();
+    final backups = await driveService.listBackups();
+    final email = await GoogleAuthService.instance.getEmail();
+    final prefs = await SharedPreferences.getInstance();
+    final lastBackupStr = prefs.getString('drive_backup_last');
+    return {
+      'authenticated': email != null && email.isNotEmpty,
+      'email': email,
+      'backup_count': backups.length,
+      'last_backup': lastBackupStr,
+      'recent_backups': backups.take(5).map((f) => {
+        'name': f.name,
+        'size': f.size,
+        'created_time': f.createdTime?.toIso8601String(),
+        'id': f.id,
+      }).toList(),
+    };
+  }
+
   @override
   Future<void> initialize(PluginContext context) async {
     GoogleAuthService.instance.init();

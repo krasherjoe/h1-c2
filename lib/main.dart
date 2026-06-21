@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
@@ -12,6 +13,10 @@ import 'services/database_helper.dart';
 import 'services/db_snapshot_service.dart';
 import 'services/company_service.dart';
 import 'services/collection_project_service.dart';
+import 'services/backup_operation_service.dart';
+import 'services/screenshot_service.dart';
+import 'plugins/backup/services/local_backup_service.dart';
+import 'services/drive_backup_service.dart';
 import 'plugin_system/plugin_registry.dart';
 import 'plugin_system/plugin_interface.dart';
 import 'plugin_system/plugin_context.dart';
@@ -105,6 +110,244 @@ Future<void> _migrateIfNeeded() async {
   }
 
   await prefs.setBool('migrated_v2', true);
+}
+
+// バックアップコマンド実装（トップレベル関数）
+Future<String> _cmdBackupLocalCreate(List<String> args) async {
+  final opService = BackupOperationService();
+  final opId = await opService.createOperation(
+    operationType: BackupOperationType.create,
+    backupType: BackupType.local,
+  );
+  await opService.updateStatus(opId, BackupStatus.inProgress);
+
+  try {
+    final dbPath = await DatabaseHelper().getDatabasePath();
+    final localService = LocalBackupService();
+    final backupPath = await localService.createAutoBackup(dbPath);
+
+    if (backupPath != null) {
+      final file = File(backupPath);
+      final size = await file.length();
+      await opService.updateFilePath(opId, backupPath, fileSize: size);
+      await opService.updateStatus(opId, BackupStatus.completed);
+      return 'ローカルバックアップ作成完了: $backupPath (${(size / 1024).toStringAsFixed(1)} KB)';
+    } else {
+      await opService.updateStatus(opId, BackupStatus.failed, errorMessage: '既に今日のバックアップが存在');
+      return '既に今日のバックアップが存在します';
+    }
+  } catch (e) {
+    await opService.updateStatus(opId, BackupStatus.failed, errorMessage: e.toString());
+    return 'ローカルバックアップ作成失敗: $e';
+  }
+}
+
+Future<String> _cmdBackupLocalList(List<String> args) async {
+  final localService = LocalBackupService();
+  final backups = await localService.listBackups();
+  if (backups.isEmpty) return 'ローカルバックアップなし';
+
+  final lines = backups.asMap().entries.map((e) {
+    final size = (e.value.sizeBytes / 1024).toStringAsFixed(1);
+    final date = e.value.createdAt.toIso8601String().split('T').first;
+    return '  ${e.key}: ${e.value.filename} ($size KB, $date)';
+  }).join('\n');
+  return 'ローカルバックアップ一覧:\n$lines';
+}
+
+Future<String> _cmdBackupLocalRestore(List<String> args) async {
+  if (args.isEmpty) {
+    final backups = await LocalBackupService().listBackups();
+    if (backups.isEmpty) return 'ローカルバックアップなし';
+    final lines = backups.asMap().entries.map((e) => '  ${e.key}: ${e.value.filename}').join('\n');
+    return 'ローカルバックアップ一覧:\n$lines\n\n使用例: !opencode backup.local.restore <index>';
+  }
+
+  final opService = BackupOperationService();
+  final opId = await opService.createOperation(
+    operationType: BackupOperationType.restore,
+    backupType: BackupType.local,
+  );
+  await opService.updateStatus(opId, BackupStatus.inProgress);
+
+  try {
+    final index = int.tryParse(args[0]);
+    if (index == null) return '数値を指定: !opencode backup.local.restore <index>';
+
+    final backups = await LocalBackupService().listBackups();
+    if (index < 0 || index >= backups.length) return '無効なインデックス';
+
+    final backupPath = backups[index].path;
+    await opService.updateFilePath(opId, backupPath);
+
+    final localService = LocalBackupService();
+    final success = await localService.restoreBackup(backupPath);
+
+    if (success) {
+      await opService.updateStatus(opId, BackupStatus.completed);
+      return 'ローカルバックアップ復元完了: ${backups[index].filename} (アプリを再起動してください)';
+    } else {
+      await opService.updateStatus(opId, BackupStatus.failed, errorMessage: '復元失敗');
+      return 'ローカルバックアップ復元失敗';
+    }
+  } catch (e) {
+    await opService.updateStatus(opId, BackupStatus.failed, errorMessage: e.toString());
+    return 'ローカルバックアップ復元失敗: $e';
+  }
+}
+
+Future<String> _cmdBackupDriveUpload(List<String> args) async {
+  final opService = BackupOperationService();
+  final opId = await opService.createOperation(
+    operationType: BackupOperationType.create,
+    backupType: BackupType.drive,
+  );
+  await opService.updateStatus(opId, BackupStatus.inProgress);
+
+  try {
+    final db = await DatabaseHelper().database;
+    final dbPath = db.path;
+    final dir = await getApplicationDocumentsDirectory();
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final baseName = p.basenameWithoutExtension(dbPath);
+    final tmpPath = '${dir.path}/backup_${baseName}_$ts.db';
+    await File(dbPath).copy(tmpPath);
+
+    final driveService = DriveBackupService();
+    final success = await driveService.uploadBackup(tmpPath, companyName: baseName);
+
+    try { await File(tmpPath).delete(); } catch (_) {}
+
+    if (success) {
+      await opService.updateStatus(opId, BackupStatus.completed);
+      await driveService.cleanOldBackups(keep: 5);
+      return 'Driveバックアップアップロード完了';
+    } else {
+      await opService.updateStatus(opId, BackupStatus.failed, errorMessage: 'アップロード失敗');
+      return 'Driveバックアップアップロード失敗';
+    }
+  } catch (e) {
+    await opService.updateStatus(opId, BackupStatus.failed, errorMessage: e.toString());
+    return 'Driveバックアップアップロード失敗: $e';
+  }
+}
+
+Future<String> _cmdBackupDriveList(List<String> args) async {
+  final driveService = DriveBackupService();
+  final backups = await driveService.listBackups();
+  if (backups.isEmpty) return 'Driveバックアップなし';
+
+  final lines = backups.asMap().entries.map((e) {
+    final sizeStr = e.value.size != null ? _formatSize(e.value.size!) : '';
+    final date = e.value.createdTime != null
+        ? '${e.value.createdTime!.year}/${e.value.createdTime!.month.toString().padLeft(2, '0')}/${e.value.createdTime!.day.toString().padLeft(2, '0')}'
+        : '';
+    return '  ${e.key}: ${e.value.name} ($sizeStr, $date)';
+  }).join('\n');
+  return 'Driveバックアップ一覧:\n$lines';
+}
+
+Future<String> _cmdBackupDriveRestore(List<String> args) async {
+  if (args.isEmpty) {
+    final backups = await DriveBackupService().listBackups();
+    if (backups.isEmpty) return 'Driveバックアップなし';
+    final lines = backups.asMap().entries.map((e) => '  ${e.key}: ${e.value.name}').join('\n');
+    return 'Driveバックアップ一覧:\n$lines\n\n使用例: !opencode backup.drive.restore <index>';
+  }
+
+  final opService = BackupOperationService();
+  final opId = await opService.createOperation(
+    operationType: BackupOperationType.restore,
+    backupType: BackupType.drive,
+  );
+  await opService.updateStatus(opId, BackupStatus.inProgress);
+
+  try {
+    final index = int.tryParse(args[0]);
+    if (index == null) return '数値を指定: !opencode backup.drive.restore <index>';
+
+    final backups = await DriveBackupService().listBackups();
+    if (index < 0 || index >= backups.length) return '無効なインデックス';
+
+    final file = backups[index];
+    if (file.id == null) return 'ファイルIDなし';
+
+    final dbPath = await DatabaseHelper().getDatabasePath();
+    final tmpDir = await getApplicationDocumentsDirectory();
+    final tmpPath = '${tmpDir.path}/restore_${DateTime.now().millisecondsSinceEpoch}.db';
+
+    await opService.updateFilePath(opId, tmpPath);
+
+    final driveService = DriveBackupService();
+    final success = await driveService.downloadBackup(file.id!, tmpPath);
+
+    if (success) {
+      await DatabaseHelper.closeAndReset();
+      await Future.delayed(const Duration(seconds: 1));
+      await File(tmpPath).copy(dbPath);
+      try { await File(tmpPath).delete(); } catch (_) {}
+      await opService.updateStatus(opId, BackupStatus.completed);
+      return 'Driveバックアップ復元完了: ${file.name} (アプリを再起動してください)';
+    } else {
+      await opService.updateStatus(opId, BackupStatus.failed, errorMessage: 'ダウンロード失敗');
+      return 'Driveバックアップ復元失敗: ダウンロードエラー';
+    }
+  } catch (e) {
+    await opService.updateStatus(opId, BackupStatus.failed, errorMessage: e.toString());
+    return 'Driveバックアップ復元失敗: $e';
+  }
+}
+
+Future<String> _cmdBackupStatus(List<String> args) async {
+  final opService = BackupOperationService();
+  final summary = await opService.getSummary();
+  return jsonEncode(summary);
+}
+
+Future<String> _cmdBackupHistory(List<String> args) async {
+  final opService = BackupOperationService();
+  final operations = await opService.getRecentOperations(limit: 50);
+  final lines = operations.map((op) {
+    return '${op.createdAt} ${op.operationType.name}/${op.backupType.name} ${op.status.name} ${op.filePath ?? ''}';
+  }).join('\n');
+  return lines;
+}
+
+String _formatSize(String sizeStr) {
+  final bytes = int.tryParse(sizeStr);
+  if (bytes == null) return '';
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+
+// スクリーンショットコマンド実装
+Future<String> _cmdScreenshotCapture(List<String> args) async {
+  try {
+    final screenshotService = ScreenshotService();
+    if (!screenshotService.isEnabled) {
+      return 'スクリーンショット機能はICE-APIプラグインが有効な場合のみ使用可能です';
+    }
+    final filePath = await screenshotService.captureToFile();
+    final file = File(filePath);
+    final size = await file.length();
+    return 'スクリーンショット保存完了: $filePath (${(size / 1024).toStringAsFixed(1)} KB)';
+  } catch (e) {
+    return 'スクリーンショット取得失敗: $e';
+  }
+}
+
+Future<String> _cmdScreenshotBase64(List<String> args) async {
+  try {
+    final screenshotService = ScreenshotService();
+    if (!screenshotService.isEnabled) {
+      return 'スクリーンショット機能はICE-APIプラグインが有効な場合のみ使用可能です';
+    }
+    final base64 = await screenshotService.captureToBase64();
+    return base64;
+  } catch (e) {
+    return 'スクリーンショット取得失敗: $e';
+  }
 }
 
 Future<String> _cmdStatus(List<String> _) async {
@@ -268,6 +511,20 @@ void main() async {
       await DbSnapshotService.restore(index);
       return '復元完了、アプリを再起動してください';
     });
+
+    // バックアップコマンド
+    DebugConsole.register('backup.local.create', _cmdBackupLocalCreate);
+    DebugConsole.register('backup.local.list', _cmdBackupLocalList);
+    DebugConsole.register('backup.local.restore', _cmdBackupLocalRestore);
+    DebugConsole.register('backup.drive.upload', _cmdBackupDriveUpload);
+    DebugConsole.register('backup.drive.list', _cmdBackupDriveList);
+    DebugConsole.register('backup.drive.restore', _cmdBackupDriveRestore);
+    DebugConsole.register('backup.status', _cmdBackupStatus);
+    DebugConsole.register('backup.history', _cmdBackupHistory);
+
+    // スクリーンショットコマンド
+    DebugConsole.register('screenshot.capture', _cmdScreenshotCapture);
+    DebugConsole.register('screenshot.base64', _cmdScreenshotBase64);
   }
 
   Database? db;
@@ -389,6 +646,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
   bool? _needsConversion;
   bool _isConverting = false;
   late ThemeMode _themeMode;
+  final GlobalKey _screenshotKey = GlobalKey();
 
   @override
   void initState() {
@@ -407,6 +665,12 @@ class _H1CoreAppState extends State<H1CoreApp> {
     _scheduleGarbageCollection();
     _check();
     _checkStoragePermission();
+    
+    // ICE-APIプラグインが有効な場合のみスクリーンショット機能を有効化
+    final iceEnabled = widget.registry.isEnabled('com.h1.plugin.ice');
+    if (iceEnabled) {
+      ScreenshotService().setGlobalKey(_screenshotKey);
+    }
   }
 
   @override
@@ -498,8 +762,9 @@ class _H1CoreAppState extends State<H1CoreApp> {
   Widget build(BuildContext context) {
     final inputStyle = widget.prefs.getString('input_field_style') ?? 'raised';
     final navbarStyle = widget.prefs.getString('navbar_style') ?? 'primary';
+    final iceEnabled = widget.registry.isEnabled('com.h1.plugin.ice');
 
-    return MaterialApp(
+    final app = MaterialApp(
       title: '販売アシスト1号 コア',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ja'),
@@ -524,6 +789,15 @@ class _H1CoreAppState extends State<H1CoreApp> {
         ...widget.registry.getAllRoutes(),
       },
     );
+
+    // ICE-APIプラグインが有効な場合のみRenderRepaintBoundaryでラップ
+    if (iceEnabled) {
+      return RepaintBoundary(
+        key: _screenshotKey,
+        child: app,
+      );
+    }
+    return app;
   }
 
   Widget _buildHome() {

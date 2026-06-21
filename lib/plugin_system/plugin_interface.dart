@@ -18,4 +18,7 @@ abstract class H1Plugin {
   Widget? getSettingsScreen() => null;
   List<ScreenDefinition> get screens => [];
   DashboardSection? get dashboardSection => null;
+  
+  /// プラグインのデバッグ情報を返す（デフォルトは空のマップ）
+  Future<Map<String, dynamic>> getDebugInfo() async => {};
 }

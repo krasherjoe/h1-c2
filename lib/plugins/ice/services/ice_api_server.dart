@@ -15,6 +15,8 @@ import 'package:h_1_core/services/project_repository.dart';
 import 'package:h_1_core/models/project_model.dart';
 import 'package:h_1_core/plugins/project/models/gantt_preset.dart';
 import 'package:h_1_core/utils/app_theme.dart';
+import 'package:h_1_core/services/backup_operation_service.dart';
+import 'package:h_1_core/services/screenshot_service.dart';
 import 'ice_state_collector.dart';
 
 class IceApiServer {
@@ -222,34 +224,79 @@ class IceApiServer {
         case '/api/errors':
           if (method == 'DELETE') {
             await _handleApiErrorsClear(request.response);
-          } else {
+          } else if (method == 'GET') {
             await _handleApiErrors(request.response);
+          } else {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET or DELETE required');
+            return;
           }
 
+        case '/api/backup-status':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiBackupStatus(request.response);
+
+        case '/api/backup-history':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiBackupHistory(request.response, request);
+
+        case '/api/plugins/debug':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiPluginsDebug(request.response);
+
+        case '/api/screenshot':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiScreenshot(request.response);
+
         default:
-          await _respond(request.response, {
-            'service': 'h-1-core ICE API',
-            'version': _version,
-            'endpoints': [
-              'GET  /health',
-              'GET  /state',
-              'GET  /errors',
-              'POST /command',
-              'POST /db/query',
-              'GET  /fs/read?path=...',
-              'POST /fs/write',
-              'GET  /fs/list?path=...',
-              'GET  /fs/download?path=...',
-              'GET  /api/workspace',
-              'GET  /api/commands',
-              'GET  /api/db/tables',
-              'GET  /api/preferences?key=...',
-              'GET  /api/theme',
-              'GET  /api/projects',
-              'GET  /api/errors',
-              'DELETE /api/errors',
-            ],
-          });
+          if (path.startsWith('/api/plugins/') && path.endsWith('/debug')) {
+            if (method != 'GET') {
+              await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+              return;
+            }
+            final pluginId = path.substring('/api/plugins/'.length, path.length - '/debug'.length);
+            await _handleApiPluginDebug(request.response, pluginId);
+          } else {
+            await _respond(request.response, {
+              'service': 'h-1-core ICE API',
+              'version': _version,
+              'endpoints': [
+                'GET  /health',
+                'GET  /state',
+                'GET  /errors',
+                'POST /command',
+                'POST /db/query',
+                'GET  /fs/read?path=...',
+                'POST /fs/write',
+                'GET  /fs/list?path=...',
+                'GET  /fs/download?path=...',
+                'GET  /api/workspace',
+                'GET  /api/commands',
+                'GET  /api/db/tables',
+                'GET  /api/preferences?key=...',
+                'GET  /api/theme',
+                'GET  /api/projects',
+                'GET  /api/errors',
+                'DELETE /api/errors',
+                'GET  /api/backup-status',
+                'GET  /api/backup-history',
+                'GET  /api/plugins/debug',
+                'GET  /api/plugins/<id>/debug',
+                'GET  /api/screenshot',
+              ],
+            });
+          }
       }
     } catch (e) {
       await _error(request.response, HttpStatus.internalServerError, e.toString());
@@ -641,6 +688,97 @@ class IceApiServer {
         context: 'POST /api/projects?action=create',
       );
       await _error(request.response, HttpStatus.internalServerError, 'Failed to create project: $e');
+    }
+  }
+
+  Future<void> _handleApiBackupStatus(HttpResponse response) async {
+    try {
+      final opService = BackupOperationService();
+      final summary = await opService.getSummary();
+      await _respond(response, summary);
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get backup status: $e');
+    }
+  }
+
+  Future<void> _handleApiBackupHistory(HttpResponse response, HttpRequest request) async {
+    try {
+      final opService = BackupOperationService();
+      final limitStr = request.uri.queryParameters['limit'];
+      final limit = limitStr != null ? int.tryParse(limitStr) ?? 50 : 50;
+      final operations = await opService.getRecentOperations(limit: limit);
+      await _respond(response, {
+        'operations': operations.map((op) => op.toJson()).toList(),
+        'count': operations.length,
+      });
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get backup history: $e');
+    }
+  }
+
+  Future<void> _handleApiPluginsDebug(HttpResponse response) async {
+    try {
+      final plugins = _registry.allPlugins;
+      final result = <String, dynamic>{};
+      for (final p in plugins) {
+        try {
+          final debugInfo = await p.getDebugInfo();
+          result[p.id] = {
+            'name': p.name,
+            'version': p.version,
+            'enabled': _registry.isEnabled(p.id),
+            'debug': debugInfo,
+          };
+        } catch (e) {
+          result[p.id] = {
+            'name': p.name,
+            'version': p.version,
+            'enabled': _registry.isEnabled(p.id),
+            'debug': {'error': e.toString()},
+          };
+        }
+      }
+      await _respond(response, result);
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get plugins debug: $e');
+    }
+  }
+
+  Future<void> _handleApiPluginDebug(HttpResponse response, String pluginId) async {
+    try {
+      final plugin = _registry.getPlugin(pluginId);
+      if (plugin == null) {
+        await _error(response, HttpStatus.notFound, 'Plugin not found: $pluginId');
+        return;
+      }
+      final debugInfo = await plugin.getDebugInfo();
+      await _respond(response, {
+        'id': plugin.id,
+        'name': plugin.name,
+        'version': plugin.version,
+        'enabled': _registry.isEnabled(plugin.id),
+        'debug': debugInfo,
+      });
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get plugin debug: $e');
+    }
+  }
+
+  Future<void> _handleApiScreenshot(HttpResponse response) async {
+    try {
+      final screenshotService = ScreenshotService();
+      if (!screenshotService.isEnabled) {
+        await _error(response, HttpStatus.notImplemented, 'Screenshot requires ICE-API plugin to be enabled');
+        return;
+      }
+      final base64 = await screenshotService.captureToBase64();
+      await _respond(response, {
+        'format': 'png',
+        'encoding': 'base64',
+        'data': base64,
+      });
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to capture screenshot: $e');
     }
   }
 

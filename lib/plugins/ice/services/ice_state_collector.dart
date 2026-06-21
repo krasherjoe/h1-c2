@@ -16,7 +16,7 @@ class IceStateCollector {
     return {
       'system': await _collectSystem(),
       'database': await _collectDbStats(),
-      'plugins': _collectPlugins(),
+      'plugins': await _collectPluginsDebug(),
       'company': await _collectCompany(),
       'errors': await _collectErrors(),
       'console': _collectConsole(),
@@ -67,15 +67,26 @@ class IceStateCollector {
     }
   }
 
-  Map<String, dynamic> _collectPlugins() {
+  Future<Map<String, dynamic>> _collectPluginsDebug() async {
     final plugins = _registry.allPlugins;
     final result = <String, dynamic>{};
     for (final p in plugins) {
-      result[p.id] = {
-        'name': p.name,
-        'version': p.version,
-        'enabled': _registry.isEnabled(p.id),
-      };
+      try {
+        final debugInfo = await p.getDebugInfo();
+        result[p.id] = {
+          'name': p.name,
+          'version': p.version,
+          'enabled': _registry.isEnabled(p.id),
+          'debug': debugInfo,
+        };
+      } catch (e) {
+        result[p.id] = {
+          'name': p.name,
+          'version': p.version,
+          'enabled': _registry.isEnabled(p.id),
+          'debug': {'error': e.toString()},
+        };
+      }
     }
     return result;
   }

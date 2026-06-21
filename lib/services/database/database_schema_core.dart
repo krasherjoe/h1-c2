@@ -111,4 +111,30 @@ Future<void> createCoreSchema(Database db) async {
   await db.execute(
     'CREATE INDEX IF NOT EXISTS idx_email_history_sent_at ON email_send_history(sent_at)',
   );
+
+  // バックアップ操作追跡テーブル
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS backup_operations (
+      id TEXT PRIMARY KEY,
+      operation_type TEXT NOT NULL,
+      backup_type TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      file_path TEXT,
+      file_size INTEGER,
+      started_at TEXT,
+      completed_at TEXT,
+      error_message TEXT,
+      metadata TEXT,
+      created_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_backup_operations_status ON backup_operations(status)',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_backup_operations_type ON backup_operations(operation_type)',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_backup_operations_created ON backup_operations(created_at)',
+  );
 }

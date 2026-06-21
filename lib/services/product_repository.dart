@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sqflite/sqflite.dart';
 import '../models/product_model.dart';
 import 'database_helper.dart';
 import 'activity_log_repository.dart';
