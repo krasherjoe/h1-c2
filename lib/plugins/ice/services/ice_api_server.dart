@@ -47,7 +47,10 @@ class IceApiServer {
         _version = envVersion;
       } else {
         final info = await PackageInfo.fromPlatform();
-        _version = '${info.version}(${info.buildNumber})';
+        // バージョン文字列から不要なプレフィックスを削除
+        var version = info.version;
+        version = version.replaceAll(RegExp(r'^v+'), '');
+        _version = '$version(${info.buildNumber})';
       }
       _server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
       _running = true;

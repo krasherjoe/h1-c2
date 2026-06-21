@@ -81,6 +81,20 @@ class _ProjectTimelineWidgetState extends State<ProjectTimelineWidget> {
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          // 上と左の明るい影（凹んだ感）
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.15),
+            offset: const Offset(-1, -1),
+            blurRadius: 2,
+          ),
+          // 下と右の暗い影（凹んだ感）
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.25),
+            offset: const Offset(1, 1),
+            blurRadius: 3,
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
