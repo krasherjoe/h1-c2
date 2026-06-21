@@ -75,9 +75,14 @@ class ProjectPlugin extends H1Plugin {
         progress INTEGER DEFAULT 0,
         scheme_id TEXT,
         current_stage_index INTEGER DEFAULT 0,
-        contract_months INTEGER
+        contract_months INTEGER,
+        sort_order INTEGER DEFAULT 0,
+        gantt_config TEXT
       )
     ''');
+    // 既存DBのマイグレーション（ALTER TABLEはIF NOT EXISTS非対応のためtry-catch）
+    try { await db.execute('ALTER TABLE projects ADD COLUMN sort_order INTEGER DEFAULT 0'); } catch (_) {}
+    try { await db.execute('ALTER TABLE projects ADD COLUMN gantt_config TEXT'); } catch (_) {}
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_projects_customer ON projects(customer_id)',
     );

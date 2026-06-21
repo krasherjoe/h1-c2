@@ -80,10 +80,7 @@ class _ProjectTimelineWidgetState extends State<ProjectTimelineWidget> {
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 2)),
-          BoxShadow(color: cs.shadow.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4)),
-        ],
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
