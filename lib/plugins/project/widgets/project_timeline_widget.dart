@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../../../models/project_model.dart';
 import '../../../utils/app_theme.dart';
-import '../../../models/document_type_colors.dart';
 import '../models/gantt_preset.dart';
-import '../../documents/models/document_model.dart';
 
 class ProjectTimelineWidget extends StatefulWidget {
   final Project project;
   final List<Map<String, dynamic>> linkedDocs;
   final Function(GanttPreset)? onPresetChanged;
-  const ProjectTimelineWidget({super.key, required this.project, required this.linkedDocs, this.onPresetChanged});
+  final Function(GanttPreset)? onTaskDateChanged;
+  const ProjectTimelineWidget({super.key, required this.project, required this.linkedDocs, this.onPresetChanged, this.onTaskDateChanged});
 
   @override
   State<ProjectTimelineWidget> createState() => _ProjectTimelineWidgetState();
@@ -117,7 +116,7 @@ class _ProjectTimelineWidgetState extends State<ProjectTimelineWidget> {
           else ...[
             _buildDateLabels(start, end, cs),
             const SizedBox(height: 8),
-            _buildGanttChart(cs, start, end, _currentPreset, widget.linkedDocs, progress, overdue),
+            _buildGanttChart(cs, start, end, _currentPreset, widget.linkedDocs, progress, overdue, widget.onTaskDateChanged),
             const SizedBox(height: 8),
             _buildProgressInfo(cs, progress, overdue, months),
           ],
@@ -163,39 +162,86 @@ class _ProjectTimelineWidgetState extends State<ProjectTimelineWidget> {
     List<Map<String, dynamic>> linkedDocs,
     double progress,
     bool overdue,
+    Function(GanttPreset)? onTaskDateChanged,
   ) {
     final isDark = cs.brightness == Brightness.dark;
     final totalDays = end != null ? end.difference(start).inDays : (widget.project.contractMonths ?? 1) * 30;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth;
-        final rowHeight = 32.0;
-        final totalHeight = preset.tasks.length * rowHeight;
+    return Column(
+      children: preset.tasks.asMap().entries.map((entry) {
+        final task = entry.value;
 
-        return SizedBox(
-          height: totalHeight,
-          child: CustomPaint(
-            size: Size(w, totalHeight),
-            painter: GanttChartPainter(
-              start: start,
-              end: end,
-              totalDays: totalDays,
-              preset: preset,
-              linkedDocs: linkedDocs,
-              progress: progress.clamp(0.0, 1.0),
-              overdue: overdue,
-              barColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
-              overdueColor: isDark ? AppTheme.timelineOverdueDark : AppTheme.timelineOverdueLight,
-              surfaceColor: isDark ? AppTheme.timelineBgDark : AppTheme.timelineBgLight,
-              markerColor: AppTheme.timelineMarker,
-              textColor: cs.onSurface,
-              rowHeight: rowHeight,
+        return GestureDetector(
+          onTap: () => _showTaskDatePicker(context, task, preset, onTaskDateChanged),
+          child: Container(
+            height: 32,
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.2))),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 60,
+                  child: Text(
+                    task.label,
+                    style: TextStyle(fontSize: 11, color: cs.onSurface),
+                  ),
+                ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return CustomPaint(
+                        size: Size(constraints.maxWidth, 32),
+                        painter: GanttTaskBarPainter(
+                          start: start,
+                          end: end,
+                          totalDays: totalDays,
+                          task: task,
+                          barColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
+                          surfaceColor: isDark ? AppTheme.timelineBgDark : AppTheme.timelineBgLight,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                if (task.date != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(
+                      _fmt(DateTime.parse(task.date!)),
+                      style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+                    ),
+                  ),
+              ],
             ),
           ),
         );
-      },
+      }).toList(),
     );
+  }
+
+  Future<void> _showTaskDatePicker(
+    BuildContext context,
+    GanttTask task,
+    GanttPreset preset,
+    Function(GanttPreset)? onTaskDateChanged,
+  ) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: task.date != null ? DateTime.parse(task.date!) : widget.project.startDate ?? DateTime.now(),
+      firstDate: widget.project.startDate ?? DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: widget.project.endDate ?? DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && mounted) {
+      final updatedTasks = preset.tasks.map((t) {
+        if (t.id == task.id) {
+          return t.copyWith(date: picked.toIso8601String());
+        }
+        return t;
+      }).toList();
+      final updatedPreset = preset.copyWith(tasks: updatedTasks);
+      onTaskDateChanged?.call(updatedPreset);
+    }
   }
 
   Widget _buildProgressInfo(ColorScheme cs, double progress, bool overdue, int months) {
@@ -266,107 +312,48 @@ class TimelineBarPainter extends CustomPainter {
       old.progress != progress || old.overdue != overdue || old.monthCount != monthCount;
 }
 
-class GanttChartPainter extends CustomPainter {
+class GanttTaskBarPainter extends CustomPainter {
   final DateTime start;
   final DateTime? end;
   final int totalDays;
-  final GanttPreset preset;
-  final List<Map<String, dynamic>> linkedDocs;
-  final double progress;
-  final bool overdue;
+  final GanttTask task;
   final Color barColor;
-  final Color overdueColor;
   final Color surfaceColor;
-  final Color markerColor;
-  final Color textColor;
-  final double rowHeight;
 
-  GanttChartPainter({
+  GanttTaskBarPainter({
     required this.start,
     required this.end,
     required this.totalDays,
-    required this.preset,
-    required this.linkedDocs,
-    required this.progress,
-    required this.overdue,
+    required this.task,
     required this.barColor,
-    required this.overdueColor,
     required this.surfaceColor,
-    required this.markerColor,
-    required this.textColor,
-    required this.rowHeight,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width;
     final h = size.height;
-    final labelWidth = 60.0;
-    final chartWidth = w - labelWidth;
+    final w = size.width;
+    final barH = 16.0;
+    final barY = (h - barH) / 2;
 
-    // 各タスク行を描画
-    for (int i = 0; i < preset.tasks.length; i++) {
-      final task = preset.tasks[i];
-      final y = i * rowHeight;
+    // 背景バー
+    final bgPaint = Paint()..color = surfaceColor;
+    canvas.drawRect(Rect.fromLTWH(0, barY, w, barH), bgPaint);
 
-      // タスクラベル
-      final textPainter = TextPainter(
-        text: TextSpan(text: task.label, style: TextStyle(color: textColor, fontSize: 11)),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout(maxWidth: labelWidth);
-      textPainter.paint(canvas, Offset(0, y + (rowHeight - textPainter.height) / 2));
-
-      // 背景バー
-      final bgPaint = Paint()..color = surfaceColor;
-      canvas.drawRect(Rect.fromLTWH(labelWidth, y + 8, chartWidth, rowHeight - 16), bgPaint);
-
-      // 伝票に対応する日付を取得
-      final docDate = _getDocumentDate(task);
-      if (docDate != null) {
-        final daysFromStart = docDate.difference(start).inDays;
-        if (daysFromStart >= 0 && daysFromStart <= totalDays) {
-          final x = labelWidth + (daysFromStart / totalDays) * chartWidth;
-          final barW = chartWidth * 0.15; // バー幅は固定
-
-          // タスクバー（DocTypeColor反映）
-          final color = task.documentType != null
-              ? documentTypeBadgeColor(task.documentType!)
-              : (overdue ? overdueColor : barColor);
-          final fgPaint = Paint()..color = color;
-          canvas.drawRect(Rect.fromLTWH(x, y + 8, barW, rowHeight - 16), fgPaint);
-        }
+    // タスクバー
+    if (task.date != null) {
+      final taskDate = DateTime.parse(task.date!);
+      final daysFromStart = taskDate.difference(start).inDays;
+      if (daysFromStart >= 0 && daysFromStart <= totalDays) {
+        final x = (daysFromStart / totalDays) * w;
+        final barW = w * 0.15; // バー幅は固定
+        final fgPaint = Paint()..color = barColor;
+        canvas.drawRect(Rect.fromLTWH(x, barY, barW, barH), fgPaint);
       }
     }
-
-    // 現在位置の縦線マーカー
-    final markerX = labelWidth + chartWidth * progress.clamp(0.0, 0.99);
-    final markerPaint = Paint()
-      ..color = markerColor
-      ..strokeWidth = 2;
-    canvas.drawLine(Offset(markerX, 0), Offset(markerX, h), markerPaint);
-  }
-
-  DateTime? _getDocumentDate(GanttTask task) {
-    if (task.documentType == null) return null;
-    for (final doc in linkedDocs) {
-      final docType = documentTypeFromString(doc['document_type'] as String? ?? '');
-      if (docType == task.documentType) {
-        final dateStr = doc['date'] as String?;
-        if (dateStr != null) {
-          try {
-            return DateTime.parse(dateStr);
-          } catch (_) {}
-        }
-      }
-    }
-    return null;
   }
 
   @override
-  bool shouldRepaint(GanttChartPainter old) =>
-      old.progress != progress ||
-      old.overdue != overdue ||
-      old.linkedDocs.length != linkedDocs.length ||
-      old.preset.id != preset.id;
+  bool shouldRepaint(GanttTaskBarPainter old) =>
+      old.task.date != task.date || old.totalDays != totalDays;
 }

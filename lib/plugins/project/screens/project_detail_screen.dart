@@ -232,6 +232,32 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           );
         }
       },
+      onTaskDateChanged: (preset) async {
+        try {
+          final updated = project.copyWith(
+            ganttConfig: jsonEncode(preset.toJson()),
+          );
+          await _repo.save(updated);
+          SyncService.pushChange(
+            entityType: 'project',
+            entityId: project.id,
+            action: 'save',
+            data: updated.toMap(),
+          );
+          await _load();
+        } catch (e, stackTrace) {
+          await ErrorLogService.instance.logError(
+            'タスク日付保存エラー: $e',
+            stackTrace: stackTrace.toString(),
+            screen: 'ProjectDetailScreen',
+            context: 'project_id: ${project.id}',
+          );
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('タスク日付保存エラー: $e')),
+          );
+        }
+      },
     );
   }
 

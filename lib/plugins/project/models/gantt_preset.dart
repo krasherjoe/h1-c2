@@ -6,19 +6,30 @@ class GanttTask {
   final String label;
   final DocumentType? documentType;
   final bool isCustom;
+  final String? date; // ISO 8601 format
 
   const GanttTask({
     required this.id,
     required this.label,
     this.documentType,
     this.isCustom = false,
+    this.date,
   });
+
+  GanttTask copyWith({String? date}) => GanttTask(
+    id: id,
+    label: label,
+    documentType: documentType,
+    isCustom: isCustom,
+    date: date ?? this.date,
+  );
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'label': label,
         'documentType': documentType?.name,
         'isCustom': isCustom,
+        'date': date,
       };
 
   factory GanttTask.fromJson(Map<String, dynamic> json) => GanttTask(
@@ -28,6 +39,7 @@ class GanttTask {
             ? documentTypeFromString(json['documentType'] as String)
             : null,
         isCustom: json['isCustom'] as bool? ?? false,
+        date: json['date'] as String?,
       );
 }
 
@@ -42,6 +54,12 @@ class GanttPreset {
     required this.name,
     required this.tasks,
   });
+
+  GanttPreset copyWith({List<GanttTask>? tasks}) => GanttPreset(
+    id: id,
+    name: name,
+    tasks: tasks ?? this.tasks,
+  );
 
   static const standard = GanttPreset(
     id: 'standard',
