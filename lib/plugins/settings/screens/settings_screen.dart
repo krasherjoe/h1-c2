@@ -5,6 +5,7 @@ import '../../../main.dart' show themeNotifier;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
 import '../../../services/google_auth_service.dart';
 import '../../../services/sync_queue.dart';
+import '../../../services/update_service.dart';
 import '../../../widgets/screen_id_title.dart';
 import '../services/settings_repository.dart';
 import '../../../widgets/h1_text_field.dart';
@@ -25,6 +26,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _googleEmail;
   bool _googleSignedIn = false;
   String _lastBackup = '';
+  String _currentVersion = '';
+  String _latestVersion = '';
+  bool _needsUpdate = false;
+  bool _checkingUpdate = false;
 
   @override
   void initState() {
@@ -36,6 +41,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     _repo = SettingsRepository(prefs);
     final email = await GoogleAuthService.instance.getEmail();
+    final updateService = UpdateService();
+    final currentVersion = await updateService.getCurrentVersion();
+    final lastBackupStr = prefs.getString('drive_backup_last');
+    String lastBackup = '';
+    if (lastBackupStr != null) {
+      final dt = DateTime.tryParse(lastBackupStr);
+      lastBackup = dt != null ? DateFormat('yyyy/MM/dd HH:mm').format(dt) : '';
+    } else {
+      lastBackup = '';
+    }
     setState(() {
       _taxRate = _repo.defaultTaxRate;
       _prefix = _repo.documentNumberPrefix;
@@ -43,13 +58,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _inputStyle = _repo.inputFieldStyle;
       _googleEmail = email;
       _googleSignedIn = email != null && email.isNotEmpty;
-      final lastBackupStr = prefs.getString('drive_backup_last');
-      if (lastBackupStr != null) {
-        final dt = DateTime.tryParse(lastBackupStr);
-        _lastBackup = dt != null ? DateFormat('yyyy/MM/dd HH:mm').format(dt) : '';
-      } else {
-        _lastBackup = '';
-      }
+      _currentVersion = currentVersion;
+      _lastBackup = lastBackup;
+    });
+  }
+
+  Future<void> _checkUpdate() async {
+    setState(() => _checkingUpdate = true);
+    final updateService = UpdateService();
+    final latest = await updateService.getLatestVersion();
+    final needsUpdate = await updateService.needsUpdate();
+    setState(() {
+      _latestVersion = latest ?? _currentVersion;
+      _needsUpdate = needsUpdate;
+      _checkingUpdate = false;
     });
   }
 
@@ -277,6 +299,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const Divider(height: 1),
+          ]),
+          const SizedBox(height: 16),
+
+          _sectionHeader(cs, Icons.system_update, 'アプリ更新', '最新バージョンを確認して更新できます'),
+          const SizedBox(height: 8),
+          _settingsCard(cs, children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                child: Icon(Icons.info, color: cs.onSurfaceVariant, size: 20),
+              ),
+              title: Text('現在のバージョン', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              trailing: Text(_currentVersion, style: TextStyle(color: cs.onSurfaceVariant)),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                child: Icon(Icons.cloud_download, color: cs.onSurfaceVariant, size: 20),
+              ),
+              title: Text('最新バージョン', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+              trailing: _checkingUpdate
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text(_latestVersion, style: TextStyle(color: _needsUpdate ? cs.error : cs.onSurfaceVariant)),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: FilledButton.icon(
+                onPressed: _checkingUpdate ? null : _checkUpdate,
+                icon: const Icon(Icons.refresh),
+                label: const Text('更新を確認'),
+              ),
+            ),
+            if (_needsUpdate)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: FilledButton.icon(
+                  onPressed: () {
+                    // APKダウンロードとインストールの処理
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('更新機能は近日実装予定です')),
+                    );
+                  },
+                  icon: const Icon(Icons.download),
+                  label: const Text('更新をダウンロード'),
+                  style: FilledButton.styleFrom(backgroundColor: cs.error),
+                ),
+              ),
           ]),
           const SizedBox(height: 16),
 
