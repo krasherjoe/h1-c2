@@ -6,11 +6,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import 'package:h_1_core/plugin_system/plugin_registry.dart';
 import 'package:h_1_core/services/company_service.dart';
 import 'package:h_1_core/services/debug_console.dart';
 import 'package:h_1_core/services/error_log_service.dart';
 import 'package:h_1_core/services/project_repository.dart';
+import 'package:h_1_core/models/project_model.dart';
+import 'package:h_1_core/plugins/project/models/gantt_preset.dart';
 import 'package:h_1_core/utils/app_theme.dart';
 import 'ice_state_collector.dart';
 
@@ -188,7 +191,12 @@ class IceApiServer {
 
         case '/api/projects':
           if (method == 'POST') {
-            await _handleApiProjectUpdate(request);
+            final action = uri.queryParameters['action'];
+            if (action == 'create') {
+              await _handleApiProjectCreate(request);
+            } else {
+              await _handleApiProjectUpdate(request);
+            }
           } else if (method == 'GET') {
             await _handleApiProjects(request.response);
           } else {
@@ -582,6 +590,57 @@ class IceApiServer {
         context: 'POST /api/projects',
       );
       await _error(request.response, HttpStatus.internalServerError, 'Failed to update project: $e');
+    }
+  }
+
+  Future<void> _handleApiProjectCreate(HttpRequest request) async {
+    try {
+      final body = await utf8.decodeStream(request);
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      final name = data['name'] as String?;
+      final ganttPresetId = data['gantt_preset'] as String?;
+      final startDateStr = data['start_date'] as String?;
+      final contractMonths = data['contract_months'] as int?;
+
+      if (name == null || name.isEmpty) {
+        await _error(request.response, HttpStatus.badRequest, 'name is required');
+        return;
+      }
+
+      final preset = ganttPresetId != null
+          ? GanttPreset.getById(ganttPresetId)
+          : null;
+
+      final repo = ProjectRepository();
+      final project = Project(
+        id: const Uuid().v4(),
+        name: name,
+        status: ProjectStatus.active,
+        startDate: startDateStr != null ? DateTime.tryParse(startDateStr) : DateTime.now(),
+        contractMonths: contractMonths ?? 6,
+        totalAmount: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: ProjectType.development,
+        pipelineStage: '要件定義',
+        ganttConfig: preset != null ? jsonEncode(preset.toJson()) : null,
+      );
+
+      await repo.save(project);
+
+      await _respond(request.response, {
+        'created': true,
+        'project_id': project.id,
+        'name': project.name,
+        'gantt_preset': preset?.id,
+      });
+    } catch (e) {
+      await ErrorLogService.instance.logError(
+        'ICE-API project create error: $e',
+        screen: 'IceApiServer',
+        context: 'POST /api/projects?action=create',
+      );
+      await _error(request.response, HttpStatus.internalServerError, 'Failed to create project: $e');
     }
   }
 

@@ -83,7 +83,19 @@ class GanttPreset {
     ],
   );
 
-  static const allPresets = [standard, simple, purchase, salesOnly];
+  static const softwareDevelopment = GanttPreset(
+    id: 'software_development',
+    name: 'ソフト開発',
+    tasks: [
+      GanttTask(id: 'requirements', label: '要件定義', isCustom: true),
+      GanttTask(id: 'design', label: '設計', isCustom: true),
+      GanttTask(id: 'implementation', label: '実装', isCustom: true),
+      GanttTask(id: 'testing', label: 'テスト', isCustom: true),
+      GanttTask(id: 'deployment', label: 'デプロイ', isCustom: true),
+    ],
+  );
+
+  static const allPresets = [standard, simple, purchase, salesOnly, softwareDevelopment];
 
   static GanttPreset? getById(String id) {
     for (final preset in allPresets) {
