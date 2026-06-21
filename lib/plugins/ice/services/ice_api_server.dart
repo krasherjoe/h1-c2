@@ -17,6 +17,7 @@ import 'package:h_1_core/plugins/project/models/gantt_preset.dart';
 import 'package:h_1_core/utils/app_theme.dart';
 import 'package:h_1_core/services/backup_operation_service.dart';
 import 'package:h_1_core/services/screenshot_service.dart';
+import 'package:h_1_core/services/test_runner_service.dart';
 import 'ice_state_collector.dart';
 
 class IceApiServer {
@@ -259,6 +260,27 @@ class IceApiServer {
           }
           await _handleApiScreenshot(request.response);
 
+        case '/api/test/list':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiTestList(request.response);
+
+        case '/api/test/run':
+          if (method != 'POST') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'POST required');
+            return;
+          }
+          await _handleApiTestRun(request.response, request);
+
+        case '/api/test/result':
+          if (method != 'GET') {
+            await _error(request.response, HttpStatus.methodNotAllowed, 'GET required');
+            return;
+          }
+          await _handleApiTestResult(request.response);
+
         default:
           if (path.startsWith('/api/plugins/') && path.endsWith('/debug')) {
             if (method != 'GET') {
@@ -294,6 +316,9 @@ class IceApiServer {
                 'GET  /api/plugins/debug',
                 'GET  /api/plugins/<id>/debug',
                 'GET  /api/screenshot',
+                'GET  /api/test/list',
+                'POST /api/test/run',
+                'GET  /api/test/result',
               ],
             });
           }
@@ -779,6 +804,48 @@ class IceApiServer {
       });
     } catch (e) {
       await _error(response, HttpStatus.internalServerError, 'Failed to capture screenshot: $e');
+    }
+  }
+
+  Future<void> _handleApiTestList(HttpResponse response) async {
+    try {
+      final testRunner = TestRunnerService();
+      final testFiles = await testRunner.listTestFiles();
+      await _respond(response, {
+        'test_files': testFiles,
+        'count': testFiles.length,
+      });
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to list test files: $e');
+    }
+  }
+
+  Future<void> _handleApiTestRun(HttpResponse response, HttpRequest request) async {
+    try {
+      final body = await utf8.decodeStream(request);
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      final testFile = data['test_file'] as String?;
+
+      if (testFile == null || testFile.isEmpty) {
+        await _error(response, HttpStatus.badRequest, 'test_file is required');
+        return;
+      }
+
+      final testRunner = TestRunnerService();
+      final result = await testRunner.runTest(testFile);
+      await _respond(response, result);
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to run test: $e');
+    }
+  }
+
+  Future<void> _handleApiTestResult(HttpResponse response) async {
+    try {
+      final testRunner = TestRunnerService();
+      final result = testRunner.getLastResult();
+      await _respond(response, result);
+    } catch (e) {
+      await _error(response, HttpStatus.internalServerError, 'Failed to get test result: $e');
     }
   }
 
