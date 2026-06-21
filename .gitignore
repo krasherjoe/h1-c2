@@ -54,6 +54,9 @@ gmail-mcp/credentials/*.json
 # /android/keystore/ は管理対象
 *.md
 !.ai/context.md
+!.ai/agents/context.md
+!lib/plugins/ice/README.md
+!AGENTS.md
 .env
 android/build/
 .opencode/
