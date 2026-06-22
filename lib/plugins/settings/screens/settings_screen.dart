@@ -398,11 +398,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                 child: FilledButton.icon(
-                  onPressed: () {
-                    // APKダウンロードとインストールの処理
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('更新機能は近日実装予定です')),
-                    );
+                  onPressed: () async {
+                    final updateService = UpdateService();
+                    final latest = await updateService.getLatestVersion();
+                    if (latest != null) {
+                      final apkPath = await updateService.downloadApk(latest);
+                      if (apkPath != null) {
+                        await updateService.installApk(apkPath);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('APKをダウンロードしてインストールダイアログを表示しました')),
+                          );
+                        }
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('APKのダウンロードに失敗しました')),
+                          );
+                        }
+                      }
+                    }
                   },
                   icon: const Icon(Icons.download),
                   label: const Text('更新をダウンロード'),
