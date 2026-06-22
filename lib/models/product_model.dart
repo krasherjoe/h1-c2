@@ -35,6 +35,12 @@ class Product {
   final bool isHidden;
   final String? parentId;
 
+  // JAN/MOOV標準対応フィールド
+  final String? productNameKana;
+  final String? classificationCode;
+  final String? divisionCode;
+  final String? manufacturerCode;
+
   final DateTime? validFrom;
   final DateTime? validTo;
   final bool isCurrentFlag;
@@ -61,6 +67,10 @@ class Product {
     this.isLocked = false,
     this.isHidden = false,
     this.parentId,
+    this.productNameKana,
+    this.classificationCode,
+    this.divisionCode,
+    this.manufacturerCode,
     this.validFrom,
     this.validTo,
     this.isCurrentFlag = true,
@@ -91,6 +101,10 @@ class Product {
       'odoo_id': odooId,
       'is_hidden': isHidden ? 1 : 0,
       'parent_id': parentId,
+      'product_name_kana': productNameKana,
+      'classification_code': classificationCode,
+      'division_code': divisionCode,
+      'manufacturer_code': manufacturerCode,
       'valid_from': validFrom?.toIso8601String(),
       'valid_to': validTo?.toIso8601String(),
       'is_current': isCurrentFlag ? 1 : 0,
@@ -121,6 +135,10 @@ class Product {
       odooId: map['odoo_id'],
       isHidden: (map['is_hidden'] ?? 0) == 1,
       parentId: map['parent_id'] as String?,
+      productNameKana: map['product_name_kana'] as String?,
+      classificationCode: map['classification_code'] as String?,
+      divisionCode: map['division_code'] as String?,
+      manufacturerCode: map['manufacturer_code'] as String?,
       validFrom: map['valid_from'] != null
           ? DateTime.parse(map['valid_from'])
           : null,
@@ -157,6 +175,10 @@ class Product {
     bool? isLocked,
     bool? isHidden,
     String? parentId,
+    String? productNameKana,
+    String? classificationCode,
+    String? divisionCode,
+    String? manufacturerCode,
     DateTime? validFrom,
     DateTime? validTo,
     bool? isCurrentFlag,
@@ -185,6 +207,10 @@ class Product {
       isLocked: isLocked ?? this.isLocked,
       isHidden: isHidden ?? this.isHidden,
       parentId: parentId ?? this.parentId,
+      productNameKana: productNameKana ?? this.productNameKana,
+      classificationCode: classificationCode ?? this.classificationCode,
+      divisionCode: divisionCode ?? this.divisionCode,
+      manufacturerCode: manufacturerCode ?? this.manufacturerCode,
       validFrom: validFrom ?? this.validFrom,
       validTo: validTo ?? this.validTo,
       isCurrentFlag: isCurrentFlag ?? this.isCurrentFlag,

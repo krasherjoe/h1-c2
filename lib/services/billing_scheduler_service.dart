@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 import 'billing_converter_service.dart';
 import 'gmail_sender.dart';
 import 'billing_template_repository.dart';
@@ -9,6 +11,8 @@ import 'invoice_repository.dart';
 import 'customer_repository.dart';
 import 'project_repository.dart';
 import 'ar_report_generator.dart';
+import 'sales_queue_repository.dart';
+import '../models/sales_queue_model.dart';
 import '../plugins/documents/logic/document_pdf_generator.dart';
 
 /// 請求書自動発行スケジューラ
@@ -28,6 +32,7 @@ class BillingSchedulerService {
   final _customerRepo = CustomerRepository();
   final _projectRepo = ProjectRepository();
   final _arReportGenerator = ArReportGenerator();
+  final _salesQueueRepo = SalesQueueRepository();
 
   /// スケジューラを開始
   void startScheduler() {
@@ -79,6 +84,9 @@ class BillingSchedulerService {
   /// 締め日処理
   Future<void> _processClosingDate(DateTime date) async {
     try {
+      // 売上キュー処理
+      await _processSalesQueue(date);
+
       // 全テンプレートを取得
       final templates = await _templateRepo.getAllTemplates();
 
@@ -113,6 +121,100 @@ class BillingSchedulerService {
     }
   }
 
+  /// 売上キュー処理
+  Future<void> _processSalesQueue(DateTime date) async {
+    try {
+      _logger.i('[BillingScheduler] Processing sales queue for date: $date');
+
+      // 待機中のエントリを取得
+      final pendingEntries = await _salesQueueRepo.getPendingEntries();
+      if (pendingEntries.isEmpty) {
+        _logger.d('[BillingScheduler] No pending entries in sales queue');
+        return;
+      }
+
+      _logger.i('[BillingScheduler] Found ${pendingEntries.length} pending entries');
+
+      // 案件ごとにグループ化
+      final Map<String, List<SalesQueueEntry>> grouped = {};
+      for (final entry in pendingEntries) {
+        grouped.putIfAbsent(entry.projectId, () => []);
+        grouped[entry.projectId]!.add(entry);
+      }
+
+      // 案件ごとに処理
+      for (final entry in grouped.entries) {
+        final projectId = entry.key;
+        final entries = entry.value;
+
+        // テンプレート取得
+        final template = await _converter.getTemplateForProject(projectId);
+        if (template == null) {
+          _logger.w('[BillingScheduler] No template for project: $projectId');
+          continue;
+        }
+
+        // 締め日チェック
+        final closingDate = template.calculateClosingDate(date);
+        if (closingDate.day != date.day) {
+          _logger.d('[BillingScheduler] Not closing date for project: $projectId');
+          continue;
+        }
+
+        _logger.i('[BillingScheduler] Processing ${entries.length} entries for project: $projectId');
+
+        // エントリを処理中に更新
+        for (final entry in entries) {
+          await _salesQueueRepo.updateStatus(entry.id, QueueStatus.processing);
+        }
+
+        try {
+          // 請求書生成
+          final invoices = await _converter.generateInvoicesForClosingDate(date);
+          
+          if (invoices.isEmpty) {
+            _logger.w('[BillingScheduler] No invoices generated for project: $projectId');
+            // 処理失敗としてマーク
+            for (final entry in entries) {
+              await _salesQueueRepo.updateStatus(
+                entry.id,
+                QueueStatus.failed,
+                errorMessage: '請求書生成なし',
+              );
+            }
+            continue;
+          }
+
+          // 請求書保存
+          await _converter.saveGeneratedInvoices(invoices);
+
+          // エントリを完了に更新
+          for (final entry in entries) {
+            await _salesQueueRepo.updateStatus(
+              entry.id,
+              QueueStatus.completed,
+              invoiceId: invoices.first.id,
+            );
+          }
+
+          _logger.i('[BillingScheduler] Completed ${entries.length} entries for project: $projectId');
+        } catch (e) {
+          _logger.e('[BillingScheduler] Error processing project $projectId: $e');
+          // エントリを失敗に更新
+          for (final entry in entries) {
+            await _salesQueueRepo.updateStatus(
+              entry.id,
+              QueueStatus.failed,
+              errorMessage: e.toString(),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      _logger.e('[BillingScheduler] Process sales queue error: $e');
+    }
+  }
+
   /// 請求書をメールで送信
   Future<void> _sendInvoicesByEmail(List<Invoice> invoices, BillingTemplate template) async {
     try {
@@ -138,21 +240,42 @@ class BillingSchedulerService {
         }
 
         // 売掛レポート添付
-        Uint8List? arReportBytes;
+        File? arReportFile;
         if (template.attachArReport) {
-          arReportBytes = await _generateArReport(invoice, template);
+          arReportFile = await _generateArReport(invoice, template);
         }
 
-        // メール送信
-        final success = await GmailSender.sendPdf(
+        // 添付ファイルリスト作成
+        final attachments = <Map<String, dynamic>>[
+          {'filename': invoice.mailAttachmentFileName, 'bytes': pdfBytes},
+        ];
+
+        if (arReportFile != null) {
+          attachments.add({
+            'filename': arReportFile.path.split('/').last,
+            'bytes': await arReportFile.readAsBytes(),
+          });
+        }
+
+        // メール送信（複数添付対応）
+        final success = await GmailSender.sendPdfs(
           to: customer.email!,
           bcc: template.emailBcc,
           replyTo: template.emailReplyTo,
           subject: invoice.mailTitleCore,
           body: invoice.mailBodyText,
-          pdfBytes: pdfBytes,
-          pdfFilename: invoice.mailAttachmentFileName,
+          attachments: attachments,
         );
+
+        // 一時ファイル削除
+        if (arReportFile != null) {
+          try {
+            await arReportFile.delete();
+            _logger.d('[BillingScheduler] Temp AR report deleted: ${arReportFile.path}');
+          } catch (e) {
+            _logger.w('[BillingScheduler] Failed to delete temp AR report: $e');
+          }
+        }
 
         if (success) {
           _logger.i('[BillingScheduler] Email sent for invoice: ${invoice.id}');
@@ -181,10 +304,15 @@ class BillingSchedulerService {
     }
   }
 
-  /// 売掛レポート生成
-  Future<Uint8List?> _generateArReport(Invoice invoice, BillingTemplate template) async {
+  /// 売掛レポート生成（一時ファイル）
+  Future<File?> _generateArReport(Invoice invoice, BillingTemplate template) async {
     try {
-      return await _arReportGenerator.generateArReportForInvoice(invoice);
+      final file = await _arReportGenerator.generateArReportAsTempFile(
+        customer: invoice.customer,
+        asOfDate: DateTime.now(),
+        template: template,
+      );
+      return file;
     } catch (e) {
       _logger.e('[BillingScheduler] Generate AR report error: $e');
       return null;

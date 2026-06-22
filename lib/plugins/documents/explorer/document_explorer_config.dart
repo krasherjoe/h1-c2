@@ -29,11 +29,12 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
 
   static const _typeOptions = [
     (value: '', label: 'すべて', icon: Icons.all_inbox),
-    (value: 'invoice', label: '請求書', icon: Icons.receipt_long),
-    (value: 'receipt', label: '領収書', icon: Icons.receipt),
-    (value: 'estimation', label: '見積書', icon: Icons.request_quote),
-    (value: 'order', label: '受注書', icon: Icons.shopping_cart_checkout),
-    (value: 'delivery', label: '納品書', icon: Icons.local_shipping),
+    (value: 'invoice', label: '請求', icon: Icons.receipt_long),
+    (value: 'receipt', label: '領収', icon: Icons.receipt),
+    (value: 'estimation', label: '見積', icon: Icons.request_quote),
+    (value: 'order', label: '受注', icon: Icons.shopping_cart_checkout),
+    (value: 'delivery', label: '納品', icon: Icons.local_shipping),
+    (value: 'bulk_invoice', label: '一括請求', icon: Icons.collections),
   ];
 
   @override
@@ -90,16 +91,26 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
   Future<List<DocumentModel>> fetchItems(String query) async {
     final repo = DocumentRepository();
     DocumentType? filterType;
-    if (typeFilter.isNotEmpty) {
+    if (typeFilter.isNotEmpty && typeFilter != 'bulk_invoice') {
       filterType = documentTypeFromString(typeFilter);
     }
-    return repo.fetchAll(
+    
+    final documents = await repo.fetchAll(
       filterType: filterType,
       query: query,
       statusFilter: statusFilter.isNotEmpty ? statusFilter : null,
       dateFrom: dateFrom,
       dateTo: dateTo,
     );
+
+    // 一括請求フィルタ（売掛レポート添付の請求書）
+    if (typeFilter == 'bulk_invoice') {
+      // TODO: 売掛レポート添付フラグでフィルタ
+      // 現在は請求書のみ返す
+      return documents.where((doc) => doc.documentType == DocumentType.invoice).toList();
+    }
+
+    return documents;
   }
 
   @override
@@ -107,7 +118,9 @@ class DocumentExplorerConfig extends H1ExplorerConfig<DocumentModel> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final doctypeColor = documentTypeColor(item.documentType, cs, isDark);
-    final verticalType = item.documentType.label.split('').join('\n');
+    // 伝票タイプを短縮（「書」を削除）
+    final shortType = item.documentType.label.replaceAll('書', '');
+    final verticalType = shortType.split('').join('\n');
     final repItems = item.items.take(3).map((i) => i.productName).join('、');
     final subject = (item.subject != null && item.subject!.isNotEmpty) ? item.subject : null;
     final date = '${item.date.year}/${item.date.month.toString().padLeft(2, '0')}/${item.date.day.toString().padLeft(2, '0')}';

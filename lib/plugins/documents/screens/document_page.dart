@@ -11,6 +11,7 @@ import '../../../services/customer_repository.dart';
 import '../../../services/project_repository.dart';
 import '../../../services/database_helper.dart';
 import '../../../services/error_reporter.dart';
+import '../../../services/ar_report_generator.dart';
 import '../../../models/document_type_colors.dart';
 import '../../../widgets/document_edit_log_section.dart';
 import '../../../widgets/document_summary_section.dart';
@@ -23,6 +24,7 @@ import '../../explorer/h1_explorer.dart';
 import '../../project/explorer/project_explorer_config.dart';
 import '../../products/widgets/variant_picker_sheet.dart';
 import '../explorer/document_preview_page.dart';
+import 'package:printing/printing.dart';
 
 class DocumentPage extends StatefulWidget {
   final DocumentModel? document;
@@ -40,6 +42,8 @@ class _DocumentPageState extends State<DocumentPage> {
   final _uuid = const Uuid();
   final _titleCtl = TextEditingController();
   final _memoCtl = TextEditingController();
+  final _arReportGenerator = ArReportGenerator();
+  final _customerRepo = CustomerRepository();
   List<DocumentEditLog> _editLogs = [];
   bool _loading = true;
   bool _copied = false;
@@ -55,6 +59,7 @@ class _DocumentPageState extends State<DocumentPage> {
   String? _projectName;
   late List<_EditableItem> _items;
   List<_EditableItem> _originalItems = [];
+  bool _attachArReport = false;
 
   static const _maxUndo = 30;
   List<_Snapshot> _undoStack = [];
@@ -204,6 +209,18 @@ class _DocumentPageState extends State<DocumentPage> {
           ? (widget.document != null ? 'DE:書類編集' : 'DE:新規書類')
           : 'DV:伝票閲覧'),
         actions: widget.isEditing ? [
+          if (_type == DocumentType.invoice)
+            Row(
+              children: [
+                const Text('売掛', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 8),
+                Switch(
+                  value: _attachArReport,
+                  onChanged: (value) => setState(() => _attachArReport = value),
+                  activeColor: cs.primary,
+                ),
+              ],
+            ),
           if (_undoStack.isNotEmpty)
             IconButton(icon: const Icon(Icons.undo), onPressed: () {
               if (_undoStack.isEmpty) return;
@@ -225,6 +242,18 @@ class _DocumentPageState extends State<DocumentPage> {
             tooltip: '保存',
           ),
         ] : [
+          if (_type == DocumentType.invoice)
+            Row(
+              children: [
+                const Text('売掛', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 8),
+                Switch(
+                  value: _attachArReport,
+                  onChanged: (value) => setState(() => _attachArReport = value),
+                  activeColor: cs.primary,
+                ),
+              ],
+            ),
           if (!_isLocked)
             IconButton(
               icon: const Icon(Icons.edit),
@@ -235,6 +264,11 @@ class _DocumentPageState extends State<DocumentPage> {
               },
               tooltip: '編集',
             ),
+          IconButton(
+            icon: const Icon(Icons.print),
+            onPressed: _printDocument,
+            tooltip: '印刷',
+          ),
         ],
       ),
       body: ListView(
@@ -965,6 +999,24 @@ class _DocumentPageState extends State<DocumentPage> {
 
   String _formatMoney(int amount) =>
     '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+
+  Future<void> _printDocument() async {
+    if (widget.document == null) return;
+
+    try {
+      // TODO: 請求書PDF生成
+      // 現在はスキップ
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('印刷は未実装です')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('印刷エラー: $e')),
+        );
+      }
+    }
+  }
 }
 
 class _Snapshot {

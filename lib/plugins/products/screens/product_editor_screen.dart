@@ -20,11 +20,15 @@ class ProductEditorScreen extends StatefulWidget {
 class _ProductEditorScreenState extends State<ProductEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtl = TextEditingController();
+  final _nameKanaCtl = TextEditingController();
   final _priceCtl = TextEditingController();
   final _wholesaleCtl = TextEditingController();
   final _barcodeCtl = TextEditingController();
   final _modelCtl = TextEditingController();
   final _manufacturerCtl = TextEditingController();
+  final _manufacturerCodeCtl = TextEditingController();
+  final _classificationCodeCtl = TextEditingController();
+  final _divisionCodeCtl = TextEditingController();
   final _supplierCtl = TextEditingController();
   final _stockCtl = TextEditingController();
   final _repo = ProductRepository();
@@ -47,11 +51,15 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
     if (_isEdit) {
       final p = widget.product!;
       _nameCtl.text = p.name;
+      _nameKanaCtl.text = p.productNameKana ?? '';
       _priceCtl.text = p.defaultUnitPrice.toString();
       _wholesaleCtl.text = p.wholesalePrice.toString();
       _barcodeCtl.text = p.barcode ?? '';
       _modelCtl.text = p.modelNumber ?? '';
       _manufacturerCtl.text = p.manufacturer ?? '';
+      _manufacturerCodeCtl.text = p.manufacturerCode ?? '';
+      _classificationCodeCtl.text = p.classificationCode ?? '';
+      _divisionCodeCtl.text = p.divisionCode ?? '';
       _selectedCategoryId = p.categoryId;
       _selectedCategoryPath = p.category;
       _supplierCtl.text = p.supplierName ?? '';
@@ -80,11 +88,15 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
   @override
   void dispose() {
     _nameCtl.dispose();
+    _nameKanaCtl.dispose();
     _priceCtl.dispose();
     _wholesaleCtl.dispose();
     _barcodeCtl.dispose();
     _modelCtl.dispose();
     _manufacturerCtl.dispose();
+    _manufacturerCodeCtl.dispose();
+    _classificationCodeCtl.dispose();
+    _divisionCodeCtl.dispose();
     _supplierCtl.dispose();
     _stockCtl.dispose();
     super.dispose();
@@ -123,11 +135,15 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
       final product = Product(
         id: widget.product?.id ?? Uuid().v4(),
         name: _nameCtl.text.trim(),
+        productNameKana: _nameKanaCtl.text.trim().isEmpty ? null : _nameKanaCtl.text.trim(),
         defaultUnitPrice: int.tryParse(_priceCtl.text) ?? 0,
         wholesalePrice: int.tryParse(_wholesaleCtl.text) ?? 0,
         barcode: _barcodeCtl.text.trim().isEmpty ? null : _barcodeCtl.text.trim(),
         modelNumber: _modelCtl.text.trim().isEmpty ? null : _modelCtl.text.trim(),
         manufacturer: _manufacturerCtl.text.trim().isEmpty ? null : _manufacturerCtl.text.trim(),
+        manufacturerCode: _manufacturerCodeCtl.text.trim().isEmpty ? null : _manufacturerCodeCtl.text.trim(),
+        classificationCode: _classificationCodeCtl.text.trim().isEmpty ? null : _classificationCodeCtl.text.trim(),
+        divisionCode: _divisionCodeCtl.text.trim().isEmpty ? null : _divisionCodeCtl.text.trim(),
         category: _selectedCategoryPath,
         categoryId: _selectedCategoryId,
         supplierName: _supplierCtl.text.trim().isEmpty ? null : _supplierCtl.text.trim(),
@@ -353,6 +369,38 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                       decoration: const InputDecoration(
                         labelText: 'メーカー',
                         prefixIcon: Icon(Icons.factory),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    H1FormField(
+                      controller: _nameKanaCtl,
+                      decoration: const InputDecoration(
+                        labelText: '商品名カナ',
+                        prefixIcon: Icon(Icons.text_fields),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    H1FormField(
+                      controller: _manufacturerCodeCtl,
+                      decoration: const InputDecoration(
+                        labelText: 'メーカーコード',
+                        prefixIcon: Icon(Icons.code),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    H1FormField(
+                      controller: _classificationCodeCtl,
+                      decoration: const InputDecoration(
+                        labelText: '分類コード',
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    H1FormField(
+                      controller: _divisionCodeCtl,
+                      decoration: const InputDecoration(
+                        labelText: 'ジャンルコード',
+                        prefixIcon: Icon(Icons.apps),
                       ),
                     ),
                     const SizedBox(height: 14),

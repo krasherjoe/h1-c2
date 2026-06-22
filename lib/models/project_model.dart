@@ -19,6 +19,21 @@ extension ProjectTypeX on ProjectType {
         return '回収';
     }
   }
+
+  static ProjectType fromString(String value) {
+    switch (value) {
+      case 'sales':
+        return ProjectType.sales;
+      case 'development':
+        return ProjectType.development;
+      case 'other':
+        return ProjectType.other;
+      case 'collection':
+        return ProjectType.collection;
+      default:
+        return ProjectType.other;
+    }
+  }
 }
 
 /// 案件ステータス
@@ -40,6 +55,21 @@ extension ProjectStatusX on ProjectStatus {
         return '失注';
       case ProjectStatus.suspended:
         return '保留';
+    }
+  }
+
+  static ProjectStatus fromString(String value) {
+    switch (value) {
+      case 'active':
+        return ProjectStatus.active;
+      case 'won':
+        return ProjectStatus.won;
+      case 'lost':
+        return ProjectStatus.lost;
+      case 'suspended':
+        return ProjectStatus.suspended;
+      default:
+        return ProjectStatus.active;
     }
   }
 }
@@ -66,6 +96,11 @@ class Project {
   final int sortOrder;
   final String? ganttConfig;
   final String? billingTemplateId; // 請求テンプレートID
+  
+  // ワークフロー進捗
+  final String? currentWorkflowStep; // 現在のステップ名
+  final DateTime? workflowStartedAt; // ワークフロー開始日時
+  final DateTime? workflowCompletedAt; // ワークフロー完了日時
 
   const Project({
     required this.id,
@@ -88,6 +123,9 @@ class Project {
     this.sortOrder = 0,
     this.ganttConfig,
     this.billingTemplateId,
+    this.currentWorkflowStep,
+    this.workflowStartedAt,
+    this.workflowCompletedAt,
   });
 
   int get elapsedMonths {
@@ -124,6 +162,9 @@ class Project {
         'sort_order': sortOrder,
         'gantt_config': ganttConfig,
         'billing_template_id': billingTemplateId,
+        'current_workflow_step': currentWorkflowStep,
+        'workflow_started_at': workflowStartedAt?.toIso8601String(),
+        'workflow_completed_at': workflowCompletedAt?.toIso8601String(),
       };
 
   factory Project.fromMap(Map<String, dynamic> map) {
@@ -159,6 +200,13 @@ class Project {
       sortOrder: (map['sort_order'] as int?) ?? 0,
       ganttConfig: map['gantt_config'] as String?,
       billingTemplateId: map['billing_template_id'] as String?,
+      currentWorkflowStep: map['current_workflow_step'] as String?,
+      workflowStartedAt: map['workflow_started_at'] != null
+          ? DateTime.tryParse(map['workflow_started_at'] as String)
+          : null,
+      workflowCompletedAt: map['workflow_completed_at'] != null
+          ? DateTime.tryParse(map['workflow_completed_at'] as String)
+          : null,
     );
   }
 
@@ -183,6 +231,9 @@ class Project {
     int? sortOrder,
     String? ganttConfig,
     String? billingTemplateId,
+    String? currentWorkflowStep,
+    DateTime? workflowStartedAt,
+    DateTime? workflowCompletedAt,
   }) {
     return Project(
       id: id ?? this.id,
@@ -205,6 +256,9 @@ class Project {
       sortOrder: sortOrder ?? this.sortOrder,
       ganttConfig: ganttConfig ?? this.ganttConfig,
       billingTemplateId: billingTemplateId ?? this.billingTemplateId,
+      currentWorkflowStep: currentWorkflowStep ?? this.currentWorkflowStep,
+      workflowStartedAt: workflowStartedAt ?? this.workflowStartedAt,
+      workflowCompletedAt: workflowCompletedAt ?? this.workflowCompletedAt,
     );
   }
 }

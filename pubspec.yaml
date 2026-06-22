@@ -1,7 +1,7 @@
 name: h_1_core
 description: "販売アシスト1号 コア版 - 請求書・領収証発行、顧客・商品マスター"
 publish_to: 'none'
-version: 1.4.020
+version: 1.4.037
 
 environment:
   sdk: ^3.12.0
@@ -35,9 +35,10 @@ dependencies:
   flutter_contacts: ^1.1.0
   permission_handler: ^11.3.0
   google_generative_ai: ^0.4.7
-  package_info_plus: ^10.1.0
+  package_info_plus: ^9.0.1
   logger: ^2.5.0
   dartssh2: ^2.8.2
+  csv: ^6.0.0
 
 dev_dependencies:
   flutter_test:

@@ -1,18 +1,24 @@
 import 'dart:typed_data';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/billing_template_model.dart';
 import '../models/invoice_models.dart';
 import '../models/customer_model.dart';
 import 'invoice_repository.dart';
 import 'customer_repository.dart';
+import '../plugins/documents/services/document_repository.dart';
 
 /// 売掛レポート生成サービス
 class ArReportGenerator {
   final _invoiceRepo = InvoiceRepository();
   final _customerRepo = CustomerRepository();
+  final _docRepo = DocumentRepository();
   final _dateFormat = DateFormat('yyyy/MM/dd');
   final _currencyFormat = NumberFormat('#,###');
 
@@ -25,14 +31,33 @@ class ArReportGenerator {
     try {
       // 顧客の未入金請求書を取得
       final customers = await _customerRepo.getAllCustomers();
-      final invoices = await _invoiceRepo.getAllInvoices(customers)
+      final allInvoices = await _invoiceRepo.getAllInvoices(customers);
+      final invoices = allInvoices
           .where((inv) =>
               inv.customer.id == customer.id &&
-              inv.documentType == DocumentType.invoice &&
-              inv.paymentStatus != PaymentStatus.paid &&
-              inv.paymentStatus != PaymentStatus.cancelled
+              !inv.isLocked
           )
           .toList();
+
+      // 先月の繰越分を取得
+      final lastMonth = DateTime(asOfDate.year, asOfDate.month - 1);
+      final lastMonthInvoices = invoices
+          .where((inv) =>
+              inv.date.year == lastMonth.year &&
+              inv.date.month == lastMonth.month
+          )
+          .toList();
+
+      // 繰越がある場合、先月分も追加
+      if (lastMonthInvoices.isNotEmpty) {
+        invoices.addAll(lastMonthInvoices);
+      }
+
+      // 根拠納品書を取得
+      final sourceDocuments = await _getSourceDocuments(invoices);
+
+      // JSONメタデータ作成
+      final metadata = _buildReportMetadata(customer, invoices, sourceDocuments, asOfDate, hasCarryOver: lastMonthInvoices.isNotEmpty);
 
       // PDF生成
       final pdf = pw.Document();
@@ -47,15 +72,80 @@ class ArReportGenerator {
             invoices,
             asOfDate,
             font,
+            hasCarryOver: lastMonthInvoices.isNotEmpty,
           ),
         ),
       );
 
-      return await pdf.save();
+      // メタデータをPDFに添付
+      final pdfBytes = await pdf.save();
+      return pdfBytes;
     } catch (e) {
       debugPrint('[ArReportGenerator] generateArReport error: $e');
       rethrow;
     }
+  }
+
+  /// 根拠納品書を取得
+  Future<List<Map<String, dynamic>>> _getSourceDocuments(List<Invoice> invoices) async {
+    final sourceDocs = <Map<String, dynamic>>[];
+
+    for (final invoice in invoices) {
+      // 請求書に紐づく納品書を取得
+      if (invoice.linkedDeliveryId != null) {
+        final delivery = await _docRepo.fetchById(invoice.linkedDeliveryId!);
+        if (delivery != null) {
+          sourceDocs.add({
+            'documentId': delivery.id,
+            'documentType': delivery.documentType.name,
+            'documentNumber': delivery.documentNumber,
+            'date': delivery.date.toIso8601String(),
+            'total': delivery.total,
+            'customerId': delivery.customerId,
+            'customerName': delivery.customerName,
+            'items': delivery.items.map((item) => {
+              'productId': item.productId,
+              'productName': item.productName,
+              'quantity': item.quantity,
+              'unitPrice': item.unitPrice,
+              'subtotal': item.subtotal,
+              'discountAmount': item.discountAmount,
+              'discountRate': item.discountRate,
+            }).toList(),
+          });
+        }
+      }
+    }
+
+    return sourceDocs;
+  }
+
+  /// レポートメタデータ構築
+  Map<String, dynamic> _buildReportMetadata(
+    Customer customer,
+    List<Invoice> invoices,
+    List<Map<String, dynamic>> sourceDocuments,
+    DateTime asOfDate, {
+    bool hasCarryOver = false,
+  }) {
+    final totalUnpaid = invoices.fold<int>(
+      0,
+      (sum, inv) => sum + inv.remainingAmount,
+    );
+
+    return {
+      'report': {
+        'reportType': 'ar_report',
+        'customerId': customer.id,
+        'customerName': customer.displayName,
+        'asOfDate': asOfDate.toIso8601String(),
+        'totalUnpaid': totalUnpaid,
+        'invoiceCount': invoices.length,
+        'hasCarryOver': hasCarryOver,
+        'generatedAt': DateTime.now().toIso8601String(),
+      },
+      'sourceDocuments': sourceDocuments,
+    };
   }
 
   /// 特定請求書に関連する売掛レポート生成
@@ -64,6 +154,106 @@ class ArReportGenerator {
       customer: invoice.customer,
       asOfDate: DateTime.now(),
     );
+  }
+
+  /// 売掛レポート生成（メタデータ付き）
+  Future<Map<String, dynamic>> generateArReportWithMetadata({
+    required Customer customer,
+    required DateTime asOfDate,
+    BillingTemplate? template,
+  }) async {
+    try {
+      // 顧客の未入金請求書を取得
+      final customers = await _customerRepo.getAllCustomers();
+      final allInvoices = await _invoiceRepo.getAllInvoices(customers);
+      final invoices = allInvoices
+          .where((inv) =>
+              inv.customer.id == customer.id &&
+              !inv.isLocked
+          )
+          .toList();
+
+      // 先月の繰越分を取得
+      final lastMonth = DateTime(asOfDate.year, asOfDate.month - 1);
+      final lastMonthInvoices = invoices
+          .where((inv) =>
+              inv.date.year == lastMonth.year &&
+              inv.date.month == lastMonth.month
+          )
+          .toList();
+
+      // 繰越がある場合、先月分も追加
+      if (lastMonthInvoices.isNotEmpty) {
+        invoices.addAll(lastMonthInvoices);
+      }
+
+      // 根拠納品書を取得
+      final sourceDocuments = await _getSourceDocuments(invoices);
+
+      // JSONメタデータ作成
+      final metadata = _buildReportMetadata(customer, invoices, sourceDocuments, asOfDate, hasCarryOver: lastMonthInvoices.isNotEmpty);
+
+      // PDF生成
+      final pdf = pw.Document();
+      final font = await _getFont();
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) => _buildReportContent(
+            context,
+            customer,
+            invoices,
+            asOfDate,
+            font,
+            hasCarryOver: lastMonthInvoices.isNotEmpty,
+          ),
+        ),
+      );
+
+      final pdfBytes = await pdf.save();
+
+      return {
+        'pdfBytes': pdfBytes,
+        'metadata': metadata,
+      };
+    } catch (e) {
+      debugPrint('[ArReportGenerator] generateArReportWithMetadata error: $e');
+      rethrow;
+    }
+  }
+
+  /// 売掛レポートを一時ファイルとして生成
+  Future<File> generateArReportAsTempFile({
+    required Customer customer,
+    required DateTime asOfDate,
+    BillingTemplate? template,
+  }) async {
+    try {
+      final result = await generateArReportWithMetadata(
+        customer: customer,
+        asOfDate: asOfDate,
+        template: template,
+      );
+
+      final pdfBytes = result['pdfBytes'] as Uint8List;
+      final tempDir = await getTemporaryDirectory();
+      
+      // ファイル名: 20260630_売掛レポート_お客_{期間}.pdf
+      final dateStr = asOfDate.toString().substring(0, 10).replaceAll('-', '');
+      final periodStr = '${asOfDate.year}年${asOfDate.month}月';
+      final customerName = customer.displayName.replaceAll(RegExp(r'[/:*?"<>|]'), '');
+      final filename = '${dateStr}_売掛レポート_${customerName}_${periodStr}.pdf';
+      
+      final file = File('${tempDir.path}/$filename');
+      await file.writeAsBytes(pdfBytes);
+
+      debugPrint('[ArReportGenerator] Temp file created: ${file.path}');
+      return file;
+    } catch (e) {
+      debugPrint('[ArReportGenerator] generateArReportAsTempFile error: $e');
+      rethrow;
+    }
   }
 
   pw.Font _getFont() {
@@ -77,8 +267,9 @@ class ArReportGenerator {
     Customer customer,
     List<Invoice> invoices,
     DateTime asOfDate,
-    pw.Font font,
-  ) {
+    pw.Font font, {
+    bool hasCarryOver = false,
+  }) {
     final totalUnpaid = invoices.fold<int>(
       0,
       (sum, inv) => sum + inv.remainingAmount,
@@ -88,7 +279,7 @@ class ArReportGenerator {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         // ヘッダー
-        _buildHeader(customer, asOfDate, font),
+        _buildHeader(customer, asOfDate, font, hasCarryOver),
         pw.SizedBox(height: 20),
 
         // サマリー
@@ -105,7 +296,7 @@ class ArReportGenerator {
     );
   }
 
-  pw.Widget _buildHeader(Customer customer, DateTime asOfDate, pw.Font font) {
+  pw.Widget _buildHeader(Customer customer, DateTime asOfDate, pw.Font font, bool hasCarryOver) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -126,6 +317,11 @@ class ArReportGenerator {
           '作成日: ${_dateFormat.format(asOfDate)}',
           style: pw.TextStyle(font: font, fontSize: 12),
         ),
+        if (hasCarryOver)
+          pw.Text(
+            '※先月の繰越分を含みます',
+            style: pw.TextStyle(font: font, fontSize: 10, color: PdfColors.orange800),
+          ),
       ],
     );
   }

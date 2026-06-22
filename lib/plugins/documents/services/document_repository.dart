@@ -8,11 +8,15 @@ import '../../../services/hash_chain_verify_result.dart';
 import '../../../services/history_db_service.dart';
 import '../../../services/fiscal_year_service.dart';
 import '../../../services/company_repository.dart';
+import '../../../services/project_repository.dart';
+import '../../../services/sales_queue_repository.dart';
 import '../models/document_model.dart';
 import '../models/document_edit_log.dart';
 
 class DocumentRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final _projectRepo = ProjectRepository();
+  final _salesQueueRepo = SalesQueueRepository();
 
   Future<Database> get _db => _dbHelper.database;
 
@@ -172,6 +176,27 @@ class DocumentRepository {
       savedSnapshot = Map<String, dynamic>.from(docMap);
       savedSnapshot!['_items'] = itemMaps;
     });
+
+    // ワークフロー開始フック（案件に紐づく納品書の場合）
+    if (document.projectId != null && 
+        document.documentType == DocumentType.delivery && 
+        document.status == 'confirmed') {
+      try {
+        // 売上処理キューに追加
+        await _salesQueueRepo.addEntry(
+          projectId: document.projectId!,
+          documentId: document.id,
+          deliveryDate: document.date,
+          totalAmount: document.total,
+          customerId: document.customerId,
+          customerName: document.customerName,
+        );
+        debugPrint('[DocRepo] Sales queue entry added for project: ${document.projectId}');
+      } catch (e) {
+        debugPrint('[DocRepo] Sales queue add error: $e');
+        // キュー追加失敗は伝票保存には影響しない
+      }
+    }
 
     if (savedSnapshot != null) {
       await HistoryDbService().recordChange(

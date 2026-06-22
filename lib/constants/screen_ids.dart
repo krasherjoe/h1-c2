@@ -3,6 +3,7 @@ class S {
 
   // 伝票管理
   static const d1 = 'D1';
+  static const d2 = 'D2';
   // 顧客管理
   static const c1 = 'C1';
   static const c2 = 'C2';
@@ -90,4 +91,9 @@ class S {
   static const pp = 'PP';
   // ICEデバッグ
   static const ice = 'ICE';
+  // 配送管理
+  static const sh = 'SH';
+  static const sh1 = 'SH1';
+  static const sh2 = 'SH2';
+  static const sh3 = 'SH3';
 }

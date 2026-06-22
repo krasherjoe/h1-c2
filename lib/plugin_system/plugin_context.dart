@@ -6,11 +6,11 @@ import '../services/customer_repository.dart';
 import '../services/product_repository.dart';
 
 class PluginContext {
-  final Database database;
+  final Database? database;
   final SharedPreferences preferences;
 
   PluginContext({
-    required this.database,
+    this.database,
     required this.preferences,
   });
 

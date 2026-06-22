@@ -339,6 +339,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                             padding: const EdgeInsets.only(right: 4),
                             child: Icon(Icons.arrow_forward_ios, size: 12, color: cs.onPrimary),
                           ),
+                        if (isCurrent)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
                         Text(stage,
                           style: TextStyle(
                             fontSize: 13,
@@ -583,6 +595,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final project = await _repo.getById(projectId);
     if (project == null || !mounted) return;
 
+    final nameCtrl = TextEditingController(text: project.name);
+    final customerNameCtrl = TextEditingController(text: project.customerName ?? '');
+    final typeCtrl = TextEditingController(text: project.type.name);
+    final statusCtrl = TextEditingController(text: project.status.name);
+    final stageCtrl = TextEditingController(text: project.pipelineStage);
+    final amountCtrl = TextEditingController(text: project.totalAmount.toString());
     final startDateCtrl = TextEditingController(
       text: project.startDate != null ? '${project.startDate!.year}/${project.startDate!.month.toString().padLeft(2, '0')}/${project.startDate!.day.toString().padLeft(2, '0')}' : '',
     );
@@ -595,20 +613,38 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) =>
-            _buildEditDialog(ctx, project, setDialogState, startDateCtrl, endDateCtrl, contractMonthsCtrl),
+            _buildEditDialog(ctx, project, setDialogState, nameCtrl, customerNameCtrl, typeCtrl, statusCtrl, stageCtrl, amountCtrl, startDateCtrl, endDateCtrl, contractMonthsCtrl),
       ),
     ).then((result) async {
+      nameCtrl.dispose();
+      customerNameCtrl.dispose();
+      typeCtrl.dispose();
+      statusCtrl.dispose();
+      stageCtrl.dispose();
+      amountCtrl.dispose();
       startDateCtrl.dispose();
       endDateCtrl.dispose();
       contractMonthsCtrl.dispose();
 
       if (result == null) return;
 
+      final newName = result['name'] as String?;
+      final newCustomerName = result['customerName'] as String?;
+      final newType = result['type'] as String?;
+      final newStatus = result['status'] as String?;
+      final newStage = result['stage'] as String?;
+      final newAmount = result['amount'] as int?;
       final newStartDate = result['startDate'] as DateTime?;
       final newEndDate = result['endDate'] as DateTime?;
       final newContractMonths = result['contractMonths'] as int?;
 
-      if (newStartDate == project.startDate &&
+      if (newName == project.name &&
+          newCustomerName == project.customerName &&
+          newType == project.type.name &&
+          newStatus == project.status.name &&
+          newStage == project.pipelineStage &&
+          newAmount == project.totalAmount &&
+          newStartDate == project.startDate &&
           newEndDate == project.endDate &&
           newContractMonths == project.contractMonths) {
         return;
@@ -616,6 +652,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
       try {
         final updated = project.copyWith(
+          name: newName ?? project.name,
+          customerName: newCustomerName,
+          type: newType != null ? ProjectTypeX.fromString(newType) : project.type,
+          status: newStatus != null ? ProjectStatusX.fromString(newStatus) : project.status,
+          pipelineStage: newStage ?? project.pipelineStage,
+          totalAmount: newAmount ?? project.totalAmount,
           startDate: newStartDate,
           endDate: newEndDate,
           contractMonths: newContractMonths,
@@ -645,6 +687,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     BuildContext ctx,
     Project project,
     StateSetter setDialogState,
+    TextEditingController nameCtrl,
+    TextEditingController customerNameCtrl,
+    TextEditingController typeCtrl,
+    TextEditingController statusCtrl,
+    TextEditingController stageCtrl,
+    TextEditingController amountCtrl,
     TextEditingController startDateCtrl,
     TextEditingController endDateCtrl,
     TextEditingController contractMonthsCtrl,
@@ -658,6 +706,74 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('案件名', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('取引先', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: customerNameCtrl,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('種別', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: typeCtrl.text,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              items: ProjectType.values.map((t) => DropdownMenuItem(value: t.name, child: Text(t.displayName))).toList(),
+              onChanged: (v) => setDialogState(() => typeCtrl.text = v ?? ''),
+            ),
+            const SizedBox(height: 16),
+            Text('ステータス', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: statusCtrl.text,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              items: ProjectStatus.values.map((s) => DropdownMenuItem(value: s.name, child: Text(s.displayName))).toList(),
+              onChanged: (v) => setDialogState(() => statusCtrl.text = v ?? ''),
+            ),
+            const SizedBox(height: 16),
+            Text('ステージ', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: stageCtrl.text,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              items: const ['見積', '受注', '発注', '納品', '請求', '入金済'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              onChanged: (v) => setDialogState(() => stageCtrl.text = v ?? ''),
+            ),
+            const SizedBox(height: 16),
+            Text('合計金額', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: amountCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                prefixText: '¥ ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: 16),
             Text('開始日', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             const SizedBox(height: 4),
             InkWell(
@@ -770,7 +886,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             if (contractMonthsCtrl.text.isNotEmpty) {
               contractMonths = int.tryParse(contractMonthsCtrl.text);
             }
-            Navigator.pop(ctx, {'startDate': startDate, 'endDate': endDate, 'contractMonths': contractMonths});
+            int? amount;
+            if (amountCtrl.text.isNotEmpty) {
+              amount = int.tryParse(amountCtrl.text.replaceAll(',', ''));
+            }
+            Navigator.pop(ctx, {
+              'name': nameCtrl.text.trim().isEmpty ? null : nameCtrl.text.trim(),
+              'customerName': customerNameCtrl.text.trim().isEmpty ? null : customerNameCtrl.text.trim(),
+              'type': typeCtrl.text.trim().isEmpty ? null : typeCtrl.text.trim(),
+              'status': statusCtrl.text.trim().isEmpty ? null : statusCtrl.text.trim(),
+              'stage': stageCtrl.text.trim().isEmpty ? null : stageCtrl.text.trim(),
+              'amount': amount,
+              'startDate': startDate,
+              'endDate': endDate,
+              'contractMonths': contractMonths,
+            });
           },
           child: const Text('保存'),
         ),

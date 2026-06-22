@@ -1,10 +1,14 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'database_helper.dart';
 import '../models/project_model.dart';
+import '../models/billing_template_model.dart';
+import 'billing_template_repository.dart';
 
 class ProjectRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final _templateRepo = BillingTemplateRepository();
 
   Future<Database> get _db => _dbHelper.database;
 
@@ -147,5 +151,114 @@ class ProjectRepository {
     return db.query('documents',
       where: 'project_id = ?', whereArgs: [projectId],
       orderBy: 'date DESC');
+  }
+
+  // ワークフロー操作メソッド
+
+  /// ワークフロー開始
+  Future<void> startWorkflow(String projectId) async {
+    try {
+      final project = await getById(projectId);
+      if (project == null) {
+        debugPrint('[ProjectRepo] Project not found: $projectId');
+        return;
+      }
+
+      // テンプレート確認
+      if (project.billingTemplateId == null) {
+        debugPrint('[ProjectRepo] No billing template for project: $projectId');
+        return;
+      }
+
+      final template = await _templateRepo.getTemplateById(project.billingTemplateId!);
+      if (template == null) {
+        debugPrint('[ProjectRepo] Template not found: ${project.billingTemplateId}');
+        return;
+      }
+
+      // ワークフロー開始
+      final now = DateTime.now();
+      final firstStep = template.workflowSteps.isNotEmpty 
+          ? template.workflowSteps.first.name 
+          : null;
+
+      await _updateWorkflow(projectId, {
+        'current_workflow_step': firstStep,
+        'workflow_started_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+
+      debugPrint('[ProjectRepo] Workflow started for project: $projectId, step: $firstStep');
+    } catch (e) {
+      debugPrint('[ProjectRepo] startWorkflow error: $e');
+      rethrow;
+    }
+  }
+
+  /// ワークフロー進捗更新
+  Future<void> updateWorkflowProgress(String projectId, WorkflowStep step) async {
+    try {
+      await _updateWorkflow(projectId, {
+        'current_workflow_step': step.name,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      debugPrint('[ProjectRepo] Workflow progress updated: $projectId -> ${step.name}');
+    } catch (e) {
+      debugPrint('[ProjectRepo] updateWorkflowProgress error: $e');
+      rethrow;
+    }
+  }
+
+  /// ワークフロー完了
+  Future<void> completeWorkflow(String projectId) async {
+    try {
+      await _updateWorkflow(projectId, {
+        'current_workflow_step': null,
+        'workflow_completed_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      debugPrint('[ProjectRepo] Workflow completed: $projectId');
+    } catch (e) {
+      debugPrint('[ProjectRepo] completeWorkflow error: $e');
+      rethrow;
+    }
+  }
+
+  /// ワークフロー状態リセット
+  Future<void> resetWorkflow(String projectId) async {
+    try {
+      await _updateWorkflow(projectId, {
+        'current_workflow_step': null,
+        'workflow_started_at': null,
+        'workflow_completed_at': null,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      debugPrint('[ProjectRepo] Workflow reset: $projectId');
+    } catch (e) {
+      debugPrint('[ProjectRepo] resetWorkflow error: $e');
+      rethrow;
+    }
+  }
+
+  /// ワークフロー関連フィールド更新（共通）
+  Future<void> _updateWorkflow(String projectId, Map<String, dynamic> updates) async {
+    final db = await _db;
+    await db.update('projects', updates, where: 'id = ?', whereArgs: [projectId]);
+  }
+
+  /// 案件の現在のワークフローステップを取得
+  Future<WorkflowStep?> getCurrentWorkflowStep(String projectId) async {
+    try {
+      final project = await getById(projectId);
+      if (project?.currentWorkflowStep == null) return null;
+
+      return WorkflowStep.values.firstWhere(
+        (e) => e.name == project!.currentWorkflowStep,
+        orElse: () => WorkflowStep.delivery,
+      );
+    } catch (e) {
+      debugPrint('[ProjectRepo] getCurrentWorkflowStep error: $e');
+      return null;
+    }
   }
 }

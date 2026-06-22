@@ -11,6 +11,8 @@ import 'ledger_screen.dart';
 import 'trial_balance_screen.dart';
 import 'financial_statements_screen.dart';
 import '../../../constants/screen_ids.dart';
+import '../../explorer/h1_explorer.dart';
+import '../explorer/accounting_explorer_config.dart';
 
 class Accounting2MainScreen extends StatefulWidget {
   const Accounting2MainScreen({super.key});
@@ -145,6 +147,14 @@ class _Accounting2MainScreenState extends State<Accounting2MainScreen> {
                   const SizedBox(height: 8),
                   _menuCard(cs, Icons.book, '仕訳帳', '全仕訳の確認・手動編集', () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const JournalScreen()));
+                  }),
+                  const SizedBox(height: 8),
+                  _menuCard(cs, Icons.receipt_long, '会計伝票', '売上・入出金伝票の管理', () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => H1Explorer(
+                        config: AccountingExplorerConfig(),
+                      ),
+                    ));
                   }),
                   const SizedBox(height: 8),
                   _menuCard(cs, Icons.view_list, '総勘定元帳', '科目別取引一覧', () {

@@ -14,7 +14,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 10;
+  static const _databaseVersion = 15;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -284,6 +284,183 @@ Future<void> _migrateToVersion(Database db, int version) async {
       );
       // projectsテーブルにbilling_template_idカラム追加
       await safeAddColumn(db, 'projects', 'billing_template_id TEXT');
+      break;
+    case 11:
+      // projectsテーブルにワークフロー進捗フィールド追加
+      await safeAddColumn(db, 'projects', 'current_workflow_step TEXT');
+      await safeAddColumn(db, 'projects', 'workflow_started_at TEXT');
+      await safeAddColumn(db, 'projects', 'workflow_completed_at TEXT');
+      break;
+    case 12:
+      // 売上処理キューテーブル
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS sales_queue (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL,
+          document_id TEXT NOT NULL,
+          delivery_date TEXT NOT NULL,
+          total_amount INTEGER NOT NULL,
+          customer_id TEXT,
+          customer_name TEXT,
+          status TEXT NOT NULL DEFAULT 'pending',
+          created_at TEXT NOT NULL,
+          processed_at TEXT,
+          invoice_id TEXT,
+          error_message TEXT
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_sales_queue_project ON sales_queue(project_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_sales_queue_status ON sales_queue(status)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_sales_queue_delivery_date ON sales_queue(delivery_date)',
+      );
+      break;
+    case 13:
+      // 会計伝票テーブル
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS accounting_vouchers (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          voucher_number TEXT NOT NULL,
+          date TEXT NOT NULL,
+          amount INTEGER NOT NULL,
+          customer_id TEXT,
+          customer_name TEXT,
+          account_id TEXT,
+          account_name TEXT,
+          description TEXT,
+          reference TEXT,
+          status TEXT NOT NULL DEFAULT 'draft',
+          created_at TEXT NOT NULL,
+          updated_at TEXT
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_accounting_vouchers_type ON accounting_vouchers(type)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_accounting_vouchers_date ON accounting_vouchers(date)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_accounting_vouchers_status ON accounting_vouchers(status)',
+      );
+      break;
+    case 14:
+      // JAN/MOOV標準対応 - productsテーブルにカラム追加
+      await safeAddColumn(db, 'products', 'product_name_kana TEXT');
+      await safeAddColumn(db, 'products', 'classification_code TEXT');
+      await safeAddColumn(db, 'products', 'division_code TEXT');
+      await safeAddColumn(db, 'products', 'manufacturer_code TEXT');
+      break;
+    case 15:
+      // 配送管理 - テーブル作成（初回のみ）
+      if (!await tableExists(db, 'trackings')) {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS trackings (
+            id TEXT PRIMARY KEY,
+            tracking_number TEXT NOT NULL,
+            carrier TEXT NOT NULL,
+            direction TEXT NOT NULL,
+            status TEXT NOT NULL,
+            shipped_at TEXT,
+            delivered_at TEXT,
+            tracking_updated_at TEXT,
+            notes TEXT,
+            entity_type TEXT,
+            entity_id TEXT,
+            entity_name TEXT,
+            label_id TEXT
+          )
+        ''');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_trackings_entity ON trackings(entity_type, entity_id)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_trackings_status ON trackings(status)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_trackings_label ON trackings(label_id)',
+        );
+      } else {
+        // 既存テーブルがある場合はカラム追加
+        await safeAddColumn(db, 'trackings', 'label_id TEXT');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_trackings_label ON trackings(label_id)',
+        );
+      }
+      // 他の配送管理テーブルも作成
+      if (!await tableExists(db, 'tracking_events')) {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS tracking_events (
+            id TEXT PRIMARY KEY,
+            tracking_id TEXT NOT NULL,
+            status TEXT NOT NULL,
+            location TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            description TEXT
+          )
+        ''');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_tracking_events_tracking ON tracking_events(tracking_id)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_tracking_events_timestamp ON tracking_events(timestamp)',
+        );
+      }
+      if (!await tableExists(db, 'shipping_labels')) {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS shipping_labels (
+            id TEXT PRIMARY KEY,
+            carrier TEXT NOT NULL,
+            label_type TEXT NOT NULL,
+            tracking_number TEXT NOT NULL,
+            sender_name TEXT NOT NULL,
+            sender_zip TEXT NOT NULL,
+            sender_address TEXT NOT NULL,
+            sender_phone TEXT NOT NULL,
+            recipient_name TEXT NOT NULL,
+            recipient_zip TEXT NOT NULL,
+            recipient_address TEXT NOT NULL,
+            recipient_phone TEXT NOT NULL,
+            recipient_company TEXT,
+            contents TEXT,
+            quantity INTEGER,
+            weight INTEGER,
+            service_type TEXT,
+            cod_amount TEXT,
+            created_at TEXT NOT NULL,
+            printed_at TEXT,
+            entity_type TEXT,
+            entity_id TEXT
+          )
+        ''');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_shipping_labels_entity ON shipping_labels(entity_type, entity_id)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_shipping_labels_tracking ON shipping_labels(tracking_number)',
+        );
+      }
+      if (!await tableExists(db, 'shipping_addresses')) {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS shipping_addresses (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            company TEXT,
+            zip TEXT NOT NULL,
+            address TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            is_default INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_shipping_addresses_default ON shipping_addresses(is_default)',
+        );
+      }
       break;
     default:
       break;

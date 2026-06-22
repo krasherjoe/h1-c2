@@ -137,4 +137,100 @@ Future<void> createCoreSchema(Database db) async {
   await db.execute(
     'CREATE INDEX IF NOT EXISTS idx_backup_operations_created ON backup_operations(created_at)',
   );
+
+  // 配送管理 - 追跡番号
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS trackings (
+      id TEXT PRIMARY KEY,
+      tracking_number TEXT NOT NULL,
+      carrier TEXT NOT NULL,
+      direction TEXT NOT NULL,
+      status TEXT NOT NULL,
+      shipped_at TEXT,
+      delivered_at TEXT,
+      tracking_updated_at TEXT,
+      notes TEXT,
+      entity_type TEXT,
+      entity_id TEXT,
+      entity_name TEXT,
+      label_id TEXT
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_trackings_entity ON trackings(entity_type, entity_id)',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_trackings_status ON trackings(status)',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_trackings_label ON trackings(label_id)',
+  );
+
+  // 配送管理 - 追跡履歴
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS tracking_events (
+      id TEXT PRIMARY KEY,
+      tracking_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      location TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      description TEXT
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_tracking_events_tracking ON tracking_events(tracking_id)',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_tracking_events_timestamp ON tracking_events(timestamp)',
+  );
+
+  // 配送管理 - 送り状
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS shipping_labels (
+      id TEXT PRIMARY KEY,
+      carrier TEXT NOT NULL,
+      label_type TEXT NOT NULL,
+      tracking_number TEXT NOT NULL,
+      sender_name TEXT NOT NULL,
+      sender_zip TEXT NOT NULL,
+      sender_address TEXT NOT NULL,
+      sender_phone TEXT NOT NULL,
+      recipient_name TEXT NOT NULL,
+      recipient_zip TEXT NOT NULL,
+      recipient_address TEXT NOT NULL,
+      recipient_phone TEXT NOT NULL,
+      recipient_company TEXT,
+      contents TEXT,
+      quantity INTEGER,
+      weight INTEGER,
+      service_type TEXT,
+      cod_amount TEXT,
+      created_at TEXT NOT NULL,
+      printed_at TEXT,
+      entity_type TEXT,
+      entity_id TEXT
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_shipping_labels_entity ON shipping_labels(entity_type, entity_id)',
+  );
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_shipping_labels_tracking ON shipping_labels(tracking_number)',
+  );
+
+  // 配送管理 - 送付先
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS shipping_addresses (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      company TEXT,
+      zip TEXT NOT NULL,
+      address TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      is_default INTEGER NOT NULL DEFAULT 0
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_shipping_addresses_default ON shipping_addresses(is_default)',
+  );
 }

@@ -18,6 +18,26 @@ class GmailSender {
     required Uint8List pdfBytes,
     required String pdfFilename,
   }) async {
+    return sendPdfs(
+      to: to,
+      bcc: bcc,
+      replyTo: replyTo,
+      subject: subject,
+      body: body,
+      attachments: [
+        {'filename': pdfFilename, 'bytes': pdfBytes},
+      ],
+    );
+  }
+
+  static Future<bool> sendPdfs({
+    required String to,
+    String? bcc,
+    String? replyTo,
+    required String subject,
+    required String body,
+    required List<Map<String, dynamic>> attachments,
+  }) async {
     try {
       final client = await GoogleAuthService.instance.getAuthenticatedClient();
       if (client == null) {
@@ -41,13 +61,20 @@ class GmailSender {
       header += 'Subject: $encodedSubject\n\n'
           '--$boundary\n'
           'Content-Type: text/plain; charset=UTF-8\n\n'
-          '$body\n\n'
-          '--$boundary\n'
-          'Content-Type: application/pdf\n'
-          'Content-Disposition: attachment; filename="$pdfFilename"\n'
-          'Content-Transfer-Encoding: base64\n\n'
-          '${base64Encode(pdfBytes)}\n'
-          '--$boundary--';
+          '$body\n\n';
+
+      // 添付ファイルを追加
+      for (final attachment in attachments) {
+        final filename = attachment['filename'] as String;
+        final bytes = attachment['bytes'] as Uint8List;
+        header += '--$boundary\n'
+            'Content-Type: application/pdf\n'
+            'Content-Disposition: attachment; filename="$filename"\n'
+            'Content-Transfer-Encoding: base64\n\n'
+            '${base64Encode(bytes)}\n\n';
+      }
+
+      header += '--$boundary--';
 
       final encodedMessage = base64UrlEncode(utf8.encode(header));
       

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:csv/csv.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/product_category_repository.dart';
@@ -421,6 +422,12 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
             onTap: () => Navigator.pop(ctx, 'manual'),
           ),
           ListTile(
+            leading: Icon(Icons.file_upload, color: Colors.blue),
+            title: const Text('CSVから取込'),
+            subtitle: const Text('CSVファイルから商品を一括登録'),
+            onTap: () => Navigator.pop(ctx, 'csv'),
+          ),
+          ListTile(
             leading: Icon(Icons.table_chart, color: Colors.green),
             title: const Text('スプレッドシートから取込'),
             subtitle: const Text('Google Sheetsのデータを商品として登録'),
@@ -443,6 +450,8 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           MaterialPageRoute(builder: (_) => const ProductEditorScreen()),
         );
         if (result != null) _load();
+      case 'csv':
+        await _importFromCsv();
       case 'import':
         await _importFromSheets();
       case 'export':
@@ -516,6 +525,178 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('❌ インポート失敗: $e')),
       );
+    }
+  }
+
+  Future<void> _importFromCsv() async {
+    final csvText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('CSVデータを貼り付け'),
+        content: SingleChildScrollView(
+          child: TextField(
+            maxLines: 20,
+            decoration: const InputDecoration(
+              hintText: '商品名,単価,バーコード,型番,メーカー,カテゴリID',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('OK')),
+        ],
+      ),
+    );
+    if (csvText == null) return;
+    
+    try {
+      final rows = const CsvToListConverter().convert(csvText);
+      if (rows.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ CSVデータが空です')),
+        );
+        return;
+      }
+      
+      final createdIds = <String>[];
+      final dataRows = rows.skip(1).toList();
+      
+      for (final row in dataRows) {
+        if (row.length < 2) continue;
+        final name = row[0]?.toString().trim() ?? '';
+        final price = int.tryParse(row[1]?.toString() ?? '') ?? 0;
+        if (name.isEmpty) continue;
+        final product = Product(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          name: name,
+          defaultUnitPrice: price,
+          barcode: row.length > 2 ? row[2]?.toString() : null,
+          modelNumber: row.length > 3 ? row[3]?.toString() : null,
+          manufacturer: row.length > 4 ? row[4]?.toString() : null,
+          categoryId: row.length > 5 ? row[5]?.toString() : null,
+        );
+        await _productRepo.saveProduct(product);
+        createdIds.add(product.id);
+      }
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ ${createdIds.length}件の商品を取り込みました'),
+          duration: const Duration(seconds: 10),
+          action: SnackBarAction(
+            label: '元に戻す',
+            onPressed: () {
+              _undoImport(createdIds);
+            },
+          ),
+        ),
+      );
+      await _load();
+    } catch (e) {
+      debugPrint('[Products] importCsv error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ CSVインポート失敗: $e')),
+      );
+    }
+  }
+
+  Future<void> _importSimpleFormat(List<List<dynamic>> rows, List<String> createdIds) async {
+    final dataRows = rows.skip(1).toList();
+    debugPrint('[Simple Format] Data rows: ${dataRows.length}');
+    for (final row in dataRows) {
+      debugPrint('[Simple Format] Row: $row');
+      if (row.length < 2) continue;
+      final name = row[0]?.toString().trim() ?? '';
+      final price = int.tryParse(row[1]?.toString() ?? '') ?? 0;
+      debugPrint('[Simple Format] Name: $name, Price: $price');
+      if (name.isEmpty) continue;
+      final product = Product(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        defaultUnitPrice: price,
+        barcode: row.length > 2 ? row[2]?.toString() : null,
+        modelNumber: row.length > 3 ? row[3]?.toString() : null,
+        manufacturer: row.length > 4 ? row[4]?.toString() : null,
+        categoryId: row.length > 5 ? row[5]?.toString() : null,
+      );
+      await _productRepo.saveProduct(product);
+      createdIds.add(product.id);
+    }
+  }
+
+  Future<void> _importOldh1Format(List<List<dynamic>> rows, List<String> createdIds) async {
+    final dataRows = rows.skip(1).toList();
+    for (final row in dataRows) {
+      if (row.length < 2) continue;
+      final name = row[0]?.toString().trim() ?? '';
+      final price = int.tryParse(row[1]?.toString() ?? '') ?? 0;
+      if (name.isEmpty) continue;
+      final product = Product(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        defaultUnitPrice: price,
+        barcode: row.length > 3 ? row[3]?.toString() : null,
+        categoryId: row.length > 4 ? row[4]?.toString() : null,
+        modelNumber: row.length > 5 ? row[5]?.toString() : null,
+        manufacturer: row.length > 6 ? row[6]?.toString() : null,
+        stockQuantity: row.length > 7 ? int.tryParse(row[7]?.toString() ?? '') : null,
+      );
+      await _productRepo.saveProduct(product);
+      createdIds.add(product.id);
+    }
+  }
+
+  Future<void> _importJanFormat(List<List<dynamic>> rows, List<String> createdIds) async {
+    final dataRows = rows.skip(1).toList();
+    for (final row in dataRows) {
+      if (row.length < 2) continue;
+      final janCode = row[0]?.toString().trim() ?? '';
+      final name = row[1]?.toString().trim() ?? '';
+      final nameKana = row.length > 2 ? row[2]?.toString() : null;
+      final manufacturer = row.length > 3 ? row[3]?.toString() : null;
+      final classificationCode = row.length > 4 ? row[4]?.toString() : null;
+      final price = int.tryParse(row[5]?.toString() ?? '') ?? 0;
+      if (name.isEmpty) continue;
+      final product = Product(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        defaultUnitPrice: price,
+        barcode: janCode.isNotEmpty ? janCode : null,
+        manufacturer: manufacturer,
+        classificationCode: classificationCode,
+        productNameKana: nameKana,
+      );
+      await _productRepo.saveProduct(product);
+      createdIds.add(product.id);
+    }
+  }
+
+  Future<void> _importMoovFormat(List<List<dynamic>> rows, List<String> createdIds) async {
+    final dataRows = rows.skip(1).toList();
+    for (final row in dataRows) {
+      if (row.length < 2) continue;
+      final janCode = row[1]?.toString().trim() ?? '';
+      final productNumber = row.length > 2 ? row[2]?.toString() : null;
+      final nameKana = row.length > 3 ? row[3]?.toString() : null;
+      final name = row[5]?.toString().trim() ?? '';
+      final manufacturerCode = row.length > 7 ? row[7]?.toString() : null;
+      final price = int.tryParse(row[10]?.toString().replaceAll(',', '') ?? '') ?? 0;
+      if (name.isEmpty) continue;
+      final product = Product(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        defaultUnitPrice: price,
+        barcode: janCode.isNotEmpty ? janCode : null,
+        manufacturerCode: manufacturerCode,
+        modelNumber: productNumber,
+        productNameKana: nameKana,
+      );
+      await _productRepo.saveProduct(product);
+      createdIds.add(product.id);
     }
   }
 
@@ -666,10 +847,14 @@ class _ProductViewer extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _infoRow('商品名', product.name, cs),
+          if (product.productNameKana != null) _infoRow('商品名カナ', product.productNameKana!, cs),
           _infoRow('単価', priceStr, cs),
           if (product.barcode != null) _infoRow('バーコード', product.barcode!, cs),
           if (product.modelNumber != null) _infoRow('型番', product.modelNumber!, cs),
           if (product.manufacturer != null) _infoRow('メーカー', product.manufacturer!, cs),
+          if (product.manufacturerCode != null) _infoRow('メーカーコード', product.manufacturerCode!, cs),
+          if (product.classificationCode != null) _infoRow('分類コード', product.classificationCode!, cs),
+          if (product.divisionCode != null) _infoRow('ジャンルコード', product.divisionCode!, cs),
           if (product.category != null) _infoRow('カテゴリ', product.category!, cs),
           if (product.supplierName != null) _infoRow('仕入先', product.supplierName!, cs),
           if (product.stockQuantity != null) _infoRow('在庫数', '${product.stockQuantity}', cs),
