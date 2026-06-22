@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:h_1_core/constants/screen_ids.dart';
+import 'package:h_1_core/widgets/screen_id_title.dart';
 import '../models/tracking_model.dart';
 import '../models/shipping_label_model.dart';
 import '../services/tracking_service.dart';
@@ -54,7 +56,7 @@ class _TrackingDetailScreenState extends State<TrackingDetailScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('追跡詳細'),
+        title: const ScreenAppBarTitle(screenId: S.sh1, title: '追跡詳細'),
         actions: [
           IconButton(
             icon: const Icon(Icons.open_in_browser),

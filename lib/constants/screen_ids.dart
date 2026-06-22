@@ -96,4 +96,5 @@ class S {
   static const sh1 = 'SH1';
   static const sh2 = 'SH2';
   static const sh3 = 'SH3';
+  static const sh4 = 'SH4';
 }

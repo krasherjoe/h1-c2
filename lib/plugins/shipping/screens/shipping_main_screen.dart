@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:h_1_core/constants/screen_ids.dart';
+import 'package:h_1_core/widgets/screen_id_title.dart';
 import 'tracking_list_screen.dart';
 import 'shipping_label_screen.dart';
 import 'shipping_address_screen.dart';
@@ -31,7 +33,7 @@ class _ShippingMainScreenState extends State<ShippingMainScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('配送管理'),
+        title: const ScreenAppBarTitle(screenId: S.sh, title: '配送管理'),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,

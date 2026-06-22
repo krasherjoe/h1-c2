@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:h_1_core/constants/screen_ids.dart';
+import 'package:h_1_core/widgets/screen_id_title.dart';
 
 class TrackingScannerScreen extends StatefulWidget {
   const TrackingScannerScreen({super.key});
@@ -50,7 +52,7 @@ class _TrackingScannerScreenState extends State<TrackingScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('バーコードスキャン'),
+        title: const ScreenAppBarTitle(screenId: S.sh4, title: 'バーコードスキャン'),
         actions: [
           IconButton(
             icon: Icon(_isTorchOn ? Icons.flash_on : Icons.flash_off),

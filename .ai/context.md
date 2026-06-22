@@ -76,9 +76,12 @@ CorePlugin, DocumentsPlugin, CustomersPlugin, ProductsPlugin, CompanyPlugin, Set
 
 ## デザインルール
 
+**詳細**: `.ai/design_rules.md` を参照（テーマ配色、AppBar、文字色、入力フォームなどの完全なルール）
+
 - **3層**: 壁紙（surfaceContainerLowest）→ カード（surface）→ 入力フォーム
 - **文字色**: `textColorOn(背景色)` を使用。純白・純黒は入力フォーム内部とヘッダーのみ
 - **テーマ**: `ColorScheme.fromSeed(seedColor: Colors.indigo)`
+- **AppBar**: 必ず `ScreenAppBarTitle` を使用
 - **カードの影**:
   ```dart
   BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: Offset(0, 2)),
