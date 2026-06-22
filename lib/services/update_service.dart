@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum UpdateFrequency {
   off,
@@ -23,6 +24,7 @@ class UpdateService {
   static const String _prefKeyAutoUpdate = 'auto_update_enabled';
   static const String _prefKeyUpdateFrequency = 'update_frequency';
   static const String _prefKeyLastCheckTime = 'last_update_check_time';
+  static const String _prefKeyAutoInstall = 'auto_install_enabled';
 
   /// 自動アップデートが有効かどうか
   Future<bool> isAutoUpdateEnabled() async {
@@ -34,6 +36,18 @@ class UpdateService {
   Future<void> setAutoUpdateEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKeyAutoUpdate, enabled);
+  }
+
+  /// 自動インストールが有効かどうか
+  Future<bool> isAutoInstallEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefKeyAutoInstall) ?? false;
+  }
+
+  /// 自動インストールを設定
+  Future<void> setAutoInstallEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKeyAutoInstall, enabled);
   }
 
   /// アップデート頻度を取得
@@ -100,6 +114,17 @@ class UpdateService {
 
     final hasUpdate = await needsUpdate();
     await _updateLastCheckTime();
+
+    if (hasUpdate && await isAutoInstallEnabled()) {
+      final latest = await getLatestVersion();
+      if (latest != null) {
+        final apkPath = await downloadApk(latest);
+        if (apkPath != null) {
+          await installApk(apkPath);
+        }
+      }
+    }
+
     return hasUpdate;
   }
 
@@ -178,10 +203,13 @@ class UpdateService {
     if (!Platform.isAndroid) return false;
 
     try {
-      // AndroidではAPKインストールにはインストール権限が必要
-      // flutter_install_apkパッケージを使用するか、Intentでインストール
-      // ここでは簡易的にファイルパスを返す
-      return true;
+      // APKファイルを開いてインストールダイアログを表示
+      final uri = Uri.file(filePath);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        return true;
+      }
+      return false;
     } catch (e) {
       return false;
     }

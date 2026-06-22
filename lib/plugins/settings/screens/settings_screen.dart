@@ -32,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _checkingUpdate = false;
   bool _autoUpdateEnabled = false;
   UpdateFrequency _updateFrequency = UpdateFrequency.off;
+  bool _autoInstallEnabled = false;
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final currentVersion = await updateService.getCurrentVersion();
     final autoUpdateEnabled = await updateService.isAutoUpdateEnabled();
     final updateFrequency = await updateService.getUpdateFrequency();
+    final autoInstallEnabled = await updateService.isAutoInstallEnabled();
     final lastBackupStr = prefs.getString('drive_backup_last');
     String lastBackup = '';
     if (lastBackupStr != null) {
@@ -65,6 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _currentVersion = currentVersion;
       _autoUpdateEnabled = autoUpdateEnabled;
       _updateFrequency = updateFrequency;
+      _autoInstallEnabled = autoInstallEnabled;
       _lastBackup = lastBackup;
     });
   }
@@ -85,6 +88,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final updateService = UpdateService();
     await updateService.setAutoUpdateEnabled(enabled);
     setState(() => _autoUpdateEnabled = enabled);
+  }
+
+  Future<void> _setAutoInstallEnabled(bool enabled) async {
+    final updateService = UpdateService();
+    await updateService.setAutoInstallEnabled(enabled);
+    setState(() => _autoInstallEnabled = enabled);
   }
 
   Future<void> _setUpdateFrequency(UpdateFrequency frequency) async {
@@ -352,17 +361,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text('定期的に更新を確認します', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
             ),
             if (_autoUpdateEnabled)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: SegmentedButton<UpdateFrequency>(
-                  segments: const [
-                    ButtonSegment(value: UpdateFrequency.daily, label: Text('毎日')),
-                    ButtonSegment(value: UpdateFrequency.weekly, label: Text('毎週')),
-                    ButtonSegment(value: UpdateFrequency.monthly, label: Text('毎月')),
-                  ],
-                  selected: {_updateFrequency},
-                  onSelectionChanged: (v) => _setUpdateFrequency(v.first),
-                ),
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: SegmentedButton<UpdateFrequency>(
+                      segments: const [
+                        ButtonSegment(value: UpdateFrequency.daily, label: Text('毎日')),
+                        ButtonSegment(value: UpdateFrequency.weekly, label: Text('毎週')),
+                        ButtonSegment(value: UpdateFrequency.monthly, label: Text('毎月')),
+                      ],
+                      selected: {_updateFrequency},
+                      onSelectionChanged: (v) => _setUpdateFrequency(v.first),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    value: _autoInstallEnabled,
+                    onChanged: _setAutoInstallEnabled,
+                    title: Text('自動インストール', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                    subtitle: Text('更新を自動でインストールします', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  ),
+                ],
               ),
             const Divider(height: 1),
             Padding(
