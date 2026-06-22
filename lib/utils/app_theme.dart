@@ -87,7 +87,7 @@ class AppTheme {
           fontSize: 16,
         ),
       ),
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: tabBarFgColor,
         unselectedLabelColor: tabBarFgColor.withValues(alpha: 0.7),
         indicatorColor: tabBarFgColor,
