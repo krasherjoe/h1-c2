@@ -72,16 +72,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  Future<void> _checkUpdate() async {
+  Future<void> _installLatest() async {
     setState(() => _checkingUpdate = true);
     final updateService = UpdateService();
     final latest = await updateService.getLatestVersion();
-    final needsUpdate = await updateService.needsUpdate();
-    setState(() {
-      _latestVersion = latest ?? _currentVersion;
-      _needsUpdate = needsUpdate;
-      _checkingUpdate = false;
-    });
+    if (latest != null) {
+      final apkPath = await updateService.downloadApk(latest);
+      if (apkPath != null) {
+        await updateService.installApk(apkPath);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('APKをダウンロードしてインストールダイアログを表示しました')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('APKのダウンロードに失敗しました')),
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('最新バージョンの取得に失敗しました')),
+        );
+      }
+    }
+    setState(() => _checkingUpdate = false);
   }
 
   Future<void> _setAutoUpdateEnabled(bool enabled) async {
@@ -389,41 +407,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Padding(
               padding: const EdgeInsets.all(12),
               child: FilledButton.icon(
-                onPressed: _checkingUpdate ? null : _checkUpdate,
-                icon: const Icon(Icons.refresh),
-                label: const Text('更新を確認'),
+                onPressed: _checkingUpdate ? null : _installLatest,
+                icon: const Icon(Icons.download),
+                label: const Text('最新版をインストール'),
               ),
             ),
-            if (_needsUpdate)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    final updateService = UpdateService();
-                    final latest = await updateService.getLatestVersion();
-                    if (latest != null) {
-                      final apkPath = await updateService.downloadApk(latest);
-                      if (apkPath != null) {
-                        await updateService.installApk(apkPath);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('APKをダウンロードしてインストールダイアログを表示しました')),
-                          );
-                        }
-                      } else {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('APKのダウンロードに失敗しました')),
-                          );
-                        }
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.download),
-                  label: const Text('更新をダウンロード'),
-                  style: FilledButton.styleFrom(backgroundColor: cs.error),
-                ),
-              ),
           ]),
           const SizedBox(height: 16),
 
