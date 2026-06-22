@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:h_1_core/services/company_service.dart';
 import 'package:h_1_core/services/ssh_tunnel_service.dart';
 import 'package:h_1_core/utils/theme_utils.dart';
+import '../../conversion/services/data_migration_service.dart';
 import '../services/ice_api_server.dart';
 
 class IceSettingsScreen extends StatefulWidget {
@@ -23,6 +25,14 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
   String? _info;
   String? _sshDir;
 
+  // oldh1変換関連
+  final _oldh1DirController = TextEditingController(
+    text: '/storage/emulated/0/Documents/販売アシスト1号code',
+  );
+  List<FileSystemEntity> _foundDbFiles = [];
+  bool _isScanning = false;
+  bool _isConverting = false;
+
   @override
   void initState() {
     super.initState();
@@ -31,13 +41,14 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     _loadSshFiles();
   }
 
- @override
-  void dispose() {
-    _portController.dispose();
-    _sshConfigController.dispose();
-    _sshPrivateKeyController.dispose();
-    super.dispose();
-  }
+  @override
+   void dispose() {
+     _portController.dispose();
+     _sshConfigController.dispose();
+     _sshPrivateKeyController.dispose();
+     _oldh1DirController.dispose();
+     super.dispose();
+   }
 
   Future<void> _loadSshFiles() async {
     try {
@@ -142,6 +153,88 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     }
   }
 
+  Future<void> _scanOldh1Dir() async {
+    setState(() {
+      _isScanning = true;
+      _foundDbFiles = [];
+      _error = null;
+      _info = null;
+    });
+    try {
+      final dir = Directory(_oldh1DirController.text.trim());
+      if (!await dir.exists()) {
+        setState(() {
+          _error = 'ディレクトリが存在しません: ${dir.path}';
+          _isScanning = false;
+        });
+        return;
+      }
+      final files = await dir.list().where((e) =>
+        e is File &&
+        e.path.endsWith('.db')
+      ).toList();
+      files.sort((a, b) => (a as File).lastModifiedSync().compareTo(
+        (b as File).lastModifiedSync()));
+      setState(() {
+        _foundDbFiles = files.reversed.toList();
+        _isScanning = false;
+        _info = '${files.length}個のDBファイルを見つけました';
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'スキャンエラー: $e';
+        _isScanning = false;
+      });
+    }
+  }
+
+  Future<void> _convertAndOpen(String sourcePath) async {
+    setState(() {
+      _isConverting = true;
+      _error = null;
+      _info = '変換中...';
+    });
+    try {
+      final companyDir = await CompanyService.getCompanyDirectory();
+      final importPath = '${companyDir.path}/oldh1_imported.db';
+      final sourceFile = File(sourcePath);
+
+      // 既存のインポートファイルがあれば削除
+      final importFile = File(importPath);
+      if (await importFile.exists()) {
+        await importFile.delete();
+      }
+
+      // DBファイルをコピー
+      await sourceFile.copy(importPath);
+
+      // マイグレーションを実行
+      final db = await openDatabase(importPath);
+      try {
+        await DataMigrationService.runConversion(db);
+      } finally {
+        await db.close();
+      }
+
+      if (mounted) {
+        setState(() {
+          _isConverting = false;
+          _info = '変換完了！\n'
+              'コピー先: $importPath\n'
+              'アプリを再起動すると変換済みDBが開けます。\n'
+              '（会社切替 or アプリ再起動）';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = '変換エラー: $e';
+          _isConverting = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -163,7 +256,9 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
           _buildSshConfigEditor(cs, textColor),
           const SizedBox(height: 16),
            _buildSshPrivateKeyEditor(cs, textColor),
-          if (_error != null) ...[
+           const SizedBox(height: 16),
+           _buildOldh1Conversion(cs, textColor),
+           if (_error != null) ...[
             const SizedBox(height: 12),
             Card(
               color: cs.errorContainer,
@@ -508,6 +603,128 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
                 label: const Text('保存'),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOldh1Conversion(ColorScheme cs, Color textColor) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.swap_horiz, size: 18, color: cs.primary),
+                const SizedBox(width: 8),
+                Text('oldh1 データ変換',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('旧バージョンのDBファイルを変換して開きます',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 12),
+            // ディレクトリパス入力
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _oldh1DirController,
+                    decoration: const InputDecoration(
+                      labelText: 'DBディレクトリ',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      contentPadding: EdgeInsets.all(12),
+                    ),
+                    style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: _isScanning ? null : _scanOldh1Dir,
+                  icon: _isScanning
+                      ? const SizedBox(
+                          width: 14, height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.search, size: 16),
+                  label: Text(_isScanning ? '検索中' : 'スキャン'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // 見つかったDBファイル一覧
+            if (_foundDbFiles.isNotEmpty) ...[
+              const Divider(),
+              Text('見つかったDBファイル:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
+              const SizedBox(height: 4),
+              ...(_foundDbFiles as List<File>).map((file) {
+                final sizeKB = (file.lengthSync() / 1024).round();
+                final modified = file.lastModifiedSync();
+                final dateStr = '${modified.year}/${modified.month.toString().padLeft(2, '0')}/${modified.day.toString().padLeft(2, '0')}';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: cs.outlineVariant),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListTile(
+                      dense: true,
+                      leading: Icon(Icons.storage, size: 20, color: cs.primary),
+                      title: Text(file.uri.pathSegments.last,
+                        style: TextStyle(fontSize: 13, color: textColor, fontFamily: 'monospace')),
+                      subtitle: Text('${sizeKB}KB / $dateStr',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                      trailing: _isConverting
+                          ? const SizedBox(
+                              width: 16, height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : FilledButton.tonalIcon(
+                              onPressed: () => _convertAndOpen(file.path),
+                              icon: const Icon(Icons.download, size: 14),
+                              label: const Text('変換して開く', style: TextStyle(fontSize: 11)),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size.zero,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+            // ヒント
+            if (_foundDbFiles.isEmpty && !_isScanning)
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'スキャンしてDBファイルを探すか、パスを直接入力してください',
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
