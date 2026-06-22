@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:path/path.dart' as p;
 import '../../../main.dart' show themeNotifier;
 import '../../../services/input_style_service.dart' show inputStyleNotifier;
 import '../../../services/google_auth_service.dart';
@@ -30,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _latestVersion = '';
   bool _needsUpdate = false;
   bool _checkingUpdate = false;
+  bool _downloading = false;
   bool _autoUpdateEnabled = false;
   UpdateFrequency _updateFrequency = UpdateFrequency.off;
   bool _autoInstallEnabled = false;
@@ -72,17 +75,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  Future<void> _installLatest() async {
+  Future<void> _checkUpdate() async {
     setState(() => _checkingUpdate = true);
+    final updateService = UpdateService();
+    final latest = await updateService.getLatestVersion();
+    final needsUpdate = await updateService.needsUpdate();
+    setState(() {
+      _latestVersion = latest ?? _currentVersion;
+      _needsUpdate = needsUpdate;
+      _checkingUpdate = false;
+    });
+  }
+
+  Future<void> _downloadAndInstall() async {
+    // ダウンロード確認ダイアログ
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('APKをダウンロード'),
+        content: const Text('最新バージョンのAPKをダウンロードしますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ダウンロード'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _downloading = true);
     final updateService = UpdateService();
     final latest = await updateService.getLatestVersion();
     if (latest != null) {
       final apkPath = await updateService.downloadApk(latest);
       if (apkPath != null) {
-        await updateService.installApk(apkPath);
+        // ダウンロード完了後にファイルフォルダを開く
+        final dir = p.dirname(apkPath);
+        final dirUri = Uri.directory(dir);
+        if (await canLaunchUrl(dirUri)) {
+          await launchUrl(dirUri);
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('APKをダウンロードしてインストールダイアログを表示しました')),
+            const SnackBar(content: Text('APKをダウンロードしました')),
           );
         }
       } else {
@@ -99,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
-    setState(() => _checkingUpdate = false);
+    setState(() => _downloading = false);
   }
 
   Future<void> _setAutoUpdateEnabled(bool enabled) async {
@@ -369,7 +410,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text('最新バージョン', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
               trailing: _checkingUpdate
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_latestVersion, style: TextStyle(color: _needsUpdate ? cs.error : cs.onSurfaceVariant)),
+                  : _downloading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : _latestVersion.isEmpty
+                          ? TextButton.icon(
+                              onPressed: _checkUpdate,
+                              icon: const Icon(Icons.refresh, size: 16),
+                              label: const Text('更新'),
+                            )
+                          : InkWell(
+                              onTap: _downloadAndInstall,
+                              child: Text(
+                                _latestVersion,
+                                style: TextStyle(
+                                  color: _needsUpdate ? cs.error : cs.onSurfaceVariant,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
             ),
             const Divider(height: 1),
             SwitchListTile(
@@ -404,14 +462,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: FilledButton.icon(
-                onPressed: _checkingUpdate ? null : _installLatest,
-                icon: const Icon(Icons.download),
-                label: const Text('最新版をインストール'),
-              ),
-            ),
           ]),
           const SizedBox(height: 16),
 
