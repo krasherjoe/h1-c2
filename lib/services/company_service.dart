@@ -119,14 +119,23 @@ class CompanyService {
   }
 
   static Future<void> switchCompany(String name) async {
-    await DatabaseHelper.closeAndReset();
+    try {
+      await DatabaseHelper.closeAndReset();
+    } catch (e) {
+      debugPrint('[CompanyService] DB close error: $e');
+    }
     await setCurrentCompany(name);
     activeCompanyNotifier.value = name;
-    
-    // DB切替後にマイグレーションを実行
-    final helper = DatabaseHelper();
-    final db = await helper.database;
-    await DataMigrationService.runConversion(db);
+
+    // DB切替後にマイグレーションを実行（失敗しても致命的ではない）
+    try {
+      final helper = DatabaseHelper();
+      final db = await helper.database;
+      await DataMigrationService.runConversion(db);
+      debugPrint('[CompanyService] 切替完了: $name');
+    } catch (e) {
+      debugPrint('[CompanyService] migration error: $e');
+    }
   }
 
   static Future<String> getDefaultCompany() async {

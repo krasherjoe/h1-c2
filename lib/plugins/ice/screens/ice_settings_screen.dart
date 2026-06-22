@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:h_1_core/services/company_service.dart';
 import 'package:h_1_core/services/ssh_tunnel_service.dart';
+import 'package:path/path.dart' as p;
 import 'package:h_1_core/utils/theme_utils.dart';
 import '../../conversion/services/data_migration_service.dart';
 import '../services/ice_api_server.dart';
@@ -218,35 +219,42 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       _info = '変換中...';
     });
     try {
-      final companyDir = await CompanyService.getCompanyDirectory();
-      final importPath = '${companyDir.path}/oldh1_imported.db';
       final sourceFile = File(sourcePath);
+      final baseName = p.basenameWithoutExtension(sourceFile.path);
+      final companyName = 'oldh1_$baseName';
+      final companyDir = await CompanyService.getCompanyDirectory();
+      final destPath = p.join(companyDir.path, '$companyName.db');
 
-      // 既存のインポートファイルがあれば削除
-      final importFile = File(importPath);
-      if (await importFile.exists()) {
-        await importFile.delete();
+      // 既存の変換先DBがあれば削除
+      final destFile = File(destPath);
+      if (await destFile.exists()) {
+        await destFile.delete();
       }
 
       // DBファイルをコピー
-      await sourceFile.copy(importPath);
+      await sourceFile.copy(destPath);
 
       // マイグレーションを実行
-      final db = await openDatabase(importPath);
+      final db = await openDatabase(destPath);
       try {
         await DataMigrationService.runConversion(db);
       } finally {
         await db.close();
       }
 
+      // 法人として自動切替
+      await CompanyService.switchCompany(companyName);
+
       if (mounted) {
         setState(() {
           _isConverting = false;
-          _info = '変換完了！\n'
-              'コピー先: $importPath\n'
-              'アプリを再起動すると変換済みDBが開けます。\n'
-              '（会社切替 or アプリ再起動）';
+          _info = '変換完了！「$companyName」に自動切替しました。';
         });
+        // ルートまで戻ってアプリを再表示
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('「$companyName」に切り替えました')),
+        );
       }
     } catch (e) {
       if (mounted) {
