@@ -92,10 +92,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _openDownloadFolder() async {
     if (_downloadedApkPath == null) return;
-    final dir = p.dirname(_downloadedApkPath!);
-    final dirUri = Uri.directory(dir);
-    if (await canLaunchUrl(dirUri)) {
-      await launchUrl(dirUri);
+    final uri = Uri.file(_downloadedApkPath!);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 

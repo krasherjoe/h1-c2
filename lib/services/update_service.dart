@@ -217,6 +217,9 @@ class UpdateService {
       final fileName = 'h1-core-v$version.apk';
       final filePath = p.join(dir.path, fileName);
 
+      // 古いAPKファイルを削除
+      await _cleanupOldApkFiles(dir, version);
+
       final url = 'https://github.com/$_githubOwner/$_githubRepo/releases/download/v$version/$fileName';
       
       // ストリームでダウンロードしてプログレスを追跡
@@ -255,6 +258,24 @@ class UpdateService {
     } catch (e) {
       _downloadClient = null;
       return null;
+    }
+  }
+
+  /// 古いAPKファイルを削除
+  Future<void> _cleanupOldApkFiles(Directory dir, String currentVersion) async {
+    try {
+      final files = dir.listSync();
+      for (final file in files) {
+        if (file is File && file.path.endsWith('.apk')) {
+          final fileName = p.basename(file.path);
+          // 現在のバージョン以外のAPKを削除
+          if (!fileName.contains(currentVersion)) {
+            await file.delete();
+          }
+        }
+      }
+    } catch (e) {
+      // 削除に失敗しても無視
     }
   }
 
