@@ -111,85 +111,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     setState(() => _downloading = true);
 
-    final updateService = UpdateService();
-    final latest = await updateService.getLatestVersion();
-    
-    if (latest != null) {
-      // プログレスダイアログ表示
-      if (!mounted) return;
-      final progressNotifier = ValueNotifier<double>(0.0);
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Text('APKをダウンロード中'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ValueListenableBuilder<double>(
-                valueListenable: progressNotifier,
-                builder: (context, progress, child) {
-                  return Column(
-                    children: [
-                      LinearProgressIndicator(value: progress),
-                      const SizedBox(height: 16),
-                      Text('${(progress * 100).toStringAsFixed(0)}%'),
-                    ],
-                  );
+    try {
+      final updateService = UpdateService();
+      final latest = await updateService.getLatestVersion();
+      
+      if (latest != null) {
+        // プログレスダイアログ表示
+        if (!mounted) return;
+        final progressNotifier = ValueNotifier<double>(0.0);
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('APKをダウンロード中'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ValueListenableBuilder<double>(
+                  valueListenable: progressNotifier,
+                  builder: (context, progress, child) {
+                    return Column(
+                      children: [
+                        LinearProgressIndicator(value: progress),
+                        const SizedBox(height: 16),
+                        Text('${(progress * 100).toStringAsFixed(0)}%'),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  updateService.cancelDownload();
+                  Navigator.pop(context);
+                  setState(() => _downloading = false);
                 },
+                child: const Text('キャンセル'),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                updateService.cancelDownload();
-                Navigator.pop(context);
-                setState(() => _downloading = false);
-              },
-              child: const Text('キャンセル'),
-            ),
-          ],
-        ),
-      );
+        );
 
-      final apkPath = await updateService.downloadApk(
-        latest,
-        onProgress: (progress) {
-          progressNotifier.value = progress;
-        },
-      );
-      
-      // ダイアログを閉じる
-      if (mounted) Navigator.pop(context);
-      
-      if (apkPath != null) {
-        // ダウンロード完了後にファイルフォルダを開く
-        final dir = p.dirname(apkPath);
-        final dirUri = Uri.directory(dir);
-        if (await canLaunchUrl(dirUri)) {
-          await launchUrl(dirUri);
-        }
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('APKをダウンロードしました')),
-          );
+        final apkPath = await updateService.downloadApk(
+          latest,
+          onProgress: (progress) {
+            progressNotifier.value = progress;
+          },
+        );
+        
+        // ダイアログを閉じる
+        if (mounted) Navigator.pop(context);
+        
+        if (apkPath != null) {
+          // ダウンロード完了後にファイルフォルダを開く
+          final dir = p.dirname(apkPath);
+          final dirUri = Uri.directory(dir);
+          if (await canLaunchUrl(dirUri)) {
+            await launchUrl(dirUri);
+          }
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('APKをダウンロードしました')),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('APKのダウンロードに失敗しました')),
+            );
+          }
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('APKのダウンロードに失敗しました')),
+            const SnackBar(content: Text('最新バージョンの取得に失敗しました')),
           );
         }
       }
-    } else {
+    } finally {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('最新バージョンの取得に失敗しました')),
-        );
+        setState(() => _downloading = false);
       }
     }
-    setState(() => _downloading = false);
   }
 
   Future<void> _setAutoUpdateEnabled(bool enabled) async {
