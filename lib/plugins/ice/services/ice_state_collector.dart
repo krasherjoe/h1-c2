@@ -63,7 +63,16 @@ class IceStateCollector {
         'tables': tableStats,
       };
     } catch (e) {
-      return {'error': e.toString()};
+      final result = <String, dynamic>{
+        'path': _db.path,
+        'error': e.toString(),
+      };
+      try {
+        final size = await File(_db.path).length();
+        result['sizeBytes'] = size;
+        result['sizeKB'] = (size / 1024).round();
+      } catch (_) {}
+      return result;
     }
   }
 

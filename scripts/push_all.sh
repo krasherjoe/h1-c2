@@ -75,7 +75,7 @@ echo "------------------------"
 
 BUILD_START=$(date +%s)
 if flutter build apk --release \
-    --dart-define=APP_VERSION="$VERSION" \
+    --dart-define=APP_VERSION="$PURE_VERSION" \
     --dart-define=APP_BUILD_DATE="$BUILD_DATE" \
     --dart-define=INCLUDE_DEBUG=false; then
   BUILD_END=$(date +%s)

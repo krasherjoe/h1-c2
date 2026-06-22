@@ -177,10 +177,12 @@ class DocumentRepository {
       savedSnapshot!['_items'] = itemMaps;
     });
 
-    // ワークフロー開始フック（案件に紐づく納品書の場合）
+    // 売上処理キューに追加（案件に紐づく納品書・請求書・領収証）
     if (document.projectId != null && 
-        document.documentType == DocumentType.delivery && 
-        document.status == 'confirmed') {
+        document.status == 'confirmed' &&
+        (document.documentType == DocumentType.delivery ||
+         document.documentType == DocumentType.invoice ||
+         document.documentType == DocumentType.receipt)) {
       try {
         // 売上処理キューに追加
         await _salesQueueRepo.addEntry(
