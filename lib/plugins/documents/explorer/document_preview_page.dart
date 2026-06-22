@@ -4,10 +4,12 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/document_model.dart';
 import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
 import '../services/document_repository.dart';
+import '../../../services/ar_report_generator.dart';
 import '../../../services/error_reporter.dart';
 import '../../../services/history_repository.dart';
 import '../../../utils/theme_utils.dart';
@@ -21,6 +23,7 @@ const _kPreviewDpi = 130.0;
 
 class DocumentPreviewPage extends StatefulWidget {
   final DocumentModel document;
+  final bool attachArReport;
   final bool allowFormalIssue;
   final bool isUnlocked;
   final Future<bool> Function()? onFormalIssue;
@@ -33,6 +36,7 @@ class DocumentPreviewPage extends StatefulWidget {
   const DocumentPreviewPage({
     super.key,
     required this.document,
+    this.attachArReport = false,
     this.allowFormalIssue = true,
     this.isUnlocked = false,
     this.onFormalIssue,
@@ -90,7 +94,18 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   Future<Uint8List> _buildPdfBytes([PdfPageFormat? format]) async {
     try {
       final doc = await generateDocumentPdf(_effectiveDocument);
-      final pdfBytes = Uint8List.fromList(await doc.save());
+      var pdfBytes = Uint8List.fromList(await doc.save());
+      
+      // 売掛レポート添付
+      if (widget.attachArReport && 
+          _effectiveDocument.documentType == DocumentType.invoice) {
+        try {
+          pdfBytes = await _combineWithArReport(pdfBytes);
+        } catch (e) {
+          debugPrint('[DocumentPreview] 売掛レポート結合エラー: $e');
+          // 売掛レポート添付エラーはメインPDFに影響させない
+        }
+      }
       
       // 電子帳簿保存法テーブルにPDF生成JSONを保存（ハッシュチェーン付き）
       try {
@@ -134,6 +149,34 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       if (mounted) setState(() => _error = 'PDFの生成に失敗しました\n$e');
       rethrow;
     }
+  }
+
+  /// 売掛レポートPDFを生成し、メインPDFと結合する
+  Future<Uint8List> _combineWithArReport(Uint8List mainPdfBytes) async {
+    final arReportGenerator = ArReportGenerator();
+    final reportBytes = await arReportGenerator.generateArReportFromDocument(
+      customerId: _effectiveDocument.customerId,
+      customerName: _effectiveDocument.customerName,
+      asOfDate: DateTime.now(),
+    );
+
+    // 両方のPDFページをラスタライズして結合
+    final allPages = <Uint8List>[];
+    await for (final raster in Printing.raster(mainPdfBytes, dpi: 150)) {
+      allPages.add(await raster.toPng());
+    }
+    await for (final raster in Printing.raster(reportBytes, dpi: 150)) {
+      allPages.add(await raster.toPng());
+    }
+
+    final combined = pw.Document();
+    for (final pngBytes in allPages) {
+      combined.addPage(pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (_) => pw.Image(pw.MemoryImage(pngBytes)),
+      ));
+    }
+    return Uint8List.fromList(await combined.save());
   }
 
   Future<bool> _showFormalIssueWarning(BuildContext context) async {
@@ -215,6 +258,89 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
     }
   }
 
+  Widget _buildDocInfoHeader(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final d = widget.document;
+    final statusColor = switch (d.paymentStatus) {
+      'paid' => cs.primary,
+      'partial' => cs.tertiary,
+      'unpaid' => cs.error,
+      _ => null,
+    };
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('${d.documentType.label} #${d.documentNumber}',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                    const SizedBox(height: 2),
+                    Text('${d.date.year}/${d.date.month.toString().padLeft(2, '0')}/${d.date.day.toString().padLeft(2, '0')}',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                    const SizedBox(height: 2),
+                    Text(d.customerName, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              if (statusColor != null)
+                _paymentBadge(cs, statusColor, d.paymentStatus!, d.receivedAmount, d.total),
+            ],
+          ),
+          if (widget.attachArReport && d.documentType == DocumentType.invoice)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.attach_file, size: 14, color: cs.tertiary),
+                  const SizedBox(width: 4),
+                  Text('売掛レポート添付あり',
+                    style: TextStyle(fontSize: 11, color: cs.tertiary, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentBadge(ColorScheme cs, Color badgeColor, String status, int? receivedAmount, int total) {
+    final (String badgeText, String infoText) = switch (status) {
+      'paid' => ('済', '入金済: ${_formatMoney(receivedAmount ?? total)}'),
+      'partial' => ('一部入金', '入金: ${_formatMoney(receivedAmount ?? 0)} / ${_formatMoney(total)}'),
+      'unpaid' => ('未払い', '残高: ${_formatMoney(total)}'),
+      _ => ('', ''),
+    };
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: badgeColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(badgeText, style: TextStyle(
+            fontSize: 11, fontWeight: FontWeight.bold, color: textColorOn(badgeColor),
+          )),
+        ),
+        const SizedBox(width: 6),
+        Text(infoText, style: TextStyle(fontSize: 12, color: cs.onSurface)),
+      ],
+    );
+  }
+
+  String _formatMoney(int amount) =>
+    '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+
   Widget _ppButton({
     required IconData icon,
     required String label,
@@ -277,6 +403,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       ),
       body: Column(
         children: [
+          _buildDocInfoHeader(context),
           Expanded(
             child: _error != null
                 ? Center(

@@ -217,6 +217,7 @@ class DocumentsPlugin extends H1Plugin {
     await safeAddColumn(db, 'documents', 'payment_status TEXT DEFAULT NULL');
     await safeAddColumn(db, 'documents', 'received_amount INTEGER DEFAULT NULL');
     await safeAddColumn(db, 'documents', 'due_date TEXT DEFAULT NULL');
+    await safeAddColumn(db, 'documents', 'attach_ar_report INTEGER DEFAULT 0');
   }
 
   @override

@@ -27,6 +27,10 @@ import '../../project/explorer/project_explorer_config.dart';
 import '../../products/widgets/variant_picker_sheet.dart';
 import '../explorer/document_preview_page.dart';
 import 'package:printing/printing.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import '../logic/document_pdf_generator.dart' show generateDocumentPdf;
+import '../../../services/history_repository.dart';
 
 class DocumentPage extends StatefulWidget {
   final DocumentModel? document;
@@ -62,6 +66,8 @@ class _DocumentPageState extends State<DocumentPage> {
   late List<_EditableItem> _items;
   List<_EditableItem> _originalItems = [];
   bool _attachArReport = false;
+  String? _priceAdjustmentType;
+  int? _priceAdjustmentUnit;
 
   static const _maxUndo = 30;
   List<_Snapshot> _undoStack = [];
@@ -92,7 +98,10 @@ class _DocumentPageState extends State<DocumentPage> {
     _includeTax = doc?.includeTax ?? false;
     _totalDiscountAmount = doc?.totalDiscountAmount;
     _totalDiscountRate = doc?.totalDiscountRate;
+    _priceAdjustmentType = doc?.priceAdjustmentType;
+    _priceAdjustmentUnit = doc?.priceAdjustmentUnit;
     final subjLines = (doc?.subject ?? '').split('\n');
+    _attachArReport = doc?.attachArReport ?? false;
     _titleCtl.text = subjLines.first;
     _memoCtl.text = subjLines.length > 1 ? subjLines.sublist(1).join('\n') : '';
     _items = (doc?.items ?? []).map((e) => _EditableItem(
@@ -133,6 +142,8 @@ class _DocumentPageState extends State<DocumentPage> {
     if (_includeTax != s.includeTax) return true;
     if (_totalDiscountAmount != s.totalDiscountAmount) return true;
     if (_totalDiscountRate != s.totalDiscountRate) return true;
+    if (_priceAdjustmentType != s.priceAdjustmentType) return true;
+    if (_priceAdjustmentUnit != s.priceAdjustmentUnit) return true;
     if (_items.length != s.items.length) return true;
     for (var i = 0; i < _items.length; i++) {
       final a = _items[i], b = s.items[i];
@@ -153,7 +164,35 @@ class _DocumentPageState extends State<DocumentPage> {
     if (_totalDiscountRate != null && _totalDiscountRate! > 0) return (_subtotal * _totalDiscountRate!).round();
     return 0;
   }
-  int get _totalDiscount => _discountAmount;
+  int get _priceAdjustmentDiscount {
+    if (_priceAdjustmentType == null || _priceAdjustmentUnit == null) return 0;
+    if (_priceAdjustmentType == 'manual') return _priceAdjustmentUnit!;
+    final unit = _priceAdjustmentUnit!;
+    final base = _subtotal - _discountAmount;
+    int adjustedTotal;
+    switch (_priceAdjustmentType) {
+      case 'round_down':
+        adjustedTotal = (base ~/ unit) * unit;
+      case 'round_up':
+        adjustedTotal = ((base + unit - 1) ~/ unit) * unit;
+      case 'round_nearest':
+        adjustedTotal = ((base + unit ~/ 2) ~/ unit) * unit;
+      default:
+        return 0;
+    }
+    return base - adjustedTotal;
+  }
+  String? get _priceAdjustmentLabel {
+    if (_priceAdjustmentType == null) return null;
+    switch (_priceAdjustmentType) {
+      case 'round_down': return '端数調整（切捨）';
+      case 'round_up': return '端数調整（切上）';
+      case 'round_nearest': return '端数調整（四捨五入）';
+      case 'manual': return '端数調整（手動）';
+      default: return '端数調整';
+    }
+  }
+  int get _totalDiscount => _discountAmount + _priceAdjustmentDiscount;
   int get _taxable => _subtotal - _totalDiscount;
   int get _tax => _includeTax ? (_taxable * 0.10).floor() : 0;
   int get _grandTotal => _taxable + _tax;
@@ -164,7 +203,7 @@ class _DocumentPageState extends State<DocumentPage> {
       projectId: _projectId, projectName: _projectName,
       title: _titleCtl.text, memo: _memoCtl.text,
       includeTax: _includeTax, totalDiscountAmount: _totalDiscountAmount, totalDiscountRate: _totalDiscountRate,
-      priceAdjustmentType: null, priceAdjustmentUnit: null,
+      priceAdjustmentType: _priceAdjustmentType, priceAdjustmentUnit: _priceAdjustmentUnit,
       items: _items.map((e) => _EditableItem(
         id: e.id, productId: e.productId, productName: e.productName, maker: e.maker, productCode: e.productCode,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
@@ -186,12 +225,14 @@ class _DocumentPageState extends State<DocumentPage> {
       date: _date, total: 0, status: 'draft', projectId: _projectId,
       subject: merged.isNotEmpty ? merged : null, includeTax: _includeTax,
       taxRate: 0.10, totalDiscountAmount: _totalDiscountAmount, totalDiscountRate: _totalDiscountRate,
+      priceAdjustmentType: _priceAdjustmentType, priceAdjustmentUnit: _priceAdjustmentUnit,
       items: _items.map((e) => DocumentItem(
         id: e.id, productId: e.productId, productName: e.productName,
         maker: e.maker, productCode: e.productCode,
         quantity: e.quantity, unitPrice: e.unitPrice, taxRate: e.taxRate,
         discountAmount: e.discountAmount, discountRate: e.discountRate, notes: e.notes,
       )).toList(),
+      attachArReport: _attachArReport,
     );
   }
 
@@ -297,12 +338,17 @@ class _DocumentPageState extends State<DocumentPage> {
           _buildItems(cs),
           const SizedBox(height: 12),
           DocumentSummarySection(
-            subtotal: _subtotal, discountAmount: _totalDiscount,
+            subtotal: _subtotal, discountAmount: _discountAmount,
             taxableAmount: _taxable, tax: _tax, total: _grandTotal,
             taxRate: 0.10, formatMoney: _formatMoney,
             showDiscountOnly: !widget.isEditing,
             totalLabelIsTaxIncluded: widget.isEditing,
             showTaxExcludedIfDifferent: widget.isEditing,
+            priceAdjustmentAmount: _priceAdjustmentDiscount > 0 ? _priceAdjustmentDiscount : null,
+            priceAdjustmentLabel: _priceAdjustmentLabel,
+            onPriceAdjustmentTap: widget.isEditing ? _showPriceAdjustmentDialog : null,
+            paymentStatus: widget.document?.paymentStatus,
+            receivedAmount: widget.document?.receivedAmount,
           ),
           if (!widget.isEditing) ...[
             const SizedBox(height: 16),
@@ -603,6 +649,7 @@ class _DocumentPageState extends State<DocumentPage> {
       _projectId = s.projectId; _projectName = s.projectName;
       _titleCtl.text = s.title; _memoCtl.text = s.memo;
       _includeTax = s.includeTax; _totalDiscountAmount = s.totalDiscountAmount; _totalDiscountRate = s.totalDiscountRate;
+      _priceAdjustmentType = s.priceAdjustmentType; _priceAdjustmentUnit = s.priceAdjustmentUnit;
       _items = s.items;
     });
   }
@@ -742,6 +789,85 @@ class _DocumentPageState extends State<DocumentPage> {
       } else if (result['mode'] == 1 && rate != null && rate > 0) {
         _items[index] = item.copyWith(discountRate: rate / 100, discountAmount: null);
       }
+    });
+  }
+
+  Future<void> _showPriceAdjustmentDialog() async {
+    var localType = _priceAdjustmentType;
+    var localUnit = _priceAdjustmentUnit ?? 100;
+    final manualCtl = TextEditingController(
+      text: (_priceAdjustmentType == 'manual' ? (_priceAdjustmentUnit ?? 0).toString() : '0'),
+    );
+
+    final result = await showDialog<Map<String, dynamic>>(context: context, builder: (ctx) {
+      return StatefulBuilder(builder: (ctx, setDialogState) {
+        return AlertDialog(
+          title: const Text('端数処理設定'),
+          content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('種類', style: TextStyle(fontSize: 13)),
+            const SizedBox(height: 4),
+            Wrap(spacing: 6, children: [
+              ChoiceChip(label: const Text('なし'), selected: localType == null,
+                onSelected: (_) => setDialogState(() => localType = null)),
+              ChoiceChip(label: const Text('切捨'), selected: localType == 'round_down',
+                onSelected: (_) => setDialogState(() => localType = 'round_down')),
+              ChoiceChip(label: const Text('切上'), selected: localType == 'round_up',
+                onSelected: (_) => setDialogState(() => localType = 'round_up')),
+              ChoiceChip(label: const Text('四捨五入'), selected: localType == 'round_nearest',
+                onSelected: (_) => setDialogState(() => localType = 'round_nearest')),
+              ChoiceChip(label: const Text('手動'), selected: localType == 'manual',
+                onSelected: (_) => setDialogState(() => localType = 'manual')),
+            ]),
+            if (localType != null && localType != 'manual') ...[
+              const SizedBox(height: 12),
+              const Text('単位', style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 4),
+              Wrap(spacing: 6, children: [1, 10, 100, 1000].map((u) => ChoiceChip(
+                label: Text('${u}円'),
+                selected: localUnit == u,
+                onSelected: (_) => setDialogState(() => localUnit = u),
+              )).toList()),
+            ],
+            if (localType == 'manual') ...[
+              const SizedBox(height: 12),
+              TextField(controller: manualCtl,
+                decoration: const InputDecoration(labelText: '調整額（円）', hintText: '例: 100'),
+                keyboardType: TextInputType.number),
+            ],
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
+            if (localType != null)
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, {'clear': true}),
+                child: Text('クリア', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              ),
+            FilledButton(onPressed: () {
+              int? unit;
+              if (localType == 'manual') {
+                unit = int.tryParse(manualCtl.text.trim()) ?? 0;
+              } else if (localType != null) {
+                unit = localUnit;
+              }
+              Navigator.pop(ctx, {'type': localType, 'unit': unit});
+            }, child: const Text('OK')),
+          ],
+        );
+      });
+    });
+
+    manualCtl.dispose();
+
+    if (result == null) return;
+    if (result.containsKey('clear')) {
+      _snapshot();
+      setState(() { _priceAdjustmentType = null; _priceAdjustmentUnit = null; });
+      return;
+    }
+    _snapshot();
+    setState(() {
+      _priceAdjustmentType = result['type'] as String?;
+      _priceAdjustmentUnit = result['unit'] as int?;
     });
   }
 
@@ -905,6 +1031,7 @@ class _DocumentPageState extends State<DocumentPage> {
     final docCopy = doc.copyWith();
     await Navigator.push(context, MaterialPageRoute(builder: (_) => DocumentPreviewPage(
       document: doc,
+      attachArReport: _attachArReport,
       allowFormalIssue: !widget.isEditing && doc.isDraft && !doc.isLocked,
       isUnlocked: !doc.isLocked,
       onFormalIssue: () async {
@@ -1023,12 +1150,36 @@ class _DocumentPageState extends State<DocumentPage> {
     if (widget.document == null) return;
 
     try {
-      // TODO: 請求書PDF生成
-      // 現在はスキップ
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('印刷は未実装です')),
+      await Printing.layoutPdf(
+        onLayout: (format) async {
+          final doc = await generateDocumentPdf(widget.document!);
+          return Uint8List.fromList(await doc.save());
+        },
       );
-    } catch (e) {
+
+      // PDF出力履歴を記録
+      try {
+        final historyRepo = HistoryRepository();
+        final pdfJson = widget.document!.toPdfJson();
+        final pdfJsonString = jsonEncode(pdfJson);
+        final contentHash = sha256.convert(utf8.encode(pdfJsonString)).toString();
+
+        await historyRepo.recordPdfOutput(
+          documentType: widget.document!.documentType.name,
+          documentId: widget.document!.id,
+          documentNumber: widget.document!.documentNumber,
+          customerName: widget.document!.customerName,
+          contentHash: contentHash,
+        );
+      } catch (e) {
+        debugPrint('[DocumentPage] PDF出力履歴記録エラー: $e');
+      }
+    } catch (e, st) {
+      ErrorReporter.sendError(
+        message: '印刷エラー: $e',
+        screenId: '/documents/editor',
+        stackTrace: st,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('印刷エラー: $e')),

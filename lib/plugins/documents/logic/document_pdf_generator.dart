@@ -150,6 +150,17 @@ String _totalLabel(DocumentType type, {bool isRedInvoice = false}) {
   return '$prefix$base';
 }
 
+String _priceAdjustmentPdfLabel(DocumentModel doc) {
+  if (doc.priceAdjustmentType == null) return '端数調整';
+  switch (doc.priceAdjustmentType) {
+    case 'round_down': return '端数調整（切捨）';
+    case 'round_up': return '端数調整（切上）';
+    case 'round_nearest': return '端数調整（四捨五入）';
+    case 'manual': return '端数調整（手動）';
+    default: return '端数調整';
+  }
+}
+
 String _footerMessage(DocumentType type) {
   switch (type) {
     case DocumentType.estimation:
@@ -199,6 +210,8 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
 
   final subtotal = document.subtotal;
   final discount = document.discountAmount;
+  final priceAdjust = document.priceAdjustmentDiscount;
+  final regularDiscount = discount - priceAdjust;
   final taxable = document.taxableAmount;
   final tax = document.tax;
 
@@ -391,9 +404,11 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                 child: pw.Column(
                   children: [
                     _buildSummaryRow('小計', amountFormatter.format(subtotal)),
-                    if (discount > 0)
-                      _buildSummaryRow('値引き', '-${amountFormatter.format(discount)}'),
-                    if (taxable != subtotal && discount > 0)
+                    if (regularDiscount > 0)
+                      _buildSummaryRow('値引き', '-${amountFormatter.format(regularDiscount)}'),
+                    if (priceAdjust > 0)
+                      _buildSummaryRow(_priceAdjustmentPdfLabel(document), '-${amountFormatter.format(priceAdjust)}'),
+                    if (taxable != subtotal)
                       _buildSummaryRow('税抜合計', amountFormatter.format(taxable)),
                     if (tax > 0 && !_isExemptNoT(companyInfo))
                       _buildSummaryRow('消費税 (${(document.taxRate * 100).round()}%)', amountFormatter.format(tax)),

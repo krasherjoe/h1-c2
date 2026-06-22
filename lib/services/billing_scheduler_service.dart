@@ -313,8 +313,11 @@ class BillingSchedulerService {
   /// 売掛レポート生成（一時ファイル）
   Future<File?> _generateArReport(invoice_models.Invoice invoice, BillingTemplate template) async {
     try {
-      final file = await _arReportGenerator.generateArReportAsTempFile(
-        customer: invoice.customer,
+      // InvoiceをDocumentModelに変換して新しいメソッドを使用
+      final document = _converter.invoiceToDocumentModel(invoice);
+      final file = await _arReportGenerator.generateArReportAsTempFileFromDocument(
+        customerId: document.customerId,
+        customerName: document.customerName,
         asOfDate: DateTime.now(),
         template: template,
       );

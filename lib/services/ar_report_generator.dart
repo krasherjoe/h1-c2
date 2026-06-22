@@ -1,17 +1,16 @@
 import 'dart:typed_data';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/billing_template_model.dart';
 import '../models/invoice_models.dart';
 import '../models/customer_model.dart';
 import 'invoice_repository.dart';
 import 'customer_repository.dart';
+import '../plugins/documents/models/document_model.dart' hide DocumentType;
 import '../plugins/documents/services/document_repository.dart';
 
 /// 売掛レポート生成サービス
@@ -53,12 +52,6 @@ class ArReportGenerator {
         invoices.addAll(lastMonthInvoices);
       }
 
-      // 根拠納品書を取得
-      final sourceDocuments = await _getSourceDocuments(invoices);
-
-      // JSONメタデータ作成
-      final metadata = _buildReportMetadata(customer, invoices, sourceDocuments, asOfDate, hasCarryOver: lastMonthInvoices.isNotEmpty);
-
       // PDF生成
       final pdf = pw.Document();
       final font = await _getFont();
@@ -84,6 +77,39 @@ class ArReportGenerator {
       debugPrint('[ArReportGenerator] generateArReport error: $e');
       rethrow;
     }
+  }
+
+  /// 根拠納品書を取得（DocumentModel版）
+  Future<List<Map<String, dynamic>>> _getSourceDocumentsFromDocuments(List<DocumentModel> documents) async {
+    final sourceDocs = <Map<String, dynamic>>[];
+
+    for (final doc in documents) {
+      if (doc.linkedDocumentId != null) {
+        final source = await _docRepo.fetchById(doc.linkedDocumentId!);
+        if (source != null) {
+          sourceDocs.add({
+            'documentId': source.id,
+            'documentType': source.documentType.name,
+            'documentNumber': source.documentNumber,
+            'date': source.date.toIso8601String(),
+            'total': source.total,
+            'customerId': source.customerId,
+            'customerName': source.customerName,
+            'items': source.items.map((item) => {
+              'productId': item.productId,
+              'productName': item.productName,
+              'quantity': item.quantity,
+              'unitPrice': item.unitPrice,
+              'subtotal': item.subtotal,
+              'discountAmount': item.discountAmount,
+              'discountRate': item.discountRate,
+            }).toList(),
+          });
+        }
+      }
+    }
+
+    return sourceDocs;
   }
 
   /// 根拠納品書を取得
@@ -120,6 +146,35 @@ class ArReportGenerator {
     return sourceDocs;
   }
 
+  /// レポートメタデータ構築（DocumentModel版）
+  Map<String, dynamic> _buildReportMetadataFromDocuments(
+    String customerId,
+    String customerName,
+    List<DocumentModel> documents,
+    List<Map<String, dynamic>> sourceDocuments,
+    DateTime asOfDate, {
+    bool hasCarryOver = false,
+  }) {
+    final totalUnpaid = documents.fold<int>(
+      0,
+      (sum, doc) => sum + (doc.total - (doc.receivedAmount ?? 0)),
+    );
+
+    return {
+      'report': {
+        'reportType': 'ar_report',
+        'customerId': customerId,
+        'customerName': customerName,
+        'asOfDate': asOfDate.toIso8601String(),
+        'totalUnpaid': totalUnpaid,
+        'invoiceCount': documents.length,
+        'hasCarryOver': hasCarryOver,
+        'generatedAt': DateTime.now().toIso8601String(),
+      },
+      'sourceDocuments': sourceDocuments,
+    };
+  }
+
   /// レポートメタデータ構築
   Map<String, dynamic> _buildReportMetadata(
     Customer customer,
@@ -154,6 +209,140 @@ class ArReportGenerator {
       customer: invoice.customer,
       asOfDate: DateTime.now(),
     );
+  }
+
+  /// 特定伝文書に関連する売掛レポート生成（DocumentModel版）
+  Future<Uint8List> generateArReportForDocument(DocumentModel document) async {
+    return generateArReportFromDocument(
+      customerId: document.customerId,
+      customerName: document.customerName,
+      asOfDate: DateTime.now(),
+    );
+  }
+
+  /// 売掛レポートPDF生成（DocumentModel版）
+  Future<Uint8List> generateArReportFromDocument({
+    required String customerId,
+    required String customerName,
+    required DateTime asOfDate,
+    BillingTemplate? template,
+  }) async {
+    try {
+      // 顧客の未入金請求書を取得
+      final unpaidDocuments = await _docRepo.getUnpaidDocuments();
+      final documents = unpaidDocuments
+          .where((doc) => doc.customerId == customerId)
+          .toList();
+
+      // 先月の繰越分を取得
+      final lastMonth = DateTime(asOfDate.year, asOfDate.month - 1);
+      final lastMonthDocuments = documents
+          .where((doc) =>
+              doc.date.year == lastMonth.year &&
+              doc.date.month == lastMonth.month)
+          .toList();
+
+      // PDF生成
+      final pdf = pw.Document();
+      final font = _getFont();
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) => _buildReportContentFromDocuments(
+            context,
+            customerName,
+            documents,
+            asOfDate,
+            font,
+            hasCarryOver: lastMonthDocuments.isNotEmpty,
+          ),
+        ),
+      );
+
+      final pdfBytes = await pdf.save();
+      return pdfBytes;
+    } catch (e) {
+      debugPrint('[ArReportGenerator] generateArReportFromDocument error: $e');
+      rethrow;
+    }
+  }
+
+  /// 売掛レポート生成（メタデータ付き, DocumentModel版）
+  Future<Map<String, dynamic>> generateArReportWithMetadataFromDocument({
+    required String customerId,
+    required String customerName,
+    required DateTime asOfDate,
+    BillingTemplate? template,
+  }) async {
+    try {
+      final pdfBytes = await generateArReportFromDocument(
+        customerId: customerId,
+        customerName: customerName,
+        asOfDate: asOfDate,
+        template: template,
+      );
+
+      final unpaidDocuments = await _docRepo.getUnpaidDocuments();
+      final documents = unpaidDocuments
+          .where((doc) => doc.customerId == customerId)
+          .toList();
+
+      final lastMonth = DateTime(asOfDate.year, asOfDate.month - 1);
+      final lastMonthDocuments = documents
+          .where((doc) =>
+              doc.date.year == lastMonth.year &&
+              doc.date.month == lastMonth.month)
+          .toList();
+
+      final sourceDocuments = await _getSourceDocumentsFromDocuments(documents);
+      final metadata = _buildReportMetadataFromDocuments(
+        customerId, customerName, documents, sourceDocuments, asOfDate,
+        hasCarryOver: lastMonthDocuments.isNotEmpty,
+      );
+
+      return {
+        'pdfBytes': pdfBytes,
+        'metadata': metadata,
+      };
+    } catch (e) {
+      debugPrint('[ArReportGenerator] generateArReportWithMetadataFromDocument error: $e');
+      rethrow;
+    }
+  }
+
+  /// 売掛レポートを一時ファイルとして生成（DocumentModel版）
+  Future<File> generateArReportAsTempFileFromDocument({
+    required String customerId,
+    required String customerName,
+    required DateTime asOfDate,
+    BillingTemplate? template,
+  }) async {
+    try {
+      final result = await generateArReportWithMetadataFromDocument(
+        customerId: customerId,
+        customerName: customerName,
+        asOfDate: asOfDate,
+        template: template,
+      );
+
+      final pdfBytes = result['pdfBytes'] as Uint8List;
+      final tempDir = await getTemporaryDirectory();
+
+      final dateStr = asOfDate.toString().substring(0, 10).replaceAll('-', '');
+      final periodStr = '${asOfDate.year}年${asOfDate.month}月';
+      final safeCustomerName = customerName.replaceAll(RegExp(r'[/:*?"<>|]'), '');
+      final filename = '${dateStr}_売掛レポート_${safeCustomerName}_${periodStr}.pdf';
+
+      final file = File('${tempDir.path}/$filename');
+      await file.writeAsBytes(pdfBytes);
+
+      debugPrint('[ArReportGenerator] Temp file created: ${file.path}');
+      return file;
+    } catch (e) {
+      debugPrint('[ArReportGenerator] generateArReportAsTempFileFromDocument error: $e');
+      rethrow;
+    }
   }
 
   /// 売掛レポート生成（メタデータ付き）
@@ -262,6 +451,40 @@ class ArReportGenerator {
     return pw.Font.courier();
   }
 
+  pw.Widget _buildReportContentFromDocuments(
+    pw.Context context,
+    String customerName,
+    List<DocumentModel> documents,
+    DateTime asOfDate,
+    pw.Font font, {
+    bool hasCarryOver = false,
+  }) {
+    final totalUnpaid = documents.fold<int>(
+      0,
+      (sum, doc) => sum + (doc.total - (doc.receivedAmount ?? 0)),
+    );
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // ヘッダー
+        _buildHeaderFromDocuments(customerName, asOfDate, font, hasCarryOver),
+        pw.SizedBox(height: 20),
+
+        // サマリー
+        _buildSummary(totalUnpaid, font),
+        pw.SizedBox(height: 20),
+
+        // 伝票一覧テーブル
+        _buildDocumentTable(documents, font),
+        pw.SizedBox(height: 20),
+
+        // フッター
+        _buildFooter(font),
+      ],
+    );
+  }
+
   pw.Widget _buildReportContent(
     pw.Context context,
     Customer customer,
@@ -326,6 +549,36 @@ class ArReportGenerator {
     );
   }
 
+  pw.Widget _buildHeaderFromDocuments(String customerName, DateTime asOfDate, pw.Font font, bool hasCarryOver) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          '売掛金レポート',
+          style: pw.TextStyle(
+            font: font,
+            fontSize: 20,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+        pw.SizedBox(height: 10),
+        pw.Text(
+          '顧客名: $customerName',
+          style: pw.TextStyle(font: font, fontSize: 14),
+        ),
+        pw.Text(
+          '作成日: ${_dateFormat.format(asOfDate)}',
+          style: pw.TextStyle(font: font, fontSize: 12),
+        ),
+        if (hasCarryOver)
+          pw.Text(
+            '※先月の繰越分を含みます',
+            style: pw.TextStyle(font: font, fontSize: 10, color: PdfColors.orange800),
+          ),
+      ],
+    );
+  }
+
   pw.Widget _buildSummary(int totalUnpaid, pw.Font font) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
@@ -355,6 +608,50 @@ class ArReportGenerator {
           ),
         ],
       ),
+    );
+  }
+
+  pw.Widget _buildDocumentTable(List<DocumentModel> documents, pw.Font font) {
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey400),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(2),
+        1: pw.FlexColumnWidth(2),
+        2: pw.FlexColumnWidth(1.5),
+        3: pw.FlexColumnWidth(1.5),
+        4: pw.FlexColumnWidth(1.5),
+      },
+      children: [
+        // ヘッダー
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+          children: [
+            _tableCell('伝票番号', font, isHeader: true),
+            _tableCell('発行日', font, isHeader: true),
+            _tableCell('請求額', font, isHeader: true, alignRight: true),
+            _tableCell('入金済', font, isHeader: true, alignRight: true),
+            _tableCell('残高', font, isHeader: true, alignRight: true),
+          ],
+        ),
+        // データ行
+        ...documents.map((doc) {
+          final remaining = doc.total - (doc.receivedAmount ?? 0);
+          return pw.TableRow(
+            children: [
+              _tableCell(doc.documentNumber, font),
+              _tableCell(_dateFormat.format(doc.date), font),
+              _tableCell('¥${_currencyFormat.format(doc.total)}', font, alignRight: true),
+              _tableCell('¥${_currencyFormat.format(doc.receivedAmount ?? 0)}', font, alignRight: true),
+              _tableCell(
+                '¥${_currencyFormat.format(remaining)}',
+                font,
+                alignRight: true,
+                isBold: remaining > 0,
+              ),
+            ],
+          );
+        }),
+      ],
     );
   }
 
@@ -445,18 +742,6 @@ class ArReportGenerator {
     required DateTime endDate,
   }) async {
     try {
-      final customers = await _customerRepo.getAllCustomers();
-      final allInvoices = await _invoiceRepo.getAllInvoices(customers);
-
-      // 期間内の請求書をフィルタ
-      final invoices = allInvoices
-          .where((inv) =>
-              inv.customer.id == customer.id &&
-              inv.documentType == DocumentType.invoice &&
-              !inv.date.isBefore(startDate) &&
-              !inv.date.isAfter(endDate))
-          .toList();
-
       return generateArReport(
         customer: customer,
         asOfDate: endDate,

@@ -56,6 +56,7 @@ class DocumentModel extends H1ExplorerItem {
   final String? paymentStatus;
   final int? receivedAmount;
   final String? dueDate;
+  final bool attachArReport;
 
   DocumentModel({
     required this.id,
@@ -84,6 +85,7 @@ class DocumentModel extends H1ExplorerItem {
     this.paymentStatus,
     this.receivedAmount,
     this.dueDate,
+    this.attachArReport = false,
   });
 
   @override
@@ -202,6 +204,7 @@ class DocumentModel extends H1ExplorerItem {
     String? paymentStatus,
     int? receivedAmount,
     String? dueDate,
+    bool? attachArReport,
   }) {
     return DocumentModel(
       id: id ?? this.id,
@@ -230,6 +233,7 @@ class DocumentModel extends H1ExplorerItem {
       paymentStatus: paymentStatus ?? this.paymentStatus,
       receivedAmount: receivedAmount ?? this.receivedAmount,
       dueDate: dueDate ?? this.dueDate,
+      attachArReport: attachArReport ?? this.attachArReport,
     );
   }
 
@@ -259,6 +263,7 @@ class DocumentModel extends H1ExplorerItem {
     'payment_status': paymentStatus,
     'received_amount': receivedAmount,
     'due_date': dueDate,
+    'attach_ar_report': attachArReport ? 1 : 0,
   };
 
   /// 取消伝票（赤伝）を生成する
@@ -356,6 +361,7 @@ class DocumentModel extends H1ExplorerItem {
       paymentStatus: map['payment_status'] as String?,
       receivedAmount: map['received_amount'] as int?,
       dueDate: map['due_date'] as String?,
+      attachArReport: (map['attach_ar_report'] as int?) == 1,
     );
   }
 }
