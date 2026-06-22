@@ -331,8 +331,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   Widget _buildTaxSection() {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: cardDecoration(cs, color: cs.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
-        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5))),
+      decoration: cardDecoration(cs, radius: 12),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,8 +373,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   Widget _buildBankSection() {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: cardDecoration(cs, color: cs.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
-        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5))),
+      decoration: cardDecoration(cs, radius: 12),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,8 +494,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   Widget _buildFiscalYearSection() {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: cardDecoration(cs, color: cs.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
-        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.5))),
+      decoration: cardDecoration(cs, radius: 12),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -552,8 +549,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     final hasSeal = _info?.sealPath != null;
     final cs3 = Theme.of(context).colorScheme;
     return Container(
-      decoration: cardDecoration(cs3, color: cs3.primaryContainer.withValues(alpha: 0.15), radius: 12).copyWith(
-        border: Border.all(color: cs3.primaryContainer.withValues(alpha: 0.5))),
+      decoration: cardDecoration(cs3, radius: 12),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
