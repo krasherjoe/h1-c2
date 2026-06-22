@@ -51,7 +51,7 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
   Future<void> _switch(String name) async {
     await CompanyService.switchCompany(name);
     if (!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('「$name」に切り替えました')),
     );
@@ -172,7 +172,7 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
       await CompanyService.switchCompany(name);
       await _load();
       if (!mounted) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
