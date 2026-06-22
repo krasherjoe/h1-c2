@@ -367,6 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: SegmentedButton<UpdateFrequency>(
                       segments: const [
+                        ButtonSegment(value: UpdateFrequency.threeMinutes, label: Text('3分')),
                         ButtonSegment(value: UpdateFrequency.daily, label: Text('毎日')),
                         ButtonSegment(value: UpdateFrequency.weekly, label: Text('毎週')),
                         ButtonSegment(value: UpdateFrequency.monthly, label: Text('毎月')),

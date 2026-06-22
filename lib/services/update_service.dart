@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 enum UpdateFrequency {
   off,
+  threeMinutes,
   daily,
   weekly,
   monthly,
@@ -97,6 +98,8 @@ class UpdateService {
     final difference = now.difference(lastCheck);
 
     switch (frequency) {
+      case UpdateFrequency.threeMinutes:
+        return difference.inMinutes >= 3;
       case UpdateFrequency.daily:
         return difference.inDays >= 1;
       case UpdateFrequency.weekly:
