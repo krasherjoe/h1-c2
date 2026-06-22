@@ -48,11 +48,13 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       final configFile = File('${sshDir.path}/config');
       if (await configFile.exists()) {
         _sshConfigController.text = await configFile.readAsString();
+        SshTunnelService.instance.configText = _sshConfigController.text;
       }
 
       final privateKeyFile = File('${sshDir.path}/id_ed25519');
       if (await privateKeyFile.exists()) {
         _sshPrivateKeyController.text = await privateKeyFile.readAsString();
+        SshTunnelService.instance.keyText = _sshPrivateKeyController.text;
       }
     } catch (e) {
       debugPrint('[IceSettings] SSH load error: $e');
