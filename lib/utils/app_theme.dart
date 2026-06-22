@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  // 背景色に基づいて適切な前景色を計算
+  static Color _getContrastColor(Color backgroundColor) {
+    // 輝度を計算（0.0 = 黒, 1.0 = 白）
+    final luminance = backgroundColor.computeLuminance();
+    // 輝度が0.5以上なら黒、それ以下なら白
+    return luminance > 0.5 ? Colors.black : Colors.white;
+  }
   // --- トークン ---
   static const wallpaperLight = Color(0xFFDCDCE0);
   static const wallpaperDark = Color(0xFF2C2C2E);
@@ -32,11 +39,11 @@ class AppTheme {
   static const accentDefault = Color(0xFF455A64);    // blueGrey 600
 
   // --- テーマ構築 ---
-  static ThemeData light({String inputStyle = 'raised', String navbarStyle = 'primary'}) =>
-    _build(seedColor: Colors.indigo, brightness: Brightness.light, inputStyle: inputStyle, navbarStyle: navbarStyle);
+  static ThemeData light({String inputStyle = 'raised', String navbarStyle = 'primary', bool highContrast = true}) =>
+    _build(seedColor: Colors.indigo, brightness: Brightness.light, inputStyle: inputStyle, navbarStyle: navbarStyle, highContrast: highContrast);
 
-  static ThemeData dark({String inputStyle = 'raised', String navbarStyle = 'primary'}) =>
-    _build(seedColor: Colors.indigo, brightness: Brightness.dark, inputStyle: inputStyle, navbarStyle: navbarStyle);
+  static ThemeData dark({String inputStyle = 'raised', String navbarStyle = 'primary', bool highContrast = true}) =>
+    _build(seedColor: Colors.indigo, brightness: Brightness.dark, inputStyle: inputStyle, navbarStyle: navbarStyle, highContrast: highContrast);
 
   static Color _navBarColor(ColorScheme cs, bool isDark, String style) {
     return switch (style) {
@@ -51,12 +58,17 @@ class AppTheme {
     required Brightness brightness,
     required String inputStyle,
     required String navbarStyle,
+    required bool highContrast,
   }) {
     final isDark = brightness == Brightness.dark;
     final scheme = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness).copyWith(
       surfaceContainerLowest: isDark ? wallpaperDark : wallpaperLight,
     );
     final navBarColor = _navBarColor(scheme, isDark, navbarStyle);
+    
+    // コントラスト比の自動計算（highContrastがtrueの場合のみ）
+    final appBarFgColor = highContrast ? _getContrastColor(scheme.primary) : scheme.onPrimary;
+    final tabBarFgColor = highContrast ? _getContrastColor(scheme.primary) : scheme.onPrimary;
 
     return ThemeData(
       colorScheme: scheme,
@@ -66,14 +78,21 @@ class AppTheme {
       brightness: brightness,
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.primary,
-        foregroundColor: scheme.onPrimary,
+        foregroundColor: appBarFgColor,
         surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(size: 20, color: scheme.onPrimary),
+        iconTheme: IconThemeData(size: 20, color: appBarFgColor),
         titleTextStyle: TextStyle(
-          color: scheme.onPrimary,
+          color: appBarFgColor,
           fontWeight: FontWeight.w600,
           fontSize: 16,
         ),
+      ),
+      tabBarTheme: TabBarTheme(
+        labelColor: tabBarFgColor,
+        unselectedLabelColor: tabBarFgColor.withValues(alpha: 0.7),
+        indicatorColor: tabBarFgColor,
+        iconColor: tabBarFgColor,
+        unselectedIconColor: tabBarFgColor.withValues(alpha: 0.7),
       ),
       cardTheme: CardThemeData(
         color: isDark ? cardDark : cardLight,
