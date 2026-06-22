@@ -206,10 +206,9 @@ class UpdateService {
     if (!Platform.isAndroid) return false;
 
     try {
-      // APKファイルを開いてインストールダイアログを表示
       final uri = Uri.file(filePath);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
         return true;
       }
       return false;
