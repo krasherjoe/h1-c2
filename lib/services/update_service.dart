@@ -27,6 +27,8 @@ class UpdateService {
   static const String _prefKeyLastCheckTime = 'last_update_check_time';
   static const String _prefKeyAutoInstall = 'auto_install_enabled';
 
+  http.Client? _downloadClient;
+
   /// 自動アップデートが有効かどうか
   Future<bool> isAutoUpdateEnabled() async {
     final prefs = await SharedPreferences.getInstance();
@@ -181,24 +183,57 @@ class UpdateService {
   }
 
   /// APKをダウンロード
-  Future<String?> downloadApk(String version) async {
+  Future<String?> downloadApk(String version, {Function(double)? onProgress}) async {
     try {
       final dir = await getTemporaryDirectory();
       final fileName = 'h1-core-v$version.apk';
       final filePath = p.join(dir.path, fileName);
 
       final url = 'https://github.com/$_githubOwner/$_githubRepo/releases/download/v$version/$fileName';
-      final response = await http.get(Uri.parse(url));
+      
+      // ストリームでダウンロードしてプログレスを追跡
+      _downloadClient = http.Client();
+      final response = await _downloadClient!.send(http.Request('GET', Uri.parse(url)));
 
       if (response.statusCode == 200) {
+        final contentLength = response.contentLength ?? 0;
         final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
+        final sink = file.openWrite();
+        int downloadedBytes = 0;
+
+        await response.stream.listen(
+          (chunk) {
+            sink.add(chunk);
+            downloadedBytes += chunk.length;
+            if (contentLength > 0 && onProgress != null) {
+              onProgress(downloadedBytes / contentLength);
+            }
+          },
+          onDone: () async {
+            await sink.close();
+          },
+          onError: (e) {
+            sink.close();
+          },
+          cancelOnError: true,
+        ).asFuture();
+
+        await sink.close();
+        _downloadClient = null;
         return filePath;
       }
+      _downloadClient = null;
       return null;
     } catch (e) {
+      _downloadClient = null;
       return null;
     }
+  }
+
+  /// ダウンロードをキャンセル
+  void cancelDownload() {
+    _downloadClient?.close();
+    _downloadClient = null;
   }
 
   /// APKをインストール（Androidのみ）
