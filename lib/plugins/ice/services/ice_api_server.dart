@@ -18,6 +18,7 @@ import 'package:h_1_core/utils/app_theme.dart';
 import 'package:h_1_core/services/backup_operation_service.dart';
 import 'package:h_1_core/services/screenshot_service.dart';
 import 'package:h_1_core/services/test_runner_service.dart';
+import 'package:h_1_core/services/mattermost_polling_service.dart';
 import 'ice_state_collector.dart';
 
 class IceApiServer {
@@ -333,6 +334,7 @@ class IceApiServer {
     final data = jsonDecode(body) as Map<String, dynamic>;
     final name = data['command'] as String?;
     final argsRaw = data['args'] as List<dynamic>?;
+    final useMattermostFallback = (data['use_mattermost_fallback'] as bool?) ?? false;
 
     if (name == null || name.isEmpty) {
       await _error(request.response, HttpStatus.badRequest, 'command is required');
@@ -340,12 +342,34 @@ class IceApiServer {
     }
 
     final args = (argsRaw ?? []).map((a) => a.toString()).toList();
-    final result = await DebugConsole.call(name, args);
+    
+    String result;
+    if (useMattermostFallback) {
+      // Mattermostフォールバック
+      try {
+        final mmService = MattermostPollingService();
+        await mmService.initialize();
+        if (!mmService.isConfigured) {
+          await _error(request.response, HttpStatus.serviceUnavailable, 'Mattermost not configured');
+          return;
+        }
+        
+        final commandMessage = '$name ${args.join(' ')}';
+        result = await mmService.sendAgentMessage(commandMessage);
+      } catch (e) {
+        await _error(request.response, HttpStatus.serviceUnavailable, 'Mattermost fallback failed: $e');
+        return;
+      }
+    } else {
+      // 通常のDebugConsole実行
+      result = await DebugConsole.call(name, args);
+    }
 
     await _respond(request.response, {
       'command': name,
       'args': args,
       'result': result,
+      'method': useMattermostFallback ? 'mattermost' : 'direct',
     });
   }
 

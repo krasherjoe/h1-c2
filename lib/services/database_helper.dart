@@ -14,7 +14,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 9;
+  static const _databaseVersion = 10;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -251,6 +251,39 @@ Future<void> _migrateToVersion(Database db, int version) async {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_backup_operations_created ON backup_operations(created_at)',
       );
+      break;
+    case 10:
+      // 請求テンプレートテーブル
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS billing_templates (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          workflow_steps TEXT,
+          closing_date_type TEXT NOT NULL DEFAULT 'monthly',
+          closing_day INTEGER,
+          closing_month_type TEXT NOT NULL DEFAULT 'everyMonth',
+          payment_term TEXT NOT NULL DEFAULT 'endOfMonth',
+          payment_days INTEGER,
+          invoice_timing TEXT NOT NULL DEFAULT 'onClosingDate',
+          auto_generate_invoice INTEGER NOT NULL DEFAULT 0,
+          auto_send_email INTEGER NOT NULL DEFAULT 0,
+          attach_ar_report INTEGER NOT NULL DEFAULT 0,
+          email_bcc TEXT,
+          email_reply_to TEXT,
+          include_delivery_details INTEGER NOT NULL DEFAULT 1,
+          group_by_project INTEGER NOT NULL DEFAULT 1,
+          invoice_notes TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          is_default INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_billing_templates_default ON billing_templates(is_default)',
+      );
+      // projectsテーブルにbilling_template_idカラム追加
+      await safeAddColumn(db, 'projects', 'billing_template_id TEXT');
       break;
     default:
       break;

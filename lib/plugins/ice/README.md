@@ -97,16 +97,40 @@ DebugConsoleコマンドを実行
 ```json
 {
   "command": "backup.local.create",
-  "args": []
+  "args": [],
+  "use_mattermost_fallback": false
 }
 ```
+
+**リクエストパラメータ:**
+- `command` (必須): 実行するコマンド名
+- `args` (オプション): コマンド引数の配列
+- `use_mattermost_fallback` (オプション): Mattermostフォールバックを使用するか（デフォルト: false）
 
 **レスポンス:**
 ```json
 {
-  "result": "ローカルバックアップ作成完了: /path/to/backup.db (1024 KB)"
+  "command": "backup.local.create",
+  "args": [],
+  "result": "ローカルバックアップ作成完了: /path/to/backup.db (1024 KB)",
+  "method": "direct"
 }
 ```
+
+**Mattermostフォールバック:**
+`use_mattermost_fallback: true` を指定すると、コマンドをMattermost経由で実行します。これにより、DebugConsoleで直接実行できないコマンドや、Mattermost専用コマンドを実行できます。
+
+**Mattermostフォールバック時のレスポンス:**
+```json
+{
+  "command": "mmcheck",
+  "args": [],
+  "result": "Mattermost疎通確認完了",
+  "method": "mattermost"
+}
+```
+
+**注意:** Mattermostフォールバックを使用するには、事前にMattermost PATが設定されている必要があります。
 
 #### POST /db/query
 DBクエリを実行

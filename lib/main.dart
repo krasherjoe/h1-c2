@@ -59,6 +59,7 @@ import 'services/history_db_service.dart';
 import 'services/debug_console.dart';
 import 'services/input_style_service.dart';
 import 'services/sync_garbage_collector.dart';
+import 'services/mattermost_polling_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'widgets/tabbed_workspace.dart';
 import 'screens/plugin_management_screen.dart';
@@ -338,6 +339,57 @@ Future<String> _cmdScreenshotCapture(List<String> args) async {
   }
 }
 
+// Mattermostコマンド実装
+Future<String> _cmdMmSetPat(List<String> args) async {
+  if (args.isEmpty) {
+    return 'PATを指定: !opencode mm.setpat <pat>';
+  }
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('mattermost_pat', args[0]);
+  return 'PAT設定完了';
+}
+
+Future<String> _cmdMmSetChannel(List<String> args) async {
+  if (args.isEmpty) {
+    return 'チャンネルIDを指定: !opencode mm.setchannel <channel_id>';
+  }
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('mattermost_channel_id', args[0]);
+  return 'チャンネルID設定完了';
+}
+
+Future<String> _cmdMmSetBaseUrl(List<String> args) async {
+  if (args.isEmpty) {
+    return 'Base URLを指定: !opencode mm.setbaseurl <base_url>';
+  }
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('mattermost_base_url', args[0]);
+  return 'Base URL設定完了';
+}
+
+Future<String> _cmdMmStatus(List<String> args) async {
+  final mmService = MattermostPollingService();
+  await mmService.initialize();
+  final configured = mmService.isConfigured;
+  return 'Mattermostポーリング: ${configured ? "✅ 設定済み" : "❌ 未設定"}';
+}
+
+Future<String> _cmdMmStart(List<String> args) async {
+  final mmService = MattermostPollingService();
+  await mmService.initialize();
+  if (!mmService.isConfigured) {
+    return '❌ 設定されていません。mm.setpat, mm.setchannel, mm.setbaseurlで設定してください';
+  }
+  mmService.startForegroundPolling();
+  return '✅ Mattermostポーリング開始';
+}
+
+Future<String> _cmdMmStop(List<String> args) async {
+  final mmService = MattermostPollingService();
+  mmService.stopForegroundPolling();
+  return '✅ Mattermostポーリング停止';
+}
+
 Future<String> _cmdScreenshotBase64(List<String> args) async {
   try {
     final screenshotService = ScreenshotService();
@@ -526,6 +578,14 @@ void main() async {
     // スクリーンショットコマンド
     DebugConsole.register('screenshot.capture', _cmdScreenshotCapture);
     DebugConsole.register('screenshot.base64', _cmdScreenshotBase64);
+
+    // Mattermostコマンド
+    DebugConsole.register('mm.setpat', _cmdMmSetPat);
+    DebugConsole.register('mm.setchannel', _cmdMmSetChannel);
+    DebugConsole.register('mm.setbaseurl', _cmdMmSetBaseUrl);
+    DebugConsole.register('mm.status', _cmdMmStatus);
+    DebugConsole.register('mm.start', _cmdMmStart);
+    DebugConsole.register('mm.stop', _cmdMmStop);
   }
 
   Database? db;
@@ -643,15 +703,17 @@ class H1CoreApp extends StatefulWidget {
   State<H1CoreApp> createState() => _H1CoreAppState();
 }
 
-class _H1CoreAppState extends State<H1CoreApp> {
+class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
   bool? _needsConversion;
   bool _isConverting = false;
   late ThemeMode _themeMode;
   final GlobalKey _screenshotKey = GlobalKey();
+  final MattermostPollingService _mmService = MattermostPollingService();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _themeMode = _loadThemeMode(widget.prefs);
     themeNotifier.value = _themeMode;
     WidgetsBinding.instance.addPostFrameCallback((_) => _applySystemNavBar(_themeMode));
@@ -675,6 +737,9 @@ class _H1CoreAppState extends State<H1CoreApp> {
     
     // 自動アップデートチェック
     _checkAutoUpdate();
+    
+    // Mattermostポーリング初期化
+    _mmService.initialize();
   }
 
   Future<void> _checkAutoUpdate() async {
@@ -688,10 +753,31 @@ class _H1CoreAppState extends State<H1CoreApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     themeNotifier.removeListener(_onThemeChanged);
     inputStyleNotifier.removeListener(_onInputStyleChanged);
     CompanyService.activeCompanyNotifier.removeListener(_onCompanyChanged);
+    _mmService.stopForegroundPolling();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // フォアグラウンドに戻った時点でポーリング開始
+        _mmService.startForegroundPolling();
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        // バックグラウンドに入った時点でポーリング停止
+        _mmService.stopForegroundPolling();
+        break;
+    }
   }
 
   Future<void> _checkStoragePermission() async {

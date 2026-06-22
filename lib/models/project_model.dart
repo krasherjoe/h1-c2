@@ -65,6 +65,7 @@ class Project {
   final int currentStageIndex;
   final int sortOrder;
   final String? ganttConfig;
+  final String? billingTemplateId; // 請求テンプレートID
 
   const Project({
     required this.id,
@@ -86,6 +87,7 @@ class Project {
     this.currentStageIndex = 0,
     this.sortOrder = 0,
     this.ganttConfig,
+    this.billingTemplateId,
   });
 
   int get elapsedMonths {
@@ -121,6 +123,7 @@ class Project {
         'current_stage_index': currentStageIndex,
         'sort_order': sortOrder,
         'gantt_config': ganttConfig,
+        'billing_template_id': billingTemplateId,
       };
 
   factory Project.fromMap(Map<String, dynamic> map) {
@@ -155,6 +158,7 @@ class Project {
       currentStageIndex: (map['current_stage_index'] as int?) ?? 0,
       sortOrder: (map['sort_order'] as int?) ?? 0,
       ganttConfig: map['gantt_config'] as String?,
+      billingTemplateId: map['billing_template_id'] as String?,
     );
   }
 
@@ -178,6 +182,7 @@ class Project {
     int? currentStageIndex,
     int? sortOrder,
     String? ganttConfig,
+    String? billingTemplateId,
   }) {
     return Project(
       id: id ?? this.id,
@@ -199,6 +204,7 @@ class Project {
       currentStageIndex: currentStageIndex ?? this.currentStageIndex,
       sortOrder: sortOrder ?? this.sortOrder,
       ganttConfig: ganttConfig ?? this.ganttConfig,
+      billingTemplateId: billingTemplateId ?? this.billingTemplateId,
     );
   }
 }
