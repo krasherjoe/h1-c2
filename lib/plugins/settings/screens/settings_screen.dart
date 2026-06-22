@@ -165,12 +165,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) Navigator.pop(context);
         
         if (apkPath != null) {
-          // APKをインストール
-          final updateService = UpdateService();
-          await updateService.installApk(apkPath);
+          // ダウンロード完了後にファイルフォルダを開く
+          final dir = p.dirname(apkPath);
+          final dirUri = Uri.directory(dir);
+          if (await canLaunchUrl(dirUri)) {
+            await launchUrl(dirUri);
+          }
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('APKをインストールダイアログを表示しました')),
+              const SnackBar(content: Text('APKをダウンロードしました')),
             );
           }
         } else {

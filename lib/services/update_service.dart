@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:flutter/foundation.dart';
 
 enum UpdateFrequency {
@@ -243,8 +242,12 @@ class UpdateService {
     if (kIsWeb || !Platform.isAndroid) return false;
 
     try {
-      final result = await OpenFilex.open(filePath);
-      return result.type == ResultType.done;
+      final uri = Uri.file(filePath);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return true;
+      }
+      return false;
     } catch (e) {
       return false;
     }
