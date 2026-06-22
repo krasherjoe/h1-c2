@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart';
 
 enum UpdateFrequency {
   off,
@@ -238,7 +239,7 @@ class UpdateService {
 
   /// APKをインストール（Androidのみ）
   Future<bool> installApk(String filePath) async {
-    if (!Platform.isAndroid) return false;
+    if (kIsWeb || !Platform.isAndroid) return false;
 
     try {
       final uri = Uri.file(filePath);
