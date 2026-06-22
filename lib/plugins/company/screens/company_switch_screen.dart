@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import '../../../services/company_service.dart';
 import '../../../constants/screen_ids.dart';
+import '../../../widgets/tabbed_workspace.dart';
 
 class CompanySwitchScreen extends StatefulWidget {
   const CompanySwitchScreen({super.key});
@@ -51,7 +52,13 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
   Future<void> _switch(String name) async {
     await CompanyService.switchCompany(name);
     if (!mounted) return;
-    Navigator.of(context).pop();
+    final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+    if (tw != null) {
+      tw.switchToDashboard();
+    } else {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('「$name」に切り替えました')),
     );
@@ -172,7 +179,12 @@ class _CompanySwitchScreenState extends State<CompanySwitchScreen> {
       await CompanyService.switchCompany(name);
       await _load();
       if (!mounted) return;
-    Navigator.of(context).pop();
+      final tw = context.findAncestorStateOfType<TabbedWorkspaceState>();
+      if (tw != null) {
+        tw.switchToDashboard();
+      } else {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
