@@ -15,6 +15,7 @@ import 'services/company_service.dart';
 import 'services/collection_project_service.dart';
 import 'services/backup_operation_service.dart';
 import 'services/screenshot_service.dart';
+import 'services/update_service.dart';
 import 'plugins/backup/services/local_backup_service.dart';
 import 'services/drive_backup_service.dart';
 import 'plugin_system/plugin_registry.dart';
@@ -667,9 +668,21 @@ class _H1CoreAppState extends State<H1CoreApp> {
     _checkStoragePermission();
     
     // ICE-APIプラグインが有効な場合のみスクリーンショット機能を有効化
-    final iceEnabled = widget.registry.isEnabled('com.h1.plugin.ice');
+    final iceEnabled = widget.registry.isEnabled('com.h1.core.ice');
     if (iceEnabled) {
       ScreenshotService().setGlobalKey(_screenshotKey);
+    }
+    
+    // 自動アップデートチェック
+    _checkAutoUpdate();
+  }
+
+  Future<void> _checkAutoUpdate() async {
+    final updateService = UpdateService();
+    final needsUpdate = await updateService.performAutoCheck();
+    if (needsUpdate && mounted) {
+      // 更新がある場合は通知などを表示（将来的に実装）
+      debugPrint('[AutoUpdate] Update available');
     }
   }
 

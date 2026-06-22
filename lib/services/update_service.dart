@@ -3,6 +3,14 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
+
+enum UpdateFrequency {
+  off,
+  daily,
+  weekly,
+  monthly,
+}
 
 class UpdateService {
   static final UpdateService _instance = UpdateService._internal();
@@ -12,6 +20,88 @@ class UpdateService {
   static const String _githubOwner = 'krasherjoe';
   static const String _githubRepo = 'h1-core';
   static const String _githubApiUrl = 'https://api.github.com';
+  static const String _prefKeyAutoUpdate = 'auto_update_enabled';
+  static const String _prefKeyUpdateFrequency = 'update_frequency';
+  static const String _prefKeyLastCheckTime = 'last_update_check_time';
+
+  /// 自動アップデートが有効かどうか
+  Future<bool> isAutoUpdateEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefKeyAutoUpdate) ?? false;
+  }
+
+  /// 自動アップデートを設定
+  Future<void> setAutoUpdateEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKeyAutoUpdate, enabled);
+  }
+
+  /// アップデート頻度を取得
+  Future<UpdateFrequency> getUpdateFrequency() async {
+    final prefs = await SharedPreferences.getInstance();
+    final frequency = prefs.getString(_prefKeyUpdateFrequency) ?? 'off';
+    return UpdateFrequency.values.firstWhere(
+      (e) => e.name == frequency,
+      orElse: () => UpdateFrequency.off,
+    );
+  }
+
+  /// アップデート頻度を設定
+  Future<void> setUpdateFrequency(UpdateFrequency frequency) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeyUpdateFrequency, frequency.name);
+  }
+
+  /// 最後のチェック時間を取得
+  Future<DateTime?> getLastCheckTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final timestamp = prefs.getString(_prefKeyLastCheckTime);
+    if (timestamp != null) {
+      return DateTime.tryParse(timestamp);
+    }
+    return null;
+  }
+
+  /// 最後のチェック時間を更新
+  Future<void> _updateLastCheckTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeyLastCheckTime, DateTime.now().toIso8601String());
+  }
+
+  /// 自動チェックが必要かどうか
+  Future<bool> shouldAutoCheck() async {
+    final enabled = await isAutoUpdateEnabled();
+    if (!enabled) return false;
+
+    final frequency = await getUpdateFrequency();
+    if (frequency == UpdateFrequency.off) return false;
+
+    final lastCheck = await getLastCheckTime();
+    if (lastCheck == null) return true;
+
+    final now = DateTime.now();
+    final difference = now.difference(lastCheck);
+
+    switch (frequency) {
+      case UpdateFrequency.daily:
+        return difference.inDays >= 1;
+      case UpdateFrequency.weekly:
+        return difference.inDays >= 7;
+      case UpdateFrequency.monthly:
+        return difference.inDays >= 30;
+      case UpdateFrequency.off:
+        return false;
+    }
+  }
+
+  /// 自動チェックを実行
+  Future<bool> performAutoCheck() async {
+    if (!await shouldAutoCheck()) return false;
+
+    final hasUpdate = await needsUpdate();
+    await _updateLastCheckTime();
+    return hasUpdate;
+  }
 
   /// 現在のバージョンを取得
   Future<String> getCurrentVersion() async {
