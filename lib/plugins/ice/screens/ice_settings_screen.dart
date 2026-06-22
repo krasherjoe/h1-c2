@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:h_1_core/services/company_service.dart';
@@ -26,9 +27,7 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
   String? _sshDir;
 
   // oldh1変換関連
-  final _oldh1DirController = TextEditingController(
-    text: '/storage/emulated/0/Documents/販売アシスト1号code',
-  );
+  final _oldh1DirController = TextEditingController();
   List<FileSystemEntity> _foundDbFiles = [];
   bool _isScanning = false;
   bool _isConverting = false;
@@ -39,6 +38,7 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     _running = widget.apiServer.isRunning;
     _portController.text = widget.apiServer.port.toString();
     _loadSshFiles();
+    _resolveOldh1Paths();
   }
 
   @override
@@ -153,6 +153,13 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
     }
   }
 
+  Future<void> _resolveOldh1Paths() async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      _oldh1DirController.text = appDir.path;
+    } catch (_) {}
+  }
+
   Future<void> _scanOldh1Dir() async {
     setState(() {
       _isScanning = true;
@@ -161,24 +168,40 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       _info = null;
     });
     try {
-      final dir = Directory(_oldh1DirController.text.trim());
-      if (!await dir.exists()) {
+      final dirPath = _oldh1DirController.text.trim();
+      if (dirPath.isEmpty) {
         setState(() {
-          _error = 'ディレクトリが存在しません: ${dir.path}';
+          _error = 'ディレクトリパスを入力してください';
           _isScanning = false;
         });
         return;
       }
-      final files = await dir.list().where((e) =>
-        e is File &&
-        e.path.endsWith('.db')
-      ).toList();
-      files.sort((a, b) => (a as File).lastModifiedSync().compareTo(
-        (b as File).lastModifiedSync()));
+      final dir = Directory(dirPath);
+      if (!await dir.exists()) {
+        setState(() {
+          _foundDbFiles = [];
+          _isScanning = false;
+          _info = 'ディレクトリが存在しません: $dirPath\n他のパスを試すか、正しいパスを入力してください。';
+        });
+        return;
+      }
+      final files = await dir.list().where((e) {
+        if (e is! File) return false;
+        final name = e.uri.pathSegments.last.toLowerCase();
+        return name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3');
+      }).toList();
+      files.sort((a, b) => (b as File).lastModifiedSync().compareTo(
+        (a as File).lastModifiedSync()));
       setState(() {
-        _foundDbFiles = files.reversed.toList();
+        _foundDbFiles = files;
         _isScanning = false;
-        _info = '${files.length}個のDBファイルを見つけました';
+        if (files.isEmpty) {
+          _info = '$dirPath\n.dbファイルが見つかりませんでした。\n'
+              '・他のパスを試す\n'
+              '・ファイルマネージャーで .db ファイルを探してください';
+        } else {
+          _info = '${files.length}個のDBファイルを見つけました';
+        }
       });
     } catch (e) {
       setState(() {
@@ -656,6 +679,39 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // よく使うパス
+            Wrap(
+              spacing: 4,
+              children: [
+                Text('クイックパス: ', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                ActionChip(
+                  label: const Text('アプリデータ', style: TextStyle(fontSize: 10)),
+                  onPressed: () async {
+                    final appDir = await getApplicationDocumentsDirectory();
+                    _oldh1DirController.text = appDir.path;
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+                ActionChip(
+                  label: const Text('Documents', style: TextStyle(fontSize: 10)),
+                  onPressed: () {
+                    _oldh1DirController.text = '/storage/emulated/0/Documents';
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+                ActionChip(
+                  label: const Text('SDカード', style: TextStyle(fontSize: 10)),
+                  onPressed: () {
+                    _oldh1DirController.text = '/storage/emulated/0';
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                 ),
               ],
             ),
