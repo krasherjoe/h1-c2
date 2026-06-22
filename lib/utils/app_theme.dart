@@ -91,8 +91,6 @@ class AppTheme {
         labelColor: tabBarFgColor,
         unselectedLabelColor: tabBarFgColor.withValues(alpha: 0.7),
         indicatorColor: tabBarFgColor,
-        iconColor: tabBarFgColor,
-        unselectedIconColor: tabBarFgColor.withValues(alpha: 0.7),
       ),
       cardTheme: CardThemeData(
         color: isDark ? cardDark : cardLight,
