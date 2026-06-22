@@ -3,6 +3,7 @@ import '../models/purchase_model.dart';
 import '../logic/purchase_converter.dart';
 import '../services/purchase_repository.dart';
 import '../../../services/error_reporter.dart';
+import '../../inventory/services/stock_transaction_repository.dart';
 import 'purchase_preview_page.dart';
 
 class PurchaseViewer extends StatelessWidget {
@@ -122,6 +123,30 @@ class PurchaseViewer extends StatelessWidget {
               documentNumber: await repo.generateDocumentNumber(next),
             ));
             await repo.save(newPurchase);
+
+            // 入荷伝票の場合、在庫を自動入庫
+            if (next == PurchaseType.receipt) {
+              try {
+                final stockRepo = StockTransactionRepository();
+                for (final item in newPurchase.items) {
+                  if (item.productId.isNotEmpty) {
+                    await stockRepo.inbound(
+                      productId: item.productId,
+                      productName: item.productName,
+                      quantity: item.quantity.round(),
+                      referenceId: newPurchase.id,
+                      referenceNumber: newPurchase.documentNumber,
+                      notes: '発注 ${purchase.documentNumber} → 入荷による自動入庫',
+                    );
+                    debugPrint('[PurchaseViewer] Stock inbound: ${item.productName} x ${item.quantity}');
+                  }
+                }
+              } catch (e) {
+                debugPrint('[PurchaseViewer] Stock inbound error: $e');
+                // 入庫失敗は伝票保存には影響しない
+              }
+            }
+
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('${next.label}伝票を作成しました')),

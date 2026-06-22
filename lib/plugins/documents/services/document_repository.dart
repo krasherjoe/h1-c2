@@ -10,6 +10,7 @@ import '../../../services/fiscal_year_service.dart';
 import '../../../services/company_repository.dart';
 import '../../../services/project_repository.dart';
 import '../../../services/sales_queue_repository.dart';
+import '../../../plugins/inventory/services/stock_transaction_repository.dart';
 import '../models/document_model.dart';
 import '../models/document_edit_log.dart';
 
@@ -197,6 +198,30 @@ class DocumentRepository {
       } catch (e) {
         debugPrint('[DocRepo] Sales queue add error: $e');
         // キュー追加失敗は伝票保存には影響しない
+      }
+    }
+
+    // 納品書確定時、在庫を出庫
+    if (document.documentType == DocumentType.delivery &&
+        document.status == 'confirmed') {
+      try {
+        final stockRepo = StockTransactionRepository();
+        for (final item in document.items) {
+          if (item.productId != null && item.productId!.isNotEmpty) {
+            await stockRepo.outbound(
+              productId: item.productId!,
+              productName: item.productName ?? '',
+              quantity: item.quantity.round(),
+              referenceId: document.id,
+              referenceNumber: document.documentNumber,
+              notes: '納品書 ${document.documentNumber} による自動出庫',
+            );
+            debugPrint('[DocRepo] Stock outbound: ${item.productName} x ${item.quantity}');
+          }
+        }
+      } catch (e) {
+        debugPrint('[DocRepo] Stock outbound error: $e');
+        // 在庫出庫失敗は伝票保存には影響しない
       }
     }
 
