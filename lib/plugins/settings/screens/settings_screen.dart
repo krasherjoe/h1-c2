@@ -36,6 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoUpdateEnabled = false;
   UpdateFrequency _updateFrequency = UpdateFrequency.off;
   bool _autoInstallEnabled = false;
+  String? _downloadedApkPath;
 
   @override
   void initState() {
@@ -52,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final autoUpdateEnabled = await updateService.isAutoUpdateEnabled();
     final updateFrequency = await updateService.getUpdateFrequency();
     final autoInstallEnabled = await updateService.isAutoInstallEnabled();
+    final downloadedApkPath = await updateService.getDownloadedApkPath();
     final lastBackupStr = prefs.getString('drive_backup_last');
     String lastBackup = '';
     if (lastBackupStr != null) {
@@ -71,6 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _autoUpdateEnabled = autoUpdateEnabled;
       _updateFrequency = updateFrequency;
       _autoInstallEnabled = autoInstallEnabled;
+      _downloadedApkPath = downloadedApkPath;
       _lastBackup = lastBackup;
     });
   }
@@ -85,6 +88,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _needsUpdate = needsUpdate;
       _checkingUpdate = false;
     });
+  }
+
+  Future<void> _openDownloadFolder() async {
+    if (_downloadedApkPath == null) return;
+    final dir = p.dirname(_downloadedApkPath!);
+    final dirUri = Uri.directory(dir);
+    if (await canLaunchUrl(dirUri)) {
+      await launchUrl(dirUri);
+    }
   }
 
   Future<void> _downloadAndInstall() async {
@@ -165,12 +177,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) Navigator.pop(context);
         
         if (apkPath != null) {
-          // ダウンロード完了後にファイルフォルダを開く
-          final dir = p.dirname(apkPath);
-          final dirUri = Uri.directory(dir);
-          if (await canLaunchUrl(dirUri)) {
-            await launchUrl(dirUri);
-          }
+          final updateService = UpdateService();
+          await updateService.setDownloadedApkPath(apkPath);
+          setState(() => _downloadedApkPath = apkPath);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('APKをダウンロードしました')),
@@ -466,23 +475,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : _downloading
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : _latestVersion.isEmpty
+                      : _downloadedApkPath != null
                           ? TextButton.icon(
-                              onPressed: _checkUpdate,
-                              icon: const Icon(Icons.refresh, size: 16),
-                              label: const Text('更新'),
+                              onPressed: _openDownloadFolder,
+                              icon: const Icon(Icons.folder_open, size: 16),
+                              label: const Text('フォルダを開く'),
                             )
-                          : InkWell(
-                              onTap: _downloadAndInstall,
-                              child: Text(
-                                _latestVersion,
-                                style: TextStyle(
-                                  color: _needsUpdate ? cs.error : cs.onSurfaceVariant,
-                                  decoration: TextDecoration.underline,
+                          : _latestVersion.isEmpty
+                              ? TextButton.icon(
+                                  onPressed: _checkUpdate,
+                                  icon: const Icon(Icons.refresh, size: 16),
+                                  label: const Text('更新'),
+                                )
+                              : InkWell(
+                                  onTap: _downloadAndInstall,
+                                  child: Text(
+                                    _latestVersion,
+                                    style: TextStyle(
+                                      color: _needsUpdate ? cs.error : cs.onSurfaceVariant,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
             ),
+            if (_downloadedApkPath != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, size: 16, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'APKをダウンロード済み',
+                        style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const Divider(height: 1),
             SwitchListTile(
               value: _autoUpdateEnabled,

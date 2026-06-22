@@ -27,6 +27,7 @@ class UpdateService {
   static const String _prefKeyUpdateFrequency = 'update_frequency';
   static const String _prefKeyLastCheckTime = 'last_update_check_time';
   static const String _prefKeyAutoInstall = 'auto_install_enabled';
+  static const String _prefKeyDownloadedApkPath = 'downloaded_apk_path';
 
   http.Client? _downloadClient;
 
@@ -86,6 +87,29 @@ class UpdateService {
     await prefs.setString(_prefKeyLastCheckTime, DateTime.now().toIso8601String());
   }
 
+  /// ダウンロード済みAPKのパスを取得
+  Future<String?> getDownloadedApkPath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_prefKeyDownloadedApkPath);
+  }
+
+  /// ダウンロード済みAPKのパスを設定
+  Future<void> setDownloadedApkPath(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeyDownloadedApkPath, path);
+  }
+
+  /// ダウンロード済みAPKのパスを設定（内部用）
+  Future<void> _setDownloadedApkPath(String path) async {
+    await setDownloadedApkPath(path);
+  }
+
+  /// ダウンロード済みAPKのパスをクリア
+  Future<void> _clearDownloadedApkPath() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefKeyDownloadedApkPath);
+  }
+
   /// 自動チェックが必要かどうか
   Future<bool> shouldAutoCheck() async {
     final enabled = await isAutoUpdateEnabled();
@@ -121,12 +145,15 @@ class UpdateService {
     final hasUpdate = await needsUpdate();
     await _updateLastCheckTime();
 
-    if (hasUpdate && await isAutoInstallEnabled()) {
+    if (hasUpdate) {
       final latest = await getLatestVersion();
       if (latest != null) {
         final apkPath = await downloadApk(latest);
         if (apkPath != null) {
-          await installApk(apkPath);
+          await _setDownloadedApkPath(apkPath);
+          if (await isAutoInstallEnabled()) {
+            await installApk(apkPath);
+          }
         }
       }
     }
