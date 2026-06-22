@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 import '../../../utils/theme_utils.dart' show textColorOn, cardDecoration;
 import 'package:uuid/uuid.dart';
@@ -12,6 +13,7 @@ import '../../../services/project_repository.dart';
 import '../../../services/database_helper.dart';
 import '../../../services/error_reporter.dart';
 import '../../../services/ar_report_generator.dart';
+import '../../../services/sales_queue_repository.dart';
 import '../../../models/document_type_colors.dart';
 import '../../../widgets/document_edit_log_section.dart';
 import '../../../widgets/document_summary_section.dart';
@@ -910,6 +912,23 @@ class _DocumentPageState extends State<DocumentPage> {
         await repo.save(docCopy.copyWith(status: 'confirmed', isLocked: true));
         await repo.addEditLog(docCopy.id, '正式発行',
           details: '${docCopy.documentType.label} #${docCopy.documentNumber} ${docCopy.customerName}\n${_items.length}明細');
+        
+        // 納品書の場合、SalesQueueを自動生成
+        if (docCopy.documentType == DocumentType.delivery && docCopy.projectId != null) {
+          try {
+            final salesQueueRepo = SalesQueueRepository();
+            await salesQueueRepo.createEntry(
+              projectId: docCopy.projectId!,
+              documentId: docCopy.id,
+              documentType: 'delivery',
+              triggeredAt: DateTime.now(),
+            );
+          } catch (e) {
+            // SalesQueue生成失敗は致命的ではないのでログのみ
+            debugPrint('[DocumentPage] Failed to create SalesQueue: $e');
+          }
+        }
+        
         return true;
       },
       showShare: true, showPrint: true, customerEmail: email,

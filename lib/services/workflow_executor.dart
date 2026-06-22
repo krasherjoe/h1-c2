@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'dart:typed_data';
 import '../models/billing_template_model.dart';
-import '../models/invoice_models.dart';
+import '../models/invoice_models.dart' as invoice_models;
 import '../models/customer_model.dart';
 import '../plugins/documents/models/document_model.dart';
 import '../plugins/documents/services/document_repository.dart';
+import '../plugins/documents/logic/document_pdf_generator.dart' show generateDocumentPdf;
 import 'project_repository.dart';
 import 'billing_converter_service.dart';
 import 'invoice_repository.dart';
@@ -61,8 +63,8 @@ class WorkflowExecutor {
   /// 📦 納品書発行
   Future<void> _executeDelivery(String projectId, String? documentId) async {
     debugPrint('[WorkflowExecutor] Delivery step: documentId=$documentId');
-    // 納品書発行は既存のロジックで実行済み
-    // ここではステップ進捗のみ更新
+    // 納品書正式発行時にDocumentPageでSalesQueueが作成される
+    // ここでは何もしない
   }
 
   /// 💰 現金回収
@@ -96,12 +98,13 @@ class WorkflowExecutor {
 
       // 顧客取得
       final project = await _projectRepo.getById(projectId);
-      if (project?.customerId == null) {
+      if (project == null || project.customerId == null) {
         debugPrint('[WorkflowExecutor] No customer for project: $projectId');
         return;
       }
 
-      final customer = await _customerRepo.getCustomerById(project!.customerId!);
+      final customers = await _customerRepo.getAllCustomers();
+      final customer = customers.where((c) => c.id == project.customerId).firstOrNull;
       if (customer == null) {
         debugPrint('[WorkflowExecutor] Customer not found: ${project.customerId}');
         return;
@@ -131,20 +134,21 @@ class WorkflowExecutor {
     try {
       // 案件の最新請求書を取得
       final project = await _projectRepo.getById(projectId);
-      if (project?.customerId == null) return;
+      if (project == null || project.customerId == null) return;
 
-      final customer = await _customerRepo.getCustomerById(project!.customerId!);
+      final customers = await _customerRepo.getAllCustomers();
+      final customer = customers.where((c) => c.id == project.customerId).firstOrNull;
       if (customer == null) {
         debugPrint('[WorkflowExecutor] Customer not found: ${project.customerId}');
         return;
       }
 
-      final customers = await _customerRepo.getAllCustomers();
-      final invoices = await _invoiceRepo.getAllInvoices(customers)
+      final allInvoices = await _invoiceRepo.getAllInvoices(customers);
+      final invoices = allInvoices
           .where((inv) =>
               inv.customer.id == customer.id &&
               inv.projectId == projectId &&
-              inv.documentType == DocumentType.invoice &&
+              inv.documentType == invoice_models.DocumentType.invoice &&
               !inv.isLocked)
           .toList();
 
@@ -156,13 +160,30 @@ class WorkflowExecutor {
       // 最新の請求書を送信
       final invoice = invoices.first;
 
-      // TODO: PDF生成（Invoice→DocumentModel変換が必要）
-      // final pdfBytes = await _generateInvoicePdf(invoice);
-      
-      // TODO: メール送信
-      // final success = await GmailSender.sendPdf(...);
-      
-      debugPrint('[WorkflowExecutor] Email send skipped (PDF generation not implemented)');
+      // PDF生成（Invoice→DocumentModel変換）
+      final document = _converter.invoiceToDocumentModel(invoice);
+      final pdf = await generateDocumentPdf(document);
+      final pdfBytes = Uint8List.fromList(await pdf.save());
+
+      // メール送信
+      if (customer.email == null || customer.email!.isEmpty) {
+        debugPrint('[WorkflowExecutor] No email for customer: ${customer.displayName}');
+        return;
+      }
+
+      final success = await GmailSender.sendPdf(
+        to: customer.email!,
+        subject: invoice.mailTitleCore,
+        body: invoice.mailBodyText,
+        pdfBytes: pdfBytes,
+        pdfFilename: invoice.mailAttachmentFileName,
+      );
+
+      if (success) {
+        debugPrint('[WorkflowExecutor] Email sent for invoice: ${invoice.id}');
+      } else {
+        debugPrint('[WorkflowExecutor] Email send failed for invoice: ${invoice.id}');
+      }
     } catch (e) {
       debugPrint('[WorkflowExecutor] Send email error: $e');
       rethrow;

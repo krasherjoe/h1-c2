@@ -13,6 +13,8 @@ import 'project_repository.dart';
 import 'ar_report_generator.dart';
 import 'sales_queue_repository.dart';
 import '../models/sales_queue_model.dart';
+import '../models/invoice_models.dart' as invoice_models;
+import '../models/billing_template_model.dart';
 import '../plugins/documents/logic/document_pdf_generator.dart';
 
 /// 請求書自動発行スケジューラ
@@ -216,11 +218,12 @@ class BillingSchedulerService {
   }
 
   /// 請求書をメールで送信
-  Future<void> _sendInvoicesByEmail(List<Invoice> invoices, BillingTemplate template) async {
+  Future<void> _sendInvoicesByEmail(List<invoice_models.Invoice> invoices, BillingTemplate template) async {
     try {
       for (final invoice in invoices) {
         // 顧客情報取得
-        final customer = await _customerRepo.getCustomerById(invoice.customer.id);
+        final customers = await _customerRepo.getAllCustomers();
+        final customer = customers.where((c) => c.id == invoice.customer.id).firstOrNull;
         if (customer == null) {
           _logger.w('[BillingScheduler] Customer not found: ${invoice.customer.id}');
           continue;
@@ -291,13 +294,16 @@ class BillingSchedulerService {
   }
 
   /// 請求書PDF生成
-  Future<Uint8List?> _generateInvoicePdf(Invoice invoice) async {
+  Future<Uint8List?> _generateInvoicePdf(invoice_models.Invoice invoice) async {
     try {
-      // 既存のdocument_pdf_generator.dartを使用
-      // InvoiceをDocumentModelに変換してからPDF生成
-      // TODO: Invoice→DocumentModel変換ロジックを実装
-      _logger.w('[BillingScheduler] Invoice PDF generation requires Invoice→DocumentModel conversion');
-      return null;
+      // InvoiceをDocumentModelに変換
+      final document = _converter.invoiceToDocumentModel(invoice);
+
+      // PDF生成
+      final pdf = await generateDocumentPdf(document);
+      final pdfBytes = Uint8List.fromList(await pdf.save());
+
+      return pdfBytes;
     } catch (e) {
       _logger.e('[BillingScheduler] Generate invoice PDF error: $e');
       return null;
@@ -305,7 +311,7 @@ class BillingSchedulerService {
   }
 
   /// 売掛レポート生成（一時ファイル）
-  Future<File?> _generateArReport(Invoice invoice, BillingTemplate template) async {
+  Future<File?> _generateArReport(invoice_models.Invoice invoice, BillingTemplate template) async {
     try {
       final file = await _arReportGenerator.generateArReportAsTempFile(
         customer: invoice.customer,
@@ -322,7 +328,24 @@ class BillingSchedulerService {
   /// 請求書のメール送信日時を更新
   Future<void> _updateInvoiceEmailSent(String invoiceId, String email) async {
     try {
-      // TODO: InvoiceRepositoryにメール送信日時更新メソッドを追加
+      // InvoiceRepositoryを通じて更新
+      // まず現在の請求書を取得
+      final customers = await _customerRepo.getAllCustomers();
+      final invoices = await _invoiceRepo.getAllInvoices(customers);
+      final invoice = invoices.where((inv) => inv.id == invoiceId).firstOrNull;
+
+      if (invoice == null) {
+        _logger.w('[BillingScheduler] Invoice not found: $invoiceId');
+        return;
+      }
+
+      // メール送信日時を更新して保存
+      final updated = invoice.copyWith(
+        emailSentAt: DateTime.now().toIso8601String(),
+        emailSentTo: email,
+      );
+      await _invoiceRepo.updateInvoice(updated);
+
       _logger.d('[BillingScheduler] Update email sent for invoice: $invoiceId');
     } catch (e) {
       _logger.e('[BillingScheduler] Update email sent error: $e');

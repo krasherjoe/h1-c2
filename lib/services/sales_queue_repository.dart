@@ -40,6 +40,37 @@ class SalesQueueRepository {
     }
   }
 
+  /// キューにエントリ追加（簡易版 - ワークフロー用）
+  Future<void> createEntry({
+    required String projectId,
+    required String documentId,
+    required String documentType,
+    required DateTime triggeredAt,
+  }) async {
+    try {
+      final db = await _dbHelper.database;
+      final now = DateTime.now();
+      
+      final entry = SalesQueueEntry(
+        id: _uuid.v4(),
+        projectId: projectId,
+        documentId: documentId,
+        deliveryDate: triggeredAt,
+        totalAmount: 0, // 後で更新
+        customerId: null,
+        customerName: null,
+        status: QueueStatus.pending,
+        createdAt: now,
+      );
+
+      await db.insert('sales_queue', entry.toMap());
+      debugPrint('[SalesQueue] Entry created: ${entry.id} for project: $projectId, document: $documentId');
+    } catch (e) {
+      debugPrint('[SalesQueue] createEntry error: $e');
+      rethrow;
+    }
+  }
+
   /// 顧客別の待機中エントリを取得
   Future<List<SalesQueueEntry>> getPendingEntries() async {
     try {

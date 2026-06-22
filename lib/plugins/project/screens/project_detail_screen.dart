@@ -4,8 +4,10 @@ import 'dart:convert';
 import '../../../services/project_repository.dart';
 import '../../../services/database_helper.dart';
 import '../../../services/error_log_service.dart';
+import '../../../services/billing_template_repository.dart';
 import '../../../models/project_model.dart';
 import '../../../models/document_type_colors.dart';
+import '../../../models/billing_template_model.dart';
 import '../../documents/models/document_model.dart';
 import '../../documents/logic/document_converter.dart';
 import '../../documents/screens/document_page.dart';
@@ -33,9 +35,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   final _repo = ProjectRepository();
   final _docRepo = DocumentRepository();
   final _memoRepo = MemorandumRepository();
+  final _billingTemplateRepo = BillingTemplateRepository();
   Project? _project;
   List<Map<String, dynamic>> _linkedDocs = [];
   List<Memorandum> _memorandums = [];
+  List<BillingTemplate> _billingTemplates = [];
   bool _loading = true;
 
   @override
@@ -51,11 +55,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       final project = await _repo.getById(widget.projectId!);
       final docs = await _repo.getLinkedDocuments(widget.projectId!);
       final memos = await _memoRepo.getByProject(widget.projectId!);
+      final billingTemplates = await _billingTemplateRepo.getAllTemplates();
       if (!mounted) return;
       setState(() {
         _project = project;
         _linkedDocs = docs;
         _memorandums = memos;
+        _billingTemplates = billingTemplates;
         _loading = false;
       });
     } catch (e) {
@@ -192,6 +198,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           _infoRow('種別', project.type.displayName, cs),
           _infoRow('ステージ', project.pipelineStage, cs),
           _infoRow('合計金額', '￥${_formatMoney(project.totalAmount)}', cs),
+          _buildBillingTemplateRow(project, cs),
+          _buildWorkflowProgressRow(project, cs),
           if (project.startDate != null) ...[
             const SizedBox(height: 8),
             _buildTimeline(project, cs),
@@ -288,6 +296,282 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildBillingTemplateRow(Project project, ColorScheme cs) {
+    final currentTemplate = _billingTemplates.firstWhere(
+      (t) => t.id == project.billingTemplateId,
+      orElse: () => _billingTemplates.firstWhere(
+        (t) => t.isDefault,
+        orElse: () => BillingTemplate(
+          id: '',
+          name: '未設定',
+          workflowSteps: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text('請求テンプレート', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () => _showBillingTemplateDialog(project),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      currentTemplate.name,
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.onSurface),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkflowProgressRow(Project project, ColorScheme cs) {
+    // テンプレート取得
+    final template = _billingTemplates.firstWhere(
+      (t) => t.id == project.billingTemplateId,
+      orElse: () => _billingTemplates.firstWhere(
+        (t) => t.isDefault,
+        orElse: () => BillingTemplate(
+          id: '',
+          name: '未設定',
+          workflowSteps: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ),
+    );
+
+    if (template.workflowSteps.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // 現在のステップを特定
+    final currentStepName = project.currentWorkflowStep;
+    final currentStepIndex = template.workflowSteps.indexWhere(
+      (step) => step.name == currentStepName,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text('ワークフロー', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ステップ表示
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: template.workflowSteps.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final step = entry.value;
+                    final isCurrent = idx == currentStepIndex;
+                    final isPast = idx < currentStepIndex;
+                    final isFuture = idx > currentStepIndex;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isCurrent 
+                            ? cs.primary 
+                            : isPast 
+                                ? cs.primaryContainer 
+                                : cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isCurrent 
+                              ? cs.primary 
+                              : cs.outlineVariant,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            step.emoji,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            step.displayName,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                              color: isCurrent 
+                                  ? cs.onPrimary 
+                                  : cs.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                // 進捗情報
+                if (currentStepName != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '現在: ${template.workflowSteps.where((s) => s.name == currentStepName).firstOrNull?.displayName ?? currentStepName}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                if (project.workflowStartedAt != null) ...[
+                  Text(
+                    '開始: ${_formatDate(project.workflowStartedAt!)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                if (project.workflowCompletedAt != null) ...[
+                  Text(
+                    '完了: ${_formatDate(project.workflowCompletedAt!)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+                // 制御ボタン
+                if (project.workflowCompletedAt == null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => _resetWorkflow(project),
+                        style: ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh, size: 14),
+                            const SizedBox(width: 4),
+                            Text('リセット', style: TextStyle(fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showBillingTemplateDialog(Project project) async {
+    final selectedTemplateId = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('請求テンプレートを選択'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _billingTemplates.length,
+            itemBuilder: (context, index) {
+              final template = _billingTemplates[index];
+              final isSelected = template.id == project.billingTemplateId;
+              return ListTile(
+                title: Text(template.name),
+                subtitle: template.description != null ? Text(template.description!) : null,
+                trailing: isSelected ? Icon(Icons.check, color: Theme.of(ctx).colorScheme.primary) : null,
+                onTap: () => Navigator.of(ctx).pop(template.id),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('キャンセル'),
+          ),
+        ],
+      ),
+    );
+
+    if (selectedTemplateId == null) return;
+
+    try {
+      final updated = project.copyWith(billingTemplateId: selectedTemplateId);
+      await _repo.save(updated);
+      SyncService.pushChange(
+        entityType: 'project',
+        entityId: project.id,
+        action: 'save',
+        data: updated.toMap(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請求テンプレートを更新しました')),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('更新エラー: $e')),
+      );
+    }
+  }
+
+  Future<void> _resetWorkflow(Project project) async {
+    try {
+      final updated = project.copyWith(
+        currentWorkflowStep: null,
+        workflowStartedAt: null,
+        workflowCompletedAt: null,
+      );
+      await _repo.save(updated);
+      SyncService.pushChange(
+        entityType: 'project',
+        entityId: project.id,
+        action: 'save',
+        data: updated.toMap(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ワークフローをリセットしました')),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('エラー: $e')),
+      );
+    }
   }
 
   Widget _buildStageSection(Project project, ColorScheme cs) {
@@ -608,12 +892,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       text: project.endDate != null ? '${project.endDate!.year}/${project.endDate!.month.toString().padLeft(2, '0')}/${project.endDate!.day.toString().padLeft(2, '0')}' : '',
     );
     final contractMonthsCtrl = TextEditingController(text: project.contractMonths?.toString() ?? '');
+    String? selectedBillingTemplateId = project.billingTemplateId;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) =>
-            _buildEditDialog(ctx, project, setDialogState, nameCtrl, customerNameCtrl, typeCtrl, statusCtrl, stageCtrl, amountCtrl, startDateCtrl, endDateCtrl, contractMonthsCtrl),
+            _buildEditDialog(ctx, project, setDialogState, nameCtrl, customerNameCtrl, typeCtrl, statusCtrl, stageCtrl, amountCtrl, startDateCtrl, endDateCtrl, contractMonthsCtrl, selectedBillingTemplateId, (id) => setDialogState(() => selectedBillingTemplateId = id)),
       ),
     ).then((result) async {
       nameCtrl.dispose();
@@ -637,6 +922,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       final newStartDate = result['startDate'] as DateTime?;
       final newEndDate = result['endDate'] as DateTime?;
       final newContractMonths = result['contractMonths'] as int?;
+      final newBillingTemplateId = result['billingTemplateId'] as String?;
 
       if (newName == project.name &&
           newCustomerName == project.customerName &&
@@ -646,7 +932,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           newAmount == project.totalAmount &&
           newStartDate == project.startDate &&
           newEndDate == project.endDate &&
-          newContractMonths == project.contractMonths) {
+          newContractMonths == project.contractMonths &&
+          newBillingTemplateId == project.billingTemplateId) {
         return;
       }
 
@@ -661,6 +948,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           startDate: newStartDate,
           endDate: newEndDate,
           contractMonths: newContractMonths,
+          billingTemplateId: newBillingTemplateId,
         );
         await _repo.save(updated);
         SyncService.pushChange(
@@ -696,6 +984,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     TextEditingController startDateCtrl,
     TextEditingController endDateCtrl,
     TextEditingController contractMonthsCtrl,
+    String? selectedBillingTemplateId,
+    Function(String?) onBillingTemplateChanged,
   ) {
     final cs = Theme.of(ctx).colorScheme;
 
@@ -760,6 +1050,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               ),
               items: const ['見積', '受注', '発注', '納品', '請求', '入金済'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (v) => setDialogState(() => stageCtrl.text = v ?? ''),
+            ),
+            const SizedBox(height: 16),
+            Text('請求テンプレート', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: selectedBillingTemplateId,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              items: _billingTemplates.map((t) => DropdownMenuItem(value: t.id, child: Text(t.name))).toList(),
+              onChanged: (v) => onBillingTemplateChanged(v),
             ),
             const SizedBox(height: 16),
             Text('合計金額', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
@@ -900,6 +1202,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               'startDate': startDate,
               'endDate': endDate,
               'contractMonths': contractMonths,
+              'billingTemplateId': selectedBillingTemplateId,
             });
           },
           child: const Text('保存'),

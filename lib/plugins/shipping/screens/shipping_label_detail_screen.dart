@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:h_1_core/constants/screen_ids.dart';
-import 'package:h_1_core/widgets/screen_id_title.dart';
 import '../models/shipping_label_model.dart';
 import '../models/tracking_model.dart';
 import '../services/shipping_label_printer.dart';
@@ -35,7 +34,7 @@ class _ShippingLabelDetailScreenState extends State<ShippingLabelDetailScreen> {
     final label = widget.label;
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: S.sh2, title: '送り状詳細'),
+        title: const Text('${S.sh2}:送り状詳細'),
         actions: [
           IconButton(
             icon: const Icon(Icons.print),

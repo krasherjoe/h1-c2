@@ -28,6 +28,23 @@ extension WorkflowStepX on WorkflowStep {
     }
   }
 
+  String get name {
+    switch (this) {
+      case WorkflowStep.delivery:
+        return 'delivery';
+      case WorkflowStep.cashCollection:
+        return 'cashCollection';
+      case WorkflowStep.waitForClosing:
+        return 'waitForClosing';
+      case WorkflowStep.generateInvoice:
+        return 'generateInvoice';
+      case WorkflowStep.sendEmail:
+        return 'sendEmail';
+      case WorkflowStep.complete:
+        return 'complete';
+    }
+  }
+
   String get emoji {
     switch (this) {
       case WorkflowStep.delivery:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:h_1_core/services/error_log_service.dart';
 import '../models/tracking_model.dart';
 import '../services/tracking_repository.dart';
 import '../screens/tracking_scanner_screen.dart';
@@ -50,36 +51,64 @@ class _TrackingAddDialogState extends State<TrackingAddDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final tracking = Tracking(
-      id: widget.initialTracking?.id ?? const Uuid().v4(),
-      trackingNumber: _trackingNumberController.text.trim(),
-      carrier: _selectedCarrier,
-      direction: _selectedDirection,
-      status: _selectedStatus,
-      shippedAt: widget.initialTracking?.shippedAt ?? (_selectedStatus != TrackingStatus.notShipped ? DateTime.now() : null),
-      deliveredAt: widget.initialTracking?.deliveredAt,
-      trackingUpdatedAt: DateTime.now(),
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-      entityName: _entityNameController.text.trim().isEmpty ? null : _entityNameController.text.trim(),
-      entityType: widget.initialTracking?.entityType,
-      entityId: widget.initialTracking?.entityId,
-    );
+    try {
+      final tracking = Tracking(
+        id: widget.initialTracking?.id ?? const Uuid().v4(),
+        trackingNumber: _trackingNumberController.text.trim(),
+        carrier: _selectedCarrier,
+        direction: _selectedDirection,
+        status: _selectedStatus,
+        shippedAt: widget.initialTracking?.shippedAt ?? (_selectedStatus != TrackingStatus.notShipped ? DateTime.now() : null),
+        deliveredAt: widget.initialTracking?.deliveredAt,
+        trackingUpdatedAt: DateTime.now(),
+        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        entityName: _entityNameController.text.trim().isEmpty ? null : _entityNameController.text.trim(),
+        entityType: widget.initialTracking?.entityType,
+        entityId: widget.initialTracking?.entityId,
+      );
 
-    await _trackingRepo.save(tracking);
-    
-    if (mounted) {
-      Navigator.pop(context, true);
-      widget.onSaved?.call();
+      await _trackingRepo.save(tracking);
+      
+      if (mounted) {
+        Navigator.pop(context, true);
+        widget.onSaved?.call();
+      }
+    } catch (e, stackTrace) {
+      ErrorLogService.instance.logError(
+        '追跡番号保存エラー: $e',
+        stackTrace: stackTrace.toString(),
+        screen: 'TrackingAddDialog',
+        context: '追跡番号保存',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存に失敗しました: $e')),
+        );
+      }
     }
   }
 
   Future<void> _scanBarcode() async {
-    final result = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => const TrackingScannerScreen()),
-    );
-    if (result != null && mounted) {
-      _trackingNumberController.text = result;
+    try {
+      final result = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(builder: (_) => const TrackingScannerScreen()),
+      );
+      if (result != null && mounted) {
+        _trackingNumberController.text = result;
+      }
+    } catch (e, stackTrace) {
+      ErrorLogService.instance.logError(
+        'バーコードスキャン起動エラー: $e',
+        stackTrace: stackTrace.toString(),
+        screen: 'TrackingAddDialog',
+        context: 'バーコードスキャン起動',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('スキャン起動に失敗しました: $e')),
+        );
+      }
     }
   }
 

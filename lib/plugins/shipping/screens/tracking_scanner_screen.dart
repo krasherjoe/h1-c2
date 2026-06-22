@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:h_1_core/constants/screen_ids.dart';
-import 'package:h_1_core/widgets/screen_id_title.dart';
+import 'package:h_1_core/services/error_log_service.dart';
 
 class TrackingScannerScreen extends StatefulWidget {
   const TrackingScannerScreen({super.key});
@@ -18,41 +18,79 @@ class _TrackingScannerScreenState extends State<TrackingScannerScreen> {
   @override
   void initState() {
     super.initState();
-    _controller.start();
+    try {
+      _controller.start();
+    } catch (e, stackTrace) {
+      ErrorLogService.instance.logError(
+        'カメラ起動エラー: $e',
+        stackTrace: stackTrace.toString(),
+        screen: 'TrackingScannerScreen',
+        context: 'initState',
+      );
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    try {
+      _controller.dispose();
+    } catch (e, stackTrace) {
+      ErrorLogService.instance.logError(
+        'カメラコントローラ破棄エラー: $e',
+        stackTrace: stackTrace.toString(),
+        screen: 'TrackingScannerScreen',
+        context: 'dispose',
+      );
+    }
     super.dispose();
   }
 
   void _onDetect(BarcodeCapture capture) {
     if (_isScanned) return;
     
-    final barcode = capture.barcodes.first;
-    if (barcode.rawValue != null) {
-      setState(() => _isScanned = true);
-      
-      // バイブレーションでフィードバック
-      // (必要に応じて追加)
-      
-      Navigator.pop(context, barcode.rawValue);
+    if (capture.barcodes.isEmpty) return;
+    
+    try {
+      final barcode = capture.barcodes.first;
+      if (barcode.rawValue != null && barcode.rawValue!.isNotEmpty) {
+        setState(() => _isScanned = true);
+        
+        // バイブレーションでフィードバック
+        // (必要に応じて追加)
+        
+        Navigator.pop(context, barcode.rawValue);
+      }
+    } catch (e, stackTrace) {
+      ErrorLogService.instance.logError(
+        'バーコードスキャンエラー: $e',
+        stackTrace: stackTrace.toString(),
+        screen: 'TrackingScannerScreen',
+        context: 'バーコード検出処理',
+      );
     }
   }
 
   void _toggleTorch() {
-    setState(() {
-      _isTorchOn = !_isTorchOn;
-    });
-    _controller.toggleTorch();
+    try {
+      setState(() {
+        _isTorchOn = !_isTorchOn;
+      });
+      _controller.toggleTorch();
+    } catch (e, stackTrace) {
+      ErrorLogService.instance.logError(
+        'トライトグルエラー: $e',
+        stackTrace: stackTrace.toString(),
+        screen: 'TrackingScannerScreen',
+        context: 'トライトグル',
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const ScreenAppBarTitle(screenId: S.sh4, title: 'バーコードスキャン'),
+        title: const Text('${S.sh4}:バーコードスキャン'),
         actions: [
           IconButton(
             icon: Icon(_isTorchOn ? Icons.flash_on : Icons.flash_off),
@@ -74,7 +112,16 @@ class _TrackingScannerScreenState extends State<TrackingScannerScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    _controller.start();
+                    try {
+                      _controller.start();
+                    } catch (e, stackTrace) {
+                      ErrorLogService.instance.logError(
+                        'カメラ再起動エラー: $e',
+                        stackTrace: stackTrace.toString(),
+                        screen: 'TrackingScannerScreen',
+                        context: 'カメラ再起動',
+                      );
+                    }
                   },
                   child: const Text('再試行'),
                 ),
