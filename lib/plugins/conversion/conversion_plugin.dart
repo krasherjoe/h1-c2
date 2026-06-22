@@ -36,8 +36,7 @@ class ConversionPlugin extends H1Plugin {
   @override
   Future<void> migrate(Database db, int fromVersion, int toVersion) async {
     if (fromVersion < 2) {
-      final prefs = await SharedPreferences.getInstance();
-      await DataMigrationService.runConversion(db, prefs);
+      await DataMigrationService.runConversion(db);
     }
   }
 }

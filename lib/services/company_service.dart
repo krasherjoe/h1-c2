@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
+import '../plugins/conversion/services/data_migration_service.dart';
 
 class CompanyService {
   static final ValueNotifier<String?> activeCompanyNotifier = ValueNotifier(null);
@@ -121,6 +122,11 @@ class CompanyService {
     await DatabaseHelper.closeAndReset();
     await setCurrentCompany(name);
     activeCompanyNotifier.value = name;
+    
+    // DB切替後にマイグレーションを実行
+    final helper = DatabaseHelper();
+    final db = await helper.database;
+    await DataMigrationService.runConversion(db);
   }
 
   static Future<String> getDefaultCompany() async {

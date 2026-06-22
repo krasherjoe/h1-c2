@@ -763,7 +763,7 @@ class _H1CoreAppState extends State<H1CoreApp> {
 
   Future<void> _runConversion() async {
     setState(() => _isConverting = true);
-    await DataMigrationService.runConversion(widget.db, widget.prefs);
+    await DataMigrationService.runConversion(widget.db);
     if (!mounted) return;
     setState(() {
       _needsConversion = false;

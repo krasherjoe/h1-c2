@@ -4,10 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DataMigrationService {
   static const _conversionDoneKey = 'conversion_v1_to_v2_done';
 
+  /// マイグレーションが必要かチェック（DBごと）
   static Future<bool> needsConversion(Database db) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_conversionDoneKey) == true) return false;
-
     final tables = await db.rawQuery(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='documents'",
     );
@@ -15,27 +13,16 @@ class DataMigrationService {
 
     final cols = await db.rawQuery('PRAGMA table_info(documents)');
     final isNewSchema = cols.any((c) => c['name'] == 'document_number');
-    if (isNewSchema) {
-      await prefs.setBool(_conversionDoneKey, true);
-      return false;
-    }
+    if (isNewSchema) return false;
 
     final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM documents');
     return (rows.first['c'] as int? ?? 0) > 0;
   }
 
-  static Future<void> runConversion(
-    Database db,
-    SharedPreferences prefs,
-  ) async {
-    final done = prefs.getBool(_conversionDoneKey) ?? false;
-    if (done) return;
-
+  /// マイグレーションを実行（DBごと）
+  static Future<void> runConversion(Database db) async {
     final hasOld = await needsConversion(db);
-    if (!hasOld) {
-      await prefs.setBool(_conversionDoneKey, true);
-      return;
-    }
+    if (!hasOld) return;
 
     final oldDocs = await db.rawQuery('SELECT * FROM documents');
     for (final row in oldDocs) {
@@ -82,7 +69,17 @@ class DataMigrationService {
 
     await db.execute('DROP TABLE IF EXISTS document_items');
     await db.execute('DROP TABLE IF EXISTS documents');
+  }
 
+  /// グローバルなマイグレーション完了フラグを取得（互換性のため残す）
+  static Future<bool> isGloballyDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_conversionDoneKey) ?? false;
+  }
+
+  /// グローバルなマイグレーション完了フラグを設定（互換性のため残す）
+  static Future<void> setGloballyDone() async {
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_conversionDoneKey, true);
   }
 }
