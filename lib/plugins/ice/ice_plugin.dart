@@ -63,9 +63,8 @@ class IcePlugin extends H1Plugin {
       await _apiServer?.stop();
       return 'ICE停止';
     });
-    // DBがnullの場合はSSH自動接続をスキップ
     _autoConnectSsh();
-    debugPrint('[IcePlugin] Initialized (port: $port, db: ${context.database != null ? "available" : "null"})');
+    debugPrint('[IcePlugin] Initialized (port: $port)');
   }
 
   Future<void> _autoConnectSsh() async {

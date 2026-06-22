@@ -589,44 +589,23 @@ void main() async {
     DebugConsole.register('mm.stop', _cmdMmStop);
   }
 
-  final prefs = await SharedPreferences.getInstance();
-  debugPrint('[Startup] prefs ready');
-
-  // プラグインレジストリを初期化（DBなしで）
-  final registry = PluginRegistry.instance;
-  final context = PluginContext(database: null, preferences: prefs);
-  registry.setContext(context);
-
-  // ICE-APIプラグインだけ先に登録・初期化
-  final icePlugin = IcePlugin();
-  try {
-    await registry.register(icePlugin);
-    debugPrint('[Startup] ✅ ICE-API registered');
-  } catch (e) {
-    debugPrint('[Startup] ❌ ICE-API: $e');
-  }
-
   Database? db;
-  String? dbError;
   try {
     db = await DatabaseHelper().database;
   } catch (e) {
-    dbError = e.toString();
     ErrorReporter.sendError(message: '[Startup] DB接続エラー: $e');
   }
-  debugPrint('[Startup] DB ready');
+  final prefs = await SharedPreferences.getInstance();
+  debugPrint('[Startup] DB ready, prefs ready');
 
   if (db == null) {
-    // DBエラー時はICE-APIを起動したままエラー画面を表示
-    debugPrint('[Startup] DB初期化失敗、ICE-APIは稼働中: $dbError');
-    runApp(H1CoreApp(
-      db: null,
-      prefs: prefs,
-      registry: registry,
-      dbError: dbError,
-    ));
+    _showFatalError('データベースの初期化に失敗しました');
     return;
   }
+
+  final context = PluginContext(database: db, preferences: prefs);
+  final registry = PluginRegistry.instance;
+  registry.setContext(context);
 
   // 履歴DBから伝票テーブルの整合性チェック＋自動リペア
   {
@@ -662,10 +641,7 @@ void main() async {
     }
   }
 
-  // DB接続後にcontextを更新
-  registry.setContext(PluginContext(database: db, preferences: prefs));
-
-  // 他のプラグインを登録（ICE-APIは既に登録済み）
+  // プラグイン登録
   final plugins = <H1Plugin>[
     CorePlugin(), DocumentsPlugin(), CustomersPlugin(),
     ProductsPlugin(), CompanyPlugin(), SettingsPlugin(),
@@ -675,7 +651,7 @@ void main() async {
     ConversionPlugin(), AuditPlugin(), if (_includeDebug) DebugPlugin(),
     DriveBackupPlugin(), ProjectPlugin(), MemorandumPlugin(),
     ArPlugin(), DailyPlugin(), PriceListPlugin(), SuppliersPlugin(),
-    SyncPlugin(), PrinterPlugin(), CasesPlugin(),
+    SyncPlugin(), PrinterPlugin(), CasesPlugin(), IcePlugin(),
     ShippingPlugin(),
   ];
   for (final plugin in plugins) {
@@ -706,7 +682,7 @@ void main() async {
     debugPrint('[Startup] ✅ 回収案件を $collectionCount 件作成');
   }
 
-  runApp(H1CoreApp(registry: registry, db: db, prefs: prefs, dbError: null));
+  runApp(H1CoreApp(registry: registry, db: db, prefs: prefs));
   }, (error, stack) {
     ErrorReporter.sendError(message: error.toString(), stackTrace: stack);
   });
@@ -714,16 +690,14 @@ void main() async {
 
 class H1CoreApp extends StatefulWidget {
   final PluginRegistry registry;
-  final Database? db;
+  final Database db;
   final SharedPreferences prefs;
-  final String? dbError;
 
   const H1CoreApp({
     super.key,
     required this.registry,
     required this.db,
     required this.prefs,
-    this.dbError,
   });
 
   @override
@@ -863,8 +837,7 @@ class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
   }
 
   Future<void> _check() async {
-    if (widget.db == null) return;
-    final needs = await DataMigrationService.needsConversion(widget.db!);
+    final needs = await DataMigrationService.needsConversion(widget.db);
     if (!mounted) return;
     setState(() => _needsConversion = needs);
   }
@@ -876,9 +849,8 @@ class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
   }
 
   Future<void> _runConversion() async {
-    if (widget.db == null) return;
     setState(() => _isConverting = true);
-    await DataMigrationService.runConversion(widget.db!);
+    await DataMigrationService.runConversion(widget.db);
     if (!mounted) return;
     setState(() {
       _needsConversion = false;
@@ -929,54 +901,6 @@ class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
   }
 
   Widget _buildHome() {
-    // DBエラーがある場合はエラー画面を表示
-    if (widget.dbError != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('データベースエラー'),
-          backgroundColor: Colors.red,
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.error, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              const Text(
-                'データベースの初期化に失敗しました',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'エラー: ${widget.dbError}',
-                style: const TextStyle(fontSize: 14, color: Colors.red),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                '対処方法:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text('1. アプリを再インストール'),
-              const Text('2. データベースファイルを削除して再起動'),
-              const SizedBox(height: 24),
-              if (widget.registry.isEnabled('com.h1.core.ice')) ...[
-                const Text(
-                  'ICE-APIは稼働中です。',
-                  style: TextStyle(fontSize: 14, color: Colors.green),
-                ),
-                const Text(
-                  'API経由でデバッグ可能です。',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
-    
     if (_needsConversion == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),

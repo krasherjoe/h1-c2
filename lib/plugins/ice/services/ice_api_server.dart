@@ -26,14 +26,14 @@ class IceApiServer {
   int port;
   bool _running = false;
   late IceStateCollector _collector;
-  Database? _db;
+  late final Database _db;
   late final SharedPreferences _prefs;
   late final PluginRegistry _registry;
   String _version = 'unknown';
 
   IceApiServer({
     this.port = 8080, // ICE API Server
-    Database? database,
+    required Database database,
     required SharedPreferences prefs,
     required PluginRegistry registry,
   }) {
@@ -374,11 +374,6 @@ class IceApiServer {
   }
 
   Future<void> _handleDbQuery(HttpRequest request) async {
-    if (_db == null) {
-      await _error(request.response, HttpStatus.serviceUnavailable, 'Database not available (DB initialization failed)');
-      return;
-    }
-    
     final body = await utf8.decodeStream(request);
     final data = jsonDecode(body) as Map<String, dynamic>;
     final sql = data['sql'] as String?;
@@ -390,11 +385,18 @@ class IceApiServer {
 
     final trimmed = sql.trim().toUpperCase();
     if (trimmed.startsWith('SELECT') || trimmed.startsWith('PRAGMA')) {
+      final state = await _collector.collect();
+      final dbPath = (state['database'] as Map<String, dynamic>)['path'] as String?;
+      if (dbPath == null) {
+        await _error(request.response, HttpStatus.internalServerError, 'DB not available');
+        return;
+      }
+      final db = await openDatabase(dbPath);
       try {
-        final rows = await _db!.rawQuery(sql);
+        final rows = await db.rawQuery(sql);
         await _respond(request.response, {'sql': sql, 'rows': rows, 'count': rows.length});
-      } catch (e) {
-        await _error(request.response, HttpStatus.internalServerError, 'Query failed: $e');
+      } finally {
+        await db.close();
       }
     } else {
       await _error(request.response, HttpStatus.badRequest, 'Only SELECT/PRAGMA queries allowed');
@@ -545,26 +547,21 @@ class IceApiServer {
     try {
       final dir = await CompanyService.getCompanyDirectory();
       final sshDir = Directory('${dir.path}/.ssh');
-      
+      final dbFile = File(_db.path);
+      final dbExists = await dbFile.exists();
+      final dbSize = dbExists ? await dbFile.length() : 0;
+
       final workspaceInfo = {
         'company_dir': dir.path,
-        'db_path': _db?.path ?? 'null',
-        'db_exists': _db != null,
-        'db_size_bytes': 0,
+        'db_path': _db.path,
+        'db_exists': dbExists,
+        'db_size_bytes': dbSize,
         'ssh_dir': sshDir.path,
         'ssh_config_exists': await File('${sshDir.path}/config').exists(),
         'ssh_private_key_exists': await File('${sshDir.path}/id_ed25519').exists(),
         'ssh_public_key_exists': await File('${sshDir.path}/id_ed25519.pub').exists(),
         'plugins': _registry.allPlugins.map((p) => {'id': p.id, 'name': p.name, 'enabled': _registry.isEnabled(p.id)}).toList(),
       };
-
-      if (_db != null) {
-        final dbFile = File(_db!.path);
-        final dbExists = await dbFile.exists();
-        final dbSize = dbExists ? await dbFile.length() : 0;
-        workspaceInfo['db_exists'] = dbExists;
-        workspaceInfo['db_size_bytes'] = dbSize;
-      }
 
       await _respond(response, workspaceInfo);
     } catch (e) {
@@ -578,13 +575,8 @@ class IceApiServer {
   }
 
   Future<void> _handleApiDbTables(HttpResponse response) async {
-    if (_db == null) {
-      await _error(response, HttpStatus.serviceUnavailable, 'Database not available');
-      return;
-    }
-    
     try {
-      final tables = await _db!.rawQuery(
+      final tables = await _db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
       );
       final tableInfo = <Map<String, dynamic>>[];
@@ -592,7 +584,7 @@ class IceApiServer {
       for (final t in tables) {
         final name = t['name'] as String;
         try {
-          final cnt = await _db!.rawQuery('SELECT COUNT(*) as c FROM "$name"');
+          final cnt = await _db.rawQuery('SELECT COUNT(*) as c FROM "$name"');
           final count = cnt.first['c'] as int;
           tableInfo.add({'table': name, 'count': count});
         } catch (e) {
@@ -636,13 +628,8 @@ class IceApiServer {
   }
 
   Future<void> _handleApiProjects(HttpResponse response) async {
-    if (_db == null) {
-      await _error(response, HttpStatus.serviceUnavailable, 'Database not available');
-      return;
-    }
-    
     try {
-      final rows = await _db!.rawQuery(
+      final rows = await _db.rawQuery(
         "SELECT id, name, status, customer_name, type, pipeline_stage, progress, total_amount, start_date, end_date, contract_months, created_at, updated_at FROM projects ORDER BY sort_order IS NULL, sort_order, created_at DESC",
       );
       final lightHex = '#${AppTheme.cardLight.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';

@@ -7,7 +7,7 @@ import 'package:h_1_core/services/debug_console.dart';
 import 'package:h_1_core/plugin_system/plugin_registry.dart';
 
 class IceStateCollector {
-  final Database? _db;
+  final Database _db;
   final PluginRegistry _registry;
 
   IceStateCollector(this._db, SharedPreferences _prefs, this._registry);
@@ -40,9 +40,6 @@ class IceStateCollector {
   }
 
   Future<Map<String, dynamic>> _collectDbStats() async {
-    if (_db == null) {
-      return {'error': 'Database not available', 'status': 'null'};
-    }
     try {
       final file = File(_db.path);
       final size = await file.length();
@@ -108,9 +105,6 @@ class IceStateCollector {
   }
 
   Future<List<Map<String, dynamic>>> _collectErrors() async {
-    if (_db == null) {
-      return [];
-    }
     try {
       final rows = await _db.rawQuery(
         "SELECT * FROM activity_logs WHERE action LIKE '%error%' OR action LIKE '%exception%' ORDER BY timestamp DESC LIMIT 20",
