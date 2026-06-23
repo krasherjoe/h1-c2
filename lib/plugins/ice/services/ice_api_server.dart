@@ -384,22 +384,34 @@ class IceApiServer {
     }
 
     final trimmed = sql.trim().toUpperCase();
-    if (trimmed.startsWith('SELECT') || trimmed.startsWith('PRAGMA')) {
-      final state = await _collector.collect();
-      final dbPath = (state['database'] as Map<String, dynamic>)['path'] as String?;
-      if (dbPath == null) {
-        await _error(request.response, HttpStatus.internalServerError, 'DB not available');
-        return;
-      }
-      final db = await openDatabase(dbPath);
-      try {
+    final isRead = trimmed.startsWith('SELECT') || trimmed.startsWith('PRAGMA');
+    final isWrite = trimmed.startsWith('INSERT') || trimmed.startsWith('UPDATE') || trimmed.startsWith('DELETE');
+
+    if (!isRead && !isWrite) {
+      await _error(request.response, HttpStatus.badRequest, 'Only SELECT/PRAGMA/INSERT/UPDATE/DELETE queries allowed');
+      return;
+    }
+
+    final state = await _collector.collect();
+    final dbPath = (state['database'] as Map<String, dynamic>)['path'] as String?;
+    if (dbPath == null) {
+      await _error(request.response, HttpStatus.internalServerError, 'DB not available');
+      return;
+    }
+    final db = await openDatabase(dbPath);
+    try {
+      if (isRead) {
         final rows = await db.rawQuery(sql);
         await _respond(request.response, {'sql': sql, 'rows': rows, 'count': rows.length});
-      } finally {
-        await db.close();
+      } else if (trimmed.startsWith('DELETE')) {
+        final rowsAffected = await db.rawDelete(sql);
+        await _respond(request.response, {'sql': sql, 'rowsAffected': rowsAffected});
+      } else {
+        final rowsAffected = await db.rawUpdate(sql);
+        await _respond(request.response, {'sql': sql, 'rowsAffected': rowsAffected});
       }
-    } else {
-      await _error(request.response, HttpStatus.badRequest, 'Only SELECT/PRAGMA queries allowed');
+    } finally {
+      await db.close();
     }
   }
 
