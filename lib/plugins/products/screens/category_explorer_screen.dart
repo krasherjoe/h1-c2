@@ -9,6 +9,7 @@ import '../../../services/error_reporter.dart';
 import '../../../services/sheets_sync_service.dart';
 import '../screens/product_editor_screen.dart';
 import 'product_spreadsheet_screen.dart';
+import 'product_tree_view_screen.dart';
 import '../../../constants/screen_ids.dart';
 
 class CategoryExplorerScreen extends StatefulWidget {
@@ -73,7 +74,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('${S.p1}:商品マスター'),
@@ -81,6 +82,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
+              Tab(icon: Icon(Icons.account_tree), text: 'ツリー'),
               Tab(icon: Icon(Icons.table_chart), text: 'スプレッドシート'),
               Tab(icon: Icon(Icons.view_module), text: 'カード'),
             ],
@@ -88,6 +90,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         ),
         body: TabBarView(
           children: [
+            const ProductTreeView(),
             const SpreadsheetProductScreen(),
             _buildCardTab(),
           ],
