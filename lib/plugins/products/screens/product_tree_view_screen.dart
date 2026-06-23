@@ -20,11 +20,8 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   bool _loading = true;
   String _searchQuery = '';
 
-  // D&D状態
   String? _draggingProductId;
-  String? _dragSourceCategoryId;
 
-  // 展開状態
   final _expandedCategories = <String>{};
 
   @override
@@ -45,12 +42,22 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     });
   }
 
-  // ===== D&D =====
+  List<Product> get _filteredProducts {
+    var list = _products;
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      list = list
+          .where((p) =>
+              p.name.toLowerCase().contains(q) ||
+              (p.barcode?.toLowerCase().contains(q) ?? false))
+          .toList();
+    }
+    return list;
+  }
 
-  void _startDrag(String productId, String sourceCategoryId) {
+  void _startDrag(String productId) {
     setState(() {
       _draggingProductId = productId;
-      _dragSourceCategoryId = sourceCategoryId;
     });
   }
 
@@ -61,7 +68,6 @@ class _ProductTreeViewState extends State<ProductTreeView> {
 
     setState(() {
       _draggingProductId = null;
-      _dragSourceCategoryId = null;
     });
 
     try {
@@ -81,11 +87,8 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   void _cancelDrag() {
     setState(() {
       _draggingProductId = null;
-      _dragSourceCategoryId = null;
     });
   }
-
-  // ===== カテゴリ CRUD =====
 
   Future<void> _renameCategory(ProductCategory cat) async {
     final controller = TextEditingController(text: cat.name);
@@ -151,6 +154,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   }
 
   Future<void> _deleteCategory(ProductCategory cat) async {
+    final cs = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -163,7 +167,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('削除', style: TextStyle(color: Colors.red)),
+            child: Text('削除', style: TextStyle(color: cs.error)),
           ),
         ],
       ),
@@ -174,39 +178,19 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     }
   }
 
-  // ===== フィルタリング =====
-
-  List<Product> get _filteredProducts {
-    var list = _products;
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      list = list
-          .where((p) =>
-              p.name.toLowerCase().contains(q) ||
-              (p.barcode?.toLowerCase().contains(q) ?? false))
-          .toList();
-    }
-    return list;
-  }
-
-  // ===== レンダリング =====
-
-  Widget _buildCategoryNode(
-      ProductCategory cat, int depth, ColorScheme cs) {
+  Widget _buildCategoryNode(ProductCategory cat, int depth, ColorScheme cs) {
     final children = _categories.where((c) => c.parentId == cat.id).toList();
-    final products = _filteredProducts
-        .where((p) => p.categoryId == cat.id)
-        .toList();
+    final products =
+        _filteredProducts.where((p) => p.categoryId == cat.id).toList();
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
-    final isSourceCategory = _draggingProductId != null &&
-        _dragSourceCategoryId == cat.id;
+    final isDragging = _draggingProductId != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: _draggingProductId != null
+          onTap: isDragging
               ? () => _onDrop(_draggingProductId!, cat.id)
               : hasChildren
                   ? () => setState(() {
@@ -217,10 +201,11 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                       }
                     })
                   : null,
-          child: Container(
-            padding: EdgeInsets.only(
-                left: depth * 20.0, right: 8, top: 4, bottom: 4),
-            decoration: isSourceCategory
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 52,
+            padding: EdgeInsets.only(left: depth * 24.0, right: 16),
+            decoration: isDragging
                 ? BoxDecoration(
                     color: cs.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -228,47 +213,59 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                 : null,
             child: Row(
               children: [
+                if (hasChildren)
+                  Icon(
+                    isExpanded ? Icons.expand_more : Icons.chevron_right,
+                    size: 20,
+                    color: cs.onSurfaceVariant,
+                  )
+                else
+                  const SizedBox(width: 20),
+                const SizedBox(width: 8),
                 Icon(
-                  hasChildren
-                      ? (isExpanded
-                          ? Icons.expand_more
-                          : Icons.chevron_right)
-                      : Icons.label,
-                  size: 16,
-                  color: const Color(0xFF8D6E63),
+                  isExpanded ? Icons.folder_open : Icons.folder,
+                  size: 20,
+                  color: cs.primary,
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.folder,
-                    size: 18, color: Color(0xFFFFCA28)),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(cat.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w500)),
+                  child: Text(
+                    cat.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                    ),
+                  ),
                 ),
-                Text(
-                  '${products.length + children.length}',
-                  style: TextStyle(
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${products.length + children.length}',
+                    style: TextStyle(
                       fontSize: 12,
-                      color: cs.onSurfaceVariant
-                          .withValues(alpha: 0.6)),
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert,
-                      size: 18, color: cs.onSurfaceVariant),
+                  icon: Icon(Icons.more_vert, size: 20, color: cs.onSurfaceVariant),
                   onSelected: (v) {
                     if (v == 'rename') _renameCategory(cat);
                     if (v == 'add_sub') _addSubcategory(cat);
                     if (v == 'delete') _deleteCategory(cat);
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
-                        value: 'rename', child: Text('名前変更')),
+                    const PopupMenuItem(value: 'rename', child: Text('名前変更')),
                     const PopupMenuItem(
                         value: 'add_sub', child: Text('サブカテゴリ追加')),
-                    const PopupMenuItem(
-                        value: 'delete', child: Text('削除')),
+                    const PopupMenuItem(value: 'delete', child: Text('削除')),
                   ],
                 ),
               ],
@@ -277,59 +274,71 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         ),
         if (isExpanded) ...[
           ...products.map((p) => _buildProductItem(p, depth + 1, cs)),
-          ...children.map(
-              (child) => _buildCategoryNode(child, depth + 1, cs)),
+          ...children.map((child) => _buildCategoryNode(child, depth + 1, cs)),
         ],
       ],
     );
   }
 
-  Widget _buildProductItem(
-      Product product, int depth, ColorScheme cs) {
+  Widget _buildProductItem(Product product, int depth, ColorScheme cs) {
     final isDragging = _draggingProductId == product.id;
+    final priceStr =
+        '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
 
     return InkWell(
-      onLongPress: () =>
-          _startDrag(product.id, product.categoryId ?? ''),
-      onTap: () {
-        // 商品ビューアを開く
-      },
-      child: Container(
-        padding: EdgeInsets.only(
-            left: depth * 20.0 + 20, right: 8, top: 4, bottom: 4),
+      onLongPress: () => _startDrag(product.id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 52,
+        padding: EdgeInsets.only(left: depth * 24.0, right: 16),
         decoration: isDragging
             ? BoxDecoration(
-                color: cs.primary.withValues(alpha: 0.05),
+                color: cs.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               )
             : null,
         child: Row(
           children: [
-            Icon(Icons.inventory_2, size: 18, color: cs.primary),
+            const SizedBox(width: 28),
             const SizedBox(width: 8),
+            Icon(Icons.inventory_2, size: 20, color: cs.primary),
+            const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                product.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isDragging ? cs.primary : null,
-                  fontWeight:
-                      isDragging ? FontWeight.bold : null,
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isDragging ? cs.primary : cs.onSurface,
+                      fontWeight:
+                          isDragging ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  if (product.barcode != null)
+                    Text(
+                      product.barcode!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                ],
               ),
             ),
-            if (product.barcode != null)
-              Text(product.barcode!,
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: cs.onSurfaceVariant)),
-            const SizedBox(width: 8),
             Text(
-              '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+              priceStr,
               style: TextStyle(
-                  fontSize: 12,
-                  color: cs.onSurfaceVariant),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
             ),
           ],
         ),
@@ -338,34 +347,46 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   }
 
   Widget _buildUncategorizedSection(ColorScheme cs) {
-    final uncategorized = _filteredProducts
-        .where((p) => p.categoryId == null)
-        .toList();
+    final uncategorized =
+        _filteredProducts.where((p) => p.categoryId == null).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(),
+        const Divider(height: 32),
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.only(bottom: 8),
           child: Row(
             children: [
-              const Icon(Icons.folder_off,
-                  size: 18, color: Colors.grey),
+              Icon(Icons.folder_off, size: 20, color: cs.onSurfaceVariant),
+              const SizedBox(width: 12),
+              Text(
+                'カテゴリなし',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(width: 8),
-              Text('カテゴリなし',
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${uncategorized.length}',
                   style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: cs.onSurfaceVariant)),
-              const SizedBox(width: 8),
-              Text('${uncategorized.length}',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurfaceVariant)),
+                    fontSize: 12,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-        ...uncategorized.map(
-            (p) => _buildProductItem(p, 1, cs)),
+        ...uncategorized.map((p) => _buildProductItem(p, 1, cs)),
       ],
     );
   }
@@ -375,53 +396,50 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
-        // 検索バー
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: TextField(
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: '商品名で検索...',
-              prefixIcon: Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search),
               isDense: true,
               contentPadding:
-                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             onChanged: (v) => setState(() => _searchQuery = v),
           ),
         ),
-        // ドラッグモード中のキャンセルボタン
         if (_draggingProductId != null)
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                const Icon(Icons.info_outline, size: 16),
+                Icon(Icons.info_outline, size: 16, color: cs.primary),
                 const SizedBox(width: 8),
-                const Expanded(
-                    child: Text('カテゴリをタップしてドロップ',
-                        style: TextStyle(fontSize: 12))),
+                Expanded(
+                  child: Text(
+                    'カテゴリをタップしてドロップ',
+                    style: TextStyle(fontSize: 12, color: cs.primary),
+                  ),
+                ),
                 TextButton(
                   onPressed: _cancelDrag,
-                  child:
-                      const Text('キャンセル', style: TextStyle(fontSize: 12)),
+                  child: const Text('キャンセル'),
                 ),
               ],
             ),
           ),
-        // ツリー表示
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     children: [
                       ..._categories
                           .where((c) => c.parentId == null)
-                          .map((cat) =>
-                              _buildCategoryNode(cat, 0, cs)),
+                          .map((cat) => _buildCategoryNode(cat, 0, cs)),
                       if (_filteredProducts
                           .any((p) => p.categoryId == null))
                         _buildUncategorizedSection(cs),
