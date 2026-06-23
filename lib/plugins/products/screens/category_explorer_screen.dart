@@ -198,7 +198,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       elevation: showShadows ? null : 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () => _openProductViewer(product),
+        onTap: () => _openProductEditor(product),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: _kPadding, vertical: 4),
           child: Row(
@@ -470,26 +470,14 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     _load();
   }
 
-  void _openProductViewer(Product product) {
-    Navigator.push(
+  void _openProductEditor(Product product) async {
+    final result = await Navigator.push<Product>(
       context,
       MaterialPageRoute(
-        builder: (_) => _ProductViewer(
-          product: product,
-          onEdit: (p) async {
-            final result = await Navigator.push<Product>(
-              context,
-              MaterialPageRoute(builder: (_) => ProductEditorScreen(product: p)),
-            );
-            if (result != null) _load();
-          },
-          onDelete: () async {
-            await _productRepo.deleteProduct(product.id);
-            _load();
-          },
-        ),
+        builder: (_) => ProductEditorScreen(product: product),
       ),
-    ).then((_) => _load());
+    );
+    if (result != null) _load();
   }
 
 

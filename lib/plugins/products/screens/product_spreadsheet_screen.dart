@@ -488,9 +488,48 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
             ),
           ),
         ),
-        _textCell(
-          _supplierControllers[product.id], _columnWidths[5],
-          onChanged: () => _markModified(product.id),
+        DataCell(
+          SizedBox(
+            width: _columnWidths[5],
+            child: Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) async {
+                if (textEditingValue.text.isEmpty) {
+                  return const Iterable<String>.empty();
+                }
+                try {
+                  final db = await DatabaseHelper().database;
+                  final rows = await db.rawQuery(
+                    "SELECT DISTINCT supplier_name FROM products WHERE supplier_name IS NOT NULL AND supplier_name LIKE ? AND is_current = 1 LIMIT 10",
+                    ['%${textEditingValue.text}%'],
+                  );
+                  return rows.map((r) => r['supplier_name'] as String).where((s) => s.isNotEmpty);
+                } catch (_) {
+                  return const Iterable<String>.empty();
+                }
+              },
+              onSelected: (String selection) {
+                _supplierControllers[product.id]?.text = selection;
+                _markModified(product.id);
+              },
+              initialValue: TextEditingValue(text: _supplierControllers[product.id]?.text ?? ''),
+              fieldViewBuilder: (context, textEditingController, focusNode, onSubmitted) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                  ),
+                  style: const TextStyle(fontSize: 13),
+                  onChanged: (v) {
+                    _supplierControllers[product.id]?.text = v;
+                    _markModified(product.id);
+                  },
+                  onSubmitted: (_) => onSubmitted(),
+                );
+              },
+            ),
+          ),
         ),
         DataCell(
           SizedBox(
