@@ -3,6 +3,7 @@ import 'package:h_1_core/models/product_model.dart';
 import 'package:h_1_core/models/product_category_model.dart';
 import 'package:h_1_core/services/product_repository.dart';
 import 'package:h_1_core/services/product_category_repository.dart';
+import 'product_editor_screen.dart';
 
 class ProductTreeView extends StatefulWidget {
   const ProductTreeView({super.key});
@@ -286,6 +287,15 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
 
     return InkWell(
+      onTap: () async {
+        final result = await Navigator.push<Product>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductEditorScreen(product: product),
+          ),
+        );
+        if (result != null) _load();
+      },
       onLongPress: () => _startDrag(product.id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
