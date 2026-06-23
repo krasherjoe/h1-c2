@@ -194,14 +194,34 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       // compute で別isolateでスキャン実行（既知のoldh1パスも自動追加）
       final foundPaths = await compute(_findDbFilesIsolate, scanPaths.toList());
 
-      _foundDbFiles = foundPaths.map((p) => File(p)).toList();
-
       if (!mounted) return;
       setState(() {
+        _info = '形式を確認中... (${foundPaths.length}件)';
+      });
+
+      // 見つかった各DBの形式をチェックし、core へ変換可能な oldh1 DBだけを残す。
+      // （core形式や非SQLite/空DBは変換しても意味がないため一覧から除外）
+      final oldh1Paths = <String>[];
+      for (final path in foundPaths) {
+        if (await DataMigrationService.isOldh1Db(path)) {
+          oldh1Paths.add(path);
+        }
+      }
+
+      _foundDbFiles = oldh1Paths.map((p) => File(p)).toList();
+
+      if (!mounted) return;
+      final skipped = foundPaths.length - oldh1Paths.length;
+      setState(() {
         _isScanning = false;
-        _info = _foundDbFiles.isEmpty
-            ? '「$dirPath」以下にoldh1 DBファイルが見つかりません'
-            : '${_foundDbFiles.length}個のoldh1 DBファイルを見つけました';
+        if (_foundDbFiles.isEmpty) {
+          _info = foundPaths.isEmpty
+              ? '「$dirPath」以下にDBファイルが見つかりません'
+              : '変換可能なoldh1 DBが見つかりません（$skipped件はcore形式/対象外）';
+        } else {
+          _info = '変換可能なoldh1 DBを${_foundDbFiles.length}個検出'
+              '${skipped > 0 ? '（$skipped件はcore形式/対象外で除外）' : ''}';
+        }
       });
     } catch (e) {
       if (mounted) setState(() { _error = 'スキャンエラー: $e'; _isScanning = false; });

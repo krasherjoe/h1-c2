@@ -19,10 +19,68 @@ class DataMigrationService {
     return (rows.first['c'] as int? ?? 0) > 0;
   }
 
+  /// 指定パスのDBファイルが oldh1 形式（core へ変換可能）かを判定する。
+  ///
+  /// - oldh1 形式: `documents` テーブルが存在し `document_number` カラムを持たず、
+  ///   1件以上のレコードがある（= [needsConversion] が true）
+  /// - core 形式 / 非SQLite / 空DB などは false（変換しても意味がないため一覧から除外）
+  static Future<bool> isOldh1Db(String path) async {
+    Database? db;
+    try {
+      db = await openDatabase(path, readOnly: true);
+      return await needsConversion(db);
+    } catch (_) {
+      // SQLiteとして開けない / テーブルが無い等は oldh1 ではない
+      return false;
+    } finally {
+      try {
+        await db?.close();
+      } catch (_) {}
+    }
+  }
+
+  /// 変換の中間スキーマ（invoices / invoice_items）を作成する。
+  ///
+  /// コピー直後の oldh1 DB には core の `invoices` テーブルが存在しないため、
+  /// 挿入前に必ず用意する。存在する場合は何もしない（IF NOT EXISTS）。
+  static Future<void> _ensureInvoiceTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS invoices (
+        id TEXT PRIMARY KEY,
+        customer_id TEXT,
+        date TEXT,
+        notes TEXT,
+        subject TEXT,
+        total_amount INTEGER,
+        tax_rate REAL,
+        document_type TEXT,
+        order_status TEXT,
+        source_document_id TEXT,
+        customer_formal_name TEXT,
+        updated_at TEXT,
+        meta_json TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS invoice_items (
+        id TEXT PRIMARY KEY,
+        invoice_id TEXT,
+        product_id TEXT,
+        description TEXT,
+        quantity REAL,
+        unit_price INTEGER,
+        tax_rate REAL
+      )
+    ''');
+  }
+
   /// マイグレーションを実行（DBごと）
   static Future<void> runConversion(Database db) async {
     final hasOld = await needsConversion(db);
     if (!hasOld) return;
+
+    // コピー直後の oldh1 DB には invoices/invoice_items が無いため先に作成する
+    await _ensureInvoiceTables(db);
 
     final oldDocs = await db.rawQuery('SELECT * FROM documents');
     for (final row in oldDocs) {
