@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -5,6 +6,7 @@ import 'database_helper.dart';
 import '../models/project_model.dart';
 import '../models/billing_template_model.dart';
 import 'billing_template_repository.dart';
+import '../plugins/project/models/gantt_preset.dart';
 
 class ProjectRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -259,6 +261,47 @@ class ProjectRepository {
     } catch (e) {
       debugPrint('[ProjectRepo] getCurrentWorkflowStep error: $e');
       return null;
+    }
+  }
+
+  /// 伝票の日付変更に応じて、ガントチャートの対応タスク日付を更新
+  Future<void> updateGanttTaskDate(String projectId, String documentType, DateTime date) async {
+    try {
+      final project = await getById(projectId);
+      if (project == null) return;
+
+      if (project.ganttConfig == null || project.ganttConfig!.isEmpty) return;
+
+      final preset = GanttPreset.fromJson(
+        jsonDecode(project.ganttConfig!) as Map<String, dynamic>,
+      );
+
+      final taskIdMap = {
+        'estimation': 'estimation',
+        'order': 'order',
+        'delivery': 'delivery',
+        'invoice': 'invoice',
+      };
+
+      final taskId = taskIdMap[documentType];
+      if (taskId == null) return;
+
+      final updatedTasks = preset.tasks.map((task) {
+        if (task.id == taskId) {
+          return task.copyWith(date: date.toIso8601String());
+        }
+        return task;
+      }).toList();
+
+      final updatedPreset = preset.copyWith(tasks: updatedTasks);
+      final updatedProject = project.copyWith(
+        ganttConfig: jsonEncode(updatedPreset.toJson()),
+      );
+
+      await save(updatedProject);
+      debugPrint('[ProjectRepo] gantt task updated: $taskId → ${date.toIso8601String()}');
+    } catch (e) {
+      debugPrint('[ProjectRepo] updateGanttTaskDate error: $e');
     }
   }
 }

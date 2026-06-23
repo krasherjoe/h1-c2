@@ -1097,6 +1097,17 @@ class _DocumentPageState extends State<DocumentPage> {
       await _repo.save(saved);
       await _repo.addEditLog(saved.id, '保存',
         details: '${_type.label} #${saved.documentNumber} ${_customerName}\n${_buildDiff()}');
+      if (saved.projectId != null) {
+        try {
+          await ProjectRepository().updateGanttTaskDate(
+            saved.projectId!,
+            saved.documentType.name,
+            saved.date,
+          );
+        } catch (e) {
+          debugPrint('[DocumentPage] gantt sync error: $e');
+        }
+      }
       if (!mounted) return;
       Navigator.pop(context, saved);
     } catch (e, st) {
