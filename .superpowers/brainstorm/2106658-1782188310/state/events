@@ -1,0 +1,8 @@
+{"type":"click","text":"✓\n    \n      商品名 (name)\n      商品の正式名称。一括編集で最も頻繁に変更される項目。\n    \n    常時表示","choice":"selected","id":null,"timestamp":1782188553537}
+{"type":"click","text":"✓\n    \n      単価 (default_unit_price)\n      標準販売単価。税抜き／税込の表示切替対応。\n    \n    常時表示","choice":"selected","id":null,"timestamp":1782188554454}
+{"type":"click","text":"✓\n    \n      バーコード (JAN) (barcode)\n      JANコード・EANコード。スキャナ連携、在庫管理で使用。","choice":"selected","id":null,"timestamp":1782188554922}
+{"type":"click","text":"✓\n    \n      バーコード (JAN) (barcode)\n      JANコード・EANコード。スキャナ連携、在庫管理で使用。","choice":"selected","id":null,"timestamp":1782188555793}
+{"type":"click","text":"✓\n    \n      バーコード (JAN) (barcode)\n      JANコード・EANコード。スキャナ連携、在庫管理で使用。","choice":"selected","id":null,"timestamp":1782188556321}
+{"type":"click","text":"✓\n    \n      型番 (model_number)\n      メーカー型番・管理番号。仕入発注時の識別に使用。","choice":"selected","id":null,"timestamp":1782188557029}
+{"type":"click","text":"✓\n    \n      カテゴリ (category / category_id)\n      所属カテゴリ。ドロップダウンで選択、ドラッグ&ドロップで変更。","choice":"selected","id":null,"timestamp":1782188557492}
+{"type":"click","text":"✓\n    \n      メーカー (manufacturer)\n      製造元・ブランド名。","choice":"selected","id":null,"timestamp":1782188558270}

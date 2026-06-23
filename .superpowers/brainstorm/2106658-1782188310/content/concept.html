@@ -1,0 +1,278 @@
+<h2>P1 商品マスター 画面デザイン案</h2>
+<p class="subtitle">現在のツリー型カテゴリブラウザから、一括編集に適した2つのビューへの移行案</p>
+
+<div class="split">
+
+<div class="section">
+<h3>🟢 スプレッドシート形式（一括編集向け）</h3>
+
+<div class="mockup" style="padding:0; overflow:hidden;">
+  <!-- Tab bar -->
+  <div style="display:flex; border-bottom:2px solid #e0e0e0; background:#f5f5f5;">
+    <div style="padding:10px 24px; background:#fff; border-bottom:2px solid #1976d2; font-weight:600; color:#1976d2; cursor:default;">スプレッドシート</div>
+    <div style="padding:10px 24px; color:#666; cursor:default; opacity:0.6;">カード</div>
+  </div>
+
+  <!-- Toolbar: search + filter chips -->
+  <div style="padding:12px; border-bottom:1px solid #e0e0e0;">
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <div class="placeholder" style="flex:1; min-width:200px; padding:8px 12px; text-align:left; font-size:13px; color:#666;">🔍 商品名・バーコードで検索...</div>
+      <div style="display:flex; gap:4px; flex-wrap:wrap;">
+        <span style="background:#1976d2; color:#fff; padding:4px 12px; border-radius:16px; font-size:12px;">すべて</span>
+        <span style="background:#e3f2fd; color:#1976d2; padding:4px 12px; border-radius:16px; font-size:12px;">食品</span>
+        <span style="background:#e3f2fd; color:#1976d2; padding:4px 12px; border-radius:16px; font-size:12px;">飲料</span>
+        <span style="background:#e3f2fd; color:#1976d2; padding:4px 12px; border-radius:16px; font-size:12px;">日用品</span>
+        <span style="background:#e3f2fd; color:#1976d2; padding:4px 12px; border-radius:16px; font-size:12px;">雑貨</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table header -->
+  <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr 1fr 1fr 1fr 60px; background:#fafafa; border-bottom:1px solid #e0e0e0; font-size:12px; font-weight:600; color:#555;">
+    <div style="padding:8px 12px;">商品名</div>
+    <div style="padding:8px 12px;">単価</div>
+    <div style="padding:8px 12px;">バーコード (JAN)</div>
+    <div style="padding:8px 12px;">型番</div>
+    <div style="padding:8px 12px;">カテゴリ</div>
+    <div style="padding:8px 12px;">メーカー</div>
+    <div style="padding:8px 12px; text-align:center;">操作</div>
+  </div>
+
+  <!-- Row 1 -->
+  <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr 1fr 1fr 1fr 60px; border-bottom:1px solid #f0f0f0; font-size:13px;">
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">プレミアムブレンド珈琲 200g</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">¥1,280</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">4901234567890</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">PB-CF-200</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:12px; font-size:11px;">食品</span>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">小川珈琲</div>
+    </div>
+    <div style="padding:6px 12px; text-align:center; display:flex; gap:2px; align-items:center; justify-content:center;">
+      <span style="font-size:16px; cursor:default; color:#1976d2;">✎</span>
+      <span style="font-size:16px; cursor:default; color:#d32f2f;">✕</span>
+    </div>
+  </div>
+
+  <!-- Row 2 -->
+  <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr 1fr 1fr 1fr 60px; border-bottom:1px solid #f0f0f0; font-size:13px;">
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">有機玄米茶 ティーバッグ 30包</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">¥850</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">4909876543210</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">ORG-TB-30</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:12px; font-size:11px;">飲料</span>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">伊藤園</div>
+    </div>
+    <div style="padding:6px 12px; text-align:center; display:flex; gap:2px; align-items:center; justify-content:center;">
+      <span style="font-size:16px; cursor:default; color:#1976d2;">✎</span>
+      <span style="font-size:16px; cursor:default; color:#d32f2f;">✕</span>
+    </div>
+  </div>
+
+  <!-- Row 3 -->
+  <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr 1fr 1fr 1fr 60px; border-bottom:1px solid #f0f0f0; font-size:13px;">
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">アルカリ乾電池 単3形 4本パック</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">¥450</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">4901357924680</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">LR6-4B</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <span style="background:#fff3e0; color:#e65100; padding:2px 8px; border-radius:12px; font-size:11px;">日用品</span>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">パナソニック</div>
+    </div>
+    <div style="padding:6px 12px; text-align:center; display:flex; gap:2px; align-items:center; justify-content:center;">
+      <span style="font-size:16px; cursor:default; color:#1976d2;">✎</span>
+      <span style="font-size:16px; cursor:default; color:#d32f2f;">✕</span>
+    </div>
+  </div>
+
+  <!-- Row 4 -->
+  <div style="display:grid; grid-template-columns:2fr 1fr 1.2fr 1fr 1fr 1fr 60px; font-size:13px;">
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">マイクロファイバークロス 3枚セット</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">¥680</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">—</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;">MFC-3SET</div>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <span style="background:#fce4ec; color:#c62828; padding:2px 8px; border-radius:12px; font-size:11px;">雑貨</span>
+    </div>
+    <div style="padding:6px 12px; border-right:1px solid #f5f5f5;">
+      <div contenteditable="true" style="border:1px dashed #ccc; padding:4px 6px; border-radius:4px; background:#fff; min-height:20px;"></div>
+    </div>
+    <div style="padding:6px 12px; text-align:center; display:flex; gap:2px; align-items:center; justify-content:center;">
+      <span style="font-size:16px; cursor:default; color:#1976d2;">✎</span>
+      <span style="font-size:16px; cursor:default; color:#d32f2f;">✕</span>
+    </div>
+  </div>
+
+  <!-- Add row button -->
+  <div style="padding:10px 12px; border-top:2px dashed #e0e0e0;">
+    <span style="display:inline-flex; align-items:center; gap:6px; color:#1976d2; font-size:13px; font-weight:500; cursor:default;">
+      <span style="font-size:18px; font-weight:300;">＋</span> 行を追加
+    </span>
+  </div>
+</div>
+
+<p style="font-size:12px; color:#888; margin-top:6px;">💡 各セルはインライン編集可能。Tabキーでセル移動。編集内容は自動保存または「保存」ボタンで一括反映。</p>
+</div>
+
+<div class="section">
+<h3>🟣 カード形式（参照・スキャン向け）</h3>
+
+<div class="mockup" style="padding:0; overflow:hidden;">
+  <!-- Tab bar -->
+  <div style="display:flex; border-bottom:2px solid #e0e0e0; background:#f5f5f5;">
+    <div style="padding:10px 24px; color:#666; cursor:default; opacity:0.6;">スプレッドシート</div>
+    <div style="padding:10px 24px; background:#fff; border-bottom:2px solid #7b1fa2; font-weight:600; color:#7b1fa2; cursor:default;">カード</div>
+  </div>
+
+  <!-- Toolbar -->
+  <div style="padding:12px; border-bottom:1px solid #e0e0e0;">
+    <div class="placeholder" style="padding:8px 12px; text-align:left; font-size:13px; color:#666;">🔍 商品名・バーコードで検索...</div>
+  </div>
+
+  <!-- Card grid: 2 columns -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:12px;">
+
+    <!-- Card 1 -->
+    <div style="border:1px solid #e0e0e0; border-radius:12px; padding:16px; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="font-weight:600; font-size:14px; flex:1;">プレミアムブレンド珈琲 200g</div>
+        <span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:12px; font-size:11px;">食品</span>
+      </div>
+      <div style="font-size:20px; font-weight:700; color:#1976d2; margin:8px 0 4px;">¥1,280</div>
+      <div style="font-size:11px; color:#888; display:flex; gap:12px;">
+        <span>📊 4901234567890</span>
+        <span>🏷 PB-CF-200</span>
+      </div>
+      <div style="font-size:11px; color:#999; margin-top:4px;">小川珈琲</div>
+    </div>
+
+    <!-- Card 2 -->
+    <div style="border:1px solid #e0e0e0; border-radius:12px; padding:16px; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="font-weight:600; font-size:14px; flex:1;">有機玄米茶 ティーバッグ 30包</div>
+        <span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:12px; font-size:11px;">飲料</span>
+      </div>
+      <div style="font-size:20px; font-weight:700; color:#1976d2; margin:8px 0 4px;">¥850</div>
+      <div style="font-size:11px; color:#888; display:flex; gap:12px;">
+        <span>📊 4909876543210</span>
+        <span>🏷 ORG-TB-30</span>
+      </div>
+      <div style="font-size:11px; color:#999; margin-top:4px;">伊藤園</div>
+    </div>
+
+    <!-- Card 3 -->
+    <div style="border:1px solid #e0e0e0; border-radius:12px; padding:16px; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="font-weight:600; font-size:14px; flex:1;">アルカリ乾電池 単3形 4本パック</div>
+        <span style="background:#fff3e0; color:#e65100; padding:2px 8px; border-radius:12px; font-size:11px;">日用品</span>
+      </div>
+      <div style="font-size:20px; font-weight:700; color:#1976d2; margin:8px 0 4px;">¥450</div>
+      <div style="font-size:11px; color:#888; display:flex; gap:12px;">
+        <span>📊 4901357924680</span>
+        <span>🏷 LR6-4B</span>
+      </div>
+      <div style="font-size:11px; color:#999; margin-top:4px;">パナソニック</div>
+    </div>
+
+    <!-- Card 4 -->
+    <div style="border:1px solid #e0e0e0; border-radius:12px; padding:16px; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="font-weight:600; font-size:14px; flex:1;">マイクロファイバークロス 3枚セット</div>
+        <span style="background:#fce4ec; color:#c62828; padding:2px 8px; border-radius:12px; font-size:11px;">雑貨</span>
+      </div>
+      <div style="font-size:20px; font-weight:700; color:#1976d2; margin:8px 0 4px;">¥680</div>
+      <div style="font-size:11px; color:#888; display:flex; gap:12px;">
+        <span>📊 —</span>
+        <span>🏷 MFC-3SET</span>
+      </div>
+      <div style="font-size:11px; color:#999; margin-top:4px;"></div>
+    </div>
+
+  </div>
+
+  <!-- FAB indicator -->
+  <div style="position:relative; height:40px;">
+    <div style="position:absolute; right:16px; bottom:0; width:44px; height:44px; border-radius:50%; background:#7b1fa2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 4px 12px rgba(123,31,162,0.4); cursor:default;">＋</div>
+  </div>
+</div>
+
+<p style="font-size:12px; color:#888; margin-top:6px;">💡 カードをタップで詳細表示／編集。FAB「＋」で新規商品追加。スワイプでクイックアクション（複製・削除）。</p>
+</div>
+
+</div>
+
+<!-- Comparison table -->
+<div class="section" style="margin-top:24px;">
+<h3>比較</h3>
+<table style="width:100%; border-collapse:collapse; font-size:13px;">
+  <tr style="background:#f5f5f5;">
+    <th style="text-align:left; padding:8px 12px; border-bottom:1px solid #ddd;">観点</th>
+    <th style="text-align:left; padding:8px 12px; border-bottom:1px solid #ddd;">スプレッドシート形式</th>
+    <th style="text-align:left; padding:8px 12px; border-bottom:1px solid #ddd;">カード形式</th>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee; font-weight:500;">ユースケース</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">一括編集・初期投入・価格改定</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">日次参照・バーコードスキャン確認・在庫確認</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee; font-weight:500;">一度に表示できる件数</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">多い（20〜50行）</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">中程度（6〜12カード）</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee; font-weight:500;">編集効率</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">★★★★★ — セル単位の高速編集</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">★★☆☆☆ — 1件ずつ画面遷移</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee; font-weight:500;">視認性</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">★★☆☆☆ — 情報量は多いが見づらい</td>
+    <td style="padding:8px 12px; border-bottom:1px solid #eee;">★★★★★ — 視覚的整理・スキャンしやすい</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px; font-weight:500;">モバイル適性</td>
+    <td style="padding:8px 12px;">△ — 横スクロール必須になりがち</td>
+    <td style="padding:8px 12px;">◯ — カードレイアウトで対応可能</td>
+  </tr>
+</table>
+</div>

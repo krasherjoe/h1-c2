@@ -8,6 +8,7 @@ import '../../../services/input_style_service.dart';
 import '../../../services/error_reporter.dart';
 import '../../../services/sheets_sync_service.dart';
 import '../screens/product_editor_screen.dart';
+import 'product_spreadsheet_screen.dart';
 import '../../../constants/screen_ids.dart';
 
 class CategoryExplorerScreen extends StatefulWidget {
@@ -23,12 +24,8 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   List<Product> _products = [];
   List<ProductCategory> _categories = [];
   bool _loading = true;
-  bool _isTreeView = true;
-  int _displaySize = 1; // 0=S, 1=M, 2=L
   String _searchQuery = '';
   String? _selectedCategoryId;
-
-  final _expandedCategories = <String>{};
 
   // --- デザインシステム定数 (D1基準) ---
   static const _kSpacing = 8.0;   // D1と統一: Card margin = 8
@@ -38,13 +35,6 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   void initState() {
     super.initState();
     _load();
-  }
-
-  void _autoExpandAll() {
-    for (final cat in _categories) {
-      _expandedCategories.add(cat.id);
-    }
-    debugPrint('[P1] auto-expanded all: ${_expandedCategories.length} categories');
   }
 
   Future<void> _load() async {
@@ -57,11 +47,11 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       _categories = categories;
       _loading = false;
     });
-    final logMsg = 'P1 ログ: products=${_products.length}, categories=${_categories.length}, expanded=$_expandedCategories, showShadows=${inputStyleNotifier.value == "raised"}';
+    final showShadows = inputStyleNotifier.value == 'raised';
+    final logMsg = 'P1 ログ: products=${_products.length}, categories=${_categories.length}, showShadows=$showShadows';
     debugPrint(logMsg);
     ErrorReporter.sendLog(message: logMsg);
     debugPrint('[P1] sample products: ${_products.take(3).map((p) => '${p.name}(${p.categoryId})').join(', ')}');
-    _autoExpandAll();
   }
 
   List<Product> get _filteredProducts {
@@ -82,40 +72,30 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('${S.p1}:商品マスター'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(_isTreeView ? Icons.view_list : Icons.account_tree),
-            tooltip: _isTreeView ? 'リスト表示' : 'ツリー表示',
-            onPressed: () => setState(() => _isTreeView = !_isTreeView),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('${S.p1}:商品マスター'),
+          centerTitle: true,
+          bottom: const TabBar(
+            isScrollable: true,
+            tabs: [
+              Tab(icon: Icon(Icons.table_chart), text: 'スプレッドシート'),
+              Tab(icon: Icon(Icons.view_module), text: 'カード'),
+            ],
           ),
-          IconButton(
-            icon: Icon(_displaySize == 0 ? Icons.view_list : _displaySize == 1 ? Icons.view_module : Icons.view_day),
-            tooltip: _displaySize == 0 ? 'S表示' : _displaySize == 1 ? 'M表示' : 'L表示',
-            onPressed: () => setState(() => _displaySize = (_displaySize + 1) % 3),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildSearchBar(cs),
-          if (!_isTreeView) _buildCategoryFilter(cs),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _isTreeView
-                    ? _buildTreeView(cs)
-                    : _buildListView(cs),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showProductActions,
-        child: const Icon(Icons.add),
+        ),
+        body: TabBarView(
+          children: [
+            const SpreadsheetProductScreen(),
+            _buildCardTab(),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _showProductActions,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -163,150 +143,18 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     );
   }
 
-  // --- ツリー表示 ---
-  Widget _buildTreeView(ColorScheme cs) {
-    return ValueListenableBuilder<String>(
-      valueListenable: inputStyleNotifier,
-      builder: (context, inputStyle, _) {
-        final showShadows = inputStyle == 'raised';
-        final rootCategories = _categories.where((c) => c.parentId == null).toList();
-        final uncategorizedProducts = _products.where((p) => p.categoryId == null).toList();
-        final treeLog = 'P1 ツリー: rootCategories=${rootCategories.length}, uncategorized=${uncategorizedProducts.length}, showShadows=$showShadows, expanded=$_expandedCategories';
-        debugPrint(treeLog);
-        ErrorReporter.sendLog(message: treeLog);
-        return RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.all(12),
-            children: [
-              ...rootCategories.map((cat) =>
-                _buildCategoryTreeItem(cat, 0, cs, showShadows)),
-              if (uncategorizedProducts.isNotEmpty)
-                _buildUncategorizedSection(cs, showShadows),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildCategoryTreeItem(ProductCategory cat, int depth, ColorScheme cs, bool showShadows) {
-    final children = _categories.where((c) => c.parentId == cat.id).toList();
-    final products = _products.where((p) => p.categoryId == cat.id).toList();
-    final hasChildren = children.isNotEmpty;
-    final isExpanded = _expandedCategories.contains(cat.id);
-    final spacing = _kSpacing;
-    debugPrint('[P1] treeItem: ${cat.name}(id=${cat.id}) products=${products.length} expanded=$isExpanded');
-
-    return DragTarget<Product>(
-      onWillAcceptWithDetails: (details) => details.data.categoryId != cat.id,
-      onAcceptWithDetails: (details) async {
-        try {
-          final updated = details.data.copyWith(categoryId: cat.id);
-          await _productRepo.saveProduct(updated);
-          setState(() => _expandedCategories.add(cat.id));
-          await _load();
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('商品移動エラー: $e')),
-            );
-          }
-        }
-      },
-      builder: (ctx, candidates, rejected) {
-        final isHighlighted = candidates.isNotEmpty;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InkWell(
-              onTap: hasChildren ? () => setState(() {
-                if (isExpanded) _expandedCategories.remove(cat.id);
-                else _expandedCategories.add(cat.id);
-              }) : null,
-              child: Container(
-                padding: EdgeInsets.only(left: depth * 20.0, right: 8, top: spacing, bottom: spacing),
-                decoration: isHighlighted ? BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ) : null,
-                child: Row(
-                  children: [
-                Icon(
-                  hasChildren ? (isExpanded ? Icons.expand_more : Icons.chevron_right) : Icons.label,
-                  size: [16, 20, 24][_displaySize].toDouble(),
-                  color: isHighlighted ? cs.primary : const Color(0xFF8D6E63),
-                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null,
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.folder, size: [18, 22, 26][_displaySize].toDouble(),
-                    color: isHighlighted ? cs.primary : const Color(0xFFFFCA28),
-                    shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
-                const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(cat.name,
-                        style: TextStyle(
-                          fontSize: [12, 14, 16][_displaySize].toDouble(),
-                          fontWeight: FontWeight.w500,
-                          color: isHighlighted ? cs.primary : null,
-                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.3))] : null,
-                        )),
-                    ),
-                    Text('${products.length + children.length}',
-                      style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(),
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                          shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.25))] : null)),
-                    const SizedBox(width: 8),
-                    PopupMenuButton<String>(
-                      icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
-                      onSelected: (v) => _handleCategoryAction(v, cat),
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'rename', child: Text('名前変更')),
-                        const PopupMenuItem(value: 'add_sub', child: Text('サブカテゴリ追加')),
-                        const PopupMenuItem(value: 'delete', child: Text('削除')),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (isExpanded) ...[
-          ...products.map((p) => _buildProductCard(p, depth + 1, cs, showShadows: showShadows)),
-          ...children.map((child) => _buildCategoryTreeItem(child, depth + 1, cs, showShadows)),
-            ],
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildUncategorizedSection(ColorScheme cs, bool showShadows) {
-    final uncategorized = _products.where((p) => p.categoryId == null).toList();
-    final spacing = _kSpacing;
+  // --- カードタブ (旧リスト表示) ---
+  Widget _buildCardTab() {
+    final cs = Theme.of(context).colorScheme;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: spacing),
-          child: Row(
-            children: [
-              Icon(Icons.label, size: [18, 22, 26][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
-              const SizedBox(width: 8),
-              Text('未分類',
-                style: TextStyle(
-                  fontSize: [12, 14, 16][_displaySize].toDouble(),
-                  fontWeight: FontWeight.w500,
-                  shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.3))] : null,
-                )),
-              const SizedBox(width: 8),
-              Text('${uncategorized.length}',
-                style: TextStyle(fontSize: [10, 12, 13][_displaySize].toDouble(), color: cs.onSurfaceVariant,
-                    shadows: showShadows ? [Shadow(blurRadius: 1, color: cs.shadow.withValues(alpha: 0.25))] : null)),
-            ],
-          ),
+        _buildSearchBar(cs),
+        _buildCategoryFilter(cs),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildListView(cs),
         ),
-        ...uncategorized.map((p) => _buildProductCard(p, 0, cs, showShadows: showShadows)),
       ],
     );
   }
@@ -338,10 +186,10 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
 
   Widget _buildProductCardContent(Product product, int depth, ColorScheme cs, bool showShadows) {
     final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
-    final iconSize = [18.0, 22.0, 26.0][_displaySize];
-    final textS = [12.0, 14.0, 15.0][_displaySize];
-    final subS = [10.0, 11.0, 12.0][_displaySize];
-    final priceS = [12.0, 13.0, 14.0][_displaySize];
+    const iconSize = 22.0;
+    const textS = 14.0;
+    const subS = 11.0;
+    const priceS = 13.0;
     return Card(
       margin: EdgeInsets.symmetric(horizontal: _kSpacing / 2, vertical: 4.0),
       elevation: showShadows ? null : 0,
@@ -604,101 +452,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     }
   }
 
-  Future<void> _importSimpleFormat(List<List<dynamic>> rows, List<String> createdIds) async {
-    final dataRows = rows.skip(1).toList();
-    debugPrint('[Simple Format] Data rows: ${dataRows.length}');
-    for (final row in dataRows) {
-      debugPrint('[Simple Format] Row: $row');
-      if (row.length < 2) continue;
-      final name = row[0]?.toString().trim() ?? '';
-      final price = int.tryParse(row[1]?.toString() ?? '') ?? 0;
-      debugPrint('[Simple Format] Name: $name, Price: $price');
-      if (name.isEmpty) continue;
-      final product = Product(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        defaultUnitPrice: price,
-        barcode: row.length > 2 ? row[2]?.toString() : null,
-        modelNumber: row.length > 3 ? row[3]?.toString() : null,
-        manufacturer: row.length > 4 ? row[4]?.toString() : null,
-        categoryId: row.length > 5 ? row[5]?.toString() : null,
-      );
-      await _productRepo.saveProduct(product);
-      createdIds.add(product.id);
-    }
-  }
 
-  Future<void> _importOldh1Format(List<List<dynamic>> rows, List<String> createdIds) async {
-    final dataRows = rows.skip(1).toList();
-    for (final row in dataRows) {
-      if (row.length < 2) continue;
-      final name = row[0]?.toString().trim() ?? '';
-      final price = int.tryParse(row[1]?.toString() ?? '') ?? 0;
-      if (name.isEmpty) continue;
-      final product = Product(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        defaultUnitPrice: price,
-        barcode: row.length > 3 ? row[3]?.toString() : null,
-        categoryId: row.length > 4 ? row[4]?.toString() : null,
-        modelNumber: row.length > 5 ? row[5]?.toString() : null,
-        manufacturer: row.length > 6 ? row[6]?.toString() : null,
-        stockQuantity: row.length > 7 ? int.tryParse(row[7]?.toString() ?? '') : null,
-      );
-      await _productRepo.saveProduct(product);
-      createdIds.add(product.id);
-    }
-  }
-
-  Future<void> _importJanFormat(List<List<dynamic>> rows, List<String> createdIds) async {
-    final dataRows = rows.skip(1).toList();
-    for (final row in dataRows) {
-      if (row.length < 2) continue;
-      final janCode = row[0]?.toString().trim() ?? '';
-      final name = row[1]?.toString().trim() ?? '';
-      final nameKana = row.length > 2 ? row[2]?.toString() : null;
-      final manufacturer = row.length > 3 ? row[3]?.toString() : null;
-      final classificationCode = row.length > 4 ? row[4]?.toString() : null;
-      final price = int.tryParse(row[5]?.toString() ?? '') ?? 0;
-      if (name.isEmpty) continue;
-      final product = Product(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        defaultUnitPrice: price,
-        barcode: janCode.isNotEmpty ? janCode : null,
-        manufacturer: manufacturer,
-        classificationCode: classificationCode,
-        productNameKana: nameKana,
-      );
-      await _productRepo.saveProduct(product);
-      createdIds.add(product.id);
-    }
-  }
-
-  Future<void> _importMoovFormat(List<List<dynamic>> rows, List<String> createdIds) async {
-    final dataRows = rows.skip(1).toList();
-    for (final row in dataRows) {
-      if (row.length < 2) continue;
-      final janCode = row[1]?.toString().trim() ?? '';
-      final productNumber = row.length > 2 ? row[2]?.toString() : null;
-      final nameKana = row.length > 3 ? row[3]?.toString() : null;
-      final name = row[5]?.toString().trim() ?? '';
-      final manufacturerCode = row.length > 7 ? row[7]?.toString() : null;
-      final price = int.tryParse(row[10]?.toString().replaceAll(',', '') ?? '') ?? 0;
-      if (name.isEmpty) continue;
-      final product = Product(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        defaultUnitPrice: price,
-        barcode: janCode.isNotEmpty ? janCode : null,
-        manufacturerCode: manufacturerCode,
-        modelNumber: productNumber,
-        productNameKana: nameKana,
-      );
-      await _productRepo.saveProduct(product);
-      createdIds.add(product.id);
-    }
-  }
 
   void _undoImport(List<String> productIds) async {
     for (final id in productIds) {
@@ -735,63 +489,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     ).then((_) => _load());
   }
 
-  void _handleCategoryAction(String action, ProductCategory cat) async {
-    switch (action) {
-      case 'rename':
-        final controller = TextEditingController(text: cat.name);
-        final name = await showDialog<String>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('カテゴリ名変更'),
-            content: TextField(controller: controller, autofocus: true),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-              FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('保存')),
-            ],
-          ),
-        );
-        if (name != null && name.isNotEmpty) {
-          await _catRepo.save(cat.copyWith(name: name));
-          _load();
-        }
-        break;
-      case 'add_sub':
-        final controller = TextEditingController();
-        final name = await showDialog<String>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('サブカテゴリ追加'),
-            content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(hintText: 'カテゴリ名')),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-              FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('追加')),
-            ],
-          ),
-        );
-        if (name != null && name.isNotEmpty) {
-          await _catRepo.save(ProductCategory(id: DateTime.now().millisecondsSinceEpoch.toString(), name: name, parentId: cat.id));
-          _load();
-        }
-        break;
-      case 'delete':
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('カテゴリ削除'),
-            content: Text('「${cat.name}」を削除しますか？'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
-              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('削除')),
-            ],
-          ),
-        );
-        if (confirm == true) {
-          await _catRepo.delete(cat.id);
-          _load();
-        }
-        break;
-    }
-  }
+
 }
 
 // --- ビューアー画面 ---

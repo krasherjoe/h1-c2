@@ -56,7 +56,7 @@ class ProductsPlugin extends H1Plugin {
   List<ScreenDefinition> get screens => [
     ScreenDefinition(
       id: S.p1,
-      title: '商品カテゴリ',
+      title: '商品マスター',
       route: '/products',
       builder: (_) => const CategoryExplorerScreen(),
       category: 'マスター',

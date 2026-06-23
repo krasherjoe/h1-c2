@@ -1,0 +1,186 @@
+<h2>スプレッドシート表示カラム設定</h2>
+<p class="subtitle">どの項目をテーブルに表示しますか？ 優先順にタップして選択してください。</p>
+
+<div class="section">
+<h3>現在の表示カラム（7列）</h3>
+<p style="font-size:13px; color:#666;">チェックを入れた項目がスプレッドシートに表示されます。</p>
+
+<div style="display:flex; flex-direction:column; gap:6px; margin:12px 0;">
+  <div class="option" data-choice="selected" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer; background:#e8f5e9;">
+    <span style="font-size:18px; color:#2e7d32;">✓</span>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:14px;">商品名 <span style="font-weight:400; color:#888; font-size:12px;">(name)</span></div>
+      <div style="font-size:11px; color:#999;">商品の正式名称。一括編集で最も頻繁に変更される項目。</div>
+    </div>
+    <span style="font-size:11px; color:#888; background:#f5f5f5; padding:2px 8px; border-radius:4px;">常時表示</span>
+  </div>
+
+  <div class="option" data-choice="selected" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer; background:#e8f5e9;">
+    <span style="font-size:18px; color:#2e7d32;">✓</span>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:14px;">単価 <span style="font-weight:400; color:#888; font-size:12px;">(default_unit_price)</span></div>
+      <div style="font-size:11px; color:#999;">標準販売単価。税抜き／税込の表示切替対応。</div>
+    </div>
+    <span style="font-size:11px; color:#888; background:#f5f5f5; padding:2px 8px; border-radius:4px;">常時表示</span>
+  </div>
+
+  <div class="option" data-choice="selected" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer; background:#e8f5e9;">
+    <span style="font-size:18px; color:#2e7d32;">✓</span>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:14px;">バーコード (JAN) <span style="font-weight:400; color:#888; font-size:12px;">(barcode)</span></div>
+      <div style="font-size:11px; color:#999;">JANコード・EANコード。スキャナ連携、在庫管理で使用。</div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="selected" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer; background:#e8f5e9;">
+    <span style="font-size:18px; color:#2e7d32;">✓</span>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:14px;">型番 <span style="font-weight:400; color:#888; font-size:12px;">(model_number)</span></div>
+      <div style="font-size:11px; color:#999;">メーカー型番・管理番号。仕入発注時の識別に使用。</div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="selected" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer; background:#e8f5e9;">
+    <span style="font-size:18px; color:#2e7d32;">✓</span>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:14px;">カテゴリ <span style="font-weight:400; color:#888; font-size:12px;">(category / category_id)</span></div>
+      <div style="font-size:11px; color:#999;">所属カテゴリ。ドロップダウンで選択、ドラッグ&ドロップで変更。</div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="selected" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer; background:#e8f5e9;">
+    <span style="font-size:18px; color:#2e7d32;">✓</span>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:14px;">メーカー <span style="font-weight:400; color:#888; font-size:12px;">(manufacturer)</span></div>
+      <div style="font-size:11px; color:#999;">製造元・ブランド名。</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="section">
+<h3>追加可能カラム</h3>
+<p style="font-size:13px; color:#666;">以下の項目は現在非表示です。タップして表示カラムに追加できます。</p>
+
+<div style="display:flex; flex-direction:column; gap:6px; margin:12px 0;">
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">卸値 (仕入価格) <span style="font-weight:400; color:#888; font-size:12px;">(wholesale_price)</span></div>
+      <div style="font-size:11px; color:#999;">仕入単価。粗利計算に使用。税抜き／税込切替対応。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">在庫数 <span style="font-weight:400; color:#888; font-size:12px;">(stock_quantity)</span></div>
+      <div style="font-size:11px; color:#999;">現在庫数。在庫管理プラグインとの連携で自動更新。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">仕入先 <span style="font-weight:400; color:#888; font-size:12px;">(supplier_name)</span></div>
+      <div style="font-size:11px; color:#999;">仕入先名。発注業務で使用。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">商品名カナ <span style="font-weight:400; color:#888; font-size:12px;">(product_name_kana)</span></div>
+      <div style="font-size:11px; color:#999;">JAN標準対応。読み仮名での検索・ソートに使用。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">メーカーコード <span style="font-weight:400; color:#888; font-size:12px;">(manufacturer_code)</span></div>
+      <div style="font-size:11px; color:#999;">JAN標準のメーカーコード。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">分類コード <span style="font-weight:400; color:#888; font-size:12px;">(classification_code)</span></div>
+      <div style="font-size:11px; color:#999;">JAN標準の分類コード。業種別分類に使用。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">説明 <span style="font-weight:400; color:#888; font-size:12px;">(description)</span></div>
+      <div style="font-size:11px; color:#999;">商品説明文。伝票・帳票への記載用。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">タグ <span style="font-weight:400; color:#888; font-size:12px;">(tags)</span></div>
+      <div style="font-size:11px; color:#999;">任意タグ。グループ化・フィルタリングに使用。</div>
+    </div>
+  </div>
+
+  <div class="option" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px dashed #ccc; border-radius:8px; cursor:pointer;">
+    <span style="font-size:18px; color:#bbb;">○</span>
+    <div style="flex:1;">
+      <div style="font-weight:500; font-size:14px;">有効期間 <span style="font-weight:400; color:#888; font-size:12px;">(valid_from / valid_to)</span></div>
+      <div style="font-size:11px; color:#999;">販売有効期間。期限切れ商品は自動非表示。</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="section" style="margin-top:16px;">
+<h3>表示順プレビュー（ドラッグで並べ替え）</h3>
+<div style="display:flex; flex-wrap:wrap; gap:6px; padding:8px 0;">
+  <span style="background:#1565c0; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab;">↕ 商品名</span>
+  <span style="background:#1565c0; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab;">↕ 単価</span>
+  <span style="background:#1565c0; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab;">↕ バーコード</span>
+  <span style="background:#1565c0; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab;">↕ 型番</span>
+  <span style="background:#1565c0; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab;">↕ カテゴリ</span>
+  <span style="background:#1565c0; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab;">↕ メーカー</span>
+  <span style="background:#9e9e9e; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab; opacity:0.5;">↕ 卸値</span>
+  <span style="background:#9e9e9e; color:#fff; padding:4px 12px; border-radius:16px; font-size:13px; cursor:grab; opacity:0.5;">↕ 在庫数</span>
+</div>
+</div>
+
+<div class="options" style="margin-top:20px;">
+  <div class="option" data-choice="inline" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:10px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer;">
+    <span style="font-size:16px; color:#ff9800;">💾</span>
+    <div>
+      <div style="font-weight:500; font-size:13px;">カラム設定を保存</div>
+    </div>
+  </div>
+  <div class="option" data-choice="inline" onclick="toggleSelect(this)" style="display:flex; align-items:center; gap:10px; padding:10px 14px; border:1px solid #e0e0e0; border-radius:8px; cursor:pointer;">
+    <span style="font-size:16px; color:#1976d2;">↺</span>
+    <div>
+      <div style="font-weight:500; font-size:13px;">デフォルトに戻す</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSelect(el) {
+  const isSelected = el.getAttribute('data-choice') === 'selected';
+  if (isSelected) {
+    el.setAttribute('data-choice', '');
+    el.style.background = '';
+    el.querySelector('span:first-child').textContent = '○';
+    el.querySelector('span:first-child').style.color = '#bbb';
+  } else {
+    el.setAttribute('data-choice', 'selected');
+    el.style.background = '#e8f5e9';
+    el.querySelector('span:first-child').textContent = '✓';
+    el.querySelector('span:first-child').style.color = '#2e7d32';
+  }
+}
+</script>
