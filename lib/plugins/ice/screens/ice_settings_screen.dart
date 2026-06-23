@@ -180,28 +180,46 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
         return;
       }
 
-      final results = <FileSystemEntity>[];
+      // 既知のパスのみスキャン（全SDカードは走査しない）
+      final resultSet = <FileSystemEntity>{};
+      final scanPaths = <String>{dirPath};
+
+      // Documents 以下も追加でスキャン（別パスの場合）
+      final docsPath = '/storage/emulated/0/Documents';
+      if (dirPath != docsPath && await Directory(docsPath).exists()) {
+        scanPaths.add(docsPath);
+      }
+      // アプリデータディレクトリも追加
       try {
-        // 再帰検索 + エラーが発生しても無視して続行
-        final stream = dir.list(recursive: true, followLinks: false)
-            .handleError((e) => debugPrint('[Scan] skip: $e'));
-        await for (final entity in stream) {
-          if (!mounted) return;
-          if (entity is File) {
-            final name = entity.uri.pathSegments.last.toLowerCase();
-            if (name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3')) {
-              results.add(entity);
-              // 最大50ファイルまで
-              if (results.length >= 50) break;
+        final appDir = await getApplicationDocumentsDirectory();
+        scanPaths.add(appDir.path);
+      } catch (_) {}
+
+      for (final path in scanPaths) {
+        if (!mounted) return;
+        try {
+          final scanDir = Directory(path);
+          if (!await scanDir.exists()) continue;
+          await for (final entity in scanDir.list(recursive: true, followLinks: false)
+              .handleError((e) => debugPrint('[Scan] skip: $e'))) {
+            if (!mounted) return;
+            if (resultSet.length >= 50) break;
+            if (entity is File) {
+              final name = entity.uri.pathSegments.last.toLowerCase();
+              if (name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3')) {
+                resultSet.add(entity);
+              }
             }
           }
+        } catch (e) {
+          debugPrint('[Scan] path error ($path): $e');
         }
-      } catch (e) {
-        debugPrint('[Scan] エラー: $e');
+        if (resultSet.length >= 50) break;
       }
 
-      results.sort((a, b) => (b as File).lastModifiedSync().compareTo(
-        (a as File).lastModifiedSync()));
+      final results = resultSet.toList()
+        ..sort((a, b) => (b as File).lastModifiedSync().compareTo(
+          (a as File).lastModifiedSync()));
 
       if (!mounted) return;
       setState(() {
