@@ -54,7 +54,7 @@ class CompanyPlugin extends H1Plugin {
     ScreenDefinition(
       id: S.tm,
       title: '法人切替',
-      route: '/company/switch',
+      route: '/company-switch',
       builder: (_) => const CompanySwitchScreen(),
       category: 'システム',
       icon: Icons.swap_horiz,
@@ -67,7 +67,7 @@ class CompanyPlugin extends H1Plugin {
   @override
   Map<String, WidgetBuilder> getRoutes() => {
     '/company': (_) => const CompanyProfileScreen(),
-    '/company/switch': (_) => const CompanySwitchScreen(),
+    '/company-switch': (_) => const CompanySwitchScreen(),
   };
 
   @override
