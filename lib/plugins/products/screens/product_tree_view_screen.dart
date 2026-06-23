@@ -410,11 +410,11 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     return Column(
       children: [
         if (isDragging)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: cs.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
@@ -422,36 +422,28 @@ class _ProductTreeViewState extends State<ProductTreeView> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.open_with, size: 20, color: cs.primary),
-                  const SizedBox(width: 12),
+                  Icon(Icons.open_with, size: 18, color: cs.primary),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'カテゴリをタップしてドロップ',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: cs.onPrimaryContainer,
-                          ),
-                        ),
-                        Text(
-                          '商品: ${_products.firstWhere((p) => p.id == _draggingProductId).name}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: cs.onPrimaryContainer.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '${_products.firstWhere((p) => p.id == _draggingProductId).name} → タップでドロップ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onPrimaryContainer,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   TextButton(
                     onPressed: _cancelDrag,
                     style: TextButton.styleFrom(
                       foregroundColor: cs.error,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('キャンセル', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('キャンセル', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
