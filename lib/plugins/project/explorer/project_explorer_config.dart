@@ -228,7 +228,7 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
               Text('￥${_fmt(project.totalAmount)}',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: cs.primary)),
             ]),
-            if (project.contractMonths != null && project.contractMonths! > 0) ...[
+            if (project.startDate != null) ...[
               const SizedBox(height: 4),
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
