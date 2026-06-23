@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:uuid/uuid.dart';
 import '../../../services/barcode_utils.dart';
+import '../../../services/database_helper.dart';
 import '../../../models/product_model.dart';
 import '../../../services/product_repository.dart';
 import '../../../services/product_category_repository.dart';
 import '../../../widgets/h1_form_field.dart';
 import 'category_picker_dialog.dart';
 import '../../../services/sync_service.dart';
+import '../../suppliers/screens/supplier_picker_dialog.dart';
+import '../../suppliers/models/supplier.dart';
 
 class ProductEditorScreen extends StatefulWidget {
   final Product? product;
@@ -29,11 +32,12 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
   final _manufacturerCodeCtl = TextEditingController();
   final _classificationCodeCtl = TextEditingController();
   final _divisionCodeCtl = TextEditingController();
-  final _supplierCtl = TextEditingController();
   final _stockCtl = TextEditingController();
   final _repo = ProductRepository();
   String? _selectedCategoryId;
   String? _selectedCategoryPath;
+  Supplier? _selectedSupplier;
+  String? _selectedSupplierId;
   bool _isLocked = false;
   bool _isSaving = false;
 
@@ -62,7 +66,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
       _divisionCodeCtl.text = p.divisionCode ?? '';
       _selectedCategoryId = p.categoryId;
       _selectedCategoryPath = p.category;
-      _supplierCtl.text = p.supplierName ?? '';
+      _selectedSupplierId = p.supplierId;
       _stockCtl.text = p.stockQuantity?.toString() ?? '';
       _isLocked = p.isLocked;
       if (!_isVariant) _loadOptions();
@@ -97,7 +101,6 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
     _manufacturerCodeCtl.dispose();
     _classificationCodeCtl.dispose();
     _divisionCodeCtl.dispose();
-    _supplierCtl.dispose();
     _stockCtl.dispose();
     super.dispose();
   }
@@ -146,7 +149,8 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
         divisionCode: _divisionCodeCtl.text.trim().isEmpty ? null : _divisionCodeCtl.text.trim(),
         category: _selectedCategoryPath,
         categoryId: _selectedCategoryId,
-        supplierName: _supplierCtl.text.trim().isEmpty ? null : _supplierCtl.text.trim(),
+        supplierId: _selectedSupplierId,
+        supplierName: _selectedSupplier?.displayName,
         stockQuantity: int.tryParse(_stockCtl.text),
         isLocked: _isLocked,
         isHidden: widget.product?.isHidden ?? false,
@@ -191,6 +195,91 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
       _selectedCategoryId = result;
       _selectedCategoryPath = pathStr;
     });
+  }
+
+  Widget _buildSupplierField(ThemeData theme) {
+    final cs = theme.colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: () async {
+              final result = await showSupplierPicker(context);
+              if (result != null) {
+                setState(() {
+                  _selectedSupplier = result;
+                  _selectedSupplierId = result.id;
+                });
+              }
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: '仕入先',
+                prefixIcon: const Icon(Icons.person),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(
+                _selectedSupplier?.displayName ?? 'タップして選択',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: _selectedSupplier != null
+                      ? cs.onSurface
+                      : cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (_selectedSupplier != null) ...[
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _selectedSupplier = null;
+                _selectedSupplierId = null;
+              });
+            },
+            child: const Text('クリア'),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildManufacturerField(ThemeData theme) {
+    return Autocomplete<String>(
+      optionsBuilder: (TextEditingValue textEditingValue) async {
+        if (textEditingValue.text.isEmpty) {
+          return const Iterable<String>.empty();
+        }
+        final db = await DatabaseHelper().database;
+        final rows = await db.rawQuery(
+          "SELECT DISTINCT manufacturer FROM products WHERE manufacturer IS NOT NULL AND manufacturer LIKE ? AND is_current = 1 LIMIT 20",
+          ['%${textEditingValue.text}%'],
+        );
+        return rows.map((r) => r['manufacturer'] as String).where((s) => s.isNotEmpty);
+      },
+      onSelected: (String selection) {
+        _manufacturerCtl.text = selection;
+      },
+      initialValue: TextEditingValue(text: _manufacturerCtl.text),
+      fieldViewBuilder: (context, textEditingController, focusNode, onSubmitted) {
+        return H1FormField(
+          controller: textEditingController,
+          focusNode: focusNode,
+          decoration: const InputDecoration(
+            labelText: 'メーカー',
+            prefixIcon: Icon(Icons.factory),
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          onFieldSubmitted: (_) => onSubmitted(),
+        );
+      },
+    );
   }
 
   Widget _buildCategoryField(ThemeData theme) {
@@ -378,15 +467,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
             Row(
               children: [
                 Expanded(
-                  child: H1FormField(
-                    controller: _manufacturerCtl,
-                    decoration: const InputDecoration(
-                      labelText: 'メーカー',
-                      prefixIcon: Icon(Icons.factory),
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
-                  ),
+                  child: _buildManufacturerField(theme),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -442,15 +523,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
             Row(
               children: [
                 Expanded(
-                  child: H1FormField(
-                    controller: _supplierCtl,
-                    decoration: const InputDecoration(
-                      labelText: '仕入先',
-                      prefixIcon: Icon(Icons.person),
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
-                  ),
+                  child: _buildSupplierField(theme),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
