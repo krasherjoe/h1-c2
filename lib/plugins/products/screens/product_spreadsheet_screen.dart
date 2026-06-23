@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/product_model.dart';
+import '../../../services/database_helper.dart';
 import '../../../services/product_repository.dart';
 
 /// スプレッドシート型の商品一覧画面。
@@ -26,6 +27,8 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   final Map<String, TextEditingController> _barcodeControllers = {};
   final Map<String, TextEditingController> _modelNumberControllers = {};
   final Map<String, TextEditingController> _manufacturerControllers = {};
+  final Map<String, TextEditingController> _supplierControllers = {};
+  double _scale = 1.0;
 
   // Modified & new row tracking
   final Set<String> _modifiedIds = {};
@@ -55,6 +58,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
       c.dispose();
     }
     for (final c in _manufacturerControllers.values) {
+      c.dispose();
+    }
+    for (final c in _supplierControllers.values) {
       c.dispose();
     }
     super.dispose();
@@ -126,6 +132,10 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
         p.id,
         () => TextEditingController(text: p.manufacturer ?? ''),
       );
+      _supplierControllers.putIfAbsent(
+        p.id,
+        () => TextEditingController(text: p.supplierName ?? ''),
+      );
     }
   }
 
@@ -149,6 +159,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
       _barcodeControllers[newId] = TextEditingController(text: '');
       _modelNumberControllers[newId] = TextEditingController(text: '');
       _manufacturerControllers[newId] = TextEditingController(text: '');
+      _supplierControllers[newId] = TextEditingController(text: '');
       _applyFilter();
     });
   }
@@ -184,6 +195,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
           true
           ? null
           : _manufacturerControllers[productId]!.text.trim(),
+      supplierName: _supplierControllers[productId]?.text.trim().isEmpty ?? true
+          ? null
+          : _supplierControllers[productId]!.text.trim(),
     );
 
     try {
@@ -263,6 +277,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
     _barcodeControllers.remove(productId)?.dispose();
     _modelNumberControllers.remove(productId)?.dispose();
     _manufacturerControllers.remove(productId)?.dispose();
+    _supplierControllers.remove(productId)?.dispose();
   }
 
   void _showSnackBar(String message) {
@@ -330,76 +345,118 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
 
   Widget _buildTable() {
     final cs = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
-        child: DataTable(
-          headingRowHeight: 40,
-          dataRowMinHeight: 40,
-          dataRowMaxHeight: 52,
-          columnSpacing: 12,
-          horizontalMargin: 12,
-          columns: [
-            DataColumn(
-              label: SizedBox(
-                width: 160,
-                child: const Text(
-                  '商品名',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+    return Column(
+      children: [
+        // ズームコントロール
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              Icon(Icons.zoom_out, size: 16, color: cs.onSurfaceVariant),
+              Expanded(
+                child: Slider(
+                  value: _scale,
+                  min: 0.5,
+                  max: 2.0,
+                  divisions: 15,
+                  onChanged: (v) => setState(() => _scale = v),
                 ),
               ),
-            ),
-            DataColumn(
-              label: SizedBox(
-                width: 100,
-                child: const Text(
-                  '単価',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+              Icon(Icons.zoom_in, size: 16, color: cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text('${(_scale * 100).round()}%', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () => setState(() => _scale = 1.0),
+                child: const Text('リセット', style: TextStyle(fontSize: 11)),
               ),
-            ),
-            DataColumn(
-              label: SizedBox(
-                width: 130,
-                child: const Text(
-                  'バーコード',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-            DataColumn(
-              label: SizedBox(
-                width: 110,
-                child: const Text(
-                  '型番',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-            DataColumn(
-              label: SizedBox(
-                width: 120,
-                child: const Text(
-                  'メーカー',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-            DataColumn(
-              label: const SizedBox(
-                width: 72,
-                child: Text(
-                  '操作',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-          ],
-          rows: _filteredProducts.map((product) {
-            return _buildRow(product, cs);
-          }).toList(),
+            ],
+          ),
         ),
-      ),
+        // テーブル（ピンチズーム対応）
+        Expanded(
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 2.0,
+            scaleEnabled: true,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowHeight: 40,
+                dataRowMinHeight: 40,
+                dataRowMaxHeight: 52,
+                columnSpacing: 12,
+                horizontalMargin: 12,
+                columns: [
+                  DataColumn(
+                    label: SizedBox(
+                      width: 160,
+                      child: const Text(
+                        '商品名',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  DataColumn(
+                    label: SizedBox(
+                      width: 100,
+                      child: const Text(
+                        '単価',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  DataColumn(
+                    label: SizedBox(
+                      width: 130,
+                      child: const Text(
+                        'バーコード',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  DataColumn(
+                    label: SizedBox(
+                      width: 110,
+                      child: const Text(
+                        '型番',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  DataColumn(
+                    label: SizedBox(
+                      width: 120,
+                      child: const Text(
+                        'メーカー',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  DataColumn(
+                    label: SizedBox(
+                      width: 120,
+                      child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  DataColumn(
+                    label: const SizedBox(
+                      width: 72,
+                      child: Text(
+                        '操作',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+                rows: _filteredProducts.map((product) {
+                  return _buildRow(product, cs);
+                }).toList(),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -437,8 +494,51 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
           _modelNumberControllers[product.id], 110,
           onChanged: () => _markModified(product.id),
         ),
+        DataCell(
+          SizedBox(
+            width: 120,
+            child: Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) async {
+                if (textEditingValue.text.isEmpty) {
+                  return const Iterable<String>.empty();
+                }
+                try {
+                  final db = await DatabaseHelper().database;
+                  final rows = await db.rawQuery(
+                    "SELECT DISTINCT manufacturer FROM products WHERE manufacturer IS NOT NULL AND manufacturer LIKE ? AND is_current = 1 LIMIT 10",
+                    ['%${textEditingValue.text}%'],
+                  );
+                  return rows.map((r) => r['manufacturer'] as String).where((s) => s.isNotEmpty);
+                } catch (_) {
+                  return const Iterable<String>.empty();
+                }
+              },
+              onSelected: (String selection) {
+                _manufacturerControllers[product.id]?.text = selection;
+                _markModified(product.id);
+              },
+              initialValue: TextEditingValue(text: _manufacturerControllers[product.id]?.text ?? ''),
+              fieldViewBuilder: (context, textEditingController, focusNode, onSubmitted) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                  ),
+                  style: const TextStyle(fontSize: 13),
+                  onChanged: (v) {
+                    _manufacturerControllers[product.id]?.text = v;
+                    _markModified(product.id);
+                  },
+                  onSubmitted: (_) => onSubmitted(),
+                );
+              },
+            ),
+          ),
+        ),
         _textCell(
-          _manufacturerControllers[product.id], 120,
+          _supplierControllers[product.id], 120,
           onChanged: () => _markModified(product.id),
         ),
         DataCell(
