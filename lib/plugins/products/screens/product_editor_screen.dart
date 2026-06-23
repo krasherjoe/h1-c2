@@ -277,157 +277,200 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('基本情報', style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 12),
-                    H1FormField(
-                      controller: _nameCtl,
-                      decoration: const InputDecoration(
-                        labelText: '商品名 *',
-                        prefixIcon: Icon(Icons.inventory_2),
-                      ),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? '商品名は必須です' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: H1FormField(
-                            controller: _priceCtl,
-                            decoration: const InputDecoration(
-                              labelText: '単価',
-                              prefixIcon: Icon(Icons.monetization_on),
-                              prefixText: '¥ ',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: H1FormField(
-                            controller: _wholesaleCtl,
-                            decoration: const InputDecoration(
-                              labelText: '仕入価格',
-                              prefixIcon: Icon(Icons.shopping_cart),
-                              prefixText: '¥ ',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            // 商品名
+            H1FormField(
+              controller: _nameCtl,
+              decoration: const InputDecoration(
+                labelText: '商品名 *',
+                prefixIcon: Icon(Icons.inventory_2),
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty) ? '商品名は必須です' : null,
+            ),
+            const SizedBox(height: 8),
+            H1FormField(
+              controller: _nameKanaCtl,
+              decoration: const InputDecoration(
+                labelText: '商品名カナ',
+                prefixIcon: Icon(Icons.text_fields),
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('詳細', style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(
-                        child: H1FormField(
-                          controller: _barcodeCtl,
-                          decoration: const InputDecoration(
-                            labelText: 'バーコード',
-                            prefixIcon: Icon(Icons.qr_code),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 48,
-                        child: IconButton(
-                          icon: const Icon(Icons.qr_code_scanner),
-                          tooltip: 'バーコードをスキャン',
-                          onPressed: () => _scanBarcode(context),
-                        ),
-                      ),
-                    ]),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _modelCtl,
-                      decoration: const InputDecoration(
-                        labelText: '型番',
-                        prefixIcon: Icon(Icons.tag),
-                      ),
+            const SizedBox(height: 16),
+
+            // 価格（横並び）
+            Row(
+              children: [
+                Expanded(
+                  child: H1FormField(
+                    controller: _priceCtl,
+                    decoration: const InputDecoration(
+                      labelText: '単価',
+                      prefixIcon: Icon(Icons.monetization_on),
+                      prefixText: '¥ ',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     ),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _manufacturerCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'メーカー',
-                        prefixIcon: Icon(Icons.factory),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _nameKanaCtl,
-                      decoration: const InputDecoration(
-                        labelText: '商品名カナ',
-                        prefixIcon: Icon(Icons.text_fields),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _manufacturerCodeCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'メーカーコード',
-                        prefixIcon: Icon(Icons.code),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _classificationCodeCtl,
-                      decoration: const InputDecoration(
-                        labelText: '分類コード',
-                        prefixIcon: Icon(Icons.category),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _divisionCodeCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'ジャンルコード',
-                        prefixIcon: Icon(Icons.apps),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildCategoryField(theme),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _supplierCtl,
-                      decoration: const InputDecoration(
-                        labelText: '仕入先',
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    H1FormField(
-                      controller: _stockCtl,
-                      decoration: const InputDecoration(
-                        labelText: '在庫数',
-                        prefixIcon: Icon(Icons.inventory),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
+                    keyboardType: TextInputType.number,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: H1FormField(
+                    controller: _wholesaleCtl,
+                    decoration: const InputDecoration(
+                      labelText: '仕入価格',
+                      prefixIcon: Icon(Icons.shopping_cart),
+                      prefixText: '¥ ',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 16),
+
+            // 識別情報（横並び）
+            Row(
+              children: [
+                Expanded(
+                  child: H1FormField(
+                    controller: _barcodeCtl,
+                    decoration: const InputDecoration(
+                      labelText: 'バーコード',
+                      prefixIcon: Icon(Icons.qr_code),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 40,
+                  child: IconButton(
+                    icon: const Icon(Icons.qr_code_scanner, size: 20),
+                    tooltip: 'バーコードをスキャン',
+                    onPressed: () => _scanBarcode(context),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: H1FormField(
+                    controller: _modelCtl,
+                    decoration: const InputDecoration(
+                      labelText: '型番',
+                      prefixIcon: Icon(Icons.tag),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // メーカー情報（横並び）
+            Row(
+              children: [
+                Expanded(
+                  child: H1FormField(
+                    controller: _manufacturerCtl,
+                    decoration: const InputDecoration(
+                      labelText: 'メーカー',
+                      prefixIcon: Icon(Icons.factory),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: H1FormField(
+                    controller: _manufacturerCodeCtl,
+                    decoration: const InputDecoration(
+                      labelText: 'メーカーコード',
+                      prefixIcon: Icon(Icons.code),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // 分類情報（横並び）
+            Row(
+              children: [
+                Expanded(
+                  child: H1FormField(
+                    controller: _classificationCodeCtl,
+                    decoration: const InputDecoration(
+                      labelText: '分類コード',
+                      prefixIcon: Icon(Icons.category),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: H1FormField(
+                    controller: _divisionCodeCtl,
+                    decoration: const InputDecoration(
+                      labelText: 'ジャンルコード',
+                      prefixIcon: Icon(Icons.apps),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // カテゴリ
+            _buildCategoryField(theme),
+            const SizedBox(height: 16),
+
+            // その他（横並び）
+            Row(
+              children: [
+                Expanded(
+                  child: H1FormField(
+                    controller: _supplierCtl,
+                    decoration: const InputDecoration(
+                      labelText: '仕入先',
+                      prefixIcon: Icon(Icons.person),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: H1FormField(
+                    controller: _stockCtl,
+                    decoration: const InputDecoration(
+                      labelText: '在庫数',
+                      prefixIcon: Icon(Icons.inventory),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+
+            // オプション設定（編集時のみ）
             if (_isEdit && !_isVariant) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               _buildOptionSection(theme),
             ],
           ],
