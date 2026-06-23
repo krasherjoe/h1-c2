@@ -405,39 +405,70 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDragging = _draggingProductId != null;
+    
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: '商品名で検索...',
-              prefixIcon: const Icon(Icons.search),
-              isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            onChanged: (v) => setState(() => _searchQuery = v),
-          ),
-        ),
-        if (_draggingProductId != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, size: 16, color: cs.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'カテゴリをタップしてドロップ',
-                    style: TextStyle(fontSize: 12, color: cs.primary),
+        if (isDragging)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.primary, width: 2),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.open_with, size: 20, color: cs.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'カテゴリをタップしてドロップ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: cs.onPrimaryContainer,
+                          ),
+                        ),
+                        Text(
+                          '商品: ${_products.firstWhere((p) => p.id == _draggingProductId).name}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onPrimaryContainer.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: _cancelDrag,
-                  child: const Text('キャンセル'),
-                ),
-              ],
+                  TextButton(
+                    onPressed: _cancelDrag,
+                    style: TextButton.styleFrom(
+                      foregroundColor: cs.error,
+                    ),
+                    child: const Text('キャンセル', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: '商品名で検索...',
+                prefixIcon: const Icon(Icons.search),
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              onChanged: (v) => setState(() => _searchQuery = v),
             ),
           ),
         Expanded(
