@@ -285,7 +285,7 @@ class TimelineBarPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final h = size.height;
     final w = size.width;
-    final barH = 16.0;
+    final barH = h;
     final barY = (h - barH) / 2;
 
     // 背景バー（四角）
