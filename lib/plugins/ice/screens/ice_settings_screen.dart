@@ -175,28 +175,23 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
         if (mounted) setState(() { _error = 'ディレクトリパスを入力してください'; _isScanning = false; });
         return;
       }
-      final dir = Directory(dirPath);
-      if (!await dir.exists()) {
-        if (mounted) setState(() { _foundDbFiles = []; _isScanning = false; _info = '存在しないパス: $dirPath'; });
-        return;
-      }
 
+      if (!mounted) return;
+
+      // ユーザー指定パス + アプリ内の旧oldh1データディレクトリのみスキャン
+      // （getApplicationDocumentsDirectory()直下はcoreのDBが混ざるため除外）
       final scanPaths = <String>{dirPath};
-
-      // Documents 以下も追加でスキャン
-      final docsPath = '/storage/emulated/0/Documents';
-      if (dirPath != docsPath && await Directory(docsPath).exists()) {
-        scanPaths.add(docsPath);
-      }
-      // アプリデータディレクトリも追加
       try {
         final appDir = await getApplicationDocumentsDirectory();
-        scanPaths.add(appDir.path);
+        final oldCodeDir = p.join(appDir.path, '販売アシスト1号code');
+        if (await Directory(oldCodeDir).exists()) {
+          scanPaths.add(oldCodeDir);
+        }
       } catch (_) {}
 
       if (!mounted) return;
 
-      // compute で別isolateでスキャン実行（ネイティブクラッシュからUI保護）
+      // compute で別isolateでスキャン実行（既知のoldh1パスも自動追加）
       final foundPaths = await compute(_findDbFilesIsolate, scanPaths.toList());
 
       _foundDbFiles = foundPaths.map((p) => File(p)).toList();
@@ -205,8 +200,8 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       setState(() {
         _isScanning = false;
         _info = _foundDbFiles.isEmpty
-            ? '「$dirPath」以下に.dbファイルが見つかりません'
-            : '${_foundDbFiles.length}個のDBファイルを見つけました';
+            ? '「$dirPath」以下にoldh1 DBファイルが見つかりません'
+            : '${_foundDbFiles.length}個のoldh1 DBファイルを見つけました';
       });
     } catch (e) {
       if (mounted) setState(() { _error = 'スキャンエラー: $e'; _isScanning = false; });
@@ -814,7 +809,7 @@ List<String> _findDbFilesIsolate(List<String> scanPaths) {
     '/storage/emulated/0/Documents/販売アシスト 1 号',
     '/storage/emulated/0/Documents/販売アシスト1号code',
     '/storage/emulated/0/Documents/販売アシスト1号',
-    '/storage/emulated/0/Android/data/com.example.h1/files',
+
   ]);
 
   void walkDir(String dirPath, int depth) {
