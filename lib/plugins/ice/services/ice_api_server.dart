@@ -377,6 +377,8 @@ class IceApiServer {
     final body = await utf8.decodeStream(request);
     final data = jsonDecode(body) as Map<String, dynamic>;
     final sql = data['sql'] as String?;
+    // 任意パスの DB を読み取り専用で調査するオプション（read-only限定）
+    final externalPath = data['path'] as String?;
 
     if (sql == null || sql.trim().isEmpty) {
       await _error(request.response, HttpStatus.badRequest, 'sql is required');
@@ -392,17 +394,30 @@ class IceApiServer {
       return;
     }
 
-    final state = await _collector.collect();
-    final dbPath = (state['database'] as Map<String, dynamic>)['path'] as String?;
-    if (dbPath == null) {
-      await _error(request.response, HttpStatus.internalServerError, 'DB not available');
+    // 外部パス指定時は読み取り専用のみ許可
+    if (externalPath != null && !isRead) {
+      await _error(request.response, HttpStatus.forbidden, 'Write queries are not allowed on external DB paths');
       return;
     }
-    final db = await openDatabase(dbPath);
+
+    String resolvedPath;
+    if (externalPath != null) {
+      resolvedPath = externalPath;
+    } else {
+      final state = await _collector.collect();
+      final dbPath = (state['database'] as Map<String, dynamic>)['path'] as String?;
+      if (dbPath == null) {
+        await _error(request.response, HttpStatus.internalServerError, 'DB not available');
+        return;
+      }
+      resolvedPath = dbPath;
+    }
+
+    final db = await openDatabase(resolvedPath, readOnly: externalPath != null);
     try {
       if (isRead) {
         final rows = await db.rawQuery(sql);
-        await _respond(request.response, {'sql': sql, 'rows': rows, 'count': rows.length});
+        await _respond(request.response, {'sql': sql, 'path': resolvedPath, 'rows': rows, 'count': rows.length});
       } else if (trimmed.startsWith('DELETE')) {
         final rowsAffected = await db.rawDelete(sql);
         await _respond(request.response, {'sql': sql, 'rowsAffected': rowsAffected});
