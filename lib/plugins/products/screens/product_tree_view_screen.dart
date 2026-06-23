@@ -193,15 +193,13 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         InkWell(
           onTap: isDragging
               ? () => _onDrop(_draggingProductId!, cat.id)
-              : hasChildren
-                  ? () => setState(() {
-                      if (isExpanded) {
-                        _expandedCategories.remove(cat.id);
-                      } else {
-                        _expandedCategories.add(cat.id);
-                      }
-                    })
-                  : null,
+              : () => setState(() {
+                  if (isExpanded) {
+                    _expandedCategories.remove(cat.id);
+                  } else {
+                    _expandedCategories.add(cat.id);
+                  }
+                }),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             height: 52,
