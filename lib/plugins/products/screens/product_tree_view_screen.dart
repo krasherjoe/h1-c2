@@ -286,7 +286,10 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
 
     return InkWell(
-      onTap: () async {
+      onTap: _draggingProductId != null
+          ? null
+          : () => _startDrag(product.id),
+      onDoubleTap: () async {
         final result = await Navigator.push<Product>(
           context,
           MaterialPageRoute(
@@ -295,7 +298,6 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         );
         if (result != null) _load();
       },
-      onLongPress: () => _startDrag(product.id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         height: 52,
