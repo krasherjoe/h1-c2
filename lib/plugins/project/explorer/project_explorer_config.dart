@@ -240,10 +240,10 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
                       painter: TimelineBarPainter(
                         progress: project.timeProgress.clamp(0.0, 1.0),
                         overdue: project.isOverdue,
-                        barColor: project.isOverdue ? AppTheme.timelineOverdueLight : AppTheme.timelineBarLight,
-                        overdueColor: AppTheme.timelineOverdueLight,
+                        barColor: project.isOverdue ? cs.error : cs.primary,
+                        overdueColor: cs.error,
                         surfaceColor: cs.surfaceContainerHighest,
-                        markerColor: Colors.red,
+                        markerColor: cs.error,
                         monthCount: project.contractMonths ?? 12,
                       ),
                     ),
