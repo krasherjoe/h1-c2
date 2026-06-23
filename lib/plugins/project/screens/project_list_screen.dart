@@ -633,21 +633,20 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ? project.contractMonths! * 30
         : 365;
     final progress = (elapsedDays / totalDays).clamp(0.0, 1.0);
-    final isDark = cs.brightness == Brightness.dark;
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         return SizedBox(
-          height: 20,
+          height: 3,
           child: CustomPaint(
-            size: Size(w, 20),
+            size: Size(w, 3),
             painter: TimelineBarPainter(
               progress: progress.clamp(0.0, 1.0),
               overdue: overdue,
-              barColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
-              overdueColor: isDark ? AppTheme.timelineOverdueDark : AppTheme.timelineOverdueLight,
-              surfaceColor: isDark ? AppTheme.timelineBarDark : AppTheme.timelineBarLight,
-              markerColor: Colors.red,
+              barColor: overdue ? cs.error : cs.primary,
+              overdueColor: cs.error,
+              surfaceColor: cs.surfaceContainerHighest,
+              markerColor: cs.error,
               monthCount: hasContract && project.contractMonths != null ? project.contractMonths! : 1,
             ),
           ),
