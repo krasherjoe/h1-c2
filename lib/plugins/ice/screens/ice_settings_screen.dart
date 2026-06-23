@@ -166,60 +166,53 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       _isScanning = true;
       _foundDbFiles = [];
       _error = null;
-      _info = null;
+      _info = '検索中...';
     });
     try {
       final dirPath = _oldh1DirController.text.trim();
       if (dirPath.isEmpty) {
-        setState(() {
-          _error = 'ディレクトリパスを入力してください';
-          _isScanning = false;
-        });
+        if (mounted) setState(() { _error = 'ディレクトリパスを入力してください'; _isScanning = false; });
         return;
       }
       final dir = Directory(dirPath);
       if (!await dir.exists()) {
-        setState(() {
-          _foundDbFiles = [];
-          _isScanning = false;
-          _info = 'ディレクトリが存在しません: $dirPath\n他のパスを試すか、正しいパスを入力してください。';
-        });
+        if (mounted) setState(() { _foundDbFiles = []; _isScanning = false; _info = '存在しないパス: $dirPath'; });
         return;
       }
 
-      // 再帰的に .db ファイルを検索（find ライク）
       final results = <FileSystemEntity>[];
       try {
-        await for (final entity in dir.list(recursive: true, followLinks: false)) {
+        // 再帰検索 + エラーが発生しても無視して続行
+        final stream = dir.list(recursive: true, followLinks: false)
+            .handleError((e) => debugPrint('[Scan] skip: $e'));
+        await for (final entity in stream) {
+          if (!mounted) return;
           if (entity is File) {
             final name = entity.uri.pathSegments.last.toLowerCase();
             if (name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3')) {
               results.add(entity);
+              // 最大50ファイルまで
+              if (results.length >= 50) break;
             }
           }
         }
       } catch (e) {
-        // 権限エラーなどは無視して続行
-        debugPrint('[Oldh1Scan] 部分エラー: $e');
+        debugPrint('[Scan] エラー: $e');
       }
 
       results.sort((a, b) => (b as File).lastModifiedSync().compareTo(
         (a as File).lastModifiedSync()));
 
+      if (!mounted) return;
       setState(() {
         _foundDbFiles = results;
         _isScanning = false;
-        if (results.isEmpty) {
-          _info = '「$dirPath」以下に.dbファイルが見つかりませんでした。\n・クイックパスで「SDカード」を試す\n・ファイルマネージャーで.dbファイルの場所を確認';
-        } else {
-          _info = '${results.length}個のDBファイルを見つけました（$dirPath 以下）';
-        }
+        _info = results.isEmpty
+            ? '「$dirPath」以下に.dbファイルが見つかりません'
+            : '${results.length}個のDBファイルを見つけました';
       });
     } catch (e) {
-      setState(() {
-        _error = 'スキャンエラー: $e';
-        _isScanning = false;
-      });
+      if (mounted) setState(() { _error = 'スキャンエラー: $e'; _isScanning = false; });
     }
   }
 
