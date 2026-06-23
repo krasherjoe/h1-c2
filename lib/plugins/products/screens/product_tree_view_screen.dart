@@ -40,6 +40,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       _products = products;
       _categories = categories;
       _loading = false;
+      _expandedCategories.addAll(categories.map((c) => c.id));
     });
   }
 
