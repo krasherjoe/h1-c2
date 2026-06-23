@@ -413,7 +413,12 @@ class IceApiServer {
       resolvedPath = dbPath;
     }
 
-    final db = await openDatabase(resolvedPath, readOnly: externalPath != null);
+    // アクティブDBは _db シングルトンを直接使用（close() でアプリのDB接続を壊さないため）
+    // 外部パスのみ別接続を open/close する
+    final bool useExternal = externalPath != null;
+    final Database db = useExternal
+        ? await openDatabase(resolvedPath, readOnly: true)
+        : _db;
     try {
       if (isRead) {
         final rows = await db.rawQuery(sql);
@@ -426,7 +431,7 @@ class IceApiServer {
         await _respond(request.response, {'sql': sql, 'rowsAffected': rowsAffected});
       }
     } finally {
-      await db.close();
+      if (useExternal) await db.close();
     }
   }
 
