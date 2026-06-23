@@ -807,11 +807,23 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
 
 List<String> _findDbFilesIsolate(List<String> scanPaths) {
   final resultSet = <String>{};
-  for (final path in scanPaths) {
-    final dir = Directory(path);
-    if (!dir.existsSync()) continue;
+
+  // 既知のoldh1パスを常に追加
+  final allPaths = <String>{...scanPaths};
+  allPaths.addAll([
+    '/storage/emulated/0/Documents/販売アシスト 1 号',
+    '/storage/emulated/0/Documents/販売アシスト1号code',
+    '/storage/emulated/0/Documents/販売アシスト1号',
+    '/storage/emulated/0/Android/data/com.example.h1/files',
+  ]);
+
+  void walkDir(String dirPath, int depth) {
+    if (resultSet.length >= 50) return;
+    if (depth > 3) return;
+    final dir = Directory(dirPath);
+    if (!dir.existsSync()) return;
     try {
-      final entities = dir.listSync(recursive: true, followLinks: false);
+      final entities = dir.listSync(followLinks: false);
       for (final entity in entities) {
         if (resultSet.length >= 50) break;
         if (entity is File) {
@@ -819,13 +831,20 @@ List<String> _findDbFilesIsolate(List<String> scanPaths) {
           if (name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3')) {
             resultSet.add(entity.path);
           }
+        } else if (entity is Directory) {
+          walkDir(entity.path, depth + 1);
         }
       }
     } catch (e) {
-      // 権限不足などのエラーは無視して次へ
+      // 権限不足などは無視（1ディレクトリだけスキップ、全体は継続）
     }
-    if (resultSet.length >= 50) break;
   }
+
+  for (final path in allPaths) {
+    if (resultSet.length >= 50) break;
+    walkDir(path, 0);
+  }
+
   final results = resultSet.toList()..sort((a, b) {
     final fa = File(a).lastModifiedSync();
     final fb = File(b).lastModifiedSync();
