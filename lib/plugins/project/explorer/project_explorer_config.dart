@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../explorer/h1_explorer_config.dart';
 import '../models/project_explorer_item.dart';
 import '../screens/project_detail_screen.dart';
+import '../widgets/project_timeline_widget.dart' show TimelineBarPainter;
 import '../../../services/project_repository.dart';
 import '../../../models/project_model.dart';
 import '../../../utils/app_theme.dart';
@@ -230,15 +231,24 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
             ]),
             if (project.startDate != null) ...[
               const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: project.timeProgress.clamp(0.0, 1.0),
-                  minHeight: 3,
-                  backgroundColor: cs.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation(
-                    project.isOverdue ? cs.error : cs.primary),
-                ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return SizedBox(
+                    height: 8,
+                    child: CustomPaint(
+                      size: Size(constraints.maxWidth, 8),
+                      painter: TimelineBarPainter(
+                        progress: project.timeProgress.clamp(0.0, 1.0),
+                        overdue: project.isOverdue,
+                        barColor: project.isOverdue ? AppTheme.timelineOverdueLight : AppTheme.timelineBarLight,
+                        overdueColor: AppTheme.timelineOverdueLight,
+                        surfaceColor: cs.surfaceContainerHighest,
+                        markerColor: Colors.red,
+                        monthCount: project.contractMonths ?? 12,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ],
