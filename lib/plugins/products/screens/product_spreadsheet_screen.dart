@@ -338,35 +338,36 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // 5段階ズームボタン
-          ...List.generate(_zoomLevels.length, (i) {
-            final isSelected = _zoomLevel == _zoomLevels[i];
-            return Padding(
-              padding: const EdgeInsets.only(left: 2),
-              child: SizedBox(
-                width: 32,
-                height: 32,
-                child: FilledButton(
-                  onPressed: () => setState(() => _zoomLevel = _zoomLevels[i]),
-                  style: FilledButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    backgroundColor: isSelected ? cs.primary : cs.surfaceContainerHighest,
-                    foregroundColor: isSelected ? cs.onPrimary : cs.onSurfaceVariant,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  child: Text(
-                    _zoomLabels[i],
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ),
+          // ズームアイコン（タップで段階切替）
+          GestureDetector(
+            onTap: () {
+              final currentIdx = _zoomLevels.indexOf(_zoomLevel);
+              final nextIdx = (currentIdx + 1) % _zoomLevels.length;
+              setState(() => _zoomLevel = _zoomLevels[nextIdx]);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
               ),
-            );
-          }),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.zoom_out_map, size: 16, color: cs.onPrimaryContainer),
+                  const SizedBox(width: 4),
+                  Text(
+                    _zoomLabels[_zoomLevels.indexOf(_zoomLevel)],
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: cs.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
