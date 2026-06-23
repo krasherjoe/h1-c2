@@ -234,9 +234,9 @@ class ProjectExplorerConfig extends H1ExplorerConfig<ProjectExplorerItem> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   return SizedBox(
-                    height: 8,
+                    height: 3,
                     child: CustomPaint(
-                      size: Size(constraints.maxWidth, 8),
+                      size: Size(constraints.maxWidth, 3),
                       painter: TimelineBarPainter(
                         progress: project.timeProgress.clamp(0.0, 1.0),
                         overdue: project.isOverdue,
