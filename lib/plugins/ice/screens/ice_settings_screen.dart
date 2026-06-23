@@ -186,22 +186,33 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
         });
         return;
       }
-      final files = await dir.list().where((e) {
-        if (e is! File) return false;
-        final name = e.uri.pathSegments.last.toLowerCase();
-        return name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3');
-      }).toList();
-      files.sort((a, b) => (b as File).lastModifiedSync().compareTo(
+
+      // 再帰的に .db ファイルを検索（find ライク）
+      final results = <FileSystemEntity>[];
+      try {
+        await for (final entity in dir.list(recursive: true, followLinks: false)) {
+          if (entity is File) {
+            final name = entity.uri.pathSegments.last.toLowerCase();
+            if (name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3')) {
+              results.add(entity);
+            }
+          }
+        }
+      } catch (e) {
+        // 権限エラーなどは無視して続行
+        debugPrint('[Oldh1Scan] 部分エラー: $e');
+      }
+
+      results.sort((a, b) => (b as File).lastModifiedSync().compareTo(
         (a as File).lastModifiedSync()));
+
       setState(() {
-        _foundDbFiles = files;
+        _foundDbFiles = results;
         _isScanning = false;
-        if (files.isEmpty) {
-          _info = '$dirPath\n.dbファイルが見つかりませんでした。\n'
-              '・他のパスを試す\n'
-              '・ファイルマネージャーで .db ファイルを探してください';
+        if (results.isEmpty) {
+          _info = '「$dirPath」以下に.dbファイルが見つかりませんでした。\n・クイックパスで「SDカード」を試す\n・ファイルマネージャーで.dbファイルの場所を確認';
         } else {
-          _info = '${files.length}個のDBファイルを見つけました';
+          _info = '${results.length}個のDBファイルを見つけました（$dirPath 以下）';
         }
       });
     } catch (e) {
@@ -264,6 +275,14 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
         });
       }
     }
+  }
+
+  String _relativePath(String fullPath, String baseDir) {
+    if (fullPath.startsWith(baseDir)) {
+      final rel = fullPath.substring(baseDir.length);
+      return rel.startsWith('/') ? rel.substring(1) : rel;
+    }
+    return fullPath;
   }
 
   @override
@@ -746,7 +765,7 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
                       leading: Icon(Icons.storage, size: 20, color: cs.primary),
                       title: Text(file.uri.pathSegments.last,
                         style: TextStyle(fontSize: 13, color: textColor, fontFamily: 'monospace')),
-                      subtitle: Text('${sizeKB}KB / $dateStr',
+                      subtitle: Text('${_relativePath(file.path, _oldh1DirController.text.trim())} | ${sizeKB}KB / $dateStr',
                         style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                       trailing: _isConverting
                           ? const SizedBox(
