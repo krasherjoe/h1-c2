@@ -565,6 +565,26 @@ void main() async {
       await DbSnapshotService.restore(index);
       return '復元完了、アプリを再起動してください';
     });
+    DebugConsole.register('db.update', (args) async {
+      if (args.length < 4) {
+        return '使用法: db.update <テーブル名> <カラム名> <値> WHERE <条件>\n'
+               '例: db.update projects gantt_config \'{"id":"standard"}\' WHERE name=\'テスト\'';
+      }
+      final table = args[0];
+      final column = args[1];
+      final value = args[2];
+      final whereClause = args.sublist(3).join(' ');
+      try {
+        final db = await DatabaseHelper().database;
+        final rowsAffected = await db.rawUpdate(
+          'UPDATE $table SET $column = ? $whereClause',
+          [value],
+        );
+        return '更新完了: $rowsAffected行 affected\nテーブル: $table, カラム: $column';
+      } catch (e) {
+        return '更新エラー: $e';
+      }
+    });
 
     // バックアップコマンド
     DebugConsole.register('backup.local.create', _cmdBackupLocalCreate);
