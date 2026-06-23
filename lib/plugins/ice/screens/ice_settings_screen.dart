@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -180,11 +181,9 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
         return;
       }
 
-      // 既知のパスのみスキャン（全SDカードは走査しない）
-      final resultSet = <FileSystemEntity>{};
       final scanPaths = <String>{dirPath};
 
-      // Documents 以下も追加でスキャン（別パスの場合）
+      // Documents 以下も追加でスキャン
       final docsPath = '/storage/emulated/0/Documents';
       if (dirPath != docsPath && await Directory(docsPath).exists()) {
         scanPaths.add(docsPath);
@@ -195,39 +194,19 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
         scanPaths.add(appDir.path);
       } catch (_) {}
 
-      for (final path in scanPaths) {
-        if (!mounted) return;
-        try {
-          final scanDir = Directory(path);
-          if (!await scanDir.exists()) continue;
-          await for (final entity in scanDir.list(recursive: true, followLinks: false)
-              .handleError((e) => debugPrint('[Scan] skip: $e'))) {
-            if (!mounted) return;
-            if (resultSet.length >= 50) break;
-            if (entity is File) {
-              final name = entity.uri.pathSegments.last.toLowerCase();
-              if (name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3')) {
-                resultSet.add(entity);
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('[Scan] path error ($path): $e');
-        }
-        if (resultSet.length >= 50) break;
-      }
+      if (!mounted) return;
 
-      final results = resultSet.toList()
-        ..sort((a, b) => (b as File).lastModifiedSync().compareTo(
-          (a as File).lastModifiedSync()));
+      // compute で別isolateでスキャン実行（ネイティブクラッシュからUI保護）
+      final foundPaths = await compute(_findDbFilesIsolate, scanPaths.toList());
+
+      _foundDbFiles = foundPaths.map((p) => File(p)).toList();
 
       if (!mounted) return;
       setState(() {
-        _foundDbFiles = results;
         _isScanning = false;
-        _info = results.isEmpty
+        _info = _foundDbFiles.isEmpty
             ? '「$dirPath」以下に.dbファイルが見つかりません'
-            : '${results.length}個のDBファイルを見つけました';
+            : '${_foundDbFiles.length}個のDBファイルを見つけました';
       });
     } catch (e) {
       if (mounted) setState(() { _error = 'スキャンエラー: $e'; _isScanning = false; });
@@ -824,4 +803,33 @@ class _IceSettingsScreenState extends State<IceSettingsScreen> {
       ),
     );
   }
+}
+
+List<String> _findDbFilesIsolate(List<String> scanPaths) {
+  final resultSet = <String>{};
+  for (final path in scanPaths) {
+    final dir = Directory(path);
+    if (!dir.existsSync()) continue;
+    try {
+      final entities = dir.listSync(recursive: true, followLinks: false);
+      for (final entity in entities) {
+        if (resultSet.length >= 50) break;
+        if (entity is File) {
+          final name = entity.path.split('/').last.toLowerCase();
+          if (name.endsWith('.db') || name.endsWith('.sqlite') || name.endsWith('.sqlite3')) {
+            resultSet.add(entity.path);
+          }
+        }
+      }
+    } catch (e) {
+      // 権限不足などのエラーは無視して次へ
+    }
+    if (resultSet.length >= 50) break;
+  }
+  final results = resultSet.toList()..sort((a, b) {
+    final fa = File(a).lastModifiedSync();
+    final fb = File(b).lastModifiedSync();
+    return fb.compareTo(fa);
+  });
+  return results;
 }
