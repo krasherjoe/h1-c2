@@ -28,7 +28,11 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   final Map<String, TextEditingController> _modelNumberControllers = {};
   final Map<String, TextEditingController> _manufacturerControllers = {};
   final Map<String, TextEditingController> _supplierControllers = {};
-  double _scale = 1.0;
+  double _zoomLevel = 1.0;
+  static const _zoomLevels = [0.5, 0.7, 1.0, 1.5, 2.0];
+  static const _zoomLabels = ['XS', 'S', 'M', 'L', 'XL'];
+  static const _baseWidths = [160.0, 100.0, 130.0, 110.0, 120.0, 120.0, 72.0];
+  List<double> get _columnWidths => _baseWidths.map((w) => w * _zoomLevel).toList();
 
   // Modified & new row tracking
   final Set<String> _modifiedIds = {};
@@ -314,6 +318,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   }
 
   Widget _buildSearchBar() {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
       child: Row(
@@ -333,6 +338,36 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          // 5段階ズームボタン
+          ...List.generate(_zoomLevels.length, (i) {
+            final isSelected = _zoomLevel == _zoomLevels[i];
+            return Padding(
+              padding: const EdgeInsets.only(left: 2),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: FilledButton(
+                  onPressed: () => setState(() => _zoomLevel = _zoomLevels[i]),
+                  style: FilledButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    backgroundColor: isSelected ? cs.primary : cs.surfaceContainerHighest,
+                    foregroundColor: isSelected ? cs.onPrimary : cs.onSurfaceVariant,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    _zoomLabels[i],
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             onPressed: _addNewRow,
@@ -344,115 +379,29 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   }
 
   Widget _buildTable() {
-    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
-        // ズームコントロール
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            children: [
-              Icon(Icons.zoom_out, size: 16, color: cs.onSurfaceVariant),
-              Expanded(
-                child: Slider(
-                  value: _scale,
-                  min: 0.5,
-                  max: 2.0,
-                  divisions: 15,
-                  onChanged: (v) => setState(() => _scale = v),
-                ),
-              ),
-              Icon(Icons.zoom_in, size: 16, color: cs.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Text('${(_scale * 100).round()}%', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () => setState(() => _scale = 1.0),
-                child: const Text('リセット', style: TextStyle(fontSize: 11)),
-              ),
-            ],
-          ),
-        ),
-        // テーブル（ピンチズーム対応）
         Expanded(
-          child: InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 2.0,
-            scaleEnabled: true,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowHeight: 40,
-                dataRowMinHeight: 40,
-                dataRowMaxHeight: 52,
-                columnSpacing: 12,
-                horizontalMargin: 12,
-                columns: [
-                  DataColumn(
-                    label: SizedBox(
-                      width: 160,
-                      child: const Text(
-                        '商品名',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  DataColumn(
-                    label: SizedBox(
-                      width: 100,
-                      child: const Text(
-                        '単価',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  DataColumn(
-                    label: SizedBox(
-                      width: 130,
-                      child: const Text(
-                        'バーコード',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  DataColumn(
-                    label: SizedBox(
-                      width: 110,
-                      child: const Text(
-                        '型番',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  DataColumn(
-                    label: SizedBox(
-                      width: 120,
-                      child: const Text(
-                        'メーカー',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  DataColumn(
-                    label: SizedBox(
-                      width: 120,
-                      child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  DataColumn(
-                    label: const SizedBox(
-                      width: 72,
-                      child: Text(
-                        '操作',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ],
-                rows: _filteredProducts.map((product) {
-                  return _buildRow(product, cs);
-                }).toList(),
-              ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowHeight: 40,
+              dataRowMinHeight: 40,
+              dataRowMaxHeight: 52,
+              columnSpacing: 12,
+              horizontalMargin: 12,
+              columns: [
+                DataColumn(label: SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600)))),
+                DataColumn(label: SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600)))),
+                DataColumn(label: SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600)))),
+                DataColumn(label: SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600)))),
+                DataColumn(label: SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600)))),
+                DataColumn(label: SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600)))),
+                DataColumn(label: SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600)))),
+              ],
+              rows: _filteredProducts.map((product) {
+                return _buildRow(product);
+              }).toList(),
             ),
           ),
         ),
@@ -460,7 +409,8 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
     );
   }
 
-  DataRow _buildRow(Product product, ColorScheme cs) {
+  DataRow _buildRow(Product product) {
+    final cs = Theme.of(context).colorScheme;
     final isNew = _newRowIds.contains(product.id);
     final isModified = _modifiedIds.contains(product.id);
     final needsSave = isNew || isModified;
@@ -477,26 +427,26 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
           rowColor != null ? WidgetStatePropertyAll(rowColor) : null,
       cells: [
         _textCell(
-          _nameControllers[product.id], 160,
+          _nameControllers[product.id], _columnWidths[0],
           onChanged: () => _markModified(product.id),
         ),
         _textCell(
-          _priceControllers[product.id], 100,
+          _priceControllers[product.id], _columnWidths[1],
           onChanged: () => _markModified(product.id),
           prefix: '¥',
           keyboardType: TextInputType.number,
         ),
         _textCell(
-          _barcodeControllers[product.id], 130,
+          _barcodeControllers[product.id], _columnWidths[2],
           onChanged: () => _markModified(product.id),
         ),
         _textCell(
-          _modelNumberControllers[product.id], 110,
+          _modelNumberControllers[product.id], _columnWidths[3],
           onChanged: () => _markModified(product.id),
         ),
         DataCell(
           SizedBox(
-            width: 120,
+            width: _columnWidths[4],
             child: Autocomplete<String>(
               optionsBuilder: (TextEditingValue textEditingValue) async {
                 if (textEditingValue.text.isEmpty) {
@@ -538,28 +488,31 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
           ),
         ),
         _textCell(
-          _supplierControllers[product.id], 120,
+          _supplierControllers[product.id], _columnWidths[5],
           onChanged: () => _markModified(product.id),
         ),
         DataCell(
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.save,
-                  size: 18,
-                  color: needsSave ? cs.primary : cs.onSurfaceVariant.withValues(alpha: 0.4),
+          SizedBox(
+            width: _columnWidths[6],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.save,
+                    size: 18,
+                    color: needsSave ? cs.primary : cs.onSurfaceVariant.withValues(alpha: 0.4),
+                  ),
+                  onPressed: needsSave ? () => _saveProduct(product.id) : null,
+                  tooltip: '保存',
                 ),
-                onPressed: needsSave ? () => _saveProduct(product.id) : null,
-                tooltip: '保存',
-              ),
-              IconButton(
-                icon: Icon(Icons.delete, size: 18, color: cs.error),
-                onPressed: () => _deleteProduct(product.id),
-                tooltip: '削除',
-              ),
-            ],
+                IconButton(
+                  icon: Icon(Icons.delete, size: 18, color: cs.error),
+                  onPressed: () => _deleteProduct(product.id),
+                  tooltip: '削除',
+                ),
+              ],
+            ),
           ),
         ),
       ],
