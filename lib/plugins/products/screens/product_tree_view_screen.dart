@@ -426,13 +426,12 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${_products.firstWhere((p) => p.id == _draggingProductId).name} → タップでドロップ',
+                      '移動先をタップ',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: cs.onPrimaryContainer,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   TextButton(
