@@ -536,30 +536,8 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                     child: ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        if (_categories.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.folder_open, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                                const SizedBox(height: 16),
-                                Text('カテゴリがありません',
-                                    style: TextStyle(fontSize: 16, color: cs.onSurfaceVariant)),
-                                const SizedBox(height: 8),
-                                Text('最初のカテゴリを作成してください',
-                                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-                                const SizedBox(height: 24),
-                                FilledButton.icon(
-                                  onPressed: () => _addCategory(null),
-                                  icon: const Icon(Icons.create_new_folder),
-                                  label: const Text('カテゴリを作成'),
-                                ),
-                              ],
-                            ),
-                          )
-                        else ...[
-                          _buildRootNode(cs),
+                        _buildRootNode(cs),
+                        if (_categories.isNotEmpty) ...[
                           const Divider(height: 16),
                           ..._categories
                               .where((c) => c.parentId == null)
