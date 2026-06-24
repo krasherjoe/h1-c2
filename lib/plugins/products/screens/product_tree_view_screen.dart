@@ -595,8 +595,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDragging = _draggingProductId != null;
-    
+
     return Column(
       children: [
         if (_isSelectionMode)
@@ -624,47 +623,14 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                       ),
                     ),
                   ),
+                  IconButton(
+                    icon: Icon(Icons.delete, size: 18, color: cs.error),
+                    onPressed: _deleteSelected,
+                    tooltip: '削除',
+                    visualDensity: VisualDensity.compact,
+                  ),
                   TextButton(
                     onPressed: _cancelSelection,
-                    style: TextButton.styleFrom(
-                      foregroundColor: cs.error,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text('キャンセル', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else if (isDragging)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: cs.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: cs.primary, width: 2),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.open_with, size: 18, color: cs.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '移動先をタップ',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _cancelDrag,
                     style: TextButton.styleFrom(
                       foregroundColor: cs.error,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
