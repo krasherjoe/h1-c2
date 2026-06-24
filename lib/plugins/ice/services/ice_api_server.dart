@@ -388,9 +388,10 @@ class IceApiServer {
     final trimmed = sql.trim().toUpperCase();
     final isRead = trimmed.startsWith('SELECT') || trimmed.startsWith('PRAGMA');
     final isWrite = trimmed.startsWith('INSERT') || trimmed.startsWith('UPDATE') || trimmed.startsWith('DELETE');
+    final isDdl = trimmed.startsWith('ALTER') || trimmed.startsWith('CREATE') || trimmed.startsWith('DROP') || trimmed.startsWith('CREATE INDEX');
 
-    if (!isRead && !isWrite) {
-      await _error(request.response, HttpStatus.badRequest, 'Only SELECT/PRAGMA/INSERT/UPDATE/DELETE queries allowed');
+    if (!isRead && !isWrite && !isDdl) {
+      await _error(request.response, HttpStatus.badRequest, 'Only SELECT/PRAGMA/INSERT/UPDATE/DELETE/ALTER/CREATE/DROP queries allowed');
       return;
     }
 
@@ -423,6 +424,9 @@ class IceApiServer {
       if (isRead) {
         final rows = await db.rawQuery(sql);
         await _respond(request.response, {'sql': sql, 'path': resolvedPath, 'rows': rows, 'count': rows.length});
+      } else if (isDdl) {
+        await db.execute(sql);
+        await _respond(request.response, {'sql': sql, 'executed': true});
       } else if (trimmed.startsWith('DELETE')) {
         final rowsAffected = await db.rawDelete(sql);
         await _respond(request.response, {'sql': sql, 'rowsAffected': rowsAffected});
@@ -464,7 +468,11 @@ class IceApiServer {
       } else {
         final base64Content = base64Encode(bytes);
         response.headers.set('Content-Type', 'application/octet-stream');
-        response.headers.set('Content-Disposition', 'attachment; filename="${p.basename(path)}"');
+        final basename = p.basename(path);
+        final safeFilename = basename.contains(RegExp(r'[^\x20-\x7E]'))
+            ? 'download.db'
+            : basename;
+        response.headers.set('Content-Disposition', 'attachment; filename="$safeFilename"');
         response.write(jsonEncode({
           'path': path,
           'size': size,
