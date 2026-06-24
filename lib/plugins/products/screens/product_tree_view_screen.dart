@@ -21,8 +21,6 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   bool _loading = true;
   String _searchQuery = '';
 
-  String? _draggingProductId;
-
   final _expandedCategories = <String>{};
   bool _isRootExpanded = true;
   bool _isSelectionMode = false;
@@ -58,63 +56,6 @@ class _ProductTreeViewState extends State<ProductTreeView> {
           .toList();
     }
     return list;
-  }
-
-  void _startDrag(String productId) {
-    setState(() {
-      _draggingProductId = productId;
-    });
-  }
-
-  Future<void> _onDrop(String productId, String? targetCategoryId) async {
-    if (_draggingProductId == null) return;
-
-    final originalProduct = _products.firstWhere((p) => p.id == productId);
-
-    setState(() {
-      _draggingProductId = null;
-    });
-
-    try {
-      final updated = originalProduct.copyWith(categoryId: targetCategoryId);
-      await _productRepo.saveProduct(updated);
-      await _load();
-    } catch (e) {
-      await _load();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('移動エラー: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _onDropMultiple(String? targetCategoryId) async {
-    final ids = _selectedProductIds.toList();
-    setState(() {
-      _isSelectionMode = false;
-      _selectedProductIds.clear();
-    });
-    try {
-      for (final productId in ids) {
-        final product = _products.firstWhere((p) => p.id == productId);
-        await _productRepo.saveProduct(product.copyWith(categoryId: targetCategoryId));
-      }
-      await _load();
-    } catch (e) {
-      await _load();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('移動エラー: $e')),
-        );
-      }
-    }
-  }
-
-  void _cancelDrag() {
-    setState(() {
-      _draggingProductId = null;
-    });
   }
 
   void _cancelSelection() {
