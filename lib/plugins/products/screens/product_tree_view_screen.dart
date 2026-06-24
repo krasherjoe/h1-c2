@@ -280,7 +280,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   }
 
   Widget _buildRootNode(ColorScheme cs) {
-    final allProducts = _filteredProducts;
+    final allProducts = _filteredProducts.where((p) => p.categoryId == null).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
