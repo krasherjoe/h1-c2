@@ -413,16 +413,22 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
         scrollDirection: Axis.horizontal,
         controller: _headerScrollCtrl,
         child: SizedBox(
-          width: _columnWidths.reduce((a, b) => a + b) + 24,
+          width: _columnWidths.reduce((a, b) => a + b) + 24 + 12 * 6,
           child: Row(
             children: [
               const SizedBox(width: 12),
               SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600))),
+              const SizedBox(width: 12),
               SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600))),
+              const SizedBox(width: 12),
               SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600))),
+              const SizedBox(width: 12),
               SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600))),
+              const SizedBox(width: 12),
               SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600))),
+              const SizedBox(width: 12),
               SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600))),
+              const SizedBox(width: 12),
               SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600))),
             ],
           ),
@@ -441,24 +447,16 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               controller: _dataScrollCtrl,
-              child: DataTable(
-                headingRowHeight: 0,
-                dataRowMinHeight: 40,
-                dataRowMaxHeight: 52,
-                columnSpacing: 12,
-                horizontalMargin: 12,
-                columns: [
-                  DataColumn(label: SizedBox(width: _columnWidths[0], child: const Text(''))),
-                  DataColumn(label: SizedBox(width: _columnWidths[1], child: const Text(''))),
-                  DataColumn(label: SizedBox(width: _columnWidths[2], child: const Text(''))),
-                  DataColumn(label: SizedBox(width: _columnWidths[3], child: const Text(''))),
-                  DataColumn(label: SizedBox(width: _columnWidths[4], child: const Text(''))),
-                  DataColumn(label: SizedBox(width: _columnWidths[5], child: const Text(''))),
-                  DataColumn(label: SizedBox(width: _columnWidths[6], child: const Text(''))),
-                ],
-                rows: _filteredProducts.map((product) {
-                  return _buildRow(product);
-                }).toList(),
+              child: SizedBox(
+                width: _columnWidths.reduce((a, b) => a + b) + 24 + 12 * 6,
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _filteredProducts.map((product) {
+                    return _buildBodyRow(product);
+                  }).toList(),
+                ),
               ),
             ),
           ),
@@ -467,7 +465,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
     );
   }
 
-  DataRow _buildRow(Product product) {
+  Widget _buildBodyRow(Product product) {
     final cs = Theme.of(context).colorScheme;
     final isNew = _newRowIds.contains(product.id);
     final isModified = _modifiedIds.contains(product.id);
@@ -480,115 +478,71 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
       rowColor = Colors.orange.withValues(alpha: 0.06);
     }
 
-    return DataRow(
-      color:
-          rowColor != null ? WidgetStatePropertyAll(rowColor) : null,
-      cells: [
-        _textCell(
-          _nameControllers[product.id], _columnWidths[0],
-          onChanged: () => _markModified(product.id),
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: rowColor,
+        border: Border(
+          bottom: BorderSide(color: cs.surfaceContainerHighest, width: 1),
         ),
-        _textCell(
-          _priceControllers[product.id], _columnWidths[1],
-          onChanged: () => _markModified(product.id),
-          prefix: '¥',
-          keyboardType: TextInputType.number,
-        ),
-        _textCell(
-          _barcodeControllers[product.id], _columnWidths[2],
-          onChanged: () => _markModified(product.id),
-        ),
-        _textCell(
-          _modelNumberControllers[product.id], _columnWidths[3],
-          onChanged: () => _markModified(product.id),
-        ),
-        DataCell(
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          SizedBox(
+            width: _columnWidths[0],
+            child: _buildInlineTextField(
+              _nameControllers[product.id],
+              onChanged: () => _markModified(product.id),
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: _columnWidths[1],
+            child: _buildInlineTextField(
+              _priceControllers[product.id],
+              onChanged: () => _markModified(product.id),
+              prefix: '¥',
+              keyboardType: TextInputType.number,
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: _columnWidths[2],
+            child: _buildInlineTextField(
+              _barcodeControllers[product.id],
+              onChanged: () => _markModified(product.id),
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: _columnWidths[3],
+            child: _buildInlineTextField(
+              _modelNumberControllers[product.id],
+              onChanged: () => _markModified(product.id),
+            ),
+          ),
+          const SizedBox(width: 12),
           SizedBox(
             width: _columnWidths[4],
-            child: Autocomplete<String>(
-              optionsBuilder: (TextEditingValue textEditingValue) async {
-                if (textEditingValue.text.isEmpty) {
-                  return const Iterable<String>.empty();
-                }
-                try {
-                  final db = await DatabaseHelper().database;
-                  final rows = await db.rawQuery(
-                    "SELECT DISTINCT manufacturer FROM products WHERE manufacturer IS NOT NULL AND manufacturer LIKE ? AND is_current = 1 LIMIT 10",
-                    ['%${textEditingValue.text}%'],
-                  );
-                  return rows.map((r) => r['manufacturer'] as String).where((s) => s.isNotEmpty);
-                } catch (_) {
-                  return const Iterable<String>.empty();
-                }
-              },
-              onSelected: (String selection) {
-                _manufacturerControllers[product.id]?.text = selection;
-                _markModified(product.id);
-              },
-              initialValue: TextEditingValue(text: _manufacturerControllers[product.id]?.text ?? ''),
-              fieldViewBuilder: (context, textEditingController, focusNode, onSubmitted) {
-                return TextField(
-                  controller: textEditingController,
-                  focusNode: focusNode,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                  ),
-                  style: const TextStyle(fontSize: 13),
-                  onChanged: (v) {
-                    _manufacturerControllers[product.id]?.text = v;
-                    _markModified(product.id);
-                  },
-                  onSubmitted: (_) => onSubmitted(),
-                );
-              },
+            child: _buildAutocompleteField(
+              product.id,
+              _manufacturerControllers[product.id],
+              'manufacturer',
+              'manufacturer',
             ),
           ),
-        ),
-        DataCell(
+          const SizedBox(width: 12),
           SizedBox(
             width: _columnWidths[5],
-            child: Autocomplete<String>(
-              optionsBuilder: (TextEditingValue textEditingValue) async {
-                if (textEditingValue.text.isEmpty) {
-                  return const Iterable<String>.empty();
-                }
-                try {
-                  final db = await DatabaseHelper().database;
-                  final rows = await db.rawQuery(
-                    "SELECT DISTINCT supplier_name FROM products WHERE supplier_name IS NOT NULL AND supplier_name LIKE ? AND is_current = 1 LIMIT 10",
-                    ['%${textEditingValue.text}%'],
-                  );
-                  return rows.map((r) => r['supplier_name'] as String).where((s) => s.isNotEmpty);
-                } catch (_) {
-                  return const Iterable<String>.empty();
-                }
-              },
-              onSelected: (String selection) {
-                _supplierControllers[product.id]?.text = selection;
-                _markModified(product.id);
-              },
-              initialValue: TextEditingValue(text: _supplierControllers[product.id]?.text ?? ''),
-              fieldViewBuilder: (context, textEditingController, focusNode, onSubmitted) {
-                return TextField(
-                  controller: textEditingController,
-                  focusNode: focusNode,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                  ),
-                  style: const TextStyle(fontSize: 13),
-                  onChanged: (v) {
-                    _supplierControllers[product.id]?.text = v;
-                    _markModified(product.id);
-                  },
-                  onSubmitted: (_) => onSubmitted(),
-                );
-              },
+            child: _buildAutocompleteField(
+              product.id,
+              _supplierControllers[product.id],
+              'supplier_name',
+              'supplier_name',
             ),
           ),
-        ),
-        DataCell(
+          const SizedBox(width: 12),
           SizedBox(
             width: _columnWidths[6],
             child: Row(
@@ -611,33 +565,74 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               ],
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+        ],
+      ),
     );
   }
 
-  DataCell _textCell(
-    TextEditingController? controller,
-    double width, {
+  Widget _buildInlineTextField(
+    TextEditingController? controller, {
     VoidCallback? onChanged,
     String? prefix,
     TextInputType? keyboardType,
   }) {
-    return DataCell(
-      SizedBox(
-        width: width,
-        child: TextField(
-          controller: controller,
-          decoration: InputDecoration(
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        isDense: true,
+        border: InputBorder.none,
+        prefixText: prefix,
+      ),
+      style: const TextStyle(fontSize: 13),
+      keyboardType: keyboardType,
+      onChanged: (_) => onChanged?.call(),
+    );
+  }
+
+  Widget _buildAutocompleteField(
+    String productId,
+    TextEditingController? controller,
+    String column,
+    String fieldName,
+  ) {
+    return Autocomplete<String>(
+      optionsBuilder: (TextEditingValue textEditingValue) async {
+        if (textEditingValue.text.isEmpty) {
+          return const Iterable<String>.empty();
+        }
+        try {
+          final db = await DatabaseHelper().database;
+          final rows = await db.rawQuery(
+            "SELECT DISTINCT $column FROM products WHERE $column IS NOT NULL AND $column LIKE ? AND is_current = 1 LIMIT 10",
+            ['%${textEditingValue.text}%'],
+          );
+          return rows.map((r) => r[fieldName] as String).where((s) => s.isNotEmpty);
+        } catch (_) {
+          return const Iterable<String>.empty();
+        }
+      },
+      onSelected: (String selection) {
+        controller?.text = selection;
+        _markModified(productId);
+      },
+      initialValue: TextEditingValue(text: controller?.text ?? ''),
+      fieldViewBuilder: (context, textEditingController, focusNode, onSubmitted) {
+        return TextField(
+          controller: textEditingController,
+          focusNode: focusNode,
+          decoration: const InputDecoration(
             isDense: true,
             border: InputBorder.none,
-            prefixText: prefix,
           ),
           style: const TextStyle(fontSize: 13),
-          keyboardType: keyboardType,
-          onChanged: (_) => onChanged?.call(),
-        ),
-      ),
+          onChanged: (v) {
+            controller?.text = v;
+            _markModified(productId);
+          },
+          onSubmitted: (_) => onSubmitted(),
+        );
+      },
     );
   }
 }
