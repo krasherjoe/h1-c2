@@ -156,17 +156,18 @@ class _ProductTreeViewState extends State<ProductTreeView> {
 
   Widget _buildRootNode(ColorScheme cs) {
     final allProducts = _filteredProducts;
-    final isDragging = _draggingProductId != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: isDragging
-              ? () { /* no-op during drag */ }
-              : _isSelectionMode && _selectedProductIds.isNotEmpty
-                  ? () => _onDropMultiple(null)
-                  : () => setState(() => _isRootExpanded = !_isRootExpanded),
+          onTap: () {
+            if (_isSelectionMode && _selectedProductIds.isNotEmpty) {
+              _moveSelectedToCategory(null);
+            } else {
+              setState(() => _isRootExpanded = !_isRootExpanded);
+            }
+          },
           child: Container(
             height: 52,
             padding: const EdgeInsets.only(right: 16),
@@ -224,17 +225,14 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         _filteredProducts.where((p) => p.categoryId == cat.id).toList();
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
-    final isDragging = _draggingProductId != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
           onTap: () {
-            if (isDragging) {
-              _onDrop(_draggingProductId!, cat.id);
-            } else if (_isSelectionMode && _selectedProductIds.isNotEmpty) {
-              _onDropMultiple(cat.id);
+            if (_isSelectionMode && _selectedProductIds.isNotEmpty) {
+              _moveSelectedToCategory(cat.id);
             } else {
               setState(() {
                 if (isExpanded) {
@@ -249,12 +247,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
             duration: const Duration(milliseconds: 200),
             height: 52,
             padding: EdgeInsets.only(left: depth * 24.0, right: 16),
-            decoration: isDragging
-                ? BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  )
-                : null,
+            decoration: null,
             child: Row(
               children: [
                 if (hasChildren)
