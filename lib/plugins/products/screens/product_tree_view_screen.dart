@@ -3,7 +3,8 @@ import 'package:h_1_core/models/product_model.dart';
 import 'package:h_1_core/models/product_category_model.dart';
 import 'package:h_1_core/services/product_repository.dart';
 import 'package:h_1_core/services/product_category_repository.dart';
-import 'product_editor_screen.dart';
+import 'package:h_1_core/services/error_log_service.dart';
+import 'package:h_1_core/plugins/products/screens/product_editor_screen.dart';
 
 class ProductTreeView extends StatefulWidget {
   const ProductTreeView({super.key});
@@ -69,7 +70,14 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   Future<void> _onDrop(String productId, String? targetCategoryId) async {
     if (_draggingProductId == null) return;
 
-    final originalProduct = _products.firstWhere((p) => p.id == productId);
+    final idx = _products.indexWhere((p) => p.id == productId);
+    if (idx < 0) {
+      setState(() => _draggingProductId = null);
+      return;
+    }
+
+    if (!mounted) return;
+    final originalProduct = _products[idx];
 
     setState(() {
       _draggingProductId = null;
@@ -79,8 +87,14 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       final updated = originalProduct.copyWith(categoryId: targetCategoryId);
       await _productRepo.saveProduct(updated);
       await _load();
-    } catch (e) {
+    } catch (e, st) {
       await _load();
+      ErrorLogService.instance.logError(
+        '移動エラー: $e',
+        stackTrace: st.toString(),
+        screen: 'ProductTreeView',
+        context: '_onDrop',
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('移動エラー: $e')),
@@ -97,12 +111,22 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     });
     try {
       for (final productId in ids) {
-        final product = _products.firstWhere((p) => p.id == productId);
-        await _productRepo.saveProduct(product.copyWith(categoryId: targetCategoryId));
+        if (!mounted) return;
+        final idx = _products.indexWhere((p) => p.id == productId);
+        if (idx < 0) continue;
+        await _productRepo.saveProduct(
+          _products[idx].copyWith(categoryId: targetCategoryId),
+        );
       }
       await _load();
-    } catch (e) {
+    } catch (e, st) {
       await _load();
+      ErrorLogService.instance.logError(
+        '移動エラー: $e',
+        stackTrace: st.toString(),
+        screen: 'ProductTreeView',
+        context: '_onDropMultiple',
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('移動エラー: $e')),
@@ -214,7 +238,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   }
 
   Widget _buildRootNode(ColorScheme cs) {
-    final allProducts = _filteredProducts;
+    final allProducts = _filteredProducts.where((p) => p.categoryId == null).toList();
     final isDragging = _draggingProductId != null;
 
     return Column(
@@ -499,51 +523,6 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     );
   }
 
-  Widget _buildUncategorizedSection(ColorScheme cs) {
-    final uncategorized =
-        _filteredProducts.where((p) => p.categoryId == null).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Divider(height: 32),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            children: [
-              Icon(Icons.folder_off, size: 20, color: cs.onSurfaceVariant),
-              const SizedBox(width: 12),
-              Text(
-                'カテゴリなし',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${uncategorized.length}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        ...uncategorized.map((p) => _buildProductItem(p, 1, cs)),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -657,9 +636,6 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                           ..._categories
                               .where((c) => c.parentId == null)
                               .map((cat) => _buildCategoryNode(cat, 0, cs)),
-                          if (_filteredProducts
-                              .any((p) => p.categoryId == null))
-                            _buildUncategorizedSection(cs),
                         ],
                       ],
                     ),
