@@ -437,10 +437,10 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
         _buildHeaderRow(),
         Expanded(
           child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            controller: _dataScrollCtrl,
+            scrollDirection: Axis.vertical,
             child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
+              scrollDirection: Axis.horizontal,
+              controller: _dataScrollCtrl,
               child: DataTable(
                 headingRowHeight: 0,
                 dataRowMinHeight: 40,
