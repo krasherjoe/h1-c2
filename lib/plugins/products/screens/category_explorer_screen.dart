@@ -11,6 +11,7 @@ import 'package:h_1_core/plugins/products/screens/product_editor_screen.dart';
 import 'package:h_1_core/plugins/products/screens/product_spreadsheet_screen.dart';
 import 'package:h_1_core/plugins/products/screens/product_tree_view_screen.dart';
 import 'package:h_1_core/constants/screen_ids.dart';
+import 'package:h_1_core/widgets/screen_id_title.dart';
 
 class CategoryExplorerScreen extends StatefulWidget {
   const CategoryExplorerScreen({super.key});
@@ -92,7 +93,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('${S.p1}:商品マスター'),
+          title: const ScreenAppBarTitle(screenId: S.p1, title: '商品マスター'),
           centerTitle: true,
           bottom: const TabBar(
             isScrollable: true,
