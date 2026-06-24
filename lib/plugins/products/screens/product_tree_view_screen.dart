@@ -25,6 +25,8 @@ class _ProductTreeViewState extends State<ProductTreeView> {
 
   final _expandedCategories = <String>{};
   bool _isRootExpanded = true;
+  bool _isSelectionMode = false;
+  final Set<String> _selectedProductIds = {};
 
   @override
   void initState() {
@@ -64,7 +66,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     });
   }
 
-  Future<void> _onDrop(String productId, String targetCategoryId) async {
+  Future<void> _onDrop(String productId, String? targetCategoryId) async {
     if (_draggingProductId == null) return;
 
     final originalProduct = _products.firstWhere((p) => p.id == productId);
@@ -87,9 +89,38 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     }
   }
 
+  Future<void> _onDropMultiple(String? targetCategoryId) async {
+    final ids = _selectedProductIds.toList();
+    setState(() {
+      _isSelectionMode = false;
+      _selectedProductIds.clear();
+    });
+    try {
+      for (final productId in ids) {
+        final product = _products.firstWhere((p) => p.id == productId);
+        await _productRepo.saveProduct(product.copyWith(categoryId: targetCategoryId));
+      }
+      await _load();
+    } catch (e) {
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('移動エラー: $e')),
+        );
+      }
+    }
+  }
+
   void _cancelDrag() {
     setState(() {
       _draggingProductId = null;
+    });
+  }
+
+  void _cancelSelection() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedProductIds.clear();
     });
   }
 
@@ -191,10 +222,10 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       children: [
         InkWell(
           onTap: isDragging
-              ? () {
-                  // dragging mode: tap root does nothing (not a category target)
-                }
-              : () => setState(() => _isRootExpanded = !_isRootExpanded),
+              ? () { /* no-op during drag */ }
+              : _isSelectionMode && _selectedProductIds.isNotEmpty
+                  ? () => _onDropMultiple(null)
+                  : () => setState(() => _isRootExpanded = !_isRootExpanded),
           child: Container(
             height: 52,
             padding: const EdgeInsets.only(right: 16),
@@ -258,15 +289,21 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: isDragging
-              ? () => _onDrop(_draggingProductId!, cat.id)
-              : () => setState(() {
-                  if (isExpanded) {
-                    _expandedCategories.remove(cat.id);
-                  } else {
-                    _expandedCategories.add(cat.id);
-                  }
-                }),
+          onTap: () {
+            if (isDragging) {
+              _onDrop(_draggingProductId!, cat.id);
+            } else if (_isSelectionMode && _selectedProductIds.isNotEmpty) {
+              _onDropMultiple(cat.id);
+            } else {
+              setState(() {
+                if (isExpanded) {
+                  _expandedCategories.remove(cat.id);
+                } else {
+                  _expandedCategories.add(cat.id);
+                }
+              });
+            }
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             height: 52,
@@ -348,14 +385,36 @@ class _ProductTreeViewState extends State<ProductTreeView> {
 
   Widget _buildProductItem(Product product, int depth, ColorScheme cs) {
     final isDragging = _draggingProductId == product.id;
+    final isSelected = _selectedProductIds.contains(product.id);
     final priceStr =
         '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
 
     return InkWell(
       onTap: _draggingProductId != null
           ? null
-          : () => _startDrag(product.id),
+          : _isSelectionMode
+              ? () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedProductIds.remove(product.id);
+                      if (_selectedProductIds.isEmpty) _isSelectionMode = false;
+                    } else {
+                      _selectedProductIds.add(product.id);
+                    }
+                  });
+                }
+              : () => _startDrag(product.id),
+      onLongPress: () {
+        if (_draggingProductId != null) return;
+        setState(() {
+          if (!_isSelectionMode) {
+            _isSelectionMode = true;
+            _selectedProductIds.add(product.id);
+          }
+        });
+      },
       onDoubleTap: () async {
+        if (_isSelectionMode) return;
         final result = await Navigator.push<Product>(
           context,
           MaterialPageRoute(
@@ -376,7 +435,24 @@ class _ProductTreeViewState extends State<ProductTreeView> {
             : null,
         child: Row(
           children: [
-            const SizedBox(width: 28),
+            if (_isSelectionMode)
+              Checkbox(
+                value: isSelected,
+                onChanged: (v) {
+                  setState(() {
+                    if (v == true) {
+                      _selectedProductIds.add(product.id);
+                    } else {
+                      _selectedProductIds.remove(product.id);
+                      if (_selectedProductIds.isEmpty) _isSelectionMode = false;
+                    }
+                  });
+                },
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              )
+            else
+              const SizedBox(width: 28),
             const SizedBox(width: 8),
             Icon(Icons.inventory_2, size: 20, color: cs.primary),
             const SizedBox(width: 12),
@@ -475,7 +551,46 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     
     return Column(
       children: [
-        if (isDragging)
+        if (_isSelectionMode)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: cs.secondaryContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.secondary, width: 2),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, size: 18, color: cs.secondary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${_selectedProductIds.length}件選択中 — 移動先カテゴリをタップ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _cancelSelection,
+                    style: TextButton.styleFrom(
+                      foregroundColor: cs.error,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('キャンセル', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (isDragging)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Container(
