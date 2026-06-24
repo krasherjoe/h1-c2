@@ -34,13 +34,25 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   double _zoomLevel = 1.0;
   static const _zoomLevels = [0.5, 0.7, 1.0, 1.5, 2.0];
   static const _zoomLabels = ['XS', 'S', 'M', 'L', 'XL'];
-  static const _baseWidths = [160.0, 100.0, 130.0, 110.0, 120.0, 120.0, 72.0];
+  final List<double> _baseWidths = [
+    160.0,
+    100.0,
+    130.0,
+    110.0,
+    120.0,
+    120.0,
+    72.0,
+  ];
   List<double> get _columnWidths =>
       _baseWidths.map((w) => w * _zoomLevel).toList();
 
   // Modified & new row tracking
   final Set<String> _modifiedIds = {};
   final Set<String> _newRowIds = {};
+
+  // Column resize state
+  int? _resizingColIndex;
+  double? _resizeStartX;
 
   @override
   void initState() {
@@ -290,6 +302,51 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
     _supplierControllers.remove(productId)?.dispose();
   }
 
+  Widget _buildColumnDivider(int colIndex) {
+    final cs = Theme.of(context).colorScheme;
+    final isActive = _resizingColIndex == colIndex;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: (details) {
+        _resizingColIndex = colIndex;
+        _resizeStartX = details.globalPosition.dx;
+      },
+      onHorizontalDragUpdate: (details) {
+        if (_resizingColIndex != colIndex || _resizeStartX == null) return;
+        final delta = details.globalPosition.dx - _resizeStartX!;
+        setState(() {
+          final newWidth = (_baseWidths[colIndex] + delta).clamp(50.0, 400.0);
+          if (newWidth != _baseWidths[colIndex]) {
+            _baseWidths[colIndex] = newWidth;
+            _resizeStartX = details.globalPosition.dx;
+          }
+        });
+      },
+      onHorizontalDragEnd: (_) {
+        if (_resizingColIndex == colIndex) {
+          setState(() {
+            _resizingColIndex = null;
+            _resizeStartX = null;
+          });
+        }
+      },
+      child: Container(
+        width: 12,
+        color: isActive
+            ? cs.primary.withValues(alpha: 0.2)
+            : Colors.transparent,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+            width: 1,
+            height: double.infinity,
+            color: isActive ? cs.primary : cs.outlineVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showSnackBar(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -405,7 +462,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(0),
           SizedBox(
             width: _columnWidths[1],
             child: const Text(
@@ -413,7 +470,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(1),
           SizedBox(
             width: _columnWidths[2],
             child: const Text(
@@ -421,7 +478,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(2),
           SizedBox(
             width: _columnWidths[3],
             child: const Text(
@@ -429,7 +486,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(3),
           SizedBox(
             width: _columnWidths[4],
             child: const Text(
@@ -437,7 +494,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(4),
           SizedBox(
             width: _columnWidths[5],
             child: const Text(
@@ -445,7 +502,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(5),
           SizedBox(
             width: _columnWidths[6],
             child: const Text(
@@ -453,6 +510,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
+          const SizedBox(width: 12),
         ],
       ),
     );
@@ -466,6 +524,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
       builder: (context, constraints) {
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
+          physics: _resizingColIndex != null
+              ? const NeverScrollableScrollPhysics()
+              : null,
           controller: _hScrollCtrl,
           child: SizedBox(
             width: totalWidth,
@@ -520,7 +581,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               onChanged: () => _markModified(product.id),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(0),
           SizedBox(
             width: _columnWidths[1],
             child: _buildInlineTextField(
@@ -530,7 +591,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               keyboardType: TextInputType.number,
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(1),
           SizedBox(
             width: _columnWidths[2],
             child: _buildInlineTextField(
@@ -538,7 +599,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               onChanged: () => _markModified(product.id),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(2),
           SizedBox(
             width: _columnWidths[3],
             child: _buildInlineTextField(
@@ -546,7 +607,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               onChanged: () => _markModified(product.id),
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(3),
           SizedBox(
             width: _columnWidths[4],
             child: _buildAutocompleteField(
@@ -556,7 +617,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               'manufacturer',
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(4),
           SizedBox(
             width: _columnWidths[5],
             child: _buildAutocompleteField(
@@ -566,7 +627,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               'supplier_name',
             ),
           ),
-          const SizedBox(width: 12),
+          _buildColumnDivider(5),
           SizedBox(
             width: _columnWidths[6],
             child: Row(
