@@ -24,6 +24,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   String? _draggingProductId;
 
   final _expandedCategories = <String>{};
+  bool _isRootExpanded = true;
 
   @override
   void initState() {
@@ -179,6 +180,70 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       await _catRepo.delete(cat.id);
       await _load();
     }
+  }
+
+  Widget _buildRootNode(ColorScheme cs) {
+    final allProducts = _filteredProducts;
+    final isDragging = _draggingProductId != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: isDragging
+              ? () {
+                  // dragging mode: tap root does nothing (not a category target)
+                }
+              : () => setState(() => _isRootExpanded = !_isRootExpanded),
+          child: Container(
+            height: 52,
+            padding: const EdgeInsets.only(right: 16),
+            decoration: null,
+            child: Row(
+              children: [
+                Icon(
+                  _isRootExpanded ? Icons.expand_more : Icons.chevron_right,
+                  size: 20,
+                  color: cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  _isRootExpanded ? Icons.folder_open : Icons.folder,
+                  size: 20,
+                  color: cs.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '/',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${allProducts.length}',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
+            ),
+          ),
+        ),
+        if (_isRootExpanded)
+          ...allProducts.map((p) => _buildProductItem(p, 1, cs)),
+      ],
+    );
   }
 
   Widget _buildCategoryNode(ProductCategory cat, int depth, ColorScheme cs) {
@@ -494,6 +559,8 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                             ),
                           )
                         else ...[
+                          _buildRootNode(cs),
+                          const Divider(height: 16),
                           ..._categories
                               .where((c) => c.parentId == null)
                               .map((cat) => _buildCategoryNode(cat, 0, cs)),

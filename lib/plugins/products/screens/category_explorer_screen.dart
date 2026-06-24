@@ -172,6 +172,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   }
 
   Widget _buildBreadcrumb(ColorScheme cs) {
+    if (_breadcrumbPath.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       height: 44,
       child: ListView(
@@ -180,11 +181,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         children: [
           ActionChip(
             label: Text('すべて',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: _selectedCategoryId == null ? FontWeight.bold : FontWeight.normal,
-                  color: _selectedCategoryId == null ? cs.primary : cs.onSurfaceVariant,
-                )),
+                style: const TextStyle(fontSize: 12)),
             onPressed: () {
               setState(() {
                 _selectedCategoryId = null;
