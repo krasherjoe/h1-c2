@@ -28,8 +28,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   final Map<String, TextEditingController> _modelNumberControllers = {};
   final Map<String, TextEditingController> _manufacturerControllers = {};
   final Map<String, TextEditingController> _supplierControllers = {};
-  final _headerScrollCtrl = ScrollController();
-  final _dataScrollCtrl = ScrollController();
+  // ヘッダーとデータを同一の横スクロールに入れることで
+  // jumpTo による sync ループ問題を根本解消
+  final _hScrollCtrl = ScrollController();
   double _zoomLevel = 1.0;
   static const _zoomLevels = [0.5, 0.7, 1.0, 1.5, 2.0];
   static const _zoomLabels = ['XS', 'S', 'M', 'L', 'XL'];
@@ -43,30 +44,13 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   @override
   void initState() {
     super.initState();
-    _headerScrollCtrl.addListener(_syncScrollHeaderToData);
-    _dataScrollCtrl.addListener(_syncScrollDataToHeader);
     _searchController.addListener(_onSearchChanged);
     _load();
   }
 
-  void _syncScrollHeaderToData() {
-    if (_dataScrollCtrl.hasClients) {
-      _dataScrollCtrl.jumpTo(_headerScrollCtrl.offset);
-    }
-  }
-
-  void _syncScrollDataToHeader() {
-    if (_headerScrollCtrl.hasClients) {
-      _headerScrollCtrl.jumpTo(_dataScrollCtrl.offset);
-    }
-  }
-
   @override
   void dispose() {
-    _headerScrollCtrl.removeListener(_syncScrollHeaderToData);
-    _dataScrollCtrl.removeListener(_syncScrollDataToHeader);
-    _headerScrollCtrl.dispose();
-    _dataScrollCtrl.dispose();
+    _hScrollCtrl.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     for (final c in _nameControllers.values) {
@@ -399,7 +383,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
     );
   }
 
-  Widget _buildHeaderRow() {
+  Widget _buildHeaderRowContent() {
     final cs = Theme.of(context).colorScheme;
     return Container(
       height: 40,
@@ -409,59 +393,54 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
           bottom: BorderSide(color: cs.outlineVariant, width: 1),
         ),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        controller: _headerScrollCtrl,
-        child: SizedBox(
-          width: _columnWidths.reduce((a, b) => a + b) + 24 + 12 * 6,
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600))),
-              const SizedBox(width: 12),
-              SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600))),
-              const SizedBox(width: 12),
-              SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600))),
-              const SizedBox(width: 12),
-              SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600))),
-              const SizedBox(width: 12),
-              SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600))),
-              const SizedBox(width: 12),
-              SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600))),
-              const SizedBox(width: 12),
-              SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600))),
-            ],
-          ),
-        ),
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600))),
+          const SizedBox(width: 12),
+          SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600))),
+          const SizedBox(width: 12),
+          SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600))),
+          const SizedBox(width: 12),
+          SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600))),
+          const SizedBox(width: 12),
+          SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600))),
+          const SizedBox(width: 12),
+          SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600))),
+          const SizedBox(width: 12),
+          SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600))),
+        ],
       ),
     );
   }
 
   Widget _buildTable() {
-    return Column(
-      children: [
-        _buildHeaderRow(),
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              controller: _dataScrollCtrl,
-              child: SizedBox(
-                width: _columnWidths.reduce((a, b) => a + b) + 24 + 12 * 6,
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: _filteredProducts.map((product) {
-                    return _buildBodyRow(product);
-                  }).toList(),
+    final totalWidth = _columnWidths.reduce((a, b) => a + b) + 24 + 12 * 6;
+    // ヘッダーとデータを同一の SingleChildScrollView(horizontal) に入れる
+    // → _headerScrollCtrl/_dataScrollCtrl の jumpTo sync ループが不要になる
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          controller: _hScrollCtrl,
+          child: SizedBox(
+            width: totalWidth,
+            height: constraints.maxHeight,
+            child: Column(
+              children: [
+                _buildHeaderRowContent(),
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: _filteredProducts.length,
+                    itemBuilder: (ctx, i) => _buildBodyRow(_filteredProducts[i]),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
