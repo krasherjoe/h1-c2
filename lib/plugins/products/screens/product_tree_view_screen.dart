@@ -325,50 +325,43 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   }
 
   Widget _buildProductItem(Product product, int depth, ColorScheme cs) {
-    final isDragging = _draggingProductId == product.id;
     final isSelected = _selectedProductIds.contains(product.id);
     final priceStr =
         '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
 
     return InkWell(
-      onTap: _draggingProductId != null
-          ? null
-          : _isSelectionMode
-              ? () {
-                  setState(() {
-                    if (isSelected) {
-                      _selectedProductIds.remove(product.id);
-                      if (_selectedProductIds.isEmpty) _isSelectionMode = false;
-                    } else {
-                      _selectedProductIds.add(product.id);
-                    }
-                  });
-                }
-              : () => _startDrag(product.id),
-      onLongPress: () {
-        if (_draggingProductId != null) return;
-        setState(() {
-          if (!_isSelectionMode) {
-            _isSelectionMode = true;
-            _selectedProductIds.add(product.id);
-          }
-        });
+      onTap: () async {
+        if (_isSelectionMode) {
+          setState(() {
+            if (isSelected) {
+              _selectedProductIds.remove(product.id);
+              if (_selectedProductIds.isEmpty) _isSelectionMode = false;
+            } else {
+              _selectedProductIds.add(product.id);
+            }
+          });
+        } else {
+          final result = await Navigator.push<Product>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductEditorScreen(product: product),
+            ),
+          );
+          if (result != null) _load();
+        }
       },
-      onDoubleTap: () async {
+      onLongPress: () {
         if (_isSelectionMode) return;
-        final result = await Navigator.push<Product>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductEditorScreen(product: product),
-          ),
-        );
-        if (result != null) _load();
+        setState(() {
+          _isSelectionMode = true;
+          _selectedProductIds.add(product.id);
+        });
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         height: 52,
         padding: EdgeInsets.only(left: depth * 24.0, right: 16),
-        decoration: isDragging
+        decoration: isSelected
             ? BoxDecoration(
                 color: cs.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
@@ -408,9 +401,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
-                      color: isDragging ? cs.primary : cs.onSurface,
-                      fontWeight:
-                          isDragging ? FontWeight.bold : FontWeight.normal,
+                      color: cs.onSurface,
                     ),
                   ),
                   if (product.barcode != null)
