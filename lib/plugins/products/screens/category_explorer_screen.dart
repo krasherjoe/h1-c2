@@ -31,8 +31,8 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   List<ProductCategory> _breadcrumbPath = [];
 
   // --- デザインシステム定数 (D1基準) ---
-  static const _kSpacing = 8.0;   // D1と統一: Card margin = 8
-  static const _kPadding = 6.0;   // D1と統一: Card内padding = 6
+  static const _kSpacing = 8.0; // D1と統一: Card margin = 8
+  static const _kPadding = 6.0; // D1と統一: Card内padding = 6
 
   @override
   void initState() {
@@ -54,10 +54,13 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       _loadBreadcrumbPath(_selectedCategoryId!);
     }
     final showShadows = inputStyleNotifier.value == 'raised';
-    final logMsg = 'P1 ログ: products=${_products.length}, categories=${_categories.length}, showShadows=$showShadows';
+    final logMsg =
+        'P1 ログ: products=${_products.length}, categories=${_categories.length}, showShadows=$showShadows';
     debugPrint(logMsg);
     ErrorReporter.sendLog(message: logMsg);
-    debugPrint('[P1] sample products: ${_products.take(3).map((p) => '${p.name}(${p.categoryId})').join(', ')}');
+    debugPrint(
+      '[P1] sample products: ${_products.take(3).map((p) => '${p.name}(${p.categoryId})').join(', ')}',
+    );
   }
 
   Future<void> _loadBreadcrumbPath(String categoryId) async {
@@ -75,11 +78,14 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     var list = _products;
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
-      list = list.where((p) =>
-        p.name.toLowerCase().contains(q) ||
-        (p.barcode?.toLowerCase().contains(q) ?? false) ||
-        (p.modelNumber?.toLowerCase().contains(q) ?? false)
-      ).toList();
+      list = list
+          .where(
+            (p) =>
+                p.name.toLowerCase().contains(q) ||
+                (p.barcode?.toLowerCase().contains(q) ?? false) ||
+                (p.modelNumber?.toLowerCase().contains(q) ?? false),
+          )
+          .toList();
     }
     if (_selectedCategoryId != null) {
       list = list.where((p) => p.categoryId == _selectedCategoryId).toList();
@@ -130,7 +136,10 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           hintText: '商品名で検索...',
           prefixIcon: const Icon(Icons.search),
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
         onChanged: (v) => setState(() => _searchQuery = v),
       ),
@@ -156,20 +165,22 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
             visualDensity: VisualDensity.compact,
           ),
           const SizedBox(width: 8),
-          ..._categories.map((cat) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(cat.name),
-              selected: _selectedCategoryId == cat.id,
-              onSelected: (_) {
-                setState(() {
-                  _selectedCategoryId = cat.id;
-                });
-                _loadBreadcrumbPath(cat.id);
-              },
-              visualDensity: VisualDensity.compact,
+          ..._categories.map(
+            (cat) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: Text(cat.name),
+                selected: _selectedCategoryId == cat.id,
+                onSelected: (_) {
+                  setState(() {
+                    _selectedCategoryId = cat.id;
+                  });
+                  _loadBreadcrumbPath(cat.id);
+                },
+                visualDensity: VisualDensity.compact,
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -184,8 +195,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         children: [
           ActionChip(
-            label: Text('すべて',
-                style: const TextStyle(fontSize: 12)),
+            label: Text('すべて', style: const TextStyle(fontSize: 12)),
             onPressed: () {
               setState(() {
                 _selectedCategoryId = null;
@@ -198,15 +208,23 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           for (int i = 0; i < _breadcrumbPath.length; i++) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+              child: Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             ActionChip(
               label: Text(
                 _breadcrumbPath[i].name,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: i == _breadcrumbPath.length - 1 ? FontWeight.bold : FontWeight.normal,
-                  color: i == _breadcrumbPath.length - 1 ? cs.primary : cs.onSurfaceVariant,
+                  fontWeight: i == _breadcrumbPath.length - 1
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                  color: i == _breadcrumbPath.length - 1
+                      ? cs.primary
+                      : cs.onSurfaceVariant,
                 ),
               ),
               onPressed: () {
@@ -241,7 +259,12 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     );
   }
 
-  Widget _buildProductCard(Product product, int depth, ColorScheme cs, {bool showShadows = true}) {
+  Widget _buildProductCard(
+    Product product,
+    int depth,
+    ColorScheme cs, {
+    bool showShadows = true,
+  }) {
     return LongPressDraggable<Product>(
       data: product,
       feedback: Material(
@@ -253,7 +276,9 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           decoration: BoxDecoration(
             color: cs.primaryContainer,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(blurRadius: 8, color: cs.shadow.withValues(alpha: 0.3))],
+            boxShadow: [
+              BoxShadow(blurRadius: 8, color: cs.shadow.withValues(alpha: 0.3)),
+            ],
           ),
           child: Icon(Icons.inventory_2, size: 24, color: cs.primary),
         ),
@@ -266,8 +291,14 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     );
   }
 
-  Widget _buildProductCardContent(Product product, int depth, ColorScheme cs, bool showShadows) {
-    final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+  Widget _buildProductCardContent(
+    Product product,
+    int depth,
+    ColorScheme cs,
+    bool showShadows,
+  ) {
+    final priceStr =
+        '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     const iconSize = 22.0;
     const textS = 14.0;
     const subS = 11.0;
@@ -279,27 +310,59 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         borderRadius: BorderRadius.circular(8),
         onTap: () => _openProductEditor(product),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: _kPadding, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _kPadding,
+            vertical: 4,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.inventory_2, size: iconSize, color: cs.primary,
-                  shadows: showShadows ? [Shadow(blurRadius: 2, color: cs.shadow.withValues(alpha: 0.35))] : null),
+              Icon(
+                Icons.inventory_2,
+                size: iconSize,
+                color: cs.primary,
+                shadows: showShadows
+                    ? [
+                        Shadow(
+                          blurRadius: 2,
+                          color: cs.shadow.withValues(alpha: 0.35),
+                        ),
+                      ]
+                    : null,
+              ),
               SizedBox(width: _kPadding),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: textS, fontWeight: FontWeight.w500)),
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: textS,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     if (product.barcode != null)
-                      Text('バーコード: ${product.barcode}',
-                        style: TextStyle(fontSize: subS, color: cs.onSurfaceVariant)),
+                      Text(
+                        'バーコード: ${product.barcode}',
+                        style: TextStyle(
+                          fontSize: subS,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                   ],
                 ),
               ),
-              Text(priceStr, style: TextStyle(
-                fontSize: priceS, fontWeight: FontWeight.bold, color: cs.primary)),
+              Text(
+                priceStr,
+                style: TextStyle(
+                  fontSize: priceS,
+                  fontWeight: FontWeight.bold,
+                  color: cs.primary,
+                ),
+              ),
             ],
           ),
         ),
@@ -317,7 +380,11 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         return RefreshIndicator(
           onRefresh: _load,
           child: products.isEmpty
-              ? Center(child: Text(_searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません'))
+              ? Center(
+                  child: Text(
+                    _searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません',
+                  ),
+                )
               : ListView.builder(
                   key: ValueKey('list_${products.length}_$_searchQuery'),
                   padding: EdgeInsets.all(_kSpacing),
@@ -326,10 +393,18 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
                     builder: (context, constraints) {
                       final availableW = constraints.maxWidth;
                       final cols = availableW > 600 ? 2 : 1;
-                      final cardW = cols > 1 
-                        ? (availableW - _kSpacing * (cols + 1)) / cols 
-                        : availableW - _kSpacing * 2;
-                      return SizedBox(width: cardW, child: _buildProductCard(products[i], 0, cs, showShadows: showShadows));
+                      final cardW = cols > 1
+                          ? (availableW - _kSpacing * (cols + 1)) / cols
+                          : availableW - _kSpacing * 2;
+                      return SizedBox(
+                        width: cardW,
+                        child: _buildProductCard(
+                          products[i],
+                          0,
+                          cs,
+                          showShadows: showShadows,
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -344,32 +419,35 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (ctx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(
-            leading: Icon(Icons.edit, color: cs.primary),
-            title: const Text('手動で登録'),
-            subtitle: const Text('フォームから1件ずつ入力'),
-            onTap: () => Navigator.pop(ctx, 'manual'),
-          ),
-          ListTile(
-            leading: Icon(Icons.file_upload, color: cs.secondary),
-            title: const Text('CSVから取込'),
-            subtitle: const Text('CSVファイルから商品を一括登録'),
-            onTap: () => Navigator.pop(ctx, 'csv'),
-          ),
-          ListTile(
-            leading: Icon(Icons.table_chart, color: cs.tertiary),
-            title: const Text('スプレッドシートから取込'),
-            subtitle: const Text('Google Sheetsのデータを商品として登録'),
-            onTap: () => Navigator.pop(ctx, 'import'),
-          ),
-          ListTile(
-            leading: Icon(Icons.file_download_outlined, color: cs.error),
-            title: const Text('テンプレートを出力'),
-            subtitle: const Text('商品データをGoogle Sheetsに書き出し'),
-            onTap: () => Navigator.pop(ctx, 'export'),
-          ),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.edit, color: cs.primary),
+              title: const Text('手動で登録'),
+              subtitle: const Text('フォームから1件ずつ入力'),
+              onTap: () => Navigator.pop(ctx, 'manual'),
+            ),
+            ListTile(
+              leading: Icon(Icons.file_upload, color: cs.secondary),
+              title: const Text('CSVから取込'),
+              subtitle: const Text('CSVファイルから商品を一括登録'),
+              onTap: () => Navigator.pop(ctx, 'csv'),
+            ),
+            ListTile(
+              leading: Icon(Icons.table_chart, color: cs.tertiary),
+              title: const Text('スプレッドシートから取込'),
+              subtitle: const Text('Google Sheetsのデータを商品として登録'),
+              onTap: () => Navigator.pop(ctx, 'import'),
+            ),
+            ListTile(
+              leading: Icon(Icons.file_download_outlined, color: cs.error),
+              title: const Text('テンプレートを出力'),
+              subtitle: const Text('商品データをGoogle Sheetsに書き出し'),
+              onTap: () => Navigator.pop(ctx, 'export'),
+            ),
+          ],
+        ),
       ),
     );
     if (!mounted || action == null) return;
@@ -410,9 +488,9 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     } catch (e) {
       debugPrint('[Products] exportSheets error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ エクスポート失敗: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ エクスポート失敗: $e')));
     }
   }
 
@@ -422,9 +500,9 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       final id = await svc.ensureProductSheet();
       if (id == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ 先に「テンプレートを出力」してください')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('❌ 先に「テンプレートを出力」してください')));
         return;
       }
       final result = await svc.importProducts(id);
@@ -444,17 +522,17 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✅ ${result.count}件の商品を更新しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('✅ ${result.count}件の商品を更新しました')));
       }
       await _load();
     } catch (e) {
       debugPrint('[Products] importSheets error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ インポート失敗: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ インポート失敗: $e')));
     }
   }
 
@@ -473,26 +551,32 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('OK')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('OK'),
+          ),
         ],
       ),
     );
     if (csvText == null) return;
-    
+
     try {
       final rows = const CsvToListConverter().convert(csvText);
       if (rows.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ CSVデータが空です')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('❌ CSVデータが空です')));
         return;
       }
-      
+
       final createdIds = <String>[];
       final dataRows = rows.skip(1).toList();
-      
+
       for (final row in dataRows) {
         if (row.length < 2) continue;
         final name = row[0]?.toString().trim() ?? '';
@@ -510,7 +594,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
         await _productRepo.saveProduct(product);
         createdIds.add(product.id);
       }
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -528,13 +612,11 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     } catch (e) {
       debugPrint('[Products] importCsv error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ CSVインポート失敗: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ CSVインポート失敗: $e')));
     }
   }
-
-
 
   void _undoImport(List<String> productIds) async {
     for (final id in productIds) {
@@ -552,14 +634,10 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   void _openProductEditor(Product product) async {
     final result = await Navigator.push<Product>(
       context,
-      MaterialPageRoute(
-        builder: (_) => ProductEditorScreen(product: product),
-      ),
+      MaterialPageRoute(builder: (_) => ProductEditorScreen(product: product)),
     );
     if (result != null) _load();
   }
-
-
 }
 
 // --- ビューアー画面 ---
@@ -577,7 +655,8 @@ class _ProductViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final priceStr = '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    final priceStr =
+        '¥${product.defaultUnitPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
     return Scaffold(
       appBar: AppBar(
         title: Text(product.name),
@@ -593,8 +672,14 @@ class _ProductViewer extends StatelessWidget {
                   title: const Text('削除確認'),
                   content: Text('「${product.name}」を削除しますか？'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
-                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('削除')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('キャンセル'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('削除'),
+                    ),
                   ],
                 ),
               );
@@ -615,17 +700,25 @@ class _ProductViewer extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _infoRow('商品名', product.name, cs),
-          if (product.productNameKana != null) _infoRow('商品名カナ', product.productNameKana!, cs),
+          if (product.productNameKana != null)
+            _infoRow('商品名カナ', product.productNameKana!, cs),
           _infoRow('単価', priceStr, cs),
           if (product.barcode != null) _infoRow('バーコード', product.barcode!, cs),
-          if (product.modelNumber != null) _infoRow('型番', product.modelNumber!, cs),
-          if (product.manufacturer != null) _infoRow('メーカー', product.manufacturer!, cs),
-          if (product.manufacturerCode != null) _infoRow('メーカーコード', product.manufacturerCode!, cs),
-          if (product.classificationCode != null) _infoRow('分類コード', product.classificationCode!, cs),
-          if (product.divisionCode != null) _infoRow('ジャンルコード', product.divisionCode!, cs),
+          if (product.modelNumber != null)
+            _infoRow('型番', product.modelNumber!, cs),
+          if (product.manufacturer != null)
+            _infoRow('メーカー', product.manufacturer!, cs),
+          if (product.manufacturerCode != null)
+            _infoRow('メーカーコード', product.manufacturerCode!, cs),
+          if (product.classificationCode != null)
+            _infoRow('分類コード', product.classificationCode!, cs),
+          if (product.divisionCode != null)
+            _infoRow('ジャンルコード', product.divisionCode!, cs),
           if (product.category != null) _infoRow('カテゴリ', product.category!, cs),
-          if (product.supplierName != null) _infoRow('仕入先', product.supplierName!, cs),
-          if (product.stockQuantity != null) _infoRow('在庫数', '${product.stockQuantity}', cs),
+          if (product.supplierName != null)
+            _infoRow('仕入先', product.supplierName!, cs),
+          if (product.stockQuantity != null)
+            _infoRow('在庫数', '${product.stockQuantity}', cs),
         ],
       ),
     );
@@ -639,7 +732,14 @@ class _ProductViewer extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
         ],

@@ -35,7 +35,8 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   static const _zoomLevels = [0.5, 0.7, 1.0, 1.5, 2.0];
   static const _zoomLabels = ['XS', 'S', 'M', 'L', 'XL'];
   static const _baseWidths = [160.0, 100.0, 130.0, 110.0, 120.0, 120.0, 72.0];
-  List<double> get _columnWidths => _baseWidths.map((w) => w * _zoomLevel).toList();
+  List<double> get _columnWidths =>
+      _baseWidths.map((w) => w * _zoomLevel).toList();
 
   // Modified & new row tracking
   final Set<String> _modifiedIds = {};
@@ -188,19 +189,20 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
 
     final updated = product.copyWith(
       name: nameCtrl.text.trim(),
-      defaultUnitPrice: int.tryParse(
+      defaultUnitPrice:
+          int.tryParse(
             _priceControllers[productId]?.text.replaceAll(',', '') ?? '',
           ) ??
           0,
       barcode: _barcodeControllers[productId]?.text.trim().isEmpty ?? true
           ? null
           : _barcodeControllers[productId]!.text.trim(),
-      modelNumber: _modelNumberControllers[productId]?.text.trim().isEmpty ??
-          true
+      modelNumber:
+          _modelNumberControllers[productId]?.text.trim().isEmpty ?? true
           ? null
           : _modelNumberControllers[productId]!.text.trim(),
-      manufacturer: _manufacturerControllers[productId]?.text.trim().isEmpty ??
-          true
+      manufacturer:
+          _manufacturerControllers[productId]?.text.trim().isEmpty ?? true
           ? null
           : _manufacturerControllers[productId]!.text.trim(),
       supplierName: _supplierControllers[productId]?.text.trim().isEmpty ?? true
@@ -290,9 +292,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
 
   void _showSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   // ===== Build =====
@@ -310,9 +312,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
           child: _filteredProducts.isEmpty
               ? Center(
                   child: Text(
-                    _searchQuery.isNotEmpty
-                        ? '検索結果がありません'
-                        : '商品がありません',
+                    _searchQuery.isNotEmpty ? '検索結果がありません' : '商品がありません',
                   ),
                 )
               : _buildTable(),
@@ -358,7 +358,11 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.zoom_out_map, size: 16, color: cs.onPrimaryContainer),
+                  Icon(
+                    Icons.zoom_out_map,
+                    size: 16,
+                    color: cs.onPrimaryContainer,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     _zoomLabels[_zoomLevels.indexOf(_zoomLevel)],
@@ -389,26 +393,66 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
       height: 40,
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        border: Border(
-          bottom: BorderSide(color: cs.outlineVariant, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: cs.outlineVariant, width: 1)),
       ),
       child: Row(
         children: [
           const SizedBox(width: 12),
-          SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: _columnWidths[0],
+            child: const Text(
+              '商品名',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 12),
-          SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: _columnWidths[1],
+            child: const Text(
+              '単価',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 12),
-          SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: _columnWidths[2],
+            child: const Text(
+              'バーコード',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 12),
-          SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: _columnWidths[3],
+            child: const Text(
+              '型番',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 12),
-          SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: _columnWidths[4],
+            child: const Text(
+              'メーカー',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 12),
-          SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: _columnWidths[5],
+            child: const Text(
+              '仕入先',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 12),
-          SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: _columnWidths[6],
+            child: const Text(
+              '操作',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
@@ -433,7 +477,8 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
                   child: ListView.builder(
                     padding: EdgeInsets.zero,
                     itemCount: _filteredProducts.length,
-                    itemBuilder: (ctx, i) => _buildBodyRow(_filteredProducts[i]),
+                    itemBuilder: (ctx, i) =>
+                        _buildBodyRow(_filteredProducts[i]),
                   ),
                 ),
               ],
@@ -531,7 +576,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
                   icon: Icon(
                     Icons.save,
                     size: 18,
-                    color: needsSave ? cs.primary : cs.onSurfaceVariant.withValues(alpha: 0.4),
+                    color: needsSave
+                        ? cs.primary
+                        : cs.onSurfaceVariant.withValues(alpha: 0.4),
                   ),
                   onPressed: needsSave ? () => _saveProduct(product.id) : null,
                   tooltip: '保存',
@@ -586,7 +633,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
             "SELECT DISTINCT $column FROM products WHERE $column IS NOT NULL AND $column LIKE ? AND is_current = 1 LIMIT 10",
             ['%${textEditingValue.text}%'],
           );
-          return rows.map((r) => r[fieldName] as String).where((s) => s.isNotEmpty);
+          return rows
+              .map((r) => r[fieldName] as String)
+              .where((s) => s.isNotEmpty);
         } catch (_) {
           return const Iterable<String>.empty();
         }
@@ -596,22 +645,23 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
         _markModified(productId);
       },
       initialValue: TextEditingValue(text: controller?.text ?? ''),
-      fieldViewBuilder: (context, textEditingController, focusNode, onSubmitted) {
-        return TextField(
-          controller: textEditingController,
-          focusNode: focusNode,
-          decoration: const InputDecoration(
-            isDense: true,
-            border: InputBorder.none,
-          ),
-          style: const TextStyle(fontSize: 13),
-          onChanged: (v) {
-            controller?.text = v;
-            _markModified(productId);
+      fieldViewBuilder:
+          (context, textEditingController, focusNode, onSubmitted) {
+            return TextField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+              ),
+              style: const TextStyle(fontSize: 13),
+              onChanged: (v) {
+                controller?.text = v;
+                _markModified(productId);
+              },
+              onSubmitted: (_) => onSubmitted(),
+            );
           },
-          onSubmitted: (_) => onSubmitted(),
-        );
-      },
     );
   }
 }

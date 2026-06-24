@@ -51,9 +51,11 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
       list = list
-          .where((p) =>
-              p.name.toLowerCase().contains(q) ||
-              (p.barcode?.toLowerCase().contains(q) ?? false))
+          .where(
+            (p) =>
+                p.name.toLowerCase().contains(q) ||
+                (p.barcode?.toLowerCase().contains(q) ?? false),
+          )
           .toList();
     }
     return list;
@@ -111,9 +113,9 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       }
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${ids.length}件の商品を移動しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${ids.length}件の商品を移動しました')));
       }
     } catch (e, st) {
       await _load();
@@ -124,9 +126,9 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         context: '_moveSelectedToCategory',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('移動エラー: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('移動エラー: $e')));
       }
     }
   }
@@ -168,9 +170,9 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       }
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${ids.length}件の商品を削除しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${ids.length}件の商品を削除しました')));
       }
     } catch (e, st) {
       await _load();
@@ -181,9 +183,9 @@ class _ProductTreeViewState extends State<ProductTreeView> {
         context: '_deleteSelected',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('削除エラー: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('削除エラー: $e')));
       }
     }
   }
@@ -320,8 +322,10 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
@@ -344,8 +348,9 @@ class _ProductTreeViewState extends State<ProductTreeView> {
 
   Widget _buildCategoryNode(ProductCategory cat, int depth, ColorScheme cs) {
     final children = _categories.where((c) => c.parentId == cat.id).toList();
-    final products =
-        _filteredProducts.where((p) => p.categoryId == cat.id).toList();
+    final products = _filteredProducts
+        .where((p) => p.categoryId == cat.id)
+        .toList();
     final hasChildren = children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(cat.id);
 
@@ -399,23 +404,26 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${products.length + children.length}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                   ),
                 ),
                 const SizedBox(width: 8),
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, size: 20, color: cs.onSurfaceVariant),
+                  icon: Icon(
+                    Icons.more_vert,
+                    size: 20,
+                    color: cs.onSurfaceVariant,
+                  ),
                   onSelected: (v) {
                     if (v == 'rename') _renameCategory(cat);
                     if (v == 'add_sub') _addCategory(cat);
@@ -424,7 +432,9 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'rename', child: Text('名前変更')),
                     const PopupMenuItem(
-                        value: 'add_sub', child: Text('サブカテゴリ追加')),
+                      value: 'add_sub',
+                      child: Text('サブカテゴリ追加'),
+                    ),
                     const PopupMenuItem(value: 'delete', child: Text('削除')),
                   ],
                 ),
@@ -515,10 +525,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                     product.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: cs.onSurface,
-                    ),
+                    style: TextStyle(fontSize: 15, color: cs.onSurface),
                   ),
                   if (product.barcode != null)
                     Text(
@@ -548,8 +555,9 @@ class _ProductTreeViewState extends State<ProductTreeView> {
   }
 
   Widget _buildUncategorizedSection(ColorScheme cs) {
-    final uncategorized =
-        _filteredProducts.where((p) => p.categoryId == null).toList();
+    final uncategorized = _filteredProducts
+        .where((p) => p.categoryId == null)
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -570,18 +578,14 @@ class _ProductTreeViewState extends State<ProductTreeView> {
               ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '${uncategorized.length}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: cs.onSurfaceVariant,
-                  ),
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
               ),
             ],
@@ -637,7 +641,13 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('キャンセル', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'キャンセル',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -651,8 +661,10 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                 hintText: '商品名で検索...',
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
               onChanged: (v) => setState(() => _searchQuery = v),
             ),
@@ -662,21 +674,20 @@ class _ProductTreeViewState extends State<ProductTreeView> {
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                   onRefresh: _load,
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        _buildRootNode(cs),
-                        if (_categories.isNotEmpty) ...[
-                          const Divider(height: 16),
-                          ..._categories
-                              .where((c) => c.parentId == null)
-                              .map((cat) => _buildCategoryNode(cat, 0, cs)),
-                          if (_filteredProducts
-                              .any((p) => p.categoryId == null))
-                            _buildUncategorizedSection(cs),
-                        ],
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildRootNode(cs),
+                      if (_categories.isNotEmpty) ...[
+                        const Divider(height: 16),
+                        ..._categories
+                            .where((c) => c.parentId == null)
+                            .map((cat) => _buildCategoryNode(cat, 0, cs)),
+                        if (_filteredProducts.any((p) => p.categoryId == null))
+                          _buildUncategorizedSection(cs),
                       ],
-                    ),
+                    ],
+                  ),
                 ),
         ),
       ],
