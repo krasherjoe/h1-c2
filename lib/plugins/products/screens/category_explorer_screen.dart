@@ -352,19 +352,19 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
             onTap: () => Navigator.pop(ctx, 'manual'),
           ),
           ListTile(
-            leading: Icon(Icons.file_upload, color: Colors.blue),
+            leading: Icon(Icons.file_upload, color: cs.tertiary),
             title: const Text('CSVから取込'),
             subtitle: const Text('CSVファイルから商品を一括登録'),
             onTap: () => Navigator.pop(ctx, 'csv'),
           ),
           ListTile(
-            leading: Icon(Icons.table_chart, color: Colors.green),
+            leading: Icon(Icons.table_chart, color: cs.tertiary),
             title: const Text('スプレッドシートから取込'),
             subtitle: const Text('Google Sheetsのデータを商品として登録'),
             onTap: () => Navigator.pop(ctx, 'import'),
           ),
           ListTile(
-            leading: Icon(Icons.file_download_outlined, color: Colors.orange),
+            leading: Icon(Icons.file_download_outlined, color: cs.tertiary),
             title: const Text('テンプレートを出力'),
             subtitle: const Text('商品データをGoogle Sheetsに書き出し'),
             onTap: () => Navigator.pop(ctx, 'export'),
