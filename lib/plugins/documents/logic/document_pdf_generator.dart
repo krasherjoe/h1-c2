@@ -367,9 +367,6 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
                             style: const pw.TextStyle(fontSize: 10)),
                         pw.SizedBox(height: 2),
                       ],
-                      if (document.documentType == DocumentType.invoice ||
-                          document.documentType == DocumentType.receipt)
-                        ..._buildBankAccountPdfLines(companyInfo, ipaex),
                     ],
                   ],
                 ),
@@ -436,6 +433,27 @@ Future<pw.Document> generateDocumentPdf(DocumentModel document, {
               child: pw.Text('※当方は適格請求書発行事業者ではありません。',
                   textAlign: pw.TextAlign.left,
                   style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ),
+          ],
+          if (companyInfo != null &&
+              (document.documentType == DocumentType.invoice ||
+               document.documentType == DocumentType.receipt)) ...[
+            pw.SizedBox(height: 16),
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey300),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('備考',
+                      style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 4),
+                  ..._buildBankAccountPdfLines(companyInfo, ipaex),
+                ],
+              ),
             ),
           ],
           pw.SizedBox(height: 20),

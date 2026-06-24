@@ -19,6 +19,128 @@ class CompanyProfileScreen extends StatefulWidget {
   State<CompanyProfileScreen> createState() => _CompanyProfileScreenState();
 }
 
+class _BankSlotWidget extends StatefulWidget {
+  final int index;
+  final CompanyBankAccount account;
+  final ValueChanged<CompanyBankAccount> onChanged;
+
+  const _BankSlotWidget({
+    super.key,
+    required this.index,
+    required this.account,
+    required this.onChanged,
+  });
+
+  @override
+  State<_BankSlotWidget> createState() => _BankSlotWidgetState();
+}
+
+class _BankSlotWidgetState extends State<_BankSlotWidget> {
+  late TextEditingController _bankNameCtrl;
+  late TextEditingController _branchNameCtrl;
+  late TextEditingController _accountNumberCtrl;
+  late TextEditingController _holderNameCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final a = widget.account;
+    _bankNameCtrl = TextEditingController(text: a.bankName);
+    _branchNameCtrl = TextEditingController(text: a.branchName);
+    _accountNumberCtrl = TextEditingController(text: a.accountNumber);
+    _holderNameCtrl = TextEditingController(text: a.holderName);
+  }
+
+  @override
+  void dispose() {
+    _bankNameCtrl.dispose();
+    _branchNameCtrl.dispose();
+    _accountNumberCtrl.dispose();
+    _holderNameCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final a = widget.account;
+    return Padding(
+      padding: EdgeInsets.only(top: widget.index > 0 ? 16 : 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(a.isActive ? Icons.check_box : Icons.check_box_outline_blank,
+                size: 20, color: a.isActive ? cs.primary : cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text('口座${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              const Spacer(),
+              SizedBox(
+                height: 28,
+                child: Switch(
+                  value: a.isActive,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onChanged: (v) {
+                    widget.onChanged(a.copyWith(isActive: v));
+                  },
+                ),
+              ),
+            ],
+          ),
+          if (a.isActive) ...[
+            const SizedBox(height: 8),
+            TextField(
+              decoration: const InputDecoration(labelText: '銀行名', isDense: true),
+              controller: _bankNameCtrl,
+              onChanged: (v) => widget.onChanged(a.copyWith(bankName: v)),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              decoration: const InputDecoration(labelText: '支店名', isDense: true),
+              controller: _branchNameCtrl,
+              onChanged: (v) => widget.onChanged(a.copyWith(branchName: v)),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: a.accountType,
+                    decoration: const InputDecoration(labelText: '口座種別', isDense: true),
+                    items: ['普通', '当座', 'その他']
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 14))))
+                      .toList(),
+                    onChanged: (v) {
+                      if (v != null) widget.onChanged(a.copyWith(accountType: v));
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    decoration: const InputDecoration(labelText: '口座番号', isDense: true),
+                    controller: _accountNumberCtrl,
+                    keyboardType: TextInputType.number,
+                    onChanged: (v) => widget.onChanged(a.copyWith(accountNumber: v)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              decoration: const InputDecoration(labelText: '口座名義', isDense: true),
+              controller: _holderNameCtrl,
+              onChanged: (v) => widget.onChanged(a.copyWith(holderName: v)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
@@ -100,55 +222,63 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    final bankJson = jsonEncode(_bankAccounts.map((a) => a.toJson()).toList());
-    final regNum = _regNumberCtrl.text.trim();
-    final newName = _nameController.text.trim();
-    final info = (_info ?? CompanyInfo(name: '')).copyWith(
-      name: newName,
-      zipCode: _postalController.text.trim().isEmpty ? null : _postalController.text.trim(),
-      address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-      tel: _telController.text.trim().isEmpty ? null : _telController.text.trim(),
-      fax: _faxController.text.trim().isEmpty ? null : _faxController.text.trim(),
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      bankAccounts: bankJson,
-      registrationNumber: regNum.isEmpty ? null : regNum,
-      isExemptTaxpayer: _isExempt,
-      taxDisplayMode: _isExempt ? 'hidden' : 'normal',
-      fiscalYearStart: _fiscalYearStart,
-      closingDay: _closingDay,
-    );
-    await _companyRepo.saveCompanyInfo(info);
+    try {
+      if (!_formKey.currentState!.validate()) return;
+      final bankJson = jsonEncode(_bankAccounts.map((a) => a.toJson()).toList());
+      final regNum = _regNumberCtrl.text.trim();
+      final newName = _nameController.text.trim();
+      final info = (_info ?? CompanyInfo(name: '')).copyWith(
+        name: newName,
+        zipCode: _postalController.text.trim().isEmpty ? null : _postalController.text.trim(),
+        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+        tel: _telController.text.trim().isEmpty ? null : _telController.text.trim(),
+        fax: _faxController.text.trim().isEmpty ? null : _faxController.text.trim(),
+        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+        bankAccounts: bankJson,
+        registrationNumber: regNum.isEmpty ? null : regNum,
+        isExemptTaxpayer: _isExempt,
+        taxDisplayMode: _isExempt ? 'hidden' : 'normal',
+        fiscalYearStart: _fiscalYearStart,
+        closingDay: _closingDay,
+      );
+      await _companyRepo.saveCompanyInfo(info);
 
-    // 会社名が変わったらDBファイル名も変更
-    final currentName = await CompanyService.getCurrentCompany();
-    if (currentName != null && currentName != newName && currentName != 'default') {
-      final dir = await CompanyService.getCompanyDirectory();
-      final oldPath = '${dir.path}/$currentName.db';
-      final newPath = '${dir.path}/$newName.db';
-      if (await File(oldPath).exists() && !await File(newPath).exists()) {
-        await DatabaseHelper.closeAndReset();
-        await File(oldPath).rename(newPath);
-        await CompanyService.setCurrentCompany(newName);
+      // 会社名が変わったらDBファイル名も変更
+      final currentName = await CompanyService.getCurrentCompany();
+      if (currentName != null && currentName != newName && currentName != 'default') {
+        final dir = await CompanyService.getCompanyDirectory();
+        final oldPath = '${dir.path}/$currentName.db';
+        final newPath = '${dir.path}/$newName.db';
+        if (await File(oldPath).exists() && !await File(newPath).exists()) {
+          await DatabaseHelper.closeAndReset();
+          await File(oldPath).rename(newPath);
+          await CompanyService.setCurrentCompany(newName);
+        }
+      } else if (currentName == 'default' && newName.isNotEmpty) {
+        // default.db を新しい会社名に改名
+        final dir = await CompanyService.getCompanyDirectory();
+        final defaultPath = '${dir.path}/default.db';
+        final newPath = '${dir.path}/$newName.db';
+        if (await File(defaultPath).exists() && !await File(newPath).exists()) {
+          await DatabaseHelper.closeAndReset();
+          await File(defaultPath).rename(newPath);
+          await CompanyService.setCurrentCompany(newName);
+        }
       }
-    } else if (currentName == 'default' && newName.isNotEmpty) {
-      // default.db を新しい会社名に改名
-      final dir = await CompanyService.getCompanyDirectory();
-      final defaultPath = '${dir.path}/default.db';
-      final newPath = '${dir.path}/$newName.db';
-      if (await File(defaultPath).exists() && !await File(newPath).exists()) {
-        await DatabaseHelper.closeAndReset();
-        await File(defaultPath).rename(newPath);
-        await CompanyService.setCurrentCompany(newName);
-      }
+
+      if (!mounted) return;
+      setState(() => _info = info);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('保存しました')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存に失敗しました: $e')),
+      );
     }
-
-    setState(() => _info = info);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('保存しました')),
-    );
-    Navigator.pop(context);
   }
 
   Future<void> _pickImageFromGallery() async {
@@ -305,23 +435,6 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                       onPressed: _save,
                     ),
                   ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Text('透明度', style: TextStyle(fontSize: 13)),
-                Expanded(
-                  child: Slider(
-                    value: _info?.sealOpacity ?? 1.0,
-                    min: 0.1, max: 1.0, divisions: 9,
-                    onChanged: (v) => setState(() {
-                      _info = _info!.copyWith(sealOpacity: v);
-                    }),
-                  ),
-                ),
-                Text('${((_info?.sealOpacity ?? 1.0) * 100).toStringAsFixed(0)}%',
-                    style: const TextStyle(fontSize: 12)),
-              ],
-            ),
           ],
               ),
             ),
@@ -396,98 +509,15 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   }
 
   Widget _buildBankSlot(int index, ColorScheme cs) {
-    final account = _bankAccounts[index];
-    return Padding(
-      padding: EdgeInsets.only(top: index > 0 ? 16 : 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(account.isActive ? Icons.check_box : Icons.check_box_outline_blank,
-                size: 20, color: account.isActive ? cs.primary : cs.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Text('口座${index + 1}', style: const TextStyle(fontWeight: FontWeight.w600)),
-              const Spacer(),
-              SizedBox(
-                height: 28,
-                child: Switch(
-                  value: account.isActive,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  onChanged: (v) {
-                    setState(() {
-                      _bankAccounts[index] = account.copyWith(isActive: v);
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-          if (account.isActive) ...[
-            const SizedBox(height: 8),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: '銀行名', isDense: true,
-              ),
-              controller: TextEditingController(text: account.bankName)
-                ..selection = TextSelection.collapsed(offset: account.bankName.length),
-              onChanged: (v) => _bankAccounts[index] = account.copyWith(bankName: v),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: '支店名', isDense: true,
-              ),
-              controller: TextEditingController(text: account.branchName)
-                ..selection = TextSelection.collapsed(offset: account.branchName.length),
-              onChanged: (v) => _bankAccounts[index] = account.copyWith(branchName: v),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: account.accountType,
-                    decoration: const InputDecoration(
-                      labelText: '口座種別', isDense: true,
-                    ),
-                    items: ['普通', '当座', 'その他']
-                      .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 14))))
-                      .toList(),
-                    onChanged: (v) {
-                      if (v != null) {
-                        setState(() => _bankAccounts[index] = account.copyWith(accountType: v));
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: '口座番号', isDense: true,
-                    ),
-                    controller: TextEditingController(text: account.accountNumber)
-                      ..selection = TextSelection.collapsed(offset: account.accountNumber.length),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => _bankAccounts[index] = account.copyWith(accountNumber: v),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextField(
-            decoration: const InputDecoration(
-              labelText: '口座名義', isDense: true,
-            ),
-              controller: TextEditingController(text: account.holderName)
-                ..selection = TextSelection.collapsed(offset: account.holderName.length),
-              onChanged: (v) => _bankAccounts[index] = account.copyWith(holderName: v),
-            ),
-          ],
-        ],
-      ),
+    return _BankSlotWidget(
+      key: ValueKey('bank_slot_$index'),
+      index: index,
+      account: _bankAccounts[index],
+      onChanged: (updated) {
+        setState(() {
+          _bankAccounts[index] = updated;
+        });
+      },
     );
   }
 
@@ -527,12 +557,33 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
               children: [
                 Text('決算日', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 4),
-                DropdownButtonFormField<int>(
-                  value: _closingDay,
-                  decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                  items: [1, 5, 10, 15, 20, 25, 28, 31].map((d) =>
-                    DropdownMenuItem(value: d, child: Text('${d}日'))).toList(),
-                  onChanged: (v) { if (v != null) setState(() => _closingDay = v); },
+                InkWell(
+                  onTap: () async {
+                    final now = DateTime.now();
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime(now.year, now.month, _closingDay.clamp(1, 28)),
+                      firstDate: DateTime(now.year, 1, 1),
+                      lastDate: DateTime(now.year, 12, 31),
+                    );
+                    if (picked != null) {
+                      setState(() => _closingDay = picked.day.clamp(1, 28));
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: cs.outline),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Text('${_closingDay}日', style: const TextStyle(fontSize: 14)),
+                        const Spacer(),
+                        Icon(Icons.calendar_today, size: 16, color: cs.primary),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             )),
@@ -673,6 +724,23 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                         },
                   child: const Text('リセット'),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Text('透明度', style: TextStyle(fontSize: 13)),
+                Expanded(
+                  child: Slider(
+                    value: _info?.sealOpacity ?? 1.0,
+                    min: 0.1, max: 1.0, divisions: 9,
+                    onChanged: (v) => setState(() {
+                      _info = _info!.copyWith(sealOpacity: v);
+                    }),
+                  ),
+                ),
+                Text('${((_info?.sealOpacity ?? 1.0) * 100).toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 12)),
               ],
             ),
           ],
