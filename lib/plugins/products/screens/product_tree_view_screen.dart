@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:h_1_core/models/product_model.dart';
 import 'package:h_1_core/models/product_category_model.dart';
 import 'package:h_1_core/services/product_repository.dart';
+import 'package:h_1_core/services/error_log_service.dart';
 import 'package:h_1_core/services/product_category_repository.dart';
 import 'package:h_1_core/plugins/products/screens/product_editor_screen.dart';
 
@@ -63,6 +64,128 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       _isSelectionMode = false;
       _selectedProductIds.clear();
     });
+  }
+
+  Future<void> _moveSelectedToCategory(String? targetCategoryId) async {
+    final count = _selectedProductIds.length;
+    if (count == 0) return;
+
+    final targetName = targetCategoryId == null
+        ? 'ルート'
+        : _categories.firstWhere((c) => c.id == targetCategoryId).name;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('移動確認'),
+        content: Text('${count}件の商品を「$targetName」に移動しますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('移動'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final ids = _selectedProductIds.toList();
+    setState(() {
+      _isSelectionMode = false;
+      _selectedProductIds.clear();
+    });
+
+    try {
+      for (final productId in ids) {
+        if (!mounted) return;
+        final idx = _products.indexWhere((p) => p.id == productId);
+        if (idx < 0) continue;
+        await _productRepo.saveProduct(
+          _products[idx].copyWith(categoryId: targetCategoryId),
+        );
+      }
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${ids.length}件の商品を移動しました')),
+        );
+      }
+    } catch (e, st) {
+      await _load();
+      ErrorLogService.instance.logError(
+        '移動エラー: $e',
+        stackTrace: st.toString(),
+        screen: 'ProductTreeView',
+        context: '_moveSelectedToCategory',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('移動エラー: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteSelected() async {
+    final count = _selectedProductIds.length;
+    if (count == 0) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('削除確認'),
+        content: Text('${count}件の商品を削除しますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final ids = _selectedProductIds.toList();
+    setState(() {
+      _isSelectionMode = false;
+      _selectedProductIds.clear();
+    });
+
+    try {
+      for (final productId in ids) {
+        if (!mounted) return;
+        await _productRepo.deleteProduct(productId);
+      }
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${ids.length}件の商品を削除しました')),
+        );
+      }
+    } catch (e, st) {
+      await _load();
+      ErrorLogService.instance.logError(
+        '削除エラー: $e',
+        stackTrace: st.toString(),
+        screen: 'ProductTreeView',
+        context: '_deleteSelected',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('削除エラー: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _renameCategory(ProductCategory cat) async {
