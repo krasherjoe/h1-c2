@@ -104,6 +104,9 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           ),
         ),
         body: TabBarView(
+          // スプレッドシートタブの横スクロールと競合しないよう
+          // TabBarView のスワイプ切替を無効化する
+          physics: const NeverScrollableScrollPhysics(),
           children: [
             const ProductTreeView(),
             const SpreadsheetProductScreen(),
