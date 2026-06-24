@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
-import '../../../models/product_model.dart';
-import '../../../services/product_repository.dart';
-import '../../../services/product_category_repository.dart';
-import '../../../models/product_category_model.dart';
-import '../../../services/input_style_service.dart';
-import '../../../services/error_reporter.dart';
-import '../../../services/sheets_sync_service.dart';
-import '../screens/product_editor_screen.dart';
-import 'product_spreadsheet_screen.dart';
-import 'product_tree_view_screen.dart';
-import '../../../constants/screen_ids.dart';
+import 'package:h_1_core/models/product_model.dart';
+import 'package:h_1_core/services/product_repository.dart';
+import 'package:h_1_core/services/product_category_repository.dart';
+import 'package:h_1_core/models/product_category_model.dart';
+import 'package:h_1_core/services/input_style_service.dart';
+import 'package:h_1_core/services/error_reporter.dart';
+import 'package:h_1_core/services/sheets_sync_service.dart';
+import 'package:h_1_core/plugins/products/screens/product_editor_screen.dart';
+import 'package:h_1_core/plugins/products/screens/product_spreadsheet_screen.dart';
+import 'package:h_1_core/plugins/products/screens/product_tree_view_screen.dart';
+import 'package:h_1_core/constants/screen_ids.dart';
 
 class CategoryExplorerScreen extends StatefulWidget {
   const CategoryExplorerScreen({super.key});

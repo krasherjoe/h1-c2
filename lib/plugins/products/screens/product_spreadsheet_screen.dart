@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../models/product_model.dart';
-import '../../../services/database_helper.dart';
-import '../../../services/product_repository.dart';
+import 'package:h_1_core/models/product_model.dart';
+import 'package:h_1_core/services/database_helper.dart';
+import 'package:h_1_core/services/product_repository.dart';
 
 /// スプレッドシート型の商品一覧画面。
 /// 全商品をテーブル形式で表示し、各セルをインライン編集可能。

@@ -3,7 +3,7 @@ import 'package:h_1_core/models/product_model.dart';
 import 'package:h_1_core/models/product_category_model.dart';
 import 'package:h_1_core/services/product_repository.dart';
 import 'package:h_1_core/services/product_category_repository.dart';
-import 'product_editor_screen.dart';
+import 'package:h_1_core/plugins/products/screens/product_editor_screen.dart';
 
 class ProductTreeView extends StatefulWidget {
   const ProductTreeView({super.key});
