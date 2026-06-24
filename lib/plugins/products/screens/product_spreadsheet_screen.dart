@@ -28,6 +28,8 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   final Map<String, TextEditingController> _modelNumberControllers = {};
   final Map<String, TextEditingController> _manufacturerControllers = {};
   final Map<String, TextEditingController> _supplierControllers = {};
+  final _headerScrollCtrl = ScrollController();
+  final _dataScrollCtrl = ScrollController();
   double _zoomLevel = 1.0;
   static const _zoomLevels = [0.5, 0.7, 1.0, 1.5, 2.0];
   static const _zoomLabels = ['XS', 'S', 'M', 'L', 'XL'];
@@ -41,12 +43,30 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   @override
   void initState() {
     super.initState();
+    _headerScrollCtrl.addListener(_syncScrollHeaderToData);
+    _dataScrollCtrl.addListener(_syncScrollDataToHeader);
     _searchController.addListener(_onSearchChanged);
     _load();
   }
 
+  void _syncScrollHeaderToData() {
+    if (_dataScrollCtrl.hasClients) {
+      _dataScrollCtrl.jumpTo(_headerScrollCtrl.offset);
+    }
+  }
+
+  void _syncScrollDataToHeader() {
+    if (_headerScrollCtrl.hasClients) {
+      _headerScrollCtrl.jumpTo(_dataScrollCtrl.offset);
+    }
+  }
+
   @override
   void dispose() {
+    _headerScrollCtrl.removeListener(_syncScrollHeaderToData);
+    _dataScrollCtrl.removeListener(_syncScrollDataToHeader);
+    _headerScrollCtrl.dispose();
+    _dataScrollCtrl.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     for (final c in _nameControllers.values) {
@@ -379,31 +399,71 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
     );
   }
 
-  Widget _buildTable() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowHeight: 40,
-          dataRowMinHeight: 40,
-          dataRowMaxHeight: 52,
-          columnSpacing: 12,
-          horizontalMargin: 12,
-          columns: [
-            DataColumn(label: SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600)))),
-            DataColumn(label: SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600)))),
-            DataColumn(label: SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600)))),
-            DataColumn(label: SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600)))),
-            DataColumn(label: SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600)))),
-            DataColumn(label: SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600)))),
-            DataColumn(label: SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600)))),
-          ],
-          rows: _filteredProducts.map((product) {
-            return _buildRow(product);
-          }).toList(),
+  Widget _buildHeaderRow() {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        border: Border(
+          bottom: BorderSide(color: cs.outlineVariant, width: 1),
         ),
       ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        controller: _headerScrollCtrl,
+        child: SizedBox(
+          width: _columnWidths.reduce((a, b) => a + b) + 24,
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600))),
+              SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600))),
+              SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600))),
+              SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600))),
+              SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600))),
+              SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600))),
+              SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTable() {
+    return Column(
+      children: [
+        _buildHeaderRow(),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            controller: _dataScrollCtrl,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: DataTable(
+                headingRowHeight: 0,
+                dataRowMinHeight: 40,
+                dataRowMaxHeight: 52,
+                columnSpacing: 12,
+                horizontalMargin: 12,
+                columns: [
+                  DataColumn(label: SizedBox(width: _columnWidths[0], child: const Text(''))),
+                  DataColumn(label: SizedBox(width: _columnWidths[1], child: const Text(''))),
+                  DataColumn(label: SizedBox(width: _columnWidths[2], child: const Text(''))),
+                  DataColumn(label: SizedBox(width: _columnWidths[3], child: const Text(''))),
+                  DataColumn(label: SizedBox(width: _columnWidths[4], child: const Text(''))),
+                  DataColumn(label: SizedBox(width: _columnWidths[5], child: const Text(''))),
+                  DataColumn(label: SizedBox(width: _columnWidths[6], child: const Text(''))),
+                ],
+                rows: _filteredProducts.map((product) {
+                  return _buildRow(product);
+                }).toList(),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
