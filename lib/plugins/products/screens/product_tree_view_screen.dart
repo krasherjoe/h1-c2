@@ -121,12 +121,13 @@ class _ProductTreeViewState extends State<ProductTreeView> {
     }
   }
 
-  Future<void> _addSubcategory(ProductCategory parent) async {
+  Future<void> _addCategory(ProductCategory? parent) async {
     final controller = TextEditingController();
+    final title = parent != null ? 'サブカテゴリ追加' : 'カテゴリ追加';
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('サブカテゴリ追加'),
+        title: Text(title),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -148,7 +149,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
       final newCat = ProductCategory(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: name,
-        parentId: parent.id,
+        parentId: parent?.id,
       );
       await _catRepo.save(newCat);
       await _load();
@@ -258,7 +259,7 @@ class _ProductTreeViewState extends State<ProductTreeView> {
                   icon: Icon(Icons.more_vert, size: 20, color: cs.onSurfaceVariant),
                   onSelected: (v) {
                     if (v == 'rename') _renameCategory(cat);
-                    if (v == 'add_sub') _addSubcategory(cat);
+                    if (v == 'add_sub') _addCategory(cat);
                     if (v == 'delete') _deleteCategory(cat);
                   },
                   itemBuilder: (_) => [
@@ -467,17 +468,41 @@ class _ProductTreeViewState extends State<ProductTreeView> {
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                   onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      ..._categories
-                          .where((c) => c.parentId == null)
-                          .map((cat) => _buildCategoryNode(cat, 0, cs)),
-                      if (_filteredProducts
-                          .any((p) => p.categoryId == null))
-                        _buildUncategorizedSection(cs),
-                    ],
-                  ),
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        if (_categories.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.folder_open, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                                const SizedBox(height: 16),
+                                Text('カテゴリがありません',
+                                    style: TextStyle(fontSize: 16, color: cs.onSurfaceVariant)),
+                                const SizedBox(height: 8),
+                                Text('最初のカテゴリを作成してください',
+                                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+                                const SizedBox(height: 24),
+                                FilledButton.icon(
+                                  onPressed: () => _addCategory(null),
+                                  icon: const Icon(Icons.create_new_folder),
+                                  label: const Text('カテゴリを作成'),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          ..._categories
+                              .where((c) => c.parentId == null)
+                              .map((cat) => _buildCategoryNode(cat, 0, cs)),
+                          if (_filteredProducts
+                              .any((p) => p.categoryId == null))
+                            _buildUncategorizedSection(cs),
+                        ],
+                      ],
+                    ),
                 ),
         ),
       ],

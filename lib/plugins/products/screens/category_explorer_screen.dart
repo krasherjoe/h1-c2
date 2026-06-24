@@ -27,6 +27,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
   bool _loading = true;
   String _searchQuery = '';
   String? _selectedCategoryId;
+  List<ProductCategory> _breadcrumbPath = [];
 
   // --- デザインシステム定数 (D1基準) ---
   static const _kSpacing = 8.0;   // D1と統一: Card margin = 8
@@ -48,11 +49,25 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
       _categories = categories;
       _loading = false;
     });
+    if (_selectedCategoryId != null) {
+      _loadBreadcrumbPath(_selectedCategoryId!);
+    }
     final showShadows = inputStyleNotifier.value == 'raised';
     final logMsg = 'P1 ログ: products=${_products.length}, categories=${_categories.length}, showShadows=$showShadows';
     debugPrint(logMsg);
     ErrorReporter.sendLog(message: logMsg);
     debugPrint('[P1] sample products: ${_products.take(3).map((p) => '${p.name}(${p.categoryId})').join(', ')}');
+  }
+
+  Future<void> _loadBreadcrumbPath(String categoryId) async {
+    try {
+      final path = await _catRepo.getPath(categoryId);
+      if (!mounted) return;
+      setState(() => _breadcrumbPath = path);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _breadcrumbPath = []);
+    }
   }
 
   List<Product> get _filteredProducts {
@@ -128,7 +143,12 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
           FilterChip(
             label: const Text('すべて'),
             selected: _selectedCategoryId == null,
-            onSelected: (_) => setState(() => _selectedCategoryId = null),
+            onSelected: (_) {
+              setState(() {
+                _selectedCategoryId = null;
+                _breadcrumbPath = [];
+              });
+            },
             visualDensity: VisualDensity.compact,
           ),
           const SizedBox(width: 8),
@@ -137,10 +157,67 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
             child: FilterChip(
               label: Text(cat.name),
               selected: _selectedCategoryId == cat.id,
-              onSelected: (_) => setState(() => _selectedCategoryId = cat.id),
+              onSelected: (_) {
+                setState(() {
+                  _selectedCategoryId = cat.id;
+                });
+                _loadBreadcrumbPath(cat.id);
+              },
               visualDensity: VisualDensity.compact,
             ),
           )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumb(ColorScheme cs) {
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: [
+          ActionChip(
+            label: Text('すべて',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: _selectedCategoryId == null ? FontWeight.bold : FontWeight.normal,
+                  color: _selectedCategoryId == null ? cs.primary : cs.onSurfaceVariant,
+                )),
+            onPressed: () {
+              setState(() {
+                _selectedCategoryId = null;
+                _breadcrumbPath = [];
+              });
+            },
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          for (int i = 0; i < _breadcrumbPath.length; i++) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+            ),
+            ActionChip(
+              label: Text(
+                _breadcrumbPath[i].name,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: i == _breadcrumbPath.length - 1 ? FontWeight.bold : FontWeight.normal,
+                  color: i == _breadcrumbPath.length - 1 ? cs.primary : cs.onSurfaceVariant,
+                ),
+              ),
+              onPressed: () {
+                setState(() {
+                  _selectedCategoryId = _breadcrumbPath[i].id;
+                  _breadcrumbPath = _breadcrumbPath.sublist(0, i + 1);
+                });
+              },
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
         ],
       ),
     );
@@ -152,6 +229,7 @@ class _CategoryExplorerScreenState extends State<CategoryExplorerScreen> {
     return Column(
       children: [
         _buildSearchBar(cs),
+        _buildBreadcrumb(cs),
         _buildCategoryFilter(cs),
         Expanded(
           child: _loading

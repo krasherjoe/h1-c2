@@ -380,33 +380,30 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   }
 
   Widget _buildTable() {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowHeight: 40,
-              dataRowMinHeight: 40,
-              dataRowMaxHeight: 52,
-              columnSpacing: 12,
-              horizontalMargin: 12,
-              columns: [
-                DataColumn(label: SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600)))),
-                DataColumn(label: SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600)))),
-                DataColumn(label: SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600)))),
-                DataColumn(label: SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600)))),
-                DataColumn(label: SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600)))),
-                DataColumn(label: SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600)))),
-                DataColumn(label: SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600)))),
-              ],
-              rows: _filteredProducts.map((product) {
-                return _buildRow(product);
-              }).toList(),
-            ),
-          ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowHeight: 40,
+          dataRowMinHeight: 40,
+          dataRowMaxHeight: 52,
+          columnSpacing: 12,
+          horizontalMargin: 12,
+          columns: [
+            DataColumn(label: SizedBox(width: _columnWidths[0], child: const Text('商品名', style: TextStyle(fontWeight: FontWeight.w600)))),
+            DataColumn(label: SizedBox(width: _columnWidths[1], child: const Text('単価', style: TextStyle(fontWeight: FontWeight.w600)))),
+            DataColumn(label: SizedBox(width: _columnWidths[2], child: const Text('バーコード', style: TextStyle(fontWeight: FontWeight.w600)))),
+            DataColumn(label: SizedBox(width: _columnWidths[3], child: const Text('型番', style: TextStyle(fontWeight: FontWeight.w600)))),
+            DataColumn(label: SizedBox(width: _columnWidths[4], child: const Text('メーカー', style: TextStyle(fontWeight: FontWeight.w600)))),
+            DataColumn(label: SizedBox(width: _columnWidths[5], child: const Text('仕入先', style: TextStyle(fontWeight: FontWeight.w600)))),
+            DataColumn(label: SizedBox(width: _columnWidths[6], child: const Text('操作', style: TextStyle(fontWeight: FontWeight.w600)))),
+          ],
+          rows: _filteredProducts.map((product) {
+            return _buildRow(product);
+          }).toList(),
         ),
-      ],
+      ),
     );
   }
 
