@@ -58,16 +58,22 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
   String get _pdfFilename {
     final d = widget.document;
-    final date = '${d.date.year}${d.date.month.toString().padLeft(2, '0')}${d.date.day.toString().padLeft(2, '0')}';
+    final date =
+        '${d.date.year}${d.date.month.toString().padLeft(2, '0')}${d.date.day.toString().padLeft(2, '0')}';
     final type = d.documentType.label;
     final subject = (d.subject != null && d.subject!.isNotEmpty)
         ? d.subject!.replaceAll(RegExp(r'[/:*?"<>|]'), '')
         : (d.items.isNotEmpty ? d.items.first.productName : '');
-    final subjTrunc = subject.length > 20 ? '${subject.substring(0, 20)}..' : subject;
+    final subjTrunc = subject.length > 20
+        ? '${subject.substring(0, 20)}..'
+        : subject;
     final cust = d.customerName.replaceAll(RegExp(r'[/:*?"<>|]'), '');
     final custTrunc = cust.length > 10 ? '${cust.substring(0, 10)}..' : cust;
-    final money = '${d.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}円';
-    final hash = (d.contentHash?.length ?? 0) >= 4 ? d.contentHash!.substring(d.contentHash!.length - 4) : (d.contentHash ?? '');
+    final money =
+        '${d.total.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}円';
+    final hash = (d.contentHash?.length ?? 0) >= 4
+        ? d.contentHash!.substring(d.contentHash!.length - 4)
+        : (d.contentHash ?? '');
     final base = '$date($type)$subjTrunc@$custTrunc${money}_${hash}';
     return '${_safeFileName(base)}.pdf';
   }
@@ -87,17 +93,16 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       !_issued &&
       widget.onFormalIssue != null;
 
-  DocumentModel get _effectiveDocument => _issued
-      ? widget.document.copyWith(status: 'confirmed')
-      : widget.document;
+  DocumentModel get _effectiveDocument =>
+      _issued ? widget.document.copyWith(status: 'confirmed') : widget.document;
 
   Future<Uint8List> _buildPdfBytes([PdfPageFormat? format]) async {
     try {
       final doc = await generateDocumentPdf(_effectiveDocument);
       var pdfBytes = Uint8List.fromList(await doc.save());
-      
+
       // 売掛レポート添付
-      if (widget.attachArReport && 
+      if (widget.attachArReport &&
           _effectiveDocument.documentType == DocumentType.invoice) {
         try {
           pdfBytes = await _combineWithArReport(pdfBytes);
@@ -106,7 +111,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
           // 売掛レポート添付エラーはメインPDFに影響させない
         }
       }
-      
+
       // 電子帳簿保存法テーブルにPDF生成JSONを保存（ハッシュチェーン付き）
       try {
         final documentRepo = DocumentRepository();
@@ -125,8 +130,10 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
         final historyRepo = HistoryRepository();
         final pdfJson = _effectiveDocument.toPdfJson();
         final pdfJsonString = jsonEncode(pdfJson);
-        final contentHash = sha256.convert(utf8.encode(pdfJsonString)).toString();
-        
+        final contentHash = sha256
+            .convert(utf8.encode(pdfJsonString))
+            .toString();
+
         await historyRepo.recordPdfOutput(
           documentType: _effectiveDocument.documentType.name,
           documentId: _effectiveDocument.id,
@@ -138,7 +145,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
         // 履歴記録エラーはPDF生成を妨げない
         debugPrint('[DocumentPreview] PDF出力履歴記録エラー: $e');
       }
-      
+
       return pdfBytes;
     } catch (e, st) {
       ErrorReporter.sendError(
@@ -171,10 +178,12 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
     final combined = pw.Document();
     for (final pngBytes in allPages) {
-      combined.addPage(pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (_) => pw.Image(pw.MemoryImage(pngBytes)),
-      ));
+      combined.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (_) => pw.Image(pw.MemoryImage(pngBytes)),
+        ),
+      );
     }
     return Uint8List.fromList(await combined.save());
   }
@@ -190,9 +199,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
           children: [
             Text(widget.document.customerName),
             const SizedBox(height: 8),
-            const Text(
-              'この伝票を正式発行すると、\n二度と編集できなくなります。\n\n確定してよろしいですか？',
-            ),
+            const Text('この伝票を正式発行すると、\n二度と編集できなくなります。\n\n確定してよろしいですか？'),
           ],
         ),
         actions: [
@@ -223,7 +230,8 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
     final ok = await GmailSender.sendPdf(
       to: recipient,
       replyTo: company?.email,
-      subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
+      subject:
+          '${widget.document.documentType.label} ${widget.document.documentNumber}',
       body: '${widget.document.documentType.label}を添付してお送りします。',
       pdfBytes: bytes,
       pdfFilename: _pdfFilename,
@@ -238,23 +246,29 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
           documentId: widget.document.id,
           documentNumber: widget.document.documentNumber,
           recipientEmail: recipient,
-          subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
+          subject:
+              '${widget.document.documentType.label} ${widget.document.documentNumber}',
         );
       } catch (e) {
         debugPrint('[DocumentPreview] メール送信履歴記録エラー: $e');
       }
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('メールを送信しました')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('メールを送信しました')));
       return;
     }
     final osOk = await CommunicationPlugin().sendEmailWithPdf(
       pdfBytes: bytes,
       filename: _pdfFilename,
-      subject: '${widget.document.documentType.label} ${widget.document.documentNumber}',
+      subject:
+          '${widget.document.documentType.label} ${widget.document.documentNumber}',
       body: '${widget.document.documentType.label}を添付してお送りします。',
       recipients: [recipient],
     );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(osOk ? 'OSメールアプリを起動しました' : 'メール送信に失敗しました')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(osOk ? 'OSメールアプリを起動しました' : 'メール送信に失敗しました')),
+      );
     }
   }
 
@@ -281,18 +295,43 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('${d.documentType.label} #${d.documentNumber}',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                    Text(
+                      '${d.documentType.label} #${d.documentNumber}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text('${d.date.year}/${d.date.month.toString().padLeft(2, '0')}/${d.date.day.toString().padLeft(2, '0')}',
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                    Text(
+                      '${d.date.year}/${d.date.month.toString().padLeft(2, '0')}/${d.date.day.toString().padLeft(2, '0')}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(d.customerName, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                    Text(
+                      d.customerName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              if (statusColor != null)
-                _paymentBadge(cs, statusColor, d.paymentStatus!, d.receivedAmount, d.total),
+              if (statusColor != null &&
+                  (d.documentType == DocumentType.invoice ||
+                      d.documentType == DocumentType.receipt))
+                _paymentBadge(
+                  cs,
+                  statusColor,
+                  d.paymentStatus!,
+                  d.receivedAmount,
+                  d.total,
+                ),
             ],
           ),
           if (widget.attachArReport && d.documentType == DocumentType.invoice)
@@ -302,8 +341,14 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                 children: [
                   Icon(Icons.attach_file, size: 14, color: cs.tertiary),
                   const SizedBox(width: 4),
-                  Text('売掛レポート添付あり',
-                    style: TextStyle(fontSize: 11, color: cs.tertiary, fontWeight: FontWeight.w500)),
+                  Text(
+                    '売掛レポート添付あり',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.tertiary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -312,11 +357,20 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
     );
   }
 
-  Widget _paymentBadge(ColorScheme cs, Color badgeColor, String status, int? receivedAmount, int total) {
+  Widget _paymentBadge(
+    ColorScheme cs,
+    Color badgeColor,
+    String status,
+    int? receivedAmount,
+    int total,
+  ) {
     final (String badgeText, String infoText) = switch (status) {
-      'paid' => ('済', '入金済: ${_formatMoney(receivedAmount ?? total)}'),
-      'partial' => ('一部入金', '入金: ${_formatMoney(receivedAmount ?? 0)} / ${_formatMoney(total)}'),
-      'unpaid' => ('未払い', '残高: ${_formatMoney(total)}'),
+      'paid' => ('入金済', '入金済: ${_formatMoney(receivedAmount ?? total)}'),
+      'partial' => (
+        '一部入金',
+        '入金: ${_formatMoney(receivedAmount ?? 0)} / ${_formatMoney(total)}',
+      ),
+      'unpaid' => ('売掛', '残高: ${_formatMoney(total)}'),
       _ => ('', ''),
     };
     return Row(
@@ -328,9 +382,14 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
             color: badgeColor,
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Text(badgeText, style: TextStyle(
-            fontSize: 11, fontWeight: FontWeight.bold, color: textColorOn(badgeColor),
-          )),
+          child: Text(
+            badgeText,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: textColorOn(badgeColor),
+            ),
+          ),
         ),
         const SizedBox(width: 6),
         Text(infoText, style: TextStyle(fontSize: 12, color: cs.onSurface)),
@@ -339,7 +398,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   }
 
   String _formatMoney(int amount) =>
-    '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+      '¥${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
 
   Widget _ppButton({
     required IconData icon,
@@ -363,28 +422,45 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                 backgroundColor: enabled ? cs.primary : null,
                 foregroundColor: cs.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(icon, size: 20),
                   const SizedBox(height: 2),
-                  Text(label, style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis),
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
             if (badge != null)
               Positioned(
-                right: 4, top: 0,
+                right: 4,
+                top: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.shade600,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: cs.surface, width: 1.5),
                   ),
-                  child: Text(badge, style: TextStyle(fontSize: 9, color: textColorOn(Colors.green.shade600), fontWeight: FontWeight.bold)),
+                  child: Text(
+                    badge,
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: textColorOn(Colors.green.shade600),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -409,8 +485,13 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Text(_error!, textAlign: TextAlign.center,
-                          style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      child: Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ),
                   )
                 : PdfPreview(
@@ -438,21 +519,26 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                     enabled: _canFormalIssue,
                     onLongPress: _canFormalIssue
                         ? () async {
-                            final confirmed = await _showFormalIssueWarning(context);
+                            final confirmed = await _showFormalIssueWarning(
+                              context,
+                            );
                             if (!confirmed) return;
                             final ok = await widget.onFormalIssue!();
                             if (ok && mounted) {
                               setState(() {
                                 _issued = true;
-                                _stablePdfBuilder = (format) => _buildPdfBytes(format);
+                                _stablePdfBuilder = (format) =>
+                                    _buildPdfBytes(format);
                               });
                               try {
-                                final email = await GoogleAuthService.instance.getEmail();
+                                final email = await GoogleAuthService.instance
+                                    .getEmail();
                                 if (email != null && email.isNotEmpty) {
                                   final bytes = await _buildPdfBytes();
                                   await GmailSender.sendPdf(
                                     to: email,
-                                    subject: '${widget.document.documentType.label} ${widget.document.documentNumber}（控え）',
+                                    subject:
+                                        '${widget.document.documentType.label} ${widget.document.documentNumber}（控え）',
                                     body: '正式発行された伝票の控えです。',
                                     pdfBytes: bytes,
                                     pdfFilename: _pdfFilename,
@@ -462,15 +548,19 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                               try {
                                 final journal = AutoJournalService();
                                 if (widget.document.isRedInvoice) {
-                                  await journal.createFromCreditNote(widget.document);
-                                } else if (widget.document.documentType.name == 'invoice') {
+                                  await journal.createFromCreditNote(
+                                    widget.document,
+                                  );
+                                } else if (widget.document.documentType.name ==
+                                    'invoice') {
                                   await journal.createFromInvoice(
                                     documentId: widget.document.id,
                                     total: widget.document.total,
                                     date: widget.document.date,
                                     customerName: widget.document.customerName,
                                   );
-                                } else if (widget.document.documentType.name == 'receipt') {
+                                } else if (widget.document.documentType.name ==
+                                    'receipt') {
                                   await journal.createFromReceipt(
                                     documentId: widget.document.id,
                                     amount: widget.document.total,
@@ -505,14 +595,17 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                     label: 'メール',
                     enabled: widget.showShare,
                     onPressed: () async {
-                      if (widget.customerEmail != null && widget.customerEmail!.isNotEmpty) {
+                      if (widget.customerEmail != null &&
+                          widget.customerEmail!.isNotEmpty) {
                         await _sendEmail(context, widget.customerEmail!);
                         return;
                       }
                       final recipient = await showDialog<String>(
                         context: context,
                         builder: (ctx) {
-                          final ctrl = TextEditingController(text: widget.customerEmail ?? '');
+                          final ctrl = TextEditingController(
+                            text: widget.customerEmail ?? '',
+                          );
                           return AlertDialog(
                             title: const Text('送信先メールアドレス'),
                             content: TextField(
@@ -530,32 +623,43 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                                 child: const Text('キャンセル'),
                               ),
                               ElevatedButton(
-                                onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+                                onPressed: () =>
+                                    Navigator.pop(ctx, ctrl.text.trim()),
                                 child: const Text('送信'),
                               ),
                             ],
                           );
                         },
                       );
-                      if (recipient == null || recipient.isEmpty || !mounted) return;
+                      if (recipient == null || recipient.isEmpty || !mounted)
+                        return;
                       await _sendEmail(context, recipient);
                     },
                     onLongPress: () async {
                       final scaffold = ScaffoldMessenger.of(context);
                       scaffold.showSnackBar(
-                        const SnackBar(content: Text('PDFを準備中...'), duration: Duration(seconds: 1)),
+                        const SnackBar(
+                          content: Text('PDFを準備中...'),
+                          duration: Duration(seconds: 1),
+                        ),
                       );
                       try {
                         final bytes = await _buildPdfBytes();
                         final filename = _pdfFilename;
-                        final subject = '${widget.document.documentType.label} ${widget.document.documentNumber}';
-                        final body = '${widget.document.documentType.label}を添付してお送りします。';
-                        final recipients = widget.customerEmail != null && widget.customerEmail!.isNotEmpty
-                            ? [widget.customerEmail!] : <String>[];
+                        final subject =
+                            '${widget.document.documentType.label} ${widget.document.documentNumber}';
+                        final body =
+                            '${widget.document.documentType.label}を添付してお送りします。';
+                        final recipients =
+                            widget.customerEmail != null &&
+                                widget.customerEmail!.isNotEmpty
+                            ? [widget.customerEmail!]
+                            : <String>[];
 
                         final ok = await GmailSender.sendPdf(
                           to: recipients.isNotEmpty ? recipients.first : '',
-                          replyTo: (await CompanyRepository().getCompanyInfo())?.email,
+                          replyTo: (await CompanyRepository().getCompanyInfo())
+                              ?.email,
                           subject: subject,
                           body: body,
                           pdfBytes: bytes,
@@ -570,18 +674,21 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                           return;
                         }
 
-                        final osOk = await CommunicationPlugin().sendEmailWithPdf(
-                          pdfBytes: bytes,
-                          filename: filename,
-                          subject: subject,
-                          body: body,
-                          recipients: recipients,
-                        );
+                        final osOk = await CommunicationPlugin()
+                            .sendEmailWithPdf(
+                              pdfBytes: bytes,
+                              filename: filename,
+                              subject: subject,
+                              body: body,
+                              recipients: recipients,
+                            );
                         if (mounted) {
                           scaffold.showSnackBar(
-                            SnackBar(content: Text(
-                              osOk ? 'メールアプリを起動しました' : 'メール送信に失敗しました',
-                            )),
+                            SnackBar(
+                              content: Text(
+                                osOk ? 'メールアプリを起動しました' : 'メール送信に失敗しました',
+                              ),
+                            ),
                           );
                         }
                       } catch (e) {
@@ -601,7 +708,8 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                     onPressed: widget.showPrint
                         ? () async {
                             await Printing.layoutPdf(
-                              onLayout: (format) async => _buildPdfBytes(format),
+                              onLayout: (format) async =>
+                                  _buildPdfBytes(format),
                             );
                             widget.onPrint?.call();
                           }
