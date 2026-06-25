@@ -31,9 +31,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
   // ヘッダーとデータを同一の横スクロールに入れることで
   // jumpTo による sync ループ問題を根本解消
   final _hScrollCtrl = ScrollController();
-  double _zoomLevel = 1.0;
-  static const _zoomLevels = [0.5, 0.7, 1.0, 1.5, 2.0];
-  static const _zoomLabels = ['XS', 'S', 'M', 'L', 'XL'];
+  double _fontSize = 13.0;
+  static const _fontSizes = [10.0, 11.0, 13.0, 15.0, 17.0];
+  static const _fontLabels = ['XS', 'S', 'M', 'L', 'XL'];
   final List<double> _baseWidths = [
     160.0,
     100.0,
@@ -43,8 +43,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
     120.0,
     72.0,
   ];
-  List<double> get _columnWidths =>
-      _baseWidths.map((w) => w * _zoomLevel).toList();
+  List<double> get _columnWidths => _baseWidths;
 
   // Modified & new row tracking
   final Set<String> _modifiedIds = {};
@@ -402,9 +401,9 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
           // ズームアイコン（タップで段階切替）
           GestureDetector(
             onTap: () {
-              final currentIdx = _zoomLevels.indexOf(_zoomLevel);
-              final nextIdx = (currentIdx + 1) % _zoomLevels.length;
-              setState(() => _zoomLevel = _zoomLevels[nextIdx]);
+              final currentIdx = _fontSizes.indexOf(_fontSize);
+              final nextIdx = (currentIdx + 1) % _fontSizes.length;
+              setState(() => _fontSize = _fontSizes[nextIdx]);
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -422,7 +421,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _zoomLabels[_zoomLevels.indexOf(_zoomLevel)],
+                    _fontLabels[_fontSizes.indexOf(_fontSize)],
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -671,7 +670,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
         border: InputBorder.none,
         prefixText: prefix,
       ),
-      style: const TextStyle(fontSize: 13),
+      style: TextStyle(fontSize: _fontSize),
       keyboardType: keyboardType,
       onChanged: (_) => onChanged?.call(),
     );
@@ -715,7 +714,7 @@ class _SpreadsheetProductScreenState extends State<SpreadsheetProductScreen> {
                 isDense: true,
                 border: InputBorder.none,
               ),
-              style: const TextStyle(fontSize: 13),
+              style: TextStyle(fontSize: _fontSize),
               onChanged: (v) {
                 controller?.text = v;
                 _markModified(productId);
