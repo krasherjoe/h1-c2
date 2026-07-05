@@ -14,7 +14,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 15;
+  static const _databaseVersion = 16;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -459,6 +459,45 @@ Future<void> _migrateToVersion(Database db, int version) async {
         ''');
         await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_shipping_addresses_default ON shipping_addresses(is_default)',
+        );
+      }
+      break;
+    case 16:
+      // マルチユーザー対応: users テーブル作成 + 全テーブルに created_by/updated_by 追加
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          display_name TEXT,
+          role TEXT DEFAULT 'member',
+          photo_url TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT,
+          last_login_at TEXT
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+      );
+      
+      // 全テーブルに created_by / updated_by カラムを追加
+      final tables = [
+        'customers', 'documents', 'document_items', 'products',
+        'projects', 'purchases', 'purchase_items', 'suppliers',
+        'journal_entries', 'cash_transactions', 'accounting_vouchers',
+        'payment_schedules', 'payments', 'warehouses', 'stock_transactions',
+        'daily_reports', 'time_logs', 'cases', 'memorandums',
+        'accounts', 'audit_logs',
+      ];
+      for (final table in tables) {
+        await safeAddColumn(db, table, 'created_by TEXT');
+        await safeAddColumn(db, table, 'updated_by TEXT');
+      }
+      
+      // 既存レコードの created_by を 'system' で埋める
+      for (final table in tables) {
+        await db.rawUpdate(
+          "UPDATE $table SET created_by = 'system' WHERE created_by IS NULL",
         );
       }
       break;

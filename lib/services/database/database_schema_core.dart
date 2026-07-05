@@ -233,4 +233,21 @@ Future<void> createCoreSchema(Database db) async {
   await db.execute(
     'CREATE INDEX IF NOT EXISTS idx_shipping_addresses_default ON shipping_addresses(is_default)',
   );
+
+  // ユーザーテーブル（マルチユーザー対応）
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      display_name TEXT,
+      role TEXT DEFAULT 'member',
+      photo_url TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT,
+      last_login_at TEXT
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+  );
 }
