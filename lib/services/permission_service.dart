@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
-import 'sync_queue.dart';
+import 'role_service.dart';
 
 enum AppFeature {
   masterEdit, masterDelete, masterCreate,
@@ -72,11 +72,11 @@ class PermissionService {
 }
 
 Future<bool> guardWrite(BuildContext context, AppFeature feature) async {
-  if (SyncQueue.instance.isParent) return true;
-  if (PermissionService().hasPermission(feature)) return true;
+  final roleService = RoleService();
+  if (await roleService.hasPermission(feature.name)) return true;
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('この機能は親分によって制限されています')),
+      const SnackBar(content: Text('この機能を使用する権限がありません')),
     );
   }
   return false;
