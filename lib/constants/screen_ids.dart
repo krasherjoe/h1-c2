@@ -97,4 +97,6 @@ class S {
   static const sh2 = 'SH2';
   static const sh3 = 'SH3';
   static const sh4 = 'SH4';
+  // ユーザー管理
+  static const um = 'UM';
 }
