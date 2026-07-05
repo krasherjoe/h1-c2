@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'error_reporter.dart';
+import 'user_service.dart';
 import '../constants/secure_storage_keys.dart';
 import '../constants/env_config.dart';
 import 'secure_storage_service.dart';
@@ -74,6 +75,14 @@ class GoogleAuthService {
       final expiry = DateTime.now().add(const Duration(hours: 1));
       await secure.write(SecureStorageKeys.googleTokenExpiry, expiry.toIso8601String());
       _cachedEmail = user.email;
+
+      // ユーザーDB登録
+      await UserService().getOrCreateUser(
+        email: user.email,
+        displayName: user.displayName,
+        photoUrl: user.photoUrl,
+      );
+
       _log('signIn success');
       return true;
     } catch (e, st) {
@@ -93,6 +102,7 @@ class GoogleAuthService {
       await secure.delete(SecureStorageKeys.googleRefreshToken);
       await secure.delete(SecureStorageKeys.googleTokenExpiry);
       _cachedEmail = null;
+      UserService().logout();
       _log('signOut success');
       return true;
     } catch (e) {
