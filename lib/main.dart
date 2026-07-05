@@ -62,6 +62,7 @@ import 'services/input_style_service.dart';
 import 'services/sync_garbage_collector.dart';
 import 'services/mattermost_polling_service.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/login_screen.dart';
 import 'widgets/tabbed_workspace.dart';
 import 'screens/plugin_management_screen.dart';
 
@@ -726,6 +727,7 @@ class H1CoreApp extends StatefulWidget {
 
 class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
   bool? _needsConversion;
+  bool? _isSignedIn;
   bool _isConverting = false;
   late ThemeMode _themeMode;
   final GlobalKey _screenshotKey = GlobalKey();
@@ -748,6 +750,7 @@ class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
     });
     _scheduleGarbageCollection();
     _check();
+    _checkAuth();
     _checkStoragePermission();
     
     // ICE-APIプラグインが有効な場合のみスクリーンショット機能を有効化
@@ -862,6 +865,12 @@ class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
     setState(() => _needsConversion = needs);
   }
 
+  Future<void> _checkAuth() async {
+    final signedIn = await GoogleAuthService.instance.isSignedIn();
+    if (!mounted) return;
+    setState(() => _isSignedIn = signedIn);
+  }
+
   void _scheduleGarbageCollection() {
     Future.delayed(const Duration(seconds: 10), () {
       SyncGarbageCollector.runAll();
@@ -921,7 +930,7 @@ class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
   }
 
   Widget _buildHome() {
-    if (_needsConversion == null) {
+    if (_needsConversion == null || _isSignedIn == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -931,6 +940,9 @@ class _H1CoreAppState extends State<H1CoreApp> with WidgetsBindingObserver {
         onConvert: _runConversion,
         isConverting: _isConverting,
       );
+    }
+    if (!_isSignedIn!) {
+      return const LoginScreen();
     }
     return TabbedWorkspace(dashboard: const DashboardScreen());
   }
