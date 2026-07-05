@@ -14,7 +14,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 16;
+  static const _databaseVersion = 17;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -500,6 +500,20 @@ Future<void> _migrateToVersion(Database db, int version) async {
           "UPDATE $table SET created_by = 'system' WHERE created_by IS NULL",
         );
       }
+      break;
+    case 17:
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS user_permissions (
+          user_id TEXT,
+          feature TEXT,
+          allowed INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (user_id, feature),
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_user_perms_user ON user_permissions(user_id)',
+      );
       break;
     default:
       break;
