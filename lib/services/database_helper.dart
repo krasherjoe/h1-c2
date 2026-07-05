@@ -14,7 +14,7 @@ export 'database/database_utils.dart';
 export 'database/database_schema_core.dart';
 
 class DatabaseHelper {
-  static const _databaseVersion = 17;
+  static const _databaseVersion = 18;
   static int get databaseVersion => _databaseVersion;
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -514,6 +514,22 @@ Future<void> _migrateToVersion(Database db, int version) async {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_user_perms_user ON user_permissions(user_id)',
       );
+      break;
+    case 18:
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS sync_queue (
+          id TEXT PRIMARY KEY,
+          table_name TEXT NOT NULL,
+          record_id TEXT NOT NULL,
+          action TEXT NOT NULL,
+          data TEXT,
+          created_at TEXT,
+          synced_at TEXT,
+          status TEXT DEFAULT 'pending'
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_table ON sync_queue(table_name)');
       break;
     default:
       break;

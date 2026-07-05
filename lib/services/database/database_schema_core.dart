@@ -264,4 +264,20 @@ Future<void> createCoreSchema(Database db) async {
   await db.execute(
     'CREATE INDEX IF NOT EXISTS idx_user_perms_user ON user_permissions(user_id)',
   );
+
+  // 同期キュー（お局様連携用）
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS sync_queue (
+      id TEXT PRIMARY KEY,
+      table_name TEXT NOT NULL,
+      record_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      data TEXT,
+      created_at TEXT,
+      synced_at TEXT,
+      status TEXT DEFAULT 'pending'
+    )
+  ''');
+  await db.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status)');
+  await db.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_table ON sync_queue(table_name)');
 }
