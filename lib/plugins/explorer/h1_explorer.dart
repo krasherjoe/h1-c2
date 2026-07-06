@@ -42,6 +42,7 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   DateTime? _dateTo;
   bool _treeMode = false;
   int _displaySize = 1; // 0=S, 1=M, 2=L
+  String? _selectedGroup;
   final Set<String> _expandedFolders = {};
   final _diagnosticKey = GlobalKey();
   List<TreeFolder> _folders = [];
@@ -219,9 +220,9 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
     _loadItems();
   }
 
-  Map<String, List<T>> _groupItems() {
+  Map<String, List<T>> _groupItems([List<T>? items]) {
     final grouped = <String, List<T>>{};
-    for (final item in _items) {
+    for (final item in (items ?? _items)) {
       final key = widget.config.groupKey(item) ?? '';
       grouped.putIfAbsent(key, () => []).add(item);
     }
@@ -830,7 +831,10 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
       return _buildList(_items);
     }
 
-    final grouped = _groupItems();
+    final filtered = _selectedGroup != null
+        ? _items.where((i) => widget.config.groupKey(i) == _selectedGroup).toList()
+        : _items;
+    final grouped = _groupItems(filtered);
     final sortedKeys = grouped.keys.toList()..sort();
     return RefreshIndicator(
       onRefresh: _loadItems,
@@ -866,9 +870,12 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
         children: nonEmpty
             .map((k) => Padding(
                   padding: const EdgeInsets.only(right: 6),
-                  child: ActionChip(
+                  child: FilterChip(
                     label: Text(k, style: const TextStyle(fontSize: 13)),
-                    onPressed: () => _scrollToGroup(k),
+                    selected: _selectedGroup == k,
+                    onSelected: (sel) {
+                      setState(() => _selectedGroup = sel ? k : null);
+                    },
                   ),
                 ))
             .toList(),
@@ -877,17 +884,6 @@ class _H1ExplorerState<T extends H1ExplorerItem> extends State<H1Explorer<T>> {
   }
 
   final _listKey = GlobalKey();
-
-  void _scrollToGroup(String key) {
-    final state = _listKey.currentState;
-    if (state != null) {
-      Scrollable.ensureVisible(
-        state.context,
-        alignment: 0.05,
-        duration: const Duration(milliseconds: 200),
-      );
-    }
-  }
 
   Widget _buildList(List<T> items) {
     return ListView.builder(
