@@ -149,6 +149,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   late TextEditingController _telController;
   late TextEditingController _faxController;
   late TextEditingController _emailController;
+  late TextEditingController _urlController;
   CompanyInfo? _info;
   bool _isLoading = true;
   final _companyRepo = CompanyRepository();
@@ -169,6 +170,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     _telController = TextEditingController();
     _faxController = TextEditingController();
     _emailController = TextEditingController();
+    _urlController = TextEditingController();
     _loadProfile();
   }
 
@@ -180,6 +182,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     _telController.dispose();
     _faxController.dispose();
     _emailController.dispose();
+    _urlController.dispose();
     _regNumberCtrl.dispose();
     super.dispose();
   }
@@ -193,6 +196,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       _telController.text = info.tel ?? '';
       _faxController.text = info.fax ?? '';
       _emailController.text = info.email ?? '';
+      _urlController.text = info.url ?? '';
       _bankAccounts = _parseBankAccounts(info.bankAccounts);
       _regNumberCtrl.text = info.registrationNumber ?? '';
       _isExempt = info.isExemptTaxpayer;
@@ -234,6 +238,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
         tel: _telController.text.trim().isEmpty ? null : _telController.text.trim(),
         fax: _faxController.text.trim().isEmpty ? null : _faxController.text.trim(),
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+        url: _urlController.text.trim().isEmpty ? null : _urlController.text.trim(),
         bankAccounts: bankJson,
         registrationNumber: regNum.isEmpty ? null : regNum,
         isExemptTaxpayer: _isExempt,
@@ -414,6 +419,15 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                       labelText: 'メールアドレス',
                     ),
                     keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 12),
+                  H1FormField(
+                    controller: _urlController,
+                    decoration: const InputDecoration(
+                      labelText: 'URL',
+                      hintText: 'https://example.com',
+                    ),
+                    keyboardType: TextInputType.url,
                   ),
                   const SizedBox(height: 24),
                   _buildTaxSection(),
