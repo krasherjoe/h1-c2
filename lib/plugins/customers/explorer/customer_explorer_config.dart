@@ -202,12 +202,13 @@ class CustomerExplorerConfig extends H1ExplorerConfig<CustomerExplorerItem> {
     }
   }
 
-  Future<void> _openPhonebookImport(BuildContext context) {
-    showPhonebookImport(
+  Future<void> _openPhonebookImport(BuildContext context) async {
+    await showPhonebookImport(
       context: context,
       customerRepo: CustomerRepository(),
-      onComplete: () {},
+      onComplete: () {
+        onListChanged?.call();
+      },
     );
-    return Future<void>.value();
   }
 }
